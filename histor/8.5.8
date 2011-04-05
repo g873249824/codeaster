@@ -1,0 +1,296 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 26/11/2007 - 13:04:31
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010274 DU 2006-11-17 09:55:23
+TYPE anomalie concernant Code_Aster (VERSION 8.4)
+TITRE
+   NEW8.3.22, le test ssnv182b s'arrete par manque de MEMOIRE (R)
+FONCTIONNALITE
+   problème :
+   ----------
+   
+   MUMPS manque de mémoire pour pivoter dans le cas test ssnv182b sous rocks en NEW8
+   
+   
+   
+   réponse : 
+   ---------
+   
+   Je rajoute le paramètre mem_aster 50 dans ssnv182b.para et ca passe.
+   Du coup, je n'augmente pas la mémoire globale.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv182b
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 28/11/2007 - 09:57:26
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011446 DU 2007-11-12 08:24:21
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   NEW8.5.6, le cas test sslv134f s'arrete en ARRET_ANORMAL (C)
+FONCTIONNALITE
+   Deux noms d'objets n'étaient pas initialisés et on fait quand même un DETRSD ensuite.
+   Même si les objets ne sont pas utilisés dans ce cas, il faut au moins fournir des chaines
+   de caractères valides à DETRSD.
+   
+   
+   
+   diff -urBb ORIG/mbilgl.f v8/mbilgl.f
+   --- ORIG/mbilgl.f	2007-11-22 09:18:08.000000000 +0100
+   +++ v8/mbilgl.f	2007-11-21 21:55:32.000000000 +0100
+   @@ -116,6 +116,10 @@
+    
+          CALL INFNIV(IFM,NIV)
+    
+   +C- INITIALISATION
+   +      CHTIMU = ' '
+   +      CHTIMV = ' '
+   +
+    C- RECUPERATION DU CHAMP GEOMETRIQUE
+    
+          CALL MEGEOM(MODELE,' ',EXIGEO,CHGEOM)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv134f
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011213 DU 2007-09-07 08:02:49
+TYPE anomalie concernant Code_Aster (VERSION 8.6)
+TITRE
+   En 8.5.3, feti007a s'arrete avec un probleme de memoire sur Bull
+FONCTIONNALITE
+   On passe feti007a de 384 Mo à 512 Mo.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   feti007a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 28/11/2007 - 09:57:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011444 DU 2007-11-09 16:55:48
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   NEW8.5.5, le cas test miss06a s'arrte par manque de temps CPU (R)
+FONCTIONNALITE
+   En NEW8, ce cas-test a 6000 secondes de temps CPU dans son .para, contre 9000 en 
+   NEW9. Cela correspondait à la fiche 10669.
+   Cette fiche n'avait pas été reportée en version 8, il faudrait donc le faire, je 
+   pense.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   miss06a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 28/11/2007 - 09:57:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011492 DU 2007-11-22 15:12:43
+TYPE anomalie concernant Code_Aster (VERSION 8.5)
+TITRE
+   POST_RCCM / TRANSITOIRE : prise en compte du mot clxc3xa9 INST
+FONCTIONNALITE
+   Problème : 
+   Plantage dans POST_RCCM/TRANSITOIRE si on fourni un seul instant sous le mot clé INST
+   ("longueur de segment invalide" dans rcevo2).
+   
+   Explication :
+   Dans rcevo2, on fait un wkvect(..., NBINST), où NBINST est déterminé par un getvr8 sur le
+   mot clé INST :
+   CALL GETVR8 ( MOTCLF, 'INST', IOCC,1,1, R8B, N1 ) (--> lignes 106 et 371)
+   NBINST = -N1
+   Si on donne deux instants, N1=-2 et NBISNT=2 --> ça marche
+   Si on donne un seul instant, N1=1 et NBINST=-1 --> ça plante
+   
+   Correction (à faire en v8 et en v9) :
+   dans les deux appels à getvr8, on modifie l'argument NBMAX (de 1 à 0) :
+   CALL GETVR8 ( MOTCLF, 'INST', IOCC,1,0, R8B, N1 )
+   
+   Validation : ajout d'un POST_RCCM supplémentaire avec un seul instant dans rccm01a.com0.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rccm01a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011266 DU 2007-09-20 16:20:42
+TYPE anomalie concernant Code_Aster (VERSION 8.5)
+TMA : CS
+TITRE
+   POST_RCCM transitoire de passage
+FONCTIONNALITE
+   Les situations (ou transitoires) subis par une structure peuvent être répartis en plusieurs
+   groupes, par exemple "arrêt à froid", "arrêt à chaud", "fonctionnement nominal"...
+   Certaines situations, appelées situations de passage, correspondent au passage 
+   d'un groupe à l'autre. 
+   Code_Aster permet théoriquement de prendre en compte plusieurs groupes et des situations
+   de passage dans POST_RCCM (type TUYAUTERIE et UNITAIRE). Il s'avère cependant que les 
+   routines existantes conduisent à des résultats largement surestimés.
+   
+   Pour le calcul du facteur d'usage, le cas le plus simple consiste à considérer un groupe 
+   unique. Ce qui impose 1 situation de seisme dans le groupe ainsi constitué.
+   
+   On se limite à considérer au maximum DEUX groupes de situations dans Code_Aster avec des
+   situations de passage.
+   A ce jour, Code_Aster ne traite que les chemins de passage simples (passage direct de A à B)
+   et non pas doubles (passage de A vers C puis C vers B)
+   
+   Pour le type TUTAUTERIE, l'utilisation de NUME_PASSAGE est interdit. La correction sera
+   réalisée apres la stabilisation. 
+   
+   La validation est faite sur des cas tests simples rccm10a sur la base du cas test rccm04a
+   - 2 groupes avec une situation de passage (solution de référence analytique avec Excel)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R7.04.03, U4.83.11,V3.04.149
+VALIDATION
+   rccm10
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 28/11/2007 - 09:57:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011383 DU 2007-10-19 16:52:52
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   bug liaison_unilater
+FONCTIONNALITE
+   Bug dans la création de la SD LIASION_UNILATER.
+   Dans la routine creaun.f, l'objet CHAR(1:8)//'.UNILATE.POINOE' était mal fabriqué 
+   lorsqu'on avait plusieurs occurences du mot-clef facteur LIAISON_UNILATER.
+   Il suffit de modifier la ligne 
+   ZI(JINDIR+INO) = ZI(JINDIR+INO-1) + NBCP - NBSUP
+   par
+   ZI(JINDIR+CPTND) = ZI(JINDIR+CPTND-1) + NBCP - NBSUP
+   (en déplaçant l'incrémentation de l'indice CPTND après cette ligne)
+   INO était remis à zéro à chaque occurrence du mot-clef facteur. On écrasait donc les 
+   valeurs précédemment écrites (un INFO=2 permet de se rendre compte du problème).
+   Le message ALGORITH2_52 empechait toutefois les résultats faux. On le remplace par un 
+   CALL ASSERT(.FALSE.)
+   Pour la validation, on modifie le cas-test wtnp109a en séparant le LIAISON_UNILATER 
+   en deux occurrences.
+   
+   A faire en 8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   wtnp109a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 28/11/2007 - 09:57:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010274 DU 2006-11-17 09:55:23
+TYPE anomalie concernant Code_Aster (VERSION 8.4)
+TITRE
+   NEW8.3.22, le test ssnv182b s'arrete par manque de MEMOIRE (R)
+FONCTIONNALITE
+   problème :
+   ----------
+   
+   MUMPS manque de mémoire pour pivoter dans le cas test ssnv182b sous rocks en NEW8
+   
+   
+   
+   réponse : 
+   ---------
+   
+   Je rajoute le paramètre mem_aster 50 dans ssnv182b.para et ca passe.
+   Du coup, je n'augmente pas la mémoire globale.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv182b
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF feti007a                      macocco K.MACOCCO          183      1      1
+ CASTEST MODIF miss06a                       macocco K.MACOCCO          637      1      1
+ CASTEST MODIF rccm01a                       macocco K.MACOCCO          200      1      1
+ CASTEST MODIF ssnv182b                     lefebvre J-P.LEFEBVRE       272      1      1
+ CASTEST MODIF wtnp109a                      macocco K.MACOCCO          235     14      6
+CATALOPY MODIF commande/post_rccm            macocco K.MACOCCO          252      2      2
+ FORTRAN AJOUT postrele/rc32f0               macocco K.MACOCCO           80     80      0
+ FORTRAN AJOUT postrele/rc32f1               macocco K.MACOCCO          212    212      0
+ FORTRAN AJOUT postrele/rc32f2               macocco K.MACOCCO          107    107      0
+ FORTRAN AJOUT postrele/rc32f3               macocco K.MACOCCO           95     95      0
+ FORTRAN AJOUT postrele/rc32f4               macocco K.MACOCCO          108    108      0
+ FORTRAN AJOUT postrele/rc32f5               macocco K.MACOCCO          103    103      0
+ FORTRAN AJOUT postrele/rc32f6               macocco K.MACOCCO           87     87      0
+ FORTRAN AJOUT postrele/rc32fp               macocco K.MACOCCO          216    216      0
+ FORTRAN MODIF algorith/cucrsd               macocco K.MACOCCO          286      2      2
+ FORTRAN MODIF calculel/mbilgl               macocco K.MACOCCO          404      5      1
+ FORTRAN MODIF modelisa/creaun               macocco K.MACOCCO          287      4      3
+ FORTRAN MODIF postrele/rc3201               macocco K.MACOCCO          683     12     10
+ FORTRAN MODIF postrele/rc32ac               macocco K.MACOCCO          557     69     27
+ FORTRAN MODIF postrele/rc32fu               macocco K.MACOCCO          145     43    142
+ FORTRAN MODIF postrele/rc32r0               macocco K.MACOCCO          168      2      2
+ FORTRAN MODIF postrele/rc32r1               macocco K.MACOCCO          269      2      2
+ FORTRAN MODIF postrele/rc32si               macocco K.MACOCCO          402    171     22
+ FORTRAN MODIF postrele/rcevo2               macocco K.MACOCCO          419      3      3
+  PYTHON AJOUT Messages/postrccm             macocco K.MACOCCO           39     39      0
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    9        1047      1047             +1047
+ MODIF :   16        5399       333     226      +107
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   25        6446      1380     226     +1154 

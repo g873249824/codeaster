@@ -1,0 +1,168 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 11/05/2010 - 03:53:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015726 DU 2010-10-12 15:52:57
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW10.2.18, le cas-test ssnl502a s'arrete par non convergence sur Bull, Cal5 et Rocks.
+FONCTIONNALITE
+   Le problème vient de la nouvelle version de VTCOPY, qui met les Lagrange à zéro (ce qui
+   est tout à fait normal).
+   
+   L'option ANGL_INCR_DEPL a besoin de deux vecteurs de déplacement:
+   
+   Au temps t, itération k:
+   DEPDEL = incrément de déplacements en t depuis k = 0
+   DEPOLD = incrément de déplacements entre t-2 et t-1
+   
+   En NEW10 avec le nouveau VTCOPY:
+   
+   DEPOLD:
+   - au premier pas de temps, les Lagrange valent zéro (nouveau comportement de VTCOPY)
+   - aux pas de temps suivant, les Lagrange ne valent pas zéro (résultat d'un COPISD dans nmfpas)
+   DEPDEL
+   - au premier pas de temps, les Lagrange valent zéro (champ nul)
+   - aux pas de temps suivant, les Lagrange ne valent pas zéro (résultat d'un COPISD dans nmfpas)
+   
+   En STA10 avec l'ancien VTCOPY:
+   - au premier pas de temps, les Lagrange ne pas valent zéro (mais valeur du calcul précédent)
+   - aux pas de temps suivant, les Lagrange ne valent pas zéro (résultat d'un COPISD dans nmfpas)
+   DEPDEL
+   - au premier pas de temps, les Lagrange valent zéro (champ nul)
+   - aux pas de temps suivant, les Lagrange ne valent pas zéro (résultat d'un COPISD dans nmfpas)
+   
+   Il y a un problème dans l'évaluation de l'angle. on fait le produit scalaire des deux
+   normes des increments de déplacement DEPDEL et DEPOLD. Quand on fait ce calcul, il ne faut
+   surtout pas considérer les DDL correspondant aux lagranges, ça n'a pas de sens. Avec la
+   modification de VTCOPY, les lagranges sont désormais mis à zéro (en particulier sur
+   DEPOLD). Le fait que ça convergeasse autrefois est donc un pur produit du hasard.
+   
+   
+   Pire ! La méthode de la longueur d'arc doit s'évaluer uniquement sur les DDL de
+   déplacement DX, DY, DZ. Il ne faut pas prendre les autres DDLS (en particulier les
+   DRX/DRY/DRZ dans le cas des éléments de structure).
+   
+   Correction:
+   ===========
+   
+   Création d'un vecteur de longueur NEQ, contenant 1.D0 sur les DDL DX/DY/DZ  et 0.D0
+   partout ailleurs (y compris Lagrange des conditions limites).
+   On se sert de ce vecteur dans l'évaluation du rayon pour la longueur d'arc (NMCEAI).
+   
+   Impacts:
+   ========
+   
+   NMDOPI/NUEQCH: nouveau vecteur créée (SELPIL)
+   NMCEAI/NMCENI: sélection des _bons_ ddls dans les évaluations des critères pour le pilotage
+   NMCETA/NMCESE: pour transmettre la SD pilotage à NMCEAI/NMCENI
+   
+   Sur les cas-tests, modifications légères du chemin de convergence des cas-tests
+   ssnl135b/ssnl135c.
+   Pour ssnl135b, on passe bien la charge limite (RESU OK), par contre, on ne va plus aussi
+   loin après la charge critique (problèmes de convergence), on change COEF_MULT à 20, on va
+   jusqu'à la charge 1.84608E+04 au lieu de 1.71519E+04 (et il avait déjà du mal à ce niveau,
+   il sous-découpait déjà)
+   
+   Pour ssnl135c, en augmentant le RESI_GLOB_RELA à 3E-5, ça passe.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cas-tests avec longueur d'arc
+DEJA RESTITUE DANS : 10.2.23
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 11/03/2010 - 01:33:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015724 DU 2010-10-12 15:48:04
+TYPE anomalie concernant Code_Aster (VERSION 10.2)
+TITRE
+    En NEW10.2.18, le cas-test ssll100a est NOOK sur Bull, Calibre5 et Rocks.
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans la fiche issue15481 a été introduit une nouvelle manière de détecter si les
+   coefficients matériels (ELAS) sont des fonctions d'une variable de commande. On
+   soupçonnait cette évolution d'avoir déclenché un bug. 
+   Bien au contraire : elle a corrigé un bug. Je le vérifie en modélisant le problème avec
+   STAT_NON_LINE. En effet, avant la 10.2.18, le DISMOI qui interrogeait le matériau ne
+   voyait pas le cas où la fonction est donnée par une FORMULE. On déduisait alors qu'il ne
+   fallait pas réassembler la matrice de rigidité et on obtenait des résultats faux (on le
+   vérifie en INFO=2 dans MECA_STATIQUE). 
+   
+   Résultats faux :
+   ----------------
+   On obtenait des résultats faux dans le cas de :
+   - utilisation de MECA_STATIQUE
+   - paramètres matériaux dépendants de variables de commande exprimés en FORMULE
+   - calcul sur plusieurs pas de temps
+   
+   Il est difficile de dater l'erreur. On note qu'actuellement, on retrouve les valeurs de
+   non-régression de la 3.3.24. En 7.3.17, le test a été modifié et une formule a été
+   introduite dans le test et les valeurs de non-régression ont été sérieusement changées.
+   Cela ne veut malheureusement pas dire que le fortran était juste avant.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.3.24
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.3.24
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.01.100
+VALIDATION
+    Passage du test
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssll100a                      tardieu N.TARDIEU          380    301    335
+ CASTEST MODIF ssnl133a                        abbas M.ABBAS            274      1      1
+ CASTEST MODIF ssnl133b                        abbas M.ABBAS            239      1      1
+ CASTEST MODIF ssnl134a                        abbas M.ABBAS            437      1      1
+ CASTEST MODIF ssnl135b                        abbas M.ABBAS            738      2      2
+ CASTEST MODIF ssnl135c                        abbas M.ABBAS            743      3      2
+ CASTEST MODIF ssnl502a                        abbas M.ABBAS            390      1      1
+ CASTEST MODIF ssnl502b                        abbas M.ABBAS            371      1      1
+ CASTEST MODIF ssnl502d                        abbas M.ABBAS            542      1      1
+ CASTEST MODIF ssns501a                        abbas M.ABBAS            256      1      1
+ CASTEST MODIF ssns501b                        abbas M.ABBAS            252      1      1
+ CASTEST MODIF ssnx101a                        abbas M.ABBAS            329      1      1
+ FORTRAN MODIF algorith/nmceai                 abbas M.ABBAS            113     15      6
+ FORTRAN MODIF algorith/nmceni                 abbas M.ABBAS            100      4      3
+ FORTRAN MODIF algorith/nmcese                 abbas M.ABBAS            181     14     10
+ FORTRAN MODIF algorith/nmceta                 abbas M.ABBAS            244      5      5
+ FORTRAN MODIF algorith/nmdopi                 abbas M.ABBAS            312    112     85
+ FORTRAN MODIF algorith/nueqch                 abbas M.ABBAS            126     60     28
+ FORTRAN MODIF utilitai/dismcm               tardieu N.TARDIEU          364     13      1
+  PYTHON AJOUT Messages/pilotage               abbas M.ABBAS             44     44      0
+  PYTHON MODIF Messages/algorith13             abbas M.ABBAS            265      1      5
+  PYTHON MODIF Messages/algorith7              abbas M.ABBAS            201      1     25
+  PYTHON MODIF Messages/algorith9              abbas M.ABBAS            298      1      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1          44        44               +44
+ MODIF :   22        7155       541     521       +20
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   23        7199       585     521       +64 

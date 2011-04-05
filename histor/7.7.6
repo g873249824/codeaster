@@ -1,0 +1,362 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR cibhhlv      VIVAN L.               DATE 14/11/2006 - 16:42:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010242 DU 2006-11-10 08:04:47
+TYPE express concernant Code_Aster (VERSION 7.7)
+TITRE
+   NEW7.7.5, les tests feti001, 2, 3, 4 s'arretent en ERREUR
+FONCTIONNALITE
+   on remet la version de creso1.f de la 7.7.4
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   feti001, 2, 3, 4
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE J.P.          DATE 14/11/2006 - 16:42:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010121 DU 2006-10-09 07:14:54
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   CREA_RESU
+FONCTIONNALITE
+   La valeur associee au mot cle PRECISION n'est pas prise en compte dans la commande
+   CREA_RESU :
+   
+   AFFE=(
+   _F(CHAM_GD=CHTEM1_1,INST=-2.0,),
+   _F(CHAM_GD=CHTEM1_1,INST=-1.0,),
+   _F(CHAM_GD=CHTEM1_1,INST=0.0, ),
+   
+   _F(CHAM_GD=CHTEM1_1,INST=T1_1, PRECISION=1.E-6),
+   _F(CHAM_GD=CHTEM2_1,INST=T2_1, PRECISION=1.E-6),
+   
+   Le source CRTYPE contient les instructions :
+   
+   CALL GETVR8 ( 'AFFE', 'INST', IOCC,1,0, RBID, NIS )
+   IF ( NIS .NE. 0 ) THEN
+   NBINST = -NIS
+   CALL WKVECT ( LCPT, 'V V I', NBINST, JCPT )
+   CALL WKVECT ( LINST, 'V V R', NBINST, JINST )
+   CALL GETVR8 ( 'AFFE','INST', IOCC,1,NBINST, ZR(JINST), N1)
+   CALL GETVR8 ( 'AFFE','PRECISION',1,1,1,PREC,IBID)
+   CALL GETVTX ( 'AFFE','CRITERE',1,1,1,CRITER,IBID)
+   
+   ou les valeurs associees a PRECISION et CRITERE sont recuperees pour la premiere
+   occurence
+   uniquement.
+   Dans l'etude de JMP la precision par defaut 1.E-3 n'est pas suffisante pour distinguer
+   les
+   valeurs des instants, d'ou les alarmes.
+   
+   On corrige en specifiant la variable IOCC en versions 7 et 8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   l'etude fournie mac3c01a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 14/11/2006 - 16:42:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010195 DU 2006-10-26 14:44:05
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   quelques variables non initialisees
+FONCTIONNALITE
+   Erreurs de programmation detectees par f90 :
+   variables utilisees avant d'etre affectees
+   
+   
+   1) JEECRA/IGUARD :
+   deja corrige recemment
+   2) ARLFC2/DIM1 :
+   je corrige "au feeling" apres confirmation de Mickael (methode Arlequin)
+   3) INGRMA/NOMG :
+   Confusion NOMG/NOMMA
+   4) INITE2/NUM :
+   Une vieillerie d'avant les ELREFE
+   5) UTCMP2/JNUCP :
+   Une vieillerie datant de la suppression de NUME_CMP en version 5.5
+   6) VPWECF/CHA :
+   Il manquait la ligne suivante dans le dernier bloc :
+   CHA   = RESUFR(IFREQ,2)
+   
+   Remarque pour la version 7 :
+   Je n'ai pas verifie que toutes ces AL concernaient la v7.
+   CS reportera en V7 ce qui doit l'etre.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de special
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010250 DU 2006-11-13 08:11:22
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   un petit bug dans la routine ritz99.f
+FONCTIONNALITE
+   le test sdnl105c se plante en NEW7 (nodebug) sur bull :
+   - plantage dans jjcren <- jedetr -> ritz99
+   
+   
+   1) malheureusement, en debug, tout est OK
+   2) malheureusement, quand on surcharge ritz99 (en nodebug), le test est OK
+   3) heureusement il y a valgrind (merci Nicolas Tardieu).
+   Je l'ai utilise (en NEW8) sur ma petite machine et il m'a indique que
+   le JEDETR de la fin  (IF (NBGL.GT.1) CALL JEDETR(TEMPOR)) n'est pas correct
+   car NBGL n'est pas toujours initialise (du fait dun GOTO).
+   
+   
+   Je suppose que c'est ce bug (present en NEW7 et NEW8) qui est a l'origine du plantage
+   observe en NEW7 sur bull. Je n'en suis pas sur (a cause du point 2)
+   
+   
+   Action :
+   - j'initialise systematiquement TEMPOR et je detruit systematiquement cet objet.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage du test en local
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009947 DU 2006-08-09 09:22:02
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   Bug d'impression dans IMPR_CO / CONCEPT maillage
+FONCTIONNALITE
+   Quand on veut imprimer un pointeur de noms par JEIMPO sur clpaster/ifort les differents
+   noms sont mal espaces. On obtient par exemple :
+   
+   
+   
+   
+   IMPRESSION SEGMENT DE VALEURS >MAYA    .NOMMAI                 <
+   >>>>>
+   1 - >M1      <>M2      <>M3      <>M4      <>M5      <>M6      <>M7      <
+   >M8      <>M9      <>M10     <>M11     <>M12     <>M13     <>M14
+   <>M15     <>M16     <>M17     <>M18     <>M19     <>M20     <>M21
+   <>M22     <>M23     <>M24     <>M25     <>M26     <>M27     <>M28
+   <>M29     <>M30     <>M31     <>M32     <>M33     <>M34     <>M35
+   
+   ...
+   
+   
+   
+   
+   C'est l'impression des pointeurs de noms qui ne marche pas bien.
+   Je la modifie avec une boucle sur les lignes (comme je l'avais fait pour les vecteurs de
+   K* en juin 2006).
+   
+   Remarque :
+   Je ne comprends pas pouquoi cette correction marche ... peut etre empeche-t-elle le
+   compilateur ifort de trop optimiser la triple boucle implicite du write.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   un essai sur ma machine (ifort)
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR g8bhhxd      DESROCHES X.           DATE 14/11/2006 - 16:42:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010144 DU 2006-10-17 10:39:20
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   Test ssnv140c en erreur F sous linux Rocks en version NEW8.3.17
+FONCTIONNALITE
+   Un tableau n'etait pas initialise a 0. dans la routine
+   forngr, ce qui provoquait le plantage en mode nodebug
+   sur bull et linux.
+   Des resultats faux etaient possibles avec les COQUE_3D
+   en GREEN_GR avant correction de cette anomalie.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : V8.3.17
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv140c
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010189 DU 2006-10-26 09:28:57
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TITRE
+   bugs shb8
+FONCTIONNALITE
+   Le probleme n'etait pas de stocker l'adresse d'un
+   materiau code, ce qui est licite, mais de stocker une
+   variable entiere dans un tableau de reels.
+   Sur l'alphaserver tout se passe bien mais sur Bull les
+   conversions entier-reel puis reel-entier ne redonnent pas
+   la meme adresse, ce qui explique le plantage.
+   On corrige en stockant l'adresse du materiau code dans
+   une variable entiere.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SSNS101C
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010210 DU 2006-10-31 12:32:19
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   Deformation et elements AXIS_FOURIER
+FONCTIONNALITE
+   La famille de points de Gauss utilisee pour calculer
+   l'option EPSI_ELNO_DEPL pour les elements AXIS_FOURIER
+   n'est pas correcte : famille NOEU_S pour les elements
+   quadratiques. Pour des elements sur l'axe le rayon vaut
+   0 et on s'arrete en floating point exception.
+   Il faut prendre la famille 'GANO' pour tous les types
+   d'elements.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv109f
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND C.              DATE 14/11/2006 - 16:42:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010228 DU 2006-11-08 14:09:31
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   ajustement de tolerances pour tests portage BULL
+FONCTIONNALITE
+   J'ajuste les tolerances (faiblement) pour permettre aux tests suivants de passer sur la
+   BULL :
+   
+   ascou20a.comm
+   REFERENCE: NON_REGRESSION   VERSION: 8.0.19
+   NOOK              RELA -1.16E-05 % VALE: 1.4125532674411D+05
+   MAX              TOLE  1.00E-05 % REFE: 1.4125534312783D+05
+   
+   fdnv100a.comm
+   ---- RESULTAT:  RESU     NUME_ORDRE:   7 NOM_CHAM: DEPL
+   
+   REFERENCE: NON_REGRESSION
+   NOOK DX           RELA -6.03E-04 % VALE: 1.4970019971783D-04
+   N145     TOLE  5.00E-04 % REFE: 1.4970110314375D-04
+   
+   hplv103a.comm
+   REFERENCE: NON_REGRESSION   VERSION: 8.2.14
+   NOOK GKLOC3       RELA     0.100 % VALE: 1.6561205643365D+05
+   K1_LOCAL          TOLE     0.070 % REFE: 1.6544685100000D+05
+   
+   senst05a.comm
+   ---- RESULTAT:  RETH     NUME_ORDRE:   1 NOM_CHAM: TEMP            ... SENSIBILITE AU
+   PARAMETRE PS1
+   REFERENCE: AUTRE_ASTER
+   NOOK TEMP         RELA -1.01E-06 % VALE:-4.2253762017520D-02
+   NO33     TOLE  1.00E-06 % REFE:-4.2253762444489D-02
+   
+   ssla200a.comm
+   ssla200b.comm
+   sslp201a.comm
+   sslp201b.comm
+   => voir fiche 10227
+   
+   ssna102e.comm
+   REFERENCE: NON_REGRESSION   VERSION: 7.3.23
+   NOOK DY           RELA    -0.078 % VALE:-8.4055794291100D-01
+   N3741    TOLE     0.055 % REFE:-8.4121016905000D-01
+   REFERENCE: NON_REGRESSION   VERSION: 7.3.23
+   NOOK REACEN2      RELA    -0.074 % VALE: 1.7479355117375D+04
+   DY                TOLE     0.050 % REFE: 1.7492307043100D+04
+   
+   ssnp121j.comm
+   ---- RESULTAT:  RESU     NUME_ORDRE:   1 NOM_CHAM: DEPL
+   
+   REFERENCE: ANALYTIQUE
+   NOOK LAGS_C       RELA    -0.519 % VALE:-9.9480602262290D+04
+   N555     TOLE     0.100 % REFE:-1.0000000000000D+05
+   et NOOK suivants pour ce test.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ascou20a, fdnv100a, hplv103a, senst05a, ssla200a, ssla200b, sslp201a, sslp201b, ssna102a,
+ssnp121j
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF fdnv100a                        vivan L.VIVAN            329      4      4
+ CASTEST MODIF mtlp102a                        vivan L.VIVAN            234      2      5
+ CASTEST MODIF senst05a                        vivan L.VIVAN            368      5      5
+ CASTEST MODIF ssla200a                        vivan L.VIVAN           1316      4      4
+ CASTEST MODIF ssla200b                        vivan L.VIVAN           1338      4      4
+ CASTEST MODIF sslp201a                        vivan L.VIVAN           1185    105    105
+ CASTEST MODIF sslp201b                        vivan L.VIVAN           1188    107    107
+ CASTEST MODIF ssls200a                        vivan L.VIVAN            257      2      2
+ CASTEST MODIF sslv134f                        vivan L.VIVAN            336      3      3
+ CASTEST MODIF wtnp110a                        vivan L.VIVAN            196      1      1
+ FORTRAN MODIF algeline/vpwecf                 vivan L.VIVAN            369      2      1
+ FORTRAN MODIF algorith/crtype                 vivan L.VIVAN            381      3      3
+ FORTRAN MODIF algorith/ritz99                 vivan L.VIVAN            254      8     14
+ FORTRAN MODIF calculel/inite2                 vivan L.VIVAN             81      7     13
+ FORTRAN MODIF calculel/utcmp2                 vivan L.VIVAN            124      9     65
+ FORTRAN MODIF elements/creso1                 vivan L.VIVAN            190      7     12
+ FORTRAN MODIF elements/forngr                 vivan L.VIVAN            528      2      1
+ FORTRAN MODIF elements/shb8ps                 vivan L.VIVAN           1435     23      7
+ FORTRAN MODIF elements/te0114                 vivan L.VIVAN            111      2     11
+ FORTRAN MODIF elements/te0530                 vivan L.VIVAN            565     23     15
+ FORTRAN MODIF jeveux/jjimpo                   vivan L.VIVAN            213     12      9
+ FORTRAN MODIF modelisa/arlfc2                 vivan L.VIVAN            392      2      2
+ FORTRAN MODIF modelisa/ingrma                 vivan L.VIVAN            129      2      4
+  PYTHON MODIF Macro/defi_cable_bp_ops         vivan L.VIVAN            324     15      4
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   24       11843       354     401       -47
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   24       11843       354     401       -47 

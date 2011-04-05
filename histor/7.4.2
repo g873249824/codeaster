@@ -1,0 +1,631 @@
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhlv L.VIVAN   DATE  le 28/02/2005 a 11:37:57
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-038
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : J.P.LEFEBVRE
+   INTERET_UTILISATEUR : OUI
+   TITRE : CREA_RESU / AFFE en mode reuse
+   FONCTIONNALITE
+       toto = evol_ther pour les instants t1,t2,t3
+       CREA_RESU(reuse=toto, AFFE=_F(INST=(t1,t2,t3), CHAMP= ch1)
+     le CREA_RESU remplace les champs calculés par le champ ch1
+     pour les instants t1,t2,t3 à une précision et un critère près
+     valeur par défaut de PREC=1.E-03
+
+     Quand il y a remplacement du champ, le code émet une Alarme
+     <A> <CREA_RESU> *** CHAMP DEJA EXISTANT ***
+         IL SERA REMPLACE PAR LE CHAMP >T05     <  
+         POUR L'INSTANT   5.0000E+00
+
+     Quand il n'y a pas remplacement, les champs sont stockés à la fin
+     de la SD Résultat.
+
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.44.12 commande CREA_RESU
+       EXPL_ : surcharge des champs
+   VALIDATION 
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhpd L.SALMONA   DATE  le 01/03/2005 a 17:59:35
+
+   REALISATION EL 2004-250
+   NB_JOURS_TRAV  : 2.5
+   POUR_LE_COMPTE_DE   : J.PELLET
+   INTERET_UTILISATEUR : OUI
+   TITRE  Poutre POU_D_T_GD et amortissement 
+   FONCTIONNALITE : Permettre la combinaisons de matrices non symétriques.
+   DETAIL :
+   Plusieurs bug ont été détectés lors du passage de l'étude jointe avec la
+   fiche.
+   Tout d'abord, dans la routine NMMATR l'appel a MTCMBL (routine combinant les
+   matrices) faisait creer la matrice sur la base globale.
+   Ensuite, dans la routine PROSMO qui crée la matrice assemblée résultat de la
+   combinaison de matrices, on ne verifiait pas par des JEEXIN que l'objet
+   jeveux créé n'existait pas déjà.
+   Enfin dans MTCMBL, on fait appel a la routine VRREFE qui est censée vérifier
+   la cohérence des REFE/REFA d'objets jeveux (ici les matrices assemblées).
+   Or en plus de faire ces vérifications, la routine vérifie aussi que la taille
+   des LONMAX du .REFA est la meme.
+   Dans le cas qui nous interesse cette taille n'est pas la meme et on etait
+   dirigé vers la routine qui combine les matrices lorsque leur profil n'est pas
+   le meme. Cette routine (CBVAL2) ne sait pas combiner des matrices non
+   symetriques.
+   Par contre la routine combinant les matrices ayant meme profil (CBVAL) est
+   capable de combiner des matrices non symétriques.
+   Comme dans le cas de cette étude le profil des matrices est le meme le
+   problème se situait dans l'appel à la mauvaise routine.
+   On supprime donc l'appel a VRREFE au profit d'une comparaison simple des
+   REFA.
+   Si les maillages supportant les matrices ne sont pas les memes, on arrete en
+   erreur fatale.
+   Si les NUME_DDL supportant les matrices ne sont pas les memes, on dirige vers
+   CBVAL2 (routine de combinaisons des matrices ayant des profils différents)
+   Si le maillage et le NUME_DDL est le meme pour les matrices, on dirige vers CBVAL
+   (routine de combinaisons des matrices ayant des profils identiques).
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+
+   VALIDATION : liste restreinte ainsi que l'étude jointe a la fiche. L'EDA a émis
+   le souhait d'ajouter un cas test dans la base validant cette modification.
+   Malheureusement, J. Pellet n'a pas eu le temps de prévenir G.Devesa, le cas test
+   n'est donc pas restitué.
+   
+   IMPACT_DOCUMENTAIRE : NON
+
+--------------------------------------------------------------------------------
+   
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 5
+   POUR_LE_COMPTE_DE   : C. DURAND
+   INTERET_UTILISATEUR : OUI
+   TITRE  Gain de performance de POST_RELEVE_T 
+   FONCTIONNALITE : La recherche d'optimisation de POST_RELEVE_T a été faite sur
+   l'aspic08a qui consommait un temps CPU anormalement élevé dans la commande
+   POST_RELEVE_T.
+   DETAIL :
+   Grace à l'outil de profiling, les routines consommant le plus de temps CPU
+   ont été détectées et modifiées en conséquence.
+   -UTNCMP : cette routine sert à récupérer le nombre et le noms des composantes
+   d'un champ.
+   On faisait une boucle sur les mailles portant le champ. Or une boucle sur les
+   GREL est suffisante pour extraire les données utiles.
+   De plus, dans cette boucle on faisait appel au CATA.TE.MODELOC via un
+   JEVEUO(JEXNUM...). On remplace ces multiples appels a jeveux grace a un
+   JEVEUO(JEXATR(... ,'LONCUM')...)
+   -DGMODE: Cette routine sert a trouver le descripteur-grandeur associé a un
+   mode local. Elle est appelé par UTNCMP à l'intérieur de la boucle sur
+   les GREL. On fait sortir de la boucle l'appel au CATA.TE.MODELOC en
+   transmettant a DGMODE l'adresse du vecteur LONCUM et du vecteur
+   CATA.TE.MODELOC.
+   -TREMNO : Cette routine sert a réorganiser par noeud un sous-chamelem.
+   La encore on sort de la boucle l'appel à l'objet jeveux de la connectivité et
+   de la connectivité inverse (via les LONCUM).
+   Les temps CPU observés pour l'aspic08a sont indiqués ci-dessous:
+
+     
+                          AVANT                        APRES
+                         
+    * POST_RELEVE_T    : 258.90                        77.38
+    * POST_RELEVE_T    : 264.20                        76.87 
+    * POST_RELEVE_T    : 257.10                        75.30 
+    * POST_RELEVE_T    : 257.92                        74.85 
+
+
+
+
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+
+   VALIDATION : passage de tous les cas tests ayant un POST_RELEVE_T
+
+   IMPACT_DOCUMENTAIRE : NON
+
+
+-----------------------------------------------------------------------
+--- AUTEUR d6bhhjp J.P.LEFEBVRE   DATE  le 22/02/2005 a 12:55:44
+
+CORRECTION AL 2005-069
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE : POURSUITE
+   FONCTIONNALITE : Partitionnement de la segmentation mémoire et base hdf
+   DETAILS :
+   Lorsque l'on utilise une base hdf en poursuite et si on demande le
+   partionnement de la mémoire :
+   
+   POURSUITE (MEMOIRE =_F( TYPE_ALLOCATION=4,
+                        TAILLE = 80000,
+                        PARTITION = 0.9, ),
+          
+   Il est impossible de diviser proprement la zone mémoire allouée et on 
+   obtient un message du type :
+   
+    <S> <JJCPSG02> LA VALEUR DU RAPPORT ENTRE PARTITIONS NE CONVIENT PAS                                                                
+      LA LONGUEUR DE LA PARTITION 1 DOIT ETRE AU MINIMUM DE  554602526                                                               
+      MOTS (ENVIRON  52  %)                                                                                                          
+   Ce problème est du à l'ordre d'appel des routines de partionnement 
+   JETYPR et de relecture de la base hdf JELIHD dans la routine DEBUT, 
+   il suffit de les permuter pour corriger l'erreur, la relecture de
+   la base hdf remplissant la segmentation mémoire, il devenait 
+   impossible de définir ensuite les deux zones.
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE:  NON
+   VALIDATION : 	
+   Sur l'étude ayant révélée le bug.
+
+
+-----------------------------------------------------------------------
+--- AUTEUR durand C.DURAND   DATE  le 28/02/2005 a 17:04:54
+------------------------------------------------------------------------------
+CORRECTION AL 2004-464
+NB_JOURS_TRAV : 0.5
+INTERET_UTILISATEUR : NON
+TITRE  modif catalogue 
+FONCTIONNALITE superviseur
+RESU_FAUX_VERSION_EXPLOITATION    :   NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+RESTITUTION_VERSION_EXPLOITATION  :   OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+IMPACT_DOCUMENTAIRE : NON
+VALIDATION
+   néant
+DETAILS
+   modifs du catalogue DEFI_CABLE_BP. Il faut utiliser la regle
+   ENSEMBLE('MAILLAGE','CONE') et non PRESENT_PRESENT pour forcer l'usage
+   simultané des 2 mots clés.
+------------------------------------------------------------------------------
+CORRECTION AL 2005-036
+NB_JOURS_TRAV : 0.5
+INTERET_UTILISATEUR : NON
+TITRE  poursuite et concepts non ASSD
+FONCTIONNALITE superviseur
+RESU_FAUX_VERSION_EXPLOITATION    :   NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+RESTITUTION_VERSION_EXPLOITATION  :   OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+IMPACT_DOCUMENTAIRE : NON
+VALIDATION
+   étude perso
+DETAILS
+   Modification de ops.py
+   Lors d'une poursuite, on compare la liste des concepts relus dans la base
+   globale (jeveux, concepts fortran) et les instances de classe relues dans 
+   le pickle.
+   On vérifie la cohérence des types de concepts et de leurs noms.
+   Le hic venait d'une poursuite quand on avait fait un EXTR_COMP dans le 
+   fichier de départ. Alors on se retrouve avec un concept post_comp_cham_el
+   qui n'hérite pas de ASSD et n'a donc aucune chance d'être présent dans 
+   la base jeveux : désormais on ne fait la vérif que pour les concepts
+   héritant strictement de ASSD.
+   De plus, le mécanisme de levée d'erreur n'était pas propre dans ops.py
+   j'importe maintenant UTMESS (from Utilitai.Utmess).
+------------------------------------------------------------------------------
+CORRECTION AL 2005-060
+NB_JOURS_TRAV : 1
+INTERET_UTILISATEUR : NON
+TITRE  CREA_TABLE
+FONCTIONNALITE superviseur
+RESU_FAUX_VERSION_EXPLOITATION    :   NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+RESTITUTION_VERSION_EXPLOITATION  :   OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+IMPACT_DOCUMENTAIRE : NON
+VALIDATION
+   étude jointe
+DETAILS
+   Modification de op0036.f
+   Programmation très sale qui supposait implicitement que le nombre de 
+   lignes de la table était inférieur à 500.
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  MACRO_MODE_MECA
+   FONCTIONNALITE MACRO_MODE_MECA
+   DETAILS
+   suite AL 2005-008, restituée uniquement en version 8, on s'est apercu
+   que le catalogue de MACRO_MODE_MECA est faux. Les concepts derriere
+   MATR_A et MATR_B sont nécessairement entrants et pas produits par la
+   macro. La doc est OK de ce point de vue.
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   NON
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   VALIDATION : cas tests utilisant cette commande.
+   IMPACT_DOCUMENTAIRE : NON
+-----------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+--- AUTEUR galenne E.GALENNE   DATE  le 03/02/2005 a 13:00:24
+
+---------------------------------------------------------------------------
+CORRECTION AL 2004-039   
+   INTERET_UTILISATEUR : NON
+   TITRE Cas test ascou18a et ascou19a sous Linux
+   FONCTIONNALITE
+   Les cas test ascou18a et ascou19a s'arrêtent en erreur sous Linux, dans la commande 
+   TEST_TABLE : la ligne à tester dans un tableau résultat de l'opératuer calc_g_local_t
+   n'est pas trouvée. La ligne est désignée par le numéro d'un noeud du fond de fissure.
+   Le problème provient d'une numérotation différente entre les maillages générés par la 
+   macro-commane sous Linux ou sur clayatsr. La numérotation est différente dès la sortie 
+   de la procédure gibi. Les deux maillages semblent cependant identiques : même nombre de
+   noeuds, de mailles, même abscisses curvilignes le long du fond de fissure. De plus les 
+   résultats de g_local sont identiques (10-4% d'écart).
+   
+   On se contente donc de modifier le test_table, en extrayant la ligne du tableau par son
+   abscisse curviligne et non plus par son numéro de noeud.
+   
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON   
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON   
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      ascou18a et ascou19a sous Linux/clayastr
+   DETAILS
+   NB_JOURS_TRAV  : 1   
+---------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   INTERET_UTILISATEUR : OUI
+   FONCTIONNALITE : Syntaxe de POST_K1_K2_K3
+   DETAILS
+   Le mot clé (facultatif) PRECISION de l'opérateur POST_K1_K2_K3 ne sert à rien (il n'est
+   jamais appelé dans les routines), on le supprime du catalogue de la commande.
+   
+   On rappelle que le mot clé à utiliser pour définir la précision avec laquelle on choisit
+   les noeuds sur lesquels on interpole les déplacements est PREC_VIS_A_VIS : un noeud est 
+   sélectionné si sa distance d à la droite perpendiculaire au fond de fissure vérifie la 
+   propriété : d < epsi.L où L est égal à ABSC_CURV_MAXI, et epsi est la précision fournie 
+   dans PREC_VIS_A_VIS.
+   
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON   
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON   
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      Suppression de PRECISION dans les cas test ssnv166a/b
+   NB_JOURS_TRAV  : 0.5
+
+
+-----------------------------------------------------------------------
+--- AUTEUR lebouvie F.LEBOUVIER   DATE  le 10/02/2005 a 11:13:16
+
+-------------------------------------------------------------------------------
+CORRECTION AL 2005-011
+   POUR LE COMPTE DE : J. PELLET
+   INTERET_UTILISATEUR : NON
+   TITRE : MECA_STATIQUE : mots clés nume_couche, nive_couche, angle, 
+           plan à supprimer
+   FONCTIONNALITE : 
+   DETAIL : 
+   La seule option utilisée dans l'opérateur MECA_STATIQUE est l'option
+   SIEF_ELGA_DEPL. Cette option n'utilise pas les mots clés NUME_COUCHE,
+   NIVE_COUCHE, ANGLE et PLAN on les supprime donc de MECA_STATIQUE.
+   Modifications effectuées
+     - Catalogue : 
+        Suppression dans le meca_statique.capy des mots clés nume_couche, 
+        nive_couche, angle, plan
+     - Fortran :
+        Suppression de l'appel à mechnc dans les routines op0046, meacmv et
+        mestat. 
+        Suppression de la variable CHNUMC des routines op0046, meacmv et
+        mestat.
+     - Cas-tests:
+       18 Cas-tests ont été modifiés:
+        hpla100a, hpla100b, hpla100c, hpla100d, hpla100e
+        hpla100f, hpla100g, hpla100h, hpla100i, hpla100j
+        ssls117c, ssls117d, ssls120a, ssls120b
+        ssls120c, ssls120d, sslx100b, sslx100d
+  RESU_FAUX_VERSION_EXPLOITATION : NON
+  RESU_FAUX_VERSION_DEVELOPPEMENT : NON
+  RESTITUTION_VERSION_EXPLOITATION : OUI
+  RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+  VALIDATION : Passage des cas-tests utilisants MECA_STATIQUE 
+  IMPACT_DOCUMENTAIRE : OUI
+      DOC_U : U4.51.01 MECA_STATIQUE
+          EXPL_  : - supprimer les mots clés NUME_COUCHE, NIVE_COUCHE, ANGLE,
+                     et PLAN 
+  NB_JOURS_TRAV : 1.5
+-------------------------------------------------------------------------------
+CORRECTION AL 2005-034
+   POUR LE COMPTE DE : C. DURAND
+   INTERET_UTILISATEUR : OUI
+   TITRE : SECH_GRANGER et ELEMENTS LUMPES
+   FONCTIONNALITE :
+   DETAIL :
+      Dans l'étude, générant l'erreur, l'utilisateur souhaite utiliser la 
+      modélisation 3D_DIAG pour réaliser le calcul de séchage (SECH_GRANGER) 
+      avec un maillage composé de mailles HEXA8. Le calcul s'arrête avec le 
+      message suivant dans l'option RESI_RIGI_MASS (te0283):
+         <F> <THER_NON_LINE> <NTFCMA_01> COMPORTEMENT NON TROUVE       
+    a) Analyse:
+        le problème se situe dans la routine te0283, à la ligne 88
+         on avait :
+            IF (ZK16(ICOMP) (1:5).NE.'THER_') THEN
+         au lieu de :
+            IF (ZK16(ICOMP) (1:5).EQ.'THER_') THEN
+        Le cas-test 3D, hsna100d qui a été restitué lors de la réalisation de
+        l'évolution EL2004-138 "SECHAGE ET ELEMENTS LUMPES", utilise des mailles
+        TETRA4. Ce cas-test n'active pas la routine te0283 pour le calcul de 
+        l'option RESI_RIGI_MASS mais le te0126. L'option RESI_RIGI_MASS associée
+        aux mailles HEXA8 n'était pas testée (absence de cas-test).
+     b) Vérifications
+       -On vérifie que le problème rencontré n'est pas présent dans les routines
+        restituées lors de la réalisation de la fiche EL2004-138.
+       -Création d'un nouveau cas-test avec des mailles HEXA8, basé sur le 
+        cas-test HSNA100 "séchage d'un mur d'enceinte en béton
+  RESU_FAUX_VERSION_EXPLOITATION : NON
+  RESU_FAUX_VERSION_DEVELOPPEMENT : NON
+  RESTITUTION_VERSION_EXPLOITATION : OUI
+  RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+  VALIDATION : Passage de l'étude et du nouveau cas-test et des tests restitués
+               lors de la réalisation de la fiche EL2004-138. 
+  IMPACT_DOCUMENTAIRE : OUI
+     DOC_V : V7.20.100
+       EXPL_ : HSNA100 "séchage d'un mur d'enceinte en béton" ajout de la
+               modélisation e : modélisation 3D_DIAG avec des mailles
+               HEXA8.
+  NB_JOURS_TRAV : 2.0
+-------------------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mabbas M.ABBAS   DATE  le 01/03/2005 a 09:07:22
+
+-----------------------------------------------------------------------
+CORRECTION AL 2004-455 
+   INTERET_UTILISATEUR : OUI
+   TITRE
+    CONTACT - Bug avec TRIA7
+   FONCTIONNALITE
+    L'étude associée fait du contact entre COQUES3D de type TRIA7.
+    On plante salement dans la lecture des données du contact:
+
+    <S> <JJALLS01> LONGUEUR DU SEGMENT DE VALEURS INVALIDE
+      >ACHAR   .CONTACT.NOEUQU         <
+
+    L'erreur se situe dans NBNOEL.
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON  
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON  
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+    Nouveau cas test ssnv129c
+    Base sur ssnv129b avec trois CREA_MAILLAGE enchaines:
+          QUAD8_9       (Q8->Q9)
+          QUAD_TRIA3    (Q9->T3)
+          LINE_QUAD     (T3->T6)
+          TRIA6_7       (T6->T7)
+
+   DETAILS
+   Aucun cas-test de la base ne faisait de contact avec TRIA7.
+   La routine NBNOEL est appelee par la presence du mot-clef CONTACT
+   dans AFFE_CHAR_MECA. Elle compte le nombre de mailles, de noeuds et 
+   de noeuds milieux d'une maille ou d'un groupe de mailles.
+   Pour connaitre le nombre de noeuds milieux, on fait appel a une fonction
+   nbnomi.f qui retourne le nombre de noeuds milieux en fonction du type
+   d'element.
+   Cette fonction ne connaissait pas TRIA7 et retournait zero pour le nombre
+   de noeuds milieux, au lieu de quatre.
+   La routine NBNOEL retirait le noeud sommet des TRIA7 en retirant 1 au nombre
+   de noeuds milieux retournes par NBNOMI. Et donc: 0-1 = -1
+   On se retrouvait avec un nombre de noeuds milieux incorrect et negatif.
+
+   Corrections:
+   - prendre en compte les TRIA7 dans NBNOMI
+   - modifier NBNOMI pour qu'a l'avenir, s'il existe un TRIA34, on plante proprement
+    (transformation des IF en ELSE IF)
+   - correction de la routine TYPEMA, ajoutee en 7.3.23, qui ignorait aussi les 
+   TRIA7 mais qui plantait proprement en 'TYPE DE MAILLE INCONNU'
+   - modification de PROJMA et PROJTR (ignoraient les TRIA7)
+   NB_JOURS_TRAV  : 1
+-----------------------------------------------------------------------
+CORRECTION AL 2005-016
+   INTERET_UTILISATEUR : NON
+   TITRE
+    MACR_CABRI_MAIL - Mot-clef FICHIER parasite 
+   FONCTIONNALITE
+    Le mot-clef 'IMPRESSION' de MACR_CABRI_MAIL utilise l'option 'FICHIER' 
+    qui vient de l'ancien DEFUFI et qui a été résorbé au profit de DEFI_FICHIER.
+    Il faut donc veiller à supprimer 'FICHIER' dans MACR_CABRI_MAIL/IMPRESSION 
+    qui n'a, de toute manière aucun effet.
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON  
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON  
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+   DOC_U : U4.CB.10A
+       EXPL_ : suppression mot_clef FICHIER   
+   VALIDATION
+     cabri
+   DETAILS
+    Suppression reference mot-clef 'FICHIER' dans le CAPY et dans
+   macr_cabri_mail_ops.py
+   NB_JOURS_TRAV  : 0.1
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mcourtoi M.COURTOIS   DATE  le 17/02/2005 a 17:14:55
+
+CORRECTION AL 2005-009
+   INTERET_UTILISATEUR : NON
+   TITRE
+      IMPR_FONCTION n'imprime pas la partie imaginaire d'une fonction complexe.
+   FONCTIONNALITE
+      Pour tracer la partie imaginaire d'une fonction, 'IMAG' avait été
+      par erreur remplacée par 'COMPLEXE' (mot-clé PARTIE).
+      C'était donc toujours la partie réelle qui était tracée.
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+   DETAILS
+   NB_JOURS_TRAV  : 0.5
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE
+   Anomalie dans IMPR_TABLE :  
+      En voulant utiliser le format TABLEAU_CROISE sur une table ayant pour
+      paramètres NOEUD, INST et TEMP :
+
+      - çà fonctionnait avec NOM_PARA=('NOEUD', 'INST', 'TEMP'),
+      - çà plantait     avec NOM_PARA=('INST', 'NOEUD', 'TEMP') car le
+        paramètre de la table intermédiaire construite est un réel et non
+        une chaine de caractères (plantait sur len(p)).
+
+         TABL_POST_RELE
+         TEMP FONCTION DE NOEUD ET INST
+            NOEUD/INST     0.0          5.0          10.0
+              NO3      -1.40016E+02 -1.08375E+02 -2.11548E+01
+              NO33      2.12849E+02  2.42536E+02  3.27656E+02
+              NO2       1.41113E+02  3.46661E+02  5.55747E+02
+
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+   DETAILS
+   NB_JOURS_TRAV  : 0.5
+------------------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+--- AUTEUR nicolas O.NICOLAS   DATE  le 21/02/2005 a 13:00:59
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   INTERET_UTILISATEUR : NON
+   TITRE : COMBINAISON DE MATRICES COMPLEXES
+   FONCTIONNALITE : COMB_MATR_ASSE
+   RESU_FAUX_VERSION_EXPLOITATION  :   NON   DEPUIS : 6.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT :   NON   DEPUIS : 6.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   NON
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+   DETAILS
+     Correction d'un bug dans la routine MTXCNL qui se charge 
+     de combiner les CONL des matrices. 
+     Le bug venait d'un mauvais test : 
+           DO 320 IVAL = 0, NEQ-1
+              IF ( ZR(LMAT+IVAL) .NE. UN ) THEN
+                 ZC(LRES+IVAL)=RCUM*ZC(LRES+IVAL)+C8CST*ZC(LMAT+IVAL)
+              ENDIF
+ 320       CONTINUE
+ 
+     que j'ai corrige en
+           DO 320 IVAL = 0, NEQ-1
+              IF ( ZC(LMAT+IVAL) .NE. CUN ) THEN
+                 ZC(LRES+IVAL)=RCUM*ZC(LRES+IVAL)+C8CST*ZC(LMAT+IVAL)
+              ENDIF
+ 320       CONTINUE
+  
+   Cette restitution est faite en NEW8 via l'EL 2005-044
+     
+      
+   NB_JOURS_TRAV  : 0.5
+------------------------------------------------------------------------------
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT hsna100e                     lebouvie F.LEBOUVIER        553    553      0
+ CASTEST AJOUT ssnv129c                       mabbas M.ABBAS            293    293      0
+ CASTEST MODIF ascou18a                      galenne E.GALENNE          302      4     19
+ CASTEST MODIF ascou19a                      galenne E.GALENNE          401      8      7
+ CASTEST MODIF hpla100a                     lebouvie F.LEBOUVIER        255      1      5
+ CASTEST MODIF hpla100b                     lebouvie F.LEBOUVIER        327      1     13
+ CASTEST MODIF hpla100c                     lebouvie F.LEBOUVIER        537      1     13
+ CASTEST MODIF hpla100d                     lebouvie F.LEBOUVIER        433      1     13
+ CASTEST MODIF hpla100e                     lebouvie F.LEBOUVIER        384      1     11
+ CASTEST MODIF hpla100f                     lebouvie F.LEBOUVIER        382      1     11
+ CASTEST MODIF hpla100g                     lebouvie F.LEBOUVIER        294      1     12
+ CASTEST MODIF hpla100h                     lebouvie F.LEBOUVIER        290      1     13
+ CASTEST MODIF hpla100i                     lebouvie F.LEBOUVIER        407      1     16
+ CASTEST MODIF hpla100j                     lebouvie F.LEBOUVIER        404      1     15
+ CASTEST MODIF ssls117c                     lebouvie F.LEBOUVIER        651      2      5
+ CASTEST MODIF ssls117d                     lebouvie F.LEBOUVIER        636      2      5
+ CASTEST MODIF ssls120a                     lebouvie F.LEBOUVIER        195      2      4
+ CASTEST MODIF ssls120b                     lebouvie F.LEBOUVIER        243      2      4
+ CASTEST MODIF ssls120c                     lebouvie F.LEBOUVIER        243      2      4
+ CASTEST MODIF ssls120d                     lebouvie F.LEBOUVIER        240      2      4
+ CASTEST MODIF sslx100b                     lebouvie F.LEBOUVIER        224      2      3
+ CASTEST MODIF sslx100d                     lebouvie F.LEBOUVIER        229      2      3
+ CASTEST MODIF ssnv166a                      galenne E.GALENNE          409      8     11
+ CASTEST MODIF ssnv166b                      galenne E.GALENNE          428      1      4
+CATALOPY MODIF commande/defi_cable_bp         durand C.DURAND            83      2      2
+CATALOPY MODIF commande/macr_cabri_mail       mabbas M.ABBAS             91      1      2
+CATALOPY MODIF commande/macro_mode_meca       durand C.DURAND            91      4      9
+CATALOPY MODIF commande/meca_statique       lebouvie F.LEBOUVIER         82      1      5
+CATALOPY MODIF commande/post_k1_k2_k3        galenne E.GALENNE           66      4      4
+ FORTRAN MODIF algeline/mtcmbl               cibhhpd L.SALMONA          274     20     12
+ FORTRAN MODIF algeline/mtxcnl               nicolas O.NICOLAS          109      5      4
+ FORTRAN MODIF algeline/nbnomi                mabbas M.ABBAS             52      5      1
+ FORTRAN MODIF algorith/crtype               cibhhlv L.VIVAN            383     15      3
+ FORTRAN MODIF algorith/meacmv              lebouvie F.LEBOUVIER        466      3      4
+ FORTRAN MODIF algorith/mestat              lebouvie F.LEBOUVIER        304      2      3
+ FORTRAN MODIF algorith/nmmatr               cibhhpd L.SALMONA          438      2      2
+ FORTRAN MODIF algorith/op0046              lebouvie F.LEBOUVIER        272      3      4
+ FORTRAN MODIF algorith/projma                mabbas M.ABBAS            174      3      2
+ FORTRAN MODIF algorith/projtr                mabbas M.ABBAS            475      6      1
+ FORTRAN MODIF algorith/typema                mabbas M.ABBAS            116      5      2
+ FORTRAN MODIF calculel/dgmode               cibhhpd L.SALMONA           59      6      5
+ FORTRAN MODIF calculel/pasnoc               cibhhpd L.SALMONA          216      6      4
+ FORTRAN MODIF calculel/pasnor               cibhhpd L.SALMONA          219      6      4
+ FORTRAN MODIF elements/te0283              lebouvie F.LEBOUVIER        173      2      2
+ FORTRAN MODIF modelisa/prosmo               cibhhpd L.SALMONA          419     12      4
+ FORTRAN MODIF postrele/rvche1               cibhhpd L.SALMONA          209      5      3
+ FORTRAN MODIF postrele/rvche2               cibhhpd L.SALMONA          256      6      3
+ FORTRAN MODIF prepost/irceca                cibhhpd L.SALMONA          472      8      5
+ FORTRAN MODIF prepost/ircecl                cibhhpd L.SALMONA          874      6      4
+ FORTRAN MODIF prepost/ircecs                cibhhpd L.SALMONA          439      7      5
+ FORTRAN MODIF prepost/ircerl                cibhhpd L.SALMONA          780      7      5
+ FORTRAN MODIF prepost/ircers                cibhhpd L.SALMONA          712      9      7
+ FORTRAN MODIF prepost/tremno                cibhhpd L.SALMONA          355     17      9
+ FORTRAN MODIF supervis/debut                d6bhhjp J.P.LEFEBVRE        84      3      3
+ FORTRAN MODIF utilitai/op0036                durand C.DURAND           244     18     34
+ FORTRAN MODIF utilitai/utncmp               cibhhpd L.SALMONA          136     12     10
+  PYTHON MODIF Cata/ops                       durand C.DURAND           436      7      5
+  PYTHON MODIF Macro/impr_fonction_ops      mcourtoi M.COURTOIS         393      2      2
+  PYTHON MODIF Macro/macr_cabri_mail_ops      mabbas M.ABBAS            461      8      8
+  PYTHON MODIF Utilitai/Table               mcourtoi M.COURTOIS         704     10      8
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         846       846              +846
+ MODIF :   58       19031       285     385      -100
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   60       19877      1131     385      +746 

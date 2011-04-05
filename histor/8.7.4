@@ -1,0 +1,378 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 01/10/2008 - 16:12:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012240 DU 2008-06-26 15:04:16
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bugs potentiels xc3xa0 l'appel des routines MRMULT/MCMULT
+FONCTIONNALITE
+   Contexte
+   ----------
+   En travaillant sur l'extension du périmètre du solveur modal 
+   QZ au non symétrique, j'ai trouvé des bugs potentiels ds les routines 
+   MRMULT/MCMULT.f.
+   Ces routines effectuent le produit d'une matrice A (au format 
+   MORSE) par un vecteur X (ou un ensemble de vecteurs):
+                   A * X  --> Y
+   X,Y réels si MRMULT, complexes si MCMULT.
+   
+   Fonctionnalités impactées
+   --------------------------
+   A priori toutes, mais plutôt utilisé en dynamique (MRMULT appelé 116 fois 
+   et MCMULT 56).
+   
+   Détails
+   --------
+   Ces routines semblent a priori accepter tous les types de matrices 
+   A: réelles, complexes et hermitiennes (type résorbé récemment), 
+   structurellement symétriques ou non.
+   Elles proposent un paramètre TYPVEC qui type les vecteurs input/output X/Y
+   
+   En fait:
+    - TYPVEC n'est pas utilisé, on décide du type par l'appel a 
+   MRMULT (X,Y reels) ou MCMULT (complexes),
+    - X et Y sont forcément du même type et des vecteurs 
+   distincts,
+    - Le cas des matrices hermitiennes est a enlever (type résorbé),
+    
+    - X reel et A reelle    ---> Ok en sym et non sym
+    - X reel et A complexe  ---> resultat faux (on ne prend que 
+   la partie réelle du produit en sym; si A non sym on fait 
+   comme si A est sym).
+    - X complexe et A reelle   --> resultat faux en non sym
+    - X complexe et A complexe --> resultat faux en non sym
+   
+   Corrections apportées
+   ----------------------
+    - Entêtes des routines corrigées et clarifiees,
+    - Corrections des cas non sym.
+    - CALL ASSERT(.FALSE.) si X reel et A complexe,
+    - Resorbtion du cas hermitien.
+    - Routines devenues inutiles: mrmmvc.f, mcmmvz.f, mrmmvz.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   informatique
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR rose         ROSE Christian         DATE 01/10/2008 - 16:12:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012345 DU 2008-07-28 16:55:28
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Plantage MECA_STATIQUE (Ecrasement mxc3xa9moire - STA8+STA9)
+FONCTIONNALITE
+   La version 5 de metis a été testée, on retrouve le pb en question.
+   
+   Une recherche plus poussée montre que metis produit (sur ce castest) des mauvais Super-noeuds.
+   (un SN est un regroupement de noeuds ayant les mêmes voisins, donc les mêmes propriétés
+   d'élimination).
+   Ce cas ainsi que celui de la fiche 12503 ont des elements 1D (faible connectivité) et les
+   mauvais SN produits sont des regroupements de 2 nds seulement.
+   Ne pouvant trouver l'erreur, il me semble préférable d'inhiber la création des SN de moins
+   de 2 noeuds.(qui n'apportent aucun gain en temps de calcul).
+   Ainsi pour ce cas les SN sont identiques à l'unique noeud qui les compose et le résultat
+   est bon.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   RRA008
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 01/10/2008 - 16:12:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012432 DU 2008-09-02 14:42:13
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug dans le test de vxc3xa9rification en modal avec valeurs propres complexes
+FONCTIONNALITE
+   Contexte
+   ----------
+   En travaillant sur l'extension du périmètre du solveur modal 
+   QZ/Sorensen au non symétrique, j'ai trouvé des bugs potentiels ds les
+   routines VPERMC.F et WPERMO.F
+   Ces routines calculent la norme d'erreur a l'issu du calcul modal pour
+   toutes les methodes (QZ, Sorensen, TRI_DIAG, JACOBI, Puissance...). 
+      - VPERMC.F pour le generalise avec modes complexes (ds le perimetre
+        actuel matrice de raideur K complexe, et avec l'EL12241 en non sym).
+      - WPERMO.F pour le quadratique (avec l'EL12241 non sym)
+   
+   Fonctionnalités impactées
+   --------------------------
+   MODE_ITER_SIMULT/MODE_ITER_INV en generalise complexe et en quadratique,
+   en v8 et en v9.
+   
+   Détails
+   --------
+   Ces routines ont besoin de recalculer les valeurs propres (Re(lambda),Im
+   (lambda)) a partir de donnees annexes: 
+    - pour VPERMC: Re(f) et Im(f)/(2*Re(f))   (on prend toutes les valeurs)
+    - pour WPERMO: Im(lambda) et -Re(lambda)/abs(lambda)  (on ne prend que
+                          les complexes conjuguées avec Im(lambda)>0)
+   Rappel de notation:lambda=(2*pi*f)**2.
+   
+   En fait il semble que VPERMC reconstuise (Re(lambda),abs(Im(lambda)))
+                         WPERMO             (-abs(Re(lambda)),Im(lambda)))
+   L'erreur se produisait donc:
+      - generalise complexe avec Im(lambda)<0 
+      - quadratique avec Re(lambda)>0
+   On corrige donc les formules et cela améliore notablement les normes 
+   d'erreurs des cas-tests sensd09b et sdll123a (erreurs 100 fois plus 
+   faibles).
+   
+   On corrige en v8 et en v9.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 5.0.1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   informatique
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012476 DU 2008-09-12 16:36:50
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug potentiel en modal quadratique (routines wp*vec)
+FONCTIONNALITE
+   En modal quadratique, une fois les valeurs propres et les 
+   vecteurs propres exhumés par le solveur (TRI_DIAG, SORENSEN ou
+   QZ) on va les trier pour
+      - ne retenir que les complexes conjuguées (on élimine les 
+   réelles et les non conjuguées avec message d'alarme)
+      - ne prendre des 2 conjuguées, que celles à partie
+       imaginaire >0
+      - ne retenir que celles qui verifient le couplage
+      (partie haute, partie basse) du vecteur propre.
+   
+   Pour faire cela, chaque méthode utilise sa propre routine
+   (pour des raisons historiques et d'input/output différents):
+    -wp2vec pour TRI_DIAG,
+    -wp3vec pour SORENSEN APPROCHE REELLE ET IMAGINAIRE,
+    -wp4vec pour SORENSEN APPROCHE COMPLEXE et QZ.
+   Ces routines utilisaient:
+    - des algorithmes de tri différents et buggés,
+    - avec des paramètres en dur.
+   Nous avons tout homogénéisés par le haut (algo on espère moins
+   buggé et plus stable, avec paramètres remontés au niveau des
+    variables).
+   Les différents messages ont été aussi homogénéisés.
+   Bref, lorsque les différents solveurs modaux donnent les memes
+   resultats à ces routines... elles se comportent
+   maintenant de la meme manière pour:
+     - les affichages dans le .mess et les alarmes éventuelles.
+     - le remplissage des structures de données de la base
+      globale.
+   
+   Ce problème a pu se voir au niveau des cas-tests:
+     - on a éliminé des modes que l'on aurait du garder,
+     - on a sur-estimer leur norme d'erreur.
+   Je l'ai vérifié sur un cas transmis par Irmela en symétrique,
+   non symétrique structurel et en valeur numérique.
+   Détails:
+     - J'en ai profité pour nettoyer les routines et les passer
+     en IMPLICIT NONE.
+    - Je n'ai pas fait le travail avec WP5VEC qui concerne le
+    quadratique avec matrice K complexe (non exploité 
+    actuellement).
+    - Il faut faire la manip en V8.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 5.0.1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   informatique
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 01/10/2008 - 16:12:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012302 DU 2008-07-16 10:38:12
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MODI_MAILLAGE
+FONCTIONNALITE
+   Problème:
+   ---------
+   Si l'on utilise MODI_MAILLAGE / ORIE_NORM_COQUE / VECT_NORM et que l'on oublie le mot clé
+   NOEUD (ou GROUP_NO),
+   Le fortran nous arrete avec un message mal formaté alors que l'on pourrait etre arreté
+   plus tot lors de l'analyse syntaxique.
+                                                                                            
+                           
+   Solution:
+   ---------
+   On modifie le catalogue de MODI_MAILLAGE pour y ajouter un "bloc" si VECT_NORM.
+                                                                                            
+                           
+   Détails:
+   --------
+   On fait la meme correction pour MODI_MAILLAGE / ORIE_LIGNE
+   
+   A reporter en NEW8 :
+   --------------------
+   98,100d97
+   <            regles=(EXCLUS('NOEUD','GROUP_NO'),
+   <                    PRESENT_PRESENT('NOEUD','VECT_NORM'),
+   <                    PRESENT_PRESENT('GROUP_NO','VECT_NORM'),),
+   102a100,101
+   >            b_vect_norm     =BLOC(condition = "VECT_NORM != None",
+   >              regles=UN_PARMI('NOEUD','GROUP_NO'),
+   105a105
+   >          ),
+   107,109d106
+   <            regles=(EXCLUS('NOEUD','GROUP_NO'),
+   <                    PRESENT_PRESENT('NOEUD','VECT_TANG'),
+   <                    PRESENT_PRESENT('GROUP_NO','VECT_TANG'),),
+   111a109,110
+   >            b_vect_tang     =BLOC(condition = "VECT_TANG != None",
+   >              regles=UN_PARMI('NOEUD','GROUP_NO'),
+   114a114
+   >          ),
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 01/10/2008 - 16:12:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012462 DU 2008-09-09 15:04:42
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Mesure de temps fausse par le superviseur depuis le 8/9/8
+FONCTIONNALITE
+   Les différents exécutables en mode optimisé ont été reconstruits après recompilation de la
+   version de python déposée sous /aster/local/
+   Les versions NEW9,STA9,OLD9,NEW8,STA8,OLD8 et STA7 de l'exécutable asteru ont été modifiées.
+   Les anciennes versions sont conservées et renommées asteru_120809 pour le moment.
+   Le script utilisé a été fourni par Mathieu, il est déposé sous /aster/agla/outils/alamain.py.
+   Les versions en mode debug , mpi , zmat et prof en NEW8 et NEW9 seront actualisées lors
+   des prochaines mises à jour des versions de développement.
+   
+   [aster@aster3 ~]$ . /aster/agla/tool/init_intel-10.0.026.sh  
+   [aster@aster3 ~]$ /aster/NEW9/asteru -c 'import os, time; print os.times(); time.sleep(3);
+   print os.times()'
+   (0.02, 0.0, 0.0, 0.0, 43288190.590000004)
+   (0.02, 0.0, 0.0, 0.0, 43288193.590000004)
+   [aster@aster3 ~]$
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ligne de commande fournie dans la fiche
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR markovic     MARKOVIC Damijan       DATE 30/09/2008 - 18:24:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012527 DU 2008-09-24 14:06:03
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Anomalies dans la resolution du modele GLRC_DM
+FONCTIONNALITE
+   J'ai trouve trois anomalies concernant GLRC_DM et de 
+   natures tres differentes.
+   
+   
+   1) Les formules de la transformation des parametres 
+   d'entree (notamment SYT et SFT) aux parametres de calculs 
+   (cosnstantes seuils) ne sont pas correctes. On corrige la 
+   routine CRGDM.F
+   
+   2) La partie energetique du seuil n'est pas calculee 
+   correctement non-plus. En general, les resultats sont 
+   (legerement) faux. Routine LCGLDM.F
+   
+   3) La verification du critere de convergence de la 
+   resolution interne est erronee. L'erreur ne se manifeste 
+   que dans les cas particuliers (impact sur les valeurs 
+   testees dans les cas-test <0.1%). En plus de conduire aux 
+   resultats (legerement) faux, l'erreur peut rendre un 
+   calcul non-convergent, notamment sur les etudes plus 
+   consequentes (l'erreur a ete trouvee en simulant la 
+   maquette SMART). Routine GLDLOC.F
+   
+   
+   Routines concernees : CRGDM.F, LCGLDM.F et GLDLOC.F
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssns106e
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssns106a                     markovic D.MARKOVIC         529    103     84
+ CASTEST MODIF ssns106b                     markovic D.MARKOVIC         533    103     73
+ CASTEST MODIF ssns106c                     markovic D.MARKOVIC         829     37     81
+ CASTEST MODIF ssns106d                     markovic D.MARKOVIC         524     14     14
+ CASTEST MODIF ssns106e                     markovic D.MARKOVIC         464     33     39
+CATALOPY MODIF commande/modi_maillage        macocco K.MACOCCO          144      4      4
+ FORTRAN MODIF algeline/mcmmvc               macocco K.MACOCCO          105     20      7
+ FORTRAN MODIF algeline/mcmmvr               macocco K.MACOCCO          105     24     11
+ FORTRAN MODIF algeline/mcmult               macocco K.MACOCCO           94     10     22
+ FORTRAN MODIF algeline/mrmult               macocco K.MACOCCO           93      9     24
+ FORTRAN MODIF algeline/vpermc               macocco K.MACOCCO          140      8     10
+ FORTRAN MODIF algeline/wp2vec               macocco K.MACOCCO          394    108     24
+ FORTRAN MODIF algeline/wp3vec               macocco K.MACOCCO          397    104     29
+ FORTRAN MODIF algeline/wp4vec               macocco K.MACOCCO          347    112     29
+ FORTRAN MODIF algeline/wpermo               macocco K.MACOCCO          143      4      3
+ FORTRAN MODIF elements/crgdm               markovic D.MARKOVIC         132      6      5
+ FORTRAN MODIF elements/dxglrc              markovic D.MARKOVIC         413      8     17
+ FORTRAN MODIF elements/gldloc              markovic D.MARKOVIC         193     23      7
+ FORTRAN MODIF elements/lcgldm              markovic D.MARKOVIC         497     68     68
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   19        6076       798     551      +247
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   19        6076       798     551      +247 

@@ -1,0 +1,433 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 29/06/2010 - 17:29:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015162 DU 2010-06-08 06:17:10
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Anomalie DEFI_MATERIAU ECRO_ISOT2
+FONCTIONNALITE
+   Probleme rencontré
+   ==================
+   
+   Dans le cas du comportement MONOCRISTAL, La comparaison des calculs :
+   	ECRO_ISOT1 avec q1 et b1 non nuls
+   	ECRO_ISOT2 avec q1 et b1 de même valeur que précédemment et q2=b2=0 
+   doit conduire à des résultats identiques.
+   
+   Ce n'est pas le cas. Il y a donc une anomalie.
+   
+   Correction
+   ==========
+   
+   c'était dû à une mauvaise récupération des coefficients matériau pour l'écrouissage
+   isotrope de type ECRO_ISOT2
+   Après correction, on retrouve des résultats identiques.
+   
+   Validation
+   ==========
+   Le test SSNV172A permet de reproduire ce qui a été à l'origine de l'anomalie : on donne
+   des coefficients tels que ECRO_ISOT2=ECRO_ISOT2. On retrouve maintenant les mêmes résultats.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.11, V6.04.172
+VALIDATION
+   ssnv172a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015140 DU 2010-06-01 09:24:21
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   probleme calcul 3D 1D avec tuyau 6M
+FONCTIONNALITE
+   Problème rencontré
+   ==================
+   
+   j'ai une modélisation de la ligne VVP N4 réalisée en filaire (tuyau 6M) et qui comporte 8
+   té 3D raccordés avec des liaisons elem 3D tuyau. Le calcul modal marche pour les 8 tés
+   raccordés, mais si je rajoute un tuyau 6M après le 8ème té, le calcul plante avec comme
+   message d'erreur :
+   
+   EXCEPTION   DVP_1
+   
+   Erreur de programmation: condition non respectée
+   
+   Il y a probablement une erreur dans la programmation
+   Veuillez contacter votre assistance technique.
+   
+   Analyse 
+   =======
+   
+   Il y a un problème dans le maillage du groupe TUY10 : certaines mailles se chevauchent :
+   
+   par exemple la maille M2674 a pour extrémités N113536 et N103350 
+   et M2086 a pour extrémités N36329 et N28181 ; elles sont colinéaires et se superposent
+   (problème de création du maillage). Denis confirme que cela fonctionne après avoir réparé
+   le maillage.
+   
+   
+   Correction 
+   ==========
+   
+   Le message d'erreur a été amélioré :
+   
+   
+    !--------------------------------------------------------------------------------------------!
+      ! <EXCEPTION> <MODELISA10_4>                                                          
+         !
+      !                                                                                     
+         !
+      ! Les mailles affectées à la modélisation TUYAU ne semblent pas former des lignes
+   continues. !
+      ! Il y a probablement un probleme dans le maillage (superposition d'éléments par
+   exemple).   !
+      ! Pour obtenir le détail des mailles affectées, utilisez INFO=2.                      
+         !
+     
+   !--------------------------------------------------------------------------------------------!
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015108 DU 2010-05-25 07:45:37
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   programmation incorrecte dans tutemp.f (modxc3xa9lisations "tuyau")
+FONCTIONNALITE
+   En regardant la routine tutemp.f qui calcule CHAR_MECA_TEMP_R pour les éléments de tuyaux,
+   je me suis aperçu de plusieurs problèmes :
+                                                                                            
+   Anomalie
+   ========
+   
+   JP a observé que dans la programmation des routines des éléments TUYAU, l'appel à la
+   fonction VERIFG, qui calcule la dilatation thermique, était incorrect :                  
+                                                                
+   
+   Par exemple :
+   * tutemp ne teste pas le code_retour des routines :
+     * moytem
+     * verifg                                                                               
+                              
+   * tutemp appelle les 2 routines précédentes avec un nombre de sous-points fantaisiste (3).
+     J'aurais préféré une formule du type NBSP=NBCOU*NBSEC*NPGH
+                                                   
+   Cette programmation donnerait des résultats faux si un jour on était capable de calculer
+   un champ de variables de commande variables sur les fibres du tuyau. Par exemple, si on
+   réalisait une option de type PREP_VRC2 sur ces éléments pour obtenir une température
+   variable dans l'épaisseur du tuyau.
+                                                   
+   PS : il faut vérifier les autres appelants (tuyaux) de verifg et moytem      
+   
+   Correction
+   ==========
+   
+   Dans les routines TUTEMP, TUSIEF, TUFORC, on corrige l'appel à VERIFG :
+   
+         NSPG=(2*NBSEC + 1)*(2*NBCOU + 1)
+         DO 120 IGAU = 1,NPG
+           IF (OPTION(1:14).EQ.'SIEF_ELGA_DEPL') THEN
+             CALL VERIFG('RIGI',IGAU,NSPG,'+',ZI(IMATE),'ELAS',1,
+        &                 EPSTHE,IRET)
+             IF (IRET.NE.0) EPSTHE=0.D0
+   ainsi que l'appel à MOYTEM
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests  tuyau
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 29/06/2010 - 17:29:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015237 DU 2010-06-21 14:46:25
+TYPE express concernant Code_Aster (VERSION 10.2)
+TITRE
+   X-FEM : bug DEFI_FISS_XFEM orientation des mailles
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Bug dans le calcul de la level set normale (opérateur DEFI_FISS_XFEM)
+   pour la méthode par Projection (sur le groupe de mailles GROUP_MA_FISS).
+   
+   
+   
+   Solution :
+   ---------
+   
+   En effet, il y avait un bug dans xls3d.f lorsque l'on cherchait la distance d'un noeud à
+   un quadrangle.
+   Modification des orientations des facettes triangulaires divisant un quadrangle.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 29/06/2010 - 17:29:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014921 DU 2010-04-08 12:39:02
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   probleme de calcul avec MODE_ITER_SIMULT
+FONCTIONNALITE
+   PROBLEME
+   ========
+     Ce calcul modal plante sur Calibre 5 et pas sur Bull
+   
+   ANALYSE
+   =======
+   PB 1
+   ----
+     Le calcul plante lors de l'appel à la BLAS ZGEMM qui fait 
+   des produits matrice/matrice en complexe double précision.
+   Avec la même version des BLAS (MKL 9.1.023) on a un 
+   comportement différent suivant les plate-formes:
+            sur Bull: cela marche
+            sur Calibre 5: ça plante
+   qqes soient les versions d'Aster: NEW10 ou STA10.
+   Comme on n'a pas la main sur ces librairies (par ailleurs il 
+   y'a plusieurs fiches d'anomalie identifiées sur le site 
+   d'intel concernant ZGEMM; aucune n'est corrigée) je propose
+   deux solutions palliatives:
+      - utiliser la Bull,
+      - en local, construire une version surchargée d'Aster avec
+   le source originale de la BLAS (mais avec cette version non 
+   optimisée on perd un peu en performance CPU). Je joint le 
+   patch à la fiche corrigée.
+   
+   PB 2
+   ====
+     Dans le .comm fourni, il y'a un appel à MODE_ITER_SIMULT 
+   pour un résoudre un pb modal quadratique. Les modes calculés
+   sont de très mauvaise qualité (tellement qu'on débranche le
+   critère d'arrêt utilisé par défaut en post-traitement via
+   STOP_ERREUR='NON'): (temps elapsed=7s)
+       NORME D'ERREUR MOYENNE:  0.95783E+00
+   
+   Comme conseillé ds la doc, on peut améliorer grandement cette
+   qualité en augmentant la taille de l'espace de projection du 
+   solveur modal. Par défaut, avec Sorensen, il est de 2 fois le
+   nbre de modes recherchés (COEF_DIM_ESPACE=2). Sans que cela 
+   coûte trop cher, lorsqu'on a des pbs de précision comme ici,on 
+   peut doubler la taille de cet espace (via 
+   CALC_FREQ=_F(... COEF_DIM_ESPACE=4...).
+   Et on obtient cette fois  (temps elapsed=15s)
+   
+    NORME D'ERREUR MOYENNE:  0.11517E-06
+   
+   Avec CEOF_DIM_ESPACE=8 cela ne sert plus à rien (temps=36s)
+    NORME D'ERREUR MOYENNE:  0.11518E-06
+   Donc point trop n'en faut !
+   
+   IMPACT DOC
+   ==========
+   Mentionner plus clairement (page "quelques conseils..." comme 
+   ds les docs solveurs et //) les qqes potards à modifier pour:
+     - gagner en temps
+     -... en mémoire
+     - .. en précision
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : U4.52.03
+VALIDATION
+   informatique,non-rxc3xa9gression
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 29/06/2010 - 17:29:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015171 DU 2010-06-09 11:18:37
+TYPE anomalie concernant Code_Aster (VERSION 10.2)
+TITRE
+   FPE pour discret POI1 et PETIT_REAC
+FONCTIONNALITE
+   Calcul vu sur le forum, on active PETIT_REAC sur un élément discret à 1 noeud.
+   ==> Floating Point Exception
+   
+   Correction : dans le TE0047
+   Si NOEUD=1 ==> Actualisation des coordonnées du noeud
+   Si NOEUD=2 ==> Actualisation des coordonnées des noeuds, calcul de la longueur
+   
+   Si NOEUD=1, la réactualisation n'a pas forcément un sens, mais cela ne plante plus et les
+   coordonnées sont réactualisées.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 29/06/2010 - 17:29:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015147 DU 2010-06-02 12:52:02
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   arrxc3xaat peu comprxc3xa9hensible avec des xc3xa9lxc3xa9ments DST dans STAT_NON_LINE
+FONCTIONNALITE
+   Problème :
+   ----------
+   Ludovic Idoux a essayé de faire un calcul non-linéaire sur des éléments DST.
+   Il s'est planté avec un message obscur alors que je pensais qu'il serait arreté
+   par un message du style :
+   "Les éléments de type MEDSQU4 ne savent pas encore calculer l'option FULL_MECA."
+                                                                                            
+                           
+   Analyse :
+   ---------
+   En réalité, le calcul est arreté avant le calcul de l'option FULL_MECA, ce qui explique
+   que le message n'est pas celui attendu.
+   En effet dans la routine nmdorc.f, on vérifie les comportements affactés sur les mailles
+   et comme aucun élément du modèle ne sait calculer FULL_MECA, on se plante dans la routine
+   crcmel.f
+                                                                                            
+                           
+   Correction :
+   ------------
+   Dans la routine crcmel.f, si le champ CEL1 est vide, on émet le message spécifique suivant :
+                                                                                            
+                           
+   !------------------------------------------------------------------------------------------!
+   !.<F>.<CALCULEL5_5>........................................................................!
+   !..........................................................................................!
+   !.Erreur.utilisateur.:.....................................................................!
+   !...Vous.essayez.de.faire.un.calcul.non-linéaire.mécanique.sur.un.modèle.dont.les.éléments.!
+   !...ne.sont.pas.programmés.pour.cela.......................................................!
+   !...On.arrete.le.calcul....................................................................!
+   !..........................................................................................!
+   !.Risques.&.conseils.:.....................................................................!
+   !...Vous.devriez.changer.de.MODELISATION...................................................!
+   !...Pare.exemple,.la.modélisation.'DST'.ne.peut.pas.faire.du.non-linéaire.alors.que.la.....!
+   !...modélisation.'DKT'.le.peut.............................................................!
+   !------------------------------------------------------------------------------------------!
+                                                                                            
+                           
+   NEW9 :
+   La correction est facile à reporter en NEW9
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  15147
+     crcmel.f
+     calculel5.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015152 DU 2010-06-03 15:38:50
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   EXTR_RESU ne dxc3xa9truit pas suffisamment (suite)
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans le cadre de la fiche 14878, j'ai amélioré la commande EXTR_RESU (en reuse) pour
+   qu'elle conserve moins d'objets dans la structure de données résultat (et donc pour
+   qu'elle soit moins volumineuse).
+   Le ménage effectué concernait :
+     - les prof_chno associés aux cham_no
+     - les sd liste_charge stockées comme paramètre sous le nom EXCIT
+                                                                                            
+                    
+   Ce travail de ménage est insuffisant lorsque la sd_resultat a été enrichie par la commande
+   CALC_ELEM + GROUP_MA / MAILLE.
+   En effet dans ce cas, on crée (à chaque appel à CALC_ELEM) un ligrel "caché" correspondant
+   aux éléments sur lesquels on fait le CALC_ELEM.
+   Ces ligrels "cachés" ne sont jamais détruits.
+                   
+   Correction :
+   ------------
+   Je complète la routine rsmena.f pour qu'elle détruise également les ligrel "cachés" qui
+   doivent l'etre.                                                                          
+                                                                                            
+             
+                    
+   Validation :
+   ------------
+   Je modifie le test zzzz223a pour qu'il crée des ligrels cachés et pour qu'il vérifie que
+   ceux qui doivent etre détruits le sont bien.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  15152
+     rsmena.f
+     zzzz223a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssnv172a                      macocco K.MACOCCO         1123     80     86
+ CASTEST MODIF zzzz223a                      macocco K.MACOCCO          165     24      5
+ FORTRAN MODIF algorith/crcmel               macocco K.MACOCCO          124      7      2
+ FORTRAN MODIF algorith/lcmmfi               macocco K.MACOCCO          107      4      4
+ FORTRAN MODIF algorith/xls3d                macocco K.MACOCCO          333     15      8
+ FORTRAN MODIF elements/te0047               macocco K.MACOCCO          971     16      6
+ FORTRAN MODIF elements/tuforc               macocco K.MACOCCO          457     11      4
+ FORTRAN MODIF elements/tumass               macocco K.MACOCCO          280      6      3
+ FORTRAN MODIF elements/turigi               macocco K.MACOCCO          257      6      4
+ FORTRAN MODIF elements/tusief               macocco K.MACOCCO          308     12      7
+ FORTRAN MODIF elements/tutemp               macocco K.MACOCCO          252     10      5
+ FORTRAN MODIF modelisa/aceatu               macocco K.MACOCCO          297      5      2
+ FORTRAN MODIF prepost/rsmena                macocco K.MACOCCO          228     53      3
+  PYTHON MODIF Messages/algeline5            macocco K.MACOCCO          388      8      1
+  PYTHON MODIF Messages/calculel5            macocco K.MACOCCO          340     12      1
+  PYTHON MODIF Messages/modelisa9            macocco K.MACOCCO          442      9      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   16        6072       278     142      +136
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   16        6072       278     142      +136 

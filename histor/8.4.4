@@ -1,0 +1,572 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR markovic     MARKOVIC Damijan       DATE 04/04/2007 - 09:52:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010606 DU 2007-03-05 16:16:50
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   Correction de l'operateur tangent pour le modele GLRC_DM
+FONCTIONNALITE
+   Grâce à la lecture attentive de Patrick Massin de la docR du modèle GLRC_DM j'ai découvert
+   une erreur dans le calcul de l'opérateur tangent. L'erreur apparait dans la dérivation des
+   variables d'endommagement par rapport à l'extension  membranaire. Dans la correction il
+   suffit de remplacer deux lignes (436-) dans "lcgldm.f"
+   
+   
+             D1E(K) = 0.5D0 * QDE(K)/SEUIL/(1.0D0 + DA1)  
+             D2E(K) = 0.5D0 * QDE(K)/SEUIL/(1.0D0 + DA2) 
+   par 
+             D1E(K) = (ALF + DA1)*(1.0D0 + DA1)/2.0D0/
+        &             (SEUIL*(1.0D0 + DA1)**3 + (ALF-1.0D0)*QM1) * QDE(K)
+             
+             D2E(K) = (ALF + DA2)*(1.0D0 + DA2)/2.0D0/
+        &             (SEUIL*(1.0D0 + DA2)**3 + (ALF-1.0D0)*QM2) * QDE(K)
+   
+   
+   La correction n'a aucun impact sur des tests existants (ssns106a-d), ni par rapport aux
+   résultats ni par rapport aux nombres d'itérations, pour deux raisons :
+   
+   - L'erreur se voie seulement lorsque le paramètre "alpha" (qui dépend surtout des mots clé
+   SYT et SYF) est très différent de un. Or, il vaut 1.04 dans les tests, la valeur qu'on
+   obtient de l'identification avec la modélisation multi-couches.
+   
+   - Aucun impact lorsque la membrane et la flexion ne sont pas couplées.
+   
+   Pour le valider je propose d'introduire un nouveau test ssns106e, où la plaque est
+   sollicitée en cisaillement dans le plan combinée avec la flexion, les deux en cyclique. Ce
+   test ne converge pas sans la correction mentionnée ci-dessus.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.05.106
+VALIDATION
+   ssns106e
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR gnicolas     NICOLAS Gérald         DATE 04/04/2007 - 09:52:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010476 DU 2007-01-26 15:01:05
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   homard + suivi_frontiere
+FONCTIONNALITE
+   Tout se passait bien quand on donnait au moins 2 groupes. En revanche, pour un seul groupe
+   le décodage par le python était mal fait. Au lieu de prendre, le nom complet, il y avait
+   transmission d'autant de groupes que de caractères !
+   La correction porte sur le décodage des GROUP_MA dans creation_donnees_homard.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   l'étude associée
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010613 DU 2007-03-06 16:53:23
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Calcul du diamètre d'une maille
+FONCTIONNALITE
+   Le diamètre d'un élément est la longueur du plus grand segment que l'on peut insérer dans
+   la maille. Pour un simplexe (triangle ou tétraèdre), cela correspond au plus grand côté.
+   Pour les autres mailles, il faut prendre le max des côtés et des diagonales.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   option ERRE_ELEM_SIGM
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 04/04/2007 - 09:52:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010482 DU 2007-01-30 15:44:33
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   DEFI_CABLE_BP
+FONCTIONNALITE
+   On retire du catalogue de la commande DEFI_CABLE_BP le mot clé MAILLAGE, puisque le mot
+   clé MODELE est obligatoire. Dans la macro, on recupere le maillage a partir du MODELE.
+   
+   La doc de la v8 a deja été corrigée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv164b
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR andriam      ANDRIAMBOLOLONA Hari   DATE 04/04/2007 - 09:52:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009624 DU 2006-03-30 09:39:17
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   Sensibilite en dynamique
+FONCTIONNALITE
+   Un risque potentiel d'erreur a été signalé par M. Abbas, 
+   concernant l'archivage de variables complémentaires 
+   nécessaires pour le calcul de sensibilité en dynamique non 
+   linéaire. Cette erreur a été corrigée.
+   Une analyse plus approfondie montre que cette erreur ne 
+   conduisait pas à un résultat faux. En effet, les données 
+   en question ont déjà été archivées en amont.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sensd07a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 04/04/2007 - 09:52:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010730 DU 2007-03-30 14:48:00
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   Erreur dans AFFE_CARA_ELEM si pas de groupe de mailles
+FONCTIONNALITE
+   Suite formation de base :
+      
+   Quand on a aucun GROUP_MA dans le maillage, le message d'erreur dans AFFE_CARA_ELEM n'est
+   pas très sympa avec l'utilisateur :
+     
+   !----------------------------------------------------------------------------------------------!
+      ! <F> <JEVEUX_23>                                                                     
+           !
+      !                                                                                     
+           !
+      !                                                                                     
+           !
+      !      Nom de Collection ou de Répertoire de noms inexistant :  ma      .GROUPEMA     
+    $$XNOM !
+      !                                                                                     
+           !
+      !                                                                                     
+           !
+      ! Cette erreur est fatale. Le code s'arrete.                                          
+           !
+     
+   !----------------------------------------------------------------------------------------------!
+      
+   
+   Je corrige en appelant verima dans op0019 (à la place de la vérif manuelle). On obtient un
+   message plus parlant :
+   
+      
+      !----------------------------------------------------------!
+      ! <EXCEPTION> <MODELISA7_77>                               !
+      !                                                          !
+      !                                                          !
+      !  le group_ma  TOTO  ne fait pas partie du maillage :  ma !
+      !                                                          !
+      !                                                          !
+      !                                                          !
+      !----------------------------------------------------------!
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste AFFE_CARA_ELEM
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 04/04/2007 - 09:52:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010409 DU 2006-12-22 09:30:32
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Erreur catalogue du TRIA6 ?
+FONCTIONNALITE
+   Mathieu a remarqué que dans le catalogue de l'elrefe TR6, la famille
+    de points de Gauss NOEU ne déclarait que 3 points de Gauss (au lieu de 6) ce qui est une
+   erreur que je corrige.
+                                                                                            
+                           
+    Cette erreur NE PEUT PROVOQUER DE RéSULTATS FAUX ni d'écrasements car :
+       - le vrai nombre de points des familles de points de Gauss est redéfini dans la
+   routine ELRACA.
+         => l'elerfe TR6 était correct : la famille NOEU avait bien 6 points
+       - l'information (fausse) du catalogue des type_maille est stockée dans l'objet .TM.TMFPG
+         et cet objet n'est utilisé que dans la routine VRCDEC qui calcule le décalage des
+   différentes
+         familles de points de gauss pour les variables de commande.
+         Mais il n'existe (à la date d'aujourd'hui) aucun élément fini qui utilise la famille
+   ('NOEU')
+         dans la famille ('MATER') qui est utilisée pour les variables de commandes
+   
+   Réponse à la question de Mathieu : 
+   ----------------------------------
+   Oui, le nombre de points de la famille NOEU (comme NOEU_S) est redondant avec le nombre de
+   noeuds du type_maille mais je n'ai pas envie de faire une exception dans le lecteur de
+   catalogues pour traiter le cas 'NOEU'.
+   Par ailleurs, le nombre de noeuds des type_maille est aussi redonné en 'dur' dans la
+   routine elraca.f De facon générale, il y a beaucoup de redites entre le catalogue des
+   type_maille et la routine elraca.f. Pourrait-on améliorer cette situation dans la
+   prochaine version des catalogues ?
+   
+   Dernière minute :
+   -----------------
+   Ce catalogue a été corrigé en NEW9 avec la fiche 10365.
+   Il n'y a donc aucune restit en NEW9.
+   En revanche , ce serait bien de corriger en NEW8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010513 DU 2007-02-08 12:01:58
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   CREA_CHAMP ne peut plus rxc3xa9duire un cham_no sur un ensemble de noeuds
+FONCTIONNALITE
+   Suite à une remarque de Samuel, je me suis aperçu que l'on ne pouvait plus "réduire" un
+   cham_no (sur un ensemble de noeuds) avec CREA_CHAMP en utilisant le mot clé ASSE.
+                                                                                            
+                                                                                            
+                                                   
+   Je corrige la routine chpass.f pour rétablir ce comportement.
+                                                                                            
+                                                                                            
+                                                   
+   Suite à cette correction, je tombe sur 2 problèmes :
+      - certains tests se plantent car la numérotation des ddls du cham_no n'est pas celle de
+   la matrice (ahlv100a / RESO_LDLT): il faut alors utiliser le mot clé CREA_CHAMP / NUME_DDL
+      - la commande CREA_CHAMP crée parfois une SD PROF_CHNO inutile sur la base Globale =>
+   je détruis cette SD
+                                                                                            
+                                                                                            
+                                                   
+   
+   A faire en NEW8 également
+                                                                                            
+                                                                                            
+                                                   
+   Liste des fichiers impactés par la correction de la fiche:  10513
+   -----------------------------------------------------------------
+     chpass.f  op0195.f
+     ahlv100a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ahlv100a
+NB_JOURS_TRAV  : 0.6
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010514 DU 2007-02-08 13:41:32
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Des rxc3xa9sultats faux avec MACR_LIGN_COUPE ?
+FONCTIONNALITE
+   Des résultats faux avec MACR_LIGN_COUPE ?
+   -------------------------------------------
+                                                                                            
+                                               
+   MACR_LIGN_COUPE enchaine essentiellement 4 opérations :
+      - maillage de la ligne de coupe
+      - projection de la SD_RESULTAT sur le maillage de la ligne  (PROJ_CHAMP)  => sd2
+      - transformation de la SD_RESULTAT produite en une table (POST_RELEVE_T/EXTRACTION)  =>
+   tab1
+      - élimination de 2 colonnes de la table => table finale (tab2)
+                                                                                            
+                                               
+   Le bug (corrigé par Mathieu) concerne la 4eme et dernière étape :
+   Lors de l'élimination des 2 colonnes, les autres colonnes, si elles contiennent des cases
+   vides, deviennent fausses : les cases vides se retrouvent toutes en fin de colonne.
+                                                                                            
+                                               
+   Il y a donc un risque de résultat faux si les colonnes de la table tab1 contiennent des
+   cases vides.
+                                                                                            
+                                               
+   Les cases vides de la table tab1 proviennent de la présence (ou de l'abscence) des
+   composantes des champs de sd2 et donc du comportement de PROJ_CHAMP.
+                                                                                            
+                                               
+   Après examen approfondi de la routine cnsprj.f, (et en notant que le mot clé DISTANCE_MAX
+   de PROJ_CHAMP n'est pas encore utilisé par MACR_LIGN_COUPE), il ressort que
+   MACR_LIGNE_COUP peut produire des résultats faux si les 2 conditions suivantes sont
+   vérifiées :
+      1) Les composantes des champs post-traités ne sont pas présentes sur tous les noeuds du
+   modèle : modèles mixtes 3D + coque , modèles XFEM, ...
+         Par exemple, la colonne DRX d'un modèle 3D + coque peut etre fausse si la ligne de
+   coupe traverse des éléments 3D et des éléments de coque
+      2) Certains noeuds du maillage de la ligne tombent "pile poil" (à 1.e-6 près) sur des
+   noeuds portant la composante suspecte.
+         (cette particularité est un effet de bord de l'évolution EL 2004-249 de Roméo
+   Fernandes pour post_traiter les modélisations THM : ddls portés uniquement par les noeuds
+   sommets).
+                                                                                            
+                                               
+   Le risque de résulats faux est donc assez faible. Il concerne les versions >= 8.1.10.
+                                                                                            
+                                               
+   Correction :
+   ------------
+   - macr_lign_coup_ops.py a déjà été corrigé par Erwann Galenne en NEW9.
+   - un commentaire est amélioré dans la routine cnsprj.f
+                                                                                            
+                                               
+                                                                                            
+                                               
+                                                                                            
+                                               
+   A faire aussi en NEW8 :
+   -----------------------
+   403,416c404,409
+   <   listpara=dictab.para
+   <   listpara.remove('NOEUD')
+   <   listpara.remove('RESU')
+   <
+   <   coltab=[]
+   <   for key in listpara :
+   <       val=dictab[key].values()[key]
+   <       if   type(val[0])==types.IntType :
+   <          coltab.append(_F(PARA=key,LISTE_I=val))
+   <       elif type(val[0])==types.FloatType :
+   <          coltab.append(_F(PARA=key,LISTE_R=val))
+   <       elif type(val[0])==types.StringType :
+   <          coltab.append(_F(PARA=key,LISTE_K=val,TYPE_K='K16'))
+   <   nomres=CREA_TABLE(LISTE=coltab)
+   ---
+   >   del dictab['NOEUD']
+   >   del dictab['RESU']
+   >
+   >   dprod = dictab.dict_CREA_TABLE()
+   >
+   >   nomres=CREA_TABLE(**dprod)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.1.10
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.1.10
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie + test perso
+NB_JOURS_TRAV  : 0.7
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010518 DU 2007-02-09 09:49:43
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   CREA_CHAMP
+FONCTIONNALITE
+   Un problème rencontré par A. Parrot :
+   -------------------------------------
+                                                                                            
+                           
+   je fais un calcul thermique puis metallurgique et j'aimerais enchainer par un calcul
+   mecanique avec une loi de comportement sous Zmat parametree en fonction de la fraction de
+   pahse calculee par le calcul metallurgique. J'essaye pour cela de transformer
+   artificiellement la fraction volumique de phase en une fluence
+   qui est une vairale de commande possible pour Zmat.
+                                                                                            
+                           
+   J'obtiens une erreur dans le STAT_NON_LINE liee a la routine vrcins.
+                                                                                            
+                           
+                                                                                            
+                           
+   Détails :
+   ---------
+                                                                                            
+                           
+   1) Cette étude provoque d'abord un plantage dans CALC_META (sur ma machine).
+      Il y a un bug (faute de frappe) dans te0064. (Ce bug fait l'objet de la fiche 10520).
+                                                                                            
+                            =>  RESULTATS_FAUX si : CALC_META / RELATION='ZIRC'
+                                                                                            
+                           
+   2) Une fois le bug précédent corrigé, on tombe sur le problème annoncé dans la fiche
+   (vrcins.f)
+      Dans cette routine, je suis trop sévère : je vérifie que toutes les composantes  des
+   champs fournis pour les variables de commande sont utilisées comme variables de commande.
+      La logique doit etre inversée : il suffit que l'on trouve dans ces champs les variables
+   annoncées dans AFFE_MATERIAU/AFFE_VARC
+                                                                                            
+                           
+   A corriger aussi en NEW8 :
+                                                                                            
+                           
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  10518
+     te0064.f  vrcins.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.14
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.6
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010525 DU 2007-02-09 17:13:32
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   NEW8.4.2, le cas test sdnl103a s'arrete en arrxc3xaat anormal (LR)
+FONCTIONNALITE
+   Problème :
+   -----------
+   Avec la version 8.4.2, le cas test sdnl103a s'arrête en arrêt anormal dans la partie
+   python sur un UTPRIN car le fichier de message algeline4.py ne contient pas la ligne :
+   # -*- coding: iso-8859-1 -*-
+    
+   Correction :
+   ------------
+   Si je comprends bien cette fiche, il n'y a rien à faire en version 9. Je le fais donc avec
+   plaisir !
+    
+   En revanche, je compte sur Lionel Salmona pour ajouter la ligne "coding" dans le fichier
+   NEW8/algeline4.py
+                                                                                            
+                           
+   remarque :
+   ----------
+   Le test sdnl103a ne restera pas cassé en version 8 car la correction de la fiche 10494
+   sera reportée en NEW8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 04/04/2007 - 09:52:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010647 DU 2007-03-15 17:35:24
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   NEW9.0.13, les cas tests forma01b et forma01e s'arrete en ERREUR_<F> (L)
+FONCTIONNALITE
+   Suite à la formation de la semaine dernière, restitution (en NEW9 et en NEW8) de
+   l'ensemble des modélisations du test FORMA01, en cohérence avec la documentation V7.15.100.
+   
+   Les modélisations sont maintenant :
+   
+   - FORMA01A : TP poutres statique, maillage SALOME, coude en flexion
+   - FORMA01B : TP coques DKT, maillage SALOME, coude en flexion + presssion interne.
+   - FORMA01C : TP 3D, maillage SALOME, pression + flexion + calcul thermoélastique
+   - FORMA01D : poutre en dynamique
+   
+   Les modélisations E,F,G,H sont résorbées. 
+   Le maillage 3D quadratique GMSH est conservé dans la modélisation C (forma01c.geo et
+   forma01c.msh, lu dans forma01c.com1).
+   
+   Les tests sont OK sur Bull, Rocks, Calibre4 et ma Suse 10.1.
+   
+   A restituer également en NEW8.
+   
+   Attention, pour pouvoir faire le ménage dans les anciens fichiers, les tests sont
+   restitués en NEW9 sous les noms :
+   forma01k (qui correspond à forma01a)
+   forma01l (qui correspond à forma01b)
+   forma01m (qui correspond à forma01b)
+   forma01n (qui correspond à forma01d)
+   
+   Il seront renommés A,B,C,D lors d'une prochaine restitution.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.15.100
+VALIDATION
+   FORMA01
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT forma01k                        vivan L.VIVAN            252    252      0
+ CASTEST AJOUT forma01l                        vivan L.VIVAN            261    261      0
+ CASTEST AJOUT forma01m                        vivan L.VIVAN            313    313      0
+ CASTEST AJOUT forma01n                        vivan L.VIVAN            318    318      0
+ CASTEST AJOUT ssns106e                        vivan L.VIVAN            470    470      0
+ CASTEST MODIF ahlv100a                        vivan L.VIVAN            366      3      3
+ CASTEST MODIF forma04c                        vivan L.VIVAN            312      3      3
+ CASTEST MODIF forma05b                        vivan L.VIVAN            358      5      3
+ CASTEST MODIF sslv130a                        vivan L.VIVAN            388      5      5
+ CASTEST MODIF sslv130b                        vivan L.VIVAN            370      5      5
+ CASTEST MODIF sslv130c                        vivan L.VIVAN            348      5      5
+ CASTEST MODIF ssnp122a                        vivan L.VIVAN            236      1      1
+ CASTEST MODIF ssnv112d                        vivan L.VIVAN            291      1      1
+ CASTEST MODIF ssnv164b                        vivan L.VIVAN            573      1      2
+ CASTEST MODIF tpll01j                         vivan L.VIVAN            119      7      7
+ CASTEST MODIF wtnp116a                        vivan L.VIVAN            444      5      5
+ CASTEST MODIF wtnp116b                        vivan L.VIVAN            508      5      5
+ CASTEST MODIF zzzz175a                        vivan L.VIVAN            622      5      5
+ CASTEST SUPPR forma01a.comm                   vivan L.VIVAN            356      0    356
+ CASTEST SUPPR forma01b.comm                   vivan L.VIVAN            321      0    321
+ CASTEST SUPPR forma01c.comm                   vivan L.VIVAN            345      0    345
+ CASTEST SUPPR forma01d.comm                   vivan L.VIVAN            359      0    359
+ CASTEST SUPPR forma01e.comm                   vivan L.VIVAN            245      0    245
+ CASTEST SUPPR forma01f.comm                   vivan L.VIVAN            372      0    372
+ CASTEST SUPPR forma01g.comm                   vivan L.VIVAN            342      0    342
+ CASTEST SUPPR forma01h.comm                   vivan L.VIVAN            356      0    356
+CATALOGU MODIF compelem/type_maille__          vivan L.VIVAN            346      2      2
+CATALOPY MODIF commande/defi_cable_bp          vivan L.VIVAN             74      1      4
+ FORTRAN AJOUT utilitai/uttgel                 vivan L.VIVAN            130    130      0
+ FORTRAN MODIF algorith/nmnoli                 vivan L.VIVAN            138      2      2
+ FORTRAN MODIF calculel/cnsprj                 vivan L.VIVAN            205      8      5
+ FORTRAN MODIF calculel/uthk                   vivan L.VIVAN            365    186    179
+ FORTRAN MODIF calculel/vrcins                 vivan L.VIVAN            153      1      3
+ FORTRAN MODIF elements/lcgldm                 vivan L.VIVAN            497     17     13
+ FORTRAN MODIF elements/te0064                 vivan L.VIVAN            133      6     19
+ FORTRAN MODIF modelisa/op0019                 vivan L.VIVAN            442      4     31
+ FORTRAN MODIF utilitai/chpass                 vivan L.VIVAN            317      4     14
+ FORTRAN MODIF utilitai/op0195                 vivan L.VIVAN            247     19     13
+  PYTHON MODIF Macro/creation_donnees_homard      vivan L.VIVAN            541     10      4
+  PYTHON MODIF Macro/defi_cable_bp_ops         vivan L.VIVAN            306      6     19
+  PYTHON MODIF Macro/macr_adap_mail_ops        vivan L.VIVAN            848     16      7
+  PYTHON MODIF Macro/macr_lign_coupe_ops       vivan L.VIVAN            410      7     15
+  PYTHON MODIF Messages/algeline4              vivan L.VIVAN             31      2      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    6        1744      1744             +1744
+ MODIF :   29        9988       342     382       -40
+ SUPPR :    8        2696              2696     -2696
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   43       14428      2086    3078      -992 

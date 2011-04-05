@@ -1,0 +1,582 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR devesa       DEVESA G.              DATE 05/02/2007 - 18:43:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010414 DU 2006-12-22 16:34:47
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   raideurs en Z de RIGI_MISS_3D
+FONCTIONNALITE
+   On corrige dans un rapport 2 la raideur verticale des 
+   segments de liaison tranversale d'une fondation générée 
+   par AFFE_CARA_ELEM option RIGI_MISS_3D. On rétablit 
+   maintenant un enfoncement initial cohérent avec la 
+   méthode RIGI_PARASOL par exemple.
+   Les routines concernées sont RIGMI1 RIGMI2 et ACEARM.
+   La modification impacte surtout les valeurs de référence 
+   du test de décollement MISS06A sur sol mou. Les valeurs 
+   de fréquences propres du test ZZZZ200B sont peu 
+   modifiées car on a sol dur peu éloigné du cas encastré.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.2.2
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.200 V1.10.125
+VALIDATION
+   tests zzzz200b et miss06a
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 05/02/2007 - 18:43:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010248 DU 2006-11-10 16:38:52
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   AFFE_CHAR_CINE et REAC_NODA
+FONCTIONNALITE
+   AFFE_CHAR_CINE se plante brutalement dans CALC_NO
+   -------------------------------------------------
+                                                                                            
+                           
+   Il y a effectivement un bug dans CALC_NO (routine nmdome.f) dans le cas où la seule charge
+   est de type CHAR_CINE.
+   On cherche à créer 2 objets de longueur 0.
+                                                                                            
+                           
+   Correction :
+   ------------
+   On se protège en faisant :   
+   CALL WKVECT(LISCH2//'.FCHA','V V K24',MAX(NCHAR1,1),IFCHA1)
+                                                                                            
+                           
+   Validation :
+   ------------
+   L'etude fournie va jusqu'au bout et les résultats sont les memes qu'avec une charge
+   ordinaire (dualisée)
+                                                                                            
+                           
+                                                                                            
+                           
+   Correction à reporter en  NEW8 :
+   --------------------------------
+   nmdome.f
+    
+    
+   -------> fichier : nmdome.f -------------------------------
+   274c274,277
+   <               CALL WKVECT(LISCH2//'.LCHA','V V K24',  NCHAR1,JLCHA1)
+   ---
+   >               CALL WKVECT(LISCH2//'.LCHA','V V K24',MAX(NCHAR1,1),
+   >      &                    JLCHA1)
+   >               CALL WKVECT(LISCH2//'.FCHA','V V K24',MAX(NCHAR1,1),
+   >      &                    IFCHA1)
+   276d278
+   <               CALL WKVECT(LISCH2//'.FCHA','V V K24',  NCHAR1,IFCHA1)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010249 DU 2006-11-10 16:52:40
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   AFFE_CHAR_CINE  /= 0 + CONTACT => rxc3xa9sultats faux
+FONCTIONNALITE
+   AFFE_CHAR_CINE (/= 0) + Contact => résultats faux
+    -------------------------------------------------------
+                                                                                            
+                         
+    Dans l'étude fournie par Nicolas, le chargement utilise :
+      - du contact
+      - des déplacements imposés (/= 0) par AFFE_CHAR_CINE
+                                                                                            
+                         
+   On s'aperçoit alors que les résultats de STAT_NON_LINE ne sont les memes que ceux que l'on
+   obtient avec AFFE_CHAR_MECA/DDL_IMPO.
+                                                                                            
+                         
+   Nicolas a trouvé le bug :
+   Dans la routine cfaca1.f, on fait une résolution avec les charges cinématiques non nulles,
+   alors que cette résolution doit calculer une CORRECTION du déplacement (contact) qui doit
+   etre nulle sur les ddls imposés.
+                                                                                            
+                         
+   La correction consiste donc simplement à ignorer les charges cinématiques dans la routine
+   cfaca1.f
+                                                                                            
+                         
+                                                                                            
+                         
+   Résultats faux si :
+   -------------------
+     + STAT_NON_LINE
+     + CONTACT
+     + AFFE_CHAR_CINE / MECA_IMPO  non nul
+                                                                                            
+                         
+                                                                                            
+                         
+   Validation :
+   ------------
+   Suite à cette correction, le test va jusqu'au bout et ses résultats sont les memes que
+   ceux obtenus avec AFFE_CHAR_MECA.
+                                                                                            
+                         
+                                                                                            
+                         
+   Correction à reporter en NEW8 :
+   -------------------------------
+   routine cfaca1.f :
+   (Attention à ajouter le WKVECT après le calcul de NEQ)
+                                                                                            
+                         
+   134d131
+   <       CALL JEVEUO(CINE(1:19)//'.VALE'    ,'L',JRCINE)
+   139a137,140
+   > C --- CHARGE CINEMATIQUE NULLE
+   > C
+   >       CALL WKVECT('&&CFACA1.CHCINE0','V V R',NEQ,JRCINE)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.1.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.1.3
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010254 DU 2006-11-14 08:26:06
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   amelioration message d'erreur
+FONCTIONNALITE
+   Amélioration du message MODELISA3_30 :
+    --------------------------------------
+                                                                                            
+                           
+    Grace à Sylvie Michel-Ponnelle, le message d'erreur MODELISA3_30 s'améliore :
+                                                                                            
+                           
+   Erreur d'utilisation :
+    La norme du vecteur normal (moyenne des normales des éléments concourants) est presque nulle.
+    Les facettes concourantes au noeud  %(k1)s ne définissent pas une normale fiable.
+    Il y a un problème dans la définition des mailles de bord .
+                                                                                            
+                           
+   Suggestion :
+    Avez-vous pensé à réorienter les mailles de bord avec l'opérateur MODI_MAILLAGE
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010299 DU 2006-11-23 13:12:45
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   NUME_DDL(RENUM='RCMK', METHODE='LDLT', : erreur fatale
+FONCTIONNALITE
+   L'étude fournie se plante dans NUME_DDL/RENUM='RCMK'
+   
+    La routine rercmk.f n'avait pas prévu le cas de noeuds isolés portant des éléments
+   discrets nodaux.
+    En effet ces éléments ne permettent pas de propager la recherche des noeuds voisins.
+                                                                                            
+                              
+    Validation :
+    ------------
+    On enrichit le test sslp100a.comm pour tester le cas des éléments discrets nodaux isolés.
+                                                                                            
+                              
+                                                                                            
+                              
+    Correction à faire en 8 et 9 :
+    -----------------------------
+    2 lignes à changer dans rercmk.f :
+   265c265,266
+   <          IF((ZI(IANBCO-1+K).EQ.0).OR.(ZI(IANEW1-1+K).NE.0)) GO TO 51
+   ---
+   >          IF (ZI(IAEXI1+K).EQ.0) GO TO 51
+   >          IF (ZI(IANEW1-1+K).NE.0) GO TO 51
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslp100a
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010424 DU 2007-01-08 14:33:30
+TYPE anomalie concernant Code_Aster (VERSION 8.4)
+TITRE
+   LIAISON_MAIL : pb xc3xa9limination noeuds communs
+FONCTIONNALITE
+   L'évolution 10099 (LIAISON_MAIL plus sympa) n'a pas été correctement réalisée.
+   
+   Il y a 2 problèmes différents dans la routine calirc.f :
+                                                                                            
+                           
+       * 1 bug :
+       ---------
+         Quand on retire un noeud de la liste des noeuds à éliminer
+          message d'alarme CALCULEL5_49:
+            La relation linéaire destinée à éliminer le noeud esclave N8729 est une
+   tautologie car la maille maitre en vis à vis de ce noeud possède ce meme noeud dans sa
+   connectivité.
+            On ne l'écrit donc pas.
+                                                                                            
+                           
+         On "saute" le noeud mais on oublie d'incrémenter le décalage dans la structure de
+   donnée CORRES.
+         Les relations écrites par la suite sont alors toutes fausses.
+    
+       * 1 petit defaut :
+       ------------------
+         Un noeud est retiré de la liste si :
+           - on le relie à une maille dont la connectivité contient ce noeud
+           - si le coefficient de ce noeud dans la relation vaut presque 1. (à 1.d-6 près)
+                                                                                            
+                           
+         La deuxième condition est là pour nous protéger en cas d'un LIAISON_MAIL avec
+   transformation géométrique.
+                                                                                            
+                           
+         Malheureusement, LIAISON_MAIL utilise l'algorithme (imprécis) de PROJ_CHAMP pour
+   apparier les noeuds à liaisonner. Cette imprécision peut etre sensible si les bords des
+   éléments sont courbes ou si les hexaèdres (par exemple) ne sont pas des pavés droits.
+         Dans l'étude fournie par Patrick, après correction du bug (voir plus haut), je me
+   suis apperçu que 2 noeuds qui auraient du etre retirés de la liste ne l'avaient pas été.
+   En regardant de plus près, je me suis rendu compte que le coefficient pour ces 2 noeuds
+   était de l'ordre de 0.995 et donc pas assez proche de 1.
+         J'ai donc décidé d'assouplir la tolérance 1.d-6 -> 1.d-2 car je pense que 1% est une
+   mesure optimiste de la précision des relations linéaires écrites par LIAISON_MAIL.
+                                                                                            
+                           
+                                                                                            
+                           
+   Résultats faux :
+   ----------------
+   Pour les versions [8.3.17 -> 9.0.5]
+   LIAISON_MAIL écrivait des relations linéaires fausses dès que certains noeuds étaient
+   retirés de la liste des noeuds esclaves (message d'alarme CALCULEL5_49).
+                                                                                            
+                           
+                                                                                            
+                           
+   Correction à reporter en NEW8
+   ------------------------------
+   routine calirc.f :
+                                                                                            
+                           
+   317c317
+   <                   IF(ABS(ZR(IDCOEF+INO1)-1.D0).LT.1.D-6) THEN
+   ---
+   >                   IF(ABS(ZR(IDCOEF+INO1)-1.D0).LT.1.D-2) THEN
+   319c319
+   <                     GOTO 120
+   ---
+   >                     GOTO 119
+   354a355
+   >   119         CONTINUE
+   482c483
+   <                 IF(ABS(ZR(IDCOEF+INO1)-1.D0).LT.1.D-6) THEN
+   ---
+   >                 IF(ABS(ZR(IDCOEF+INO1)-1.D0).LT.1.D-2) THEN
+   484c485
+   <                   GOTO 270
+   ---
+   >                   GOTO 269
+   499a501,502
+   >
+   >   269       CONTINUE
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.17
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010425 DU 2007-01-08 16:05:24
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   un bug dans creprn.f
+FONCTIONNALITE
+   Le bug se trouve vers la ligne 234 de la routine :
+   Dans le cas des noeuds de Lagrange, on change le signe de NUNOEL mais comme ce changement
+   de signe est fait dans la boucle sur les entiers codés, les noeuds tardifs se transmutent
+   en noeuds physiques pour les entiers codés 2,3,...
+                                                                                            
+                           
+   Conséquences du bug :
+   1) les ddls portés par les noeuds les Lagrange sont affectés par erreur sur les noeuds
+   physiques de meme numéros (pour les ddls codés sur les entiers codés 2,3,...)
+   2) Heureusement pour nous, les noeuds de Lagrange ne portent que le ddl LAGR et ce ddl est
+   en position 20 dans le catalogue des grandeurs. Il est donc stocké sur le 1er entier codé.
+                                                                                            
+                           
+   Donc le bug n'a pas d'autre conséquence que de faire :
+      ZI(IAD)=IOR(ZI(IAD),0) (c.a.d. ZI(IAD)=ZI(IAD)) pour des adresses IAD invalides.
+                                                                                            
+                           
+   Tant que IAD est dans l'espace JEVEUX alloué par memdis, cela est licite, mais avec le
+   futur développement de Jean-Pierre (jeveux "dynamique" avec multiples "malloc"), le
+   système signale une "segmentation fault" : on n'a pas le droit d'écrire dans ZI(IAD).
+                                                                                            
+                           
+   A corriger également en NEW8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test shls200a
+NB_JOURS_TRAV  : 0.4
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010458 DU 2007-01-18 12:46:14
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   COMB_MATR_ASSE : on peut amxc3xa9liorer le catalogue
+FONCTIONNALITE
+   Sous le mot clé facteur CALC_AMOR_GENE, les 2 mots clés RIGI_GENE et MASS_GENE sont
+   obligatoires.
+   
+   Il n'y a pas lieu de corrier la doc U. Elle en tient déjà compte.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND C.              DATE 05/02/2007 - 18:43:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010290 DU 2006-11-21 18:37:59
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   MACR_LIGNE_COUPE en repxc3xa8re local
+FONCTIONNALITE
+   Objectif
+   --------
+   L'objet de la demande repose sur 4 points:
+   1. extraire en local n'importe quel type de contraintes (notamment
+   SIEF_ELNO_ELGA)puisqu'on peut le faire en global.
+   2. emettre une alarme lorsque le champ n'est pas pris en compte par le changement de
+   repère et poursuivre en repère global.
+   3. sans objet
+   4. exprimer les résultats dans le repère local propre à chaque ligne de coupe lorsque
+   plusieurs lignes de coupes sont définies. 
+   
+   Développement:
+   -------------
+   L'enrichissement du fichier python macr_lign_coupe_ops.py a été nécessaire pour introduire
+   les actions ci-dessus.
+   1. la liste des noms de champ disponible a été enrichie par SIEF_ELNO_ELGA
+   2. une alarme est dorénavant émise lorsque le champ n'est pas pris en compte par le
+   changement de repère et le calcul est effectué en repère global.
+   4. le fichier macr_lign_coupe_ops.py a été restructuré de sorte à ce que les commandes
+   POST_RELEVE_T et CREA_TABLE soient incluses dans la boucle contenant la commande
+   MODI_REPERE. Ainsi, les résultats locaux sont exprimés
+   dans le repère local associé à la ligne de coupe définie par l'utilisateur.
+   
+   Validation:
+   ----------
+   enrichissement du cas-test sslv07a:
+   - ajout de 2 commandes MACR_LIGN_COUPE pour tester le cham_elem SIEF_ELNO_ELGA un repère
+   local, l'une avec la présence du mot-clé VECT_Y, l'autre pas (pour la comparaison). 
+   - ajout d'un autre commande MACR_LIGN_COUPE telle que le mot-clé facteur LIGN_COUPE
+   comporte 2 occurences.
+   Pour chaque occurence, une ligne de coupe commune et un repère local différent ont été
+   définis.
+   Des TEST_TABLE ont été introduits pour assurer la non régression.
+   - passage d'une liste restreinte aux cas-tests contenant la macro
+   MACR_LIGN_COUPE (7 cas-tests).
+   
+   Impact:
+   ------
+   fichier python: macr_lign_coupe_ops.py 
+   cas-test: sslv07a
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.1.6
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.1.6
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SSLV07a
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 05/02/2007 - 18:43:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010426 DU 2007-01-08 16:33:35
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   la routine mrmult.f est fausse pour les matrices rxc3xa9elles non symxc3xa9triques
+FONCTIONNALITE
+   Suite à une discussion avec Clément Chavant, je me suis persuadé qu'il fallait blinder la
+   routine mrmult.f car sa programmation suppose implicitement que les matrices réelles
+   étaient symétriques.
+   
+   Je propose simplement d'arreter les utilisateurs qui tenteraient de s'en servir avec des
+   matrices non symétriques. 
+   
+   Je ne pense pas que cette fonctionnalité (potentiellement dangereuse) soit utilisable dans
+   la version NEW9 actuelle d'Aster et en conséquence, je ne coche pas la rubrique "resultats
+   faux".
+   
+   Mais si le passage des tests devaient me donner tort ....
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX J.M.             DATE 05/02/2007 - 18:43:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010307 DU 2006-11-24 09:40:15
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   Poursuite avec CHAM_EXCLU=VARI_ELGA apres un CPU_LIMIT
+FONCTIONNALITE
+   Anomalie
+   -------
+   Lorsque le temps CPU est suffisant, tous les champs aux derniers instants
+   d'archivage sont stockés, y compris les champs exclus (CHAM_EXCLU), 
+   ce qui permet de faire une poursuite.
+   Lorsque le temps CPU est insuffisant pour effectuer les calculs de STAT_NON_LINE aux
+   instants de calcul, le stockage des champs en présence d'ARCHIVAGE est perturbé:
+   - si le dernier instant de calcul avant fermeture intempestive de la base coincide avec un
+   instant d'archivage -> tous les champs sont stockés sauf les champs exclus.
+   - si le dernier instant de calcul avant fermeture intempestive de la base ne
+   coincide pas avec un instant d'archivage -> les champs a l'instant N ne sont donc pas
+   archivés,les derniers champs stockés sont ceux de l'instant N-1 où fort logiquement les
+   champs exclus sont absents.
+   L'abscence dans la base des champs exclus est préjudiciable à une éventuelle poursuite.
+   
+   Correction:
+   ----------
+   Actuellement, on sauvegarde les champs au pas de temps précedent lorsqu'il manque du temps
+   pour achever les calculs,mais en conservant le critère d'exclusion de champ ce qui ne
+   convient pas pour une eventuelle poursuite.
+   Nous avons donc forcé l'archivage afin que les champs exclus soient sauvegardés à
+   l'instant précédent la fermeture de la base.
+   Pour cela, nous avons modifié la fonction DIINCL de sorte à lui faire passer la variable
+   FORCE de sa routine d'appel NMARCH qui lui indique si on force l'archivage ou pas.
+   Ainsi dans le cas où le champ est a exclure et que le temps CPU n'est pas suffisant pour
+   réaliser tous les calculs, l'archivage des champs à l'instant précédent la fermeture de la
+   base est effectué.
+   
+   Impact
+   ------
+   fortran: diincl, nmarch
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03
+VALIDATION
+   etude jointe
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS M.               DATE 05/02/2007 - 18:43:08
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010360 DU 2006-12-06 15:35:10
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   STAT_NON_LINE - Affichages incorrects
+FONCTIONNALITE
+   Suite à une remarque de S.Granet.      
+         
+   L'affichage des residus en fin de convergence est incorrect. Exemple:           
+    RESIDU RESI_GLOB_RELA   VAUT  2.264548914E-06 SUR N784    DX          
+    RESIDU RESI_GLOB_MAXI   VAUT  2.464333224E-06 SUR N874    DY          
+   Les valeurs sont correctes mais l'endroit d'évaluation devrait être le 
+   même puisque 
+   RESI_GLOB_RELA est un simple RESI_GLOB_MAXI mis à l'échelle par le 
+   chargement.          
+   En fait  <N874    DY> devrait être  <N784    DX>  .        
+   Le RESI_GLOB_RELA actuel affiche l'endroit ou le CHARGEMENT est      
+   maximum.       
+   Bug dans NMRESI: il faut changer IMAXI = ICHAR en IMAXI = IRESI 
+    
+   Validation visuelle sur un cas test de la base
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   visuelle sur cas-test
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF miss06a                       salmona L.SALMONA          583     42     48
+ CASTEST MODIF sslv07a                       salmona L.SALMONA          787    115      3
+ CASTEST MODIF zzzz200b                      salmona L.SALMONA         1117     24     28
+CATALOPY MODIF commande/comb_matr_asse       salmona L.SALMONA           62      3      3
+ FORTRAN MODIF algeline/mrmmvr               salmona L.SALMONA           97      6      1
+ FORTRAN MODIF algeline/mrmult               salmona L.SALMONA          108      4      4
+ FORTRAN MODIF algorith/cfaca1               salmona L.SALMONA          344      5      2
+ FORTRAN MODIF algorith/diincl               salmona L.SALMONA           96      9      2
+ FORTRAN MODIF algorith/nmarch               salmona L.SALMONA          360     13     12
+ FORTRAN MODIF algorith/nmdome               salmona L.SALMONA          793      6      4
+ FORTRAN MODIF algorith/nmresi               salmona L.SALMONA          266      2      2
+ FORTRAN MODIF assembla/rercmk               salmona L.SALMONA          399      3      2
+ FORTRAN MODIF calculel/creprn               salmona L.SALMONA          309      3      4
+ FORTRAN MODIF modelisa/acearm               salmona L.SALMONA          204     17     10
+ FORTRAN MODIF modelisa/calirc               salmona L.SALMONA          536      8      5
+ FORTRAN MODIF modelisa/rigmi1               salmona L.SALMONA          149     10      6
+ FORTRAN MODIF modelisa/rigmi2               salmona L.SALMONA          199     21     12
+  PYTHON AJOUT Messages/algeline4            salmona L.SALMONA           31     31      0
+  PYTHON MODIF Macro/macr_lign_coupe_ops     salmona L.SALMONA          418     47      7
+  PYTHON MODIF Messages/modelisa3            salmona L.SALMONA          426      8      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1          31        31               +31
+ MODIF :   19        7253       346     157      +189
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   20        7284       377     157      +220 

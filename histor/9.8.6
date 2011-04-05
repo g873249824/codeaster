@@ -1,0 +1,611 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 03/31/2011 - 07:05:21
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016504 DU 2011-02-28 16:54:16
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    BETON_UMLV_FP en C_PLAN a interdire
+FONCTIONNALITE
+   Fiche d'anomalie emise par Jean-Michel Proix:
+   ---------------------------------------------
+   La modelisation C_PLAN est fausse si on n'utilise pas l'algorithme de DEBORST.
+   
+   Solutions avancées:
+   -------------------
+   Suppression de la modélisation C_PLAN 'analytique' pour le modele UMLV_FP
+   
+   Impact source: beton_umlv_fp.py
+   
+   Impact les cas-tests SSNV169F et SSNV169I, qui sont établis sur des valeurs de non
+   régression pour une modelisation C_PLAN.
+   
+   Fiche jumelée à la fiche 13196
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.0.4
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.04.169
+VALIDATION
+    CAS-TEST
+DEJA RESTITUE DANS : 10.3.17
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR audebert     AUDEBERT Sylvie        DATE 03/31/2011 - 07:05:21
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016223 DU 2011-01-18 14:37:05
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TMA : Phimeca
+TITRE
+    COMB_SISM_MODAL
+FONCTIONNALITE
+   Objectif :
+   ---------
+   Afin d'alléger le fichier de commandes, on propose que DEPL_MULT_APPUI ne soit plus 
+   obligatoire après les mots-clés GROUP_APPUI ou COMB_MULT_APPUI. De manière transparente pour 
+   l'utilisateur, le code affectera alors des valeurs nulles au résultat produit par 
+   DEPL_MULT_APPUI (composante secondaire). Une alarme avertira alors l'utilisateur :
+   "Attention, 
+   il n'y a pas de déplacements différentiels pris en compte dans votre calcul spectral multi-
+   appui".
+   
+   Réalisation :
+   ------------
+   Sous le mot-clé DEPL_MULT_APPUI, MODE_STAT permettait de renseigner les modes statiques. 
+   Ce mot-clé était facultatif, mais s'il n'était pas renseigné l'éxécution échouait sur 
+   une erreur JEVEUX. Ce mot-clé est rendu obligatoire lorsque DEPL_MULT_APPUI est renseigné. 
+   Les routines asefen.f et asverif.f ont été modifiées afin de prendre en compte la 
+   contribution des déplacements nuls lorsque DEPL_MULT_APPUI n'est pas renseigné. 
+   Si tel est le cas, l'alarme ci-dessus mise en place dans la routine op0109 avertit
+   l'utilisateur.
+   
+   Validation:
+   -----------
+   Dans les cas-tests sdld301a et sdld301b, il existe des calculs à l'aide COMB_SISM_MODAL 
+   pour lequel des déplacements différentiels nuls sont renseignés. Nous avons supprimé la
+   définition des déplacements différentiels nuls pour tester les développements. Il y a 
+   alors émission de l'alarme. Le mot-clé IGNORE_ALARME est renseigné dans ces cas-tests
+   afin que celle-ci n'apparaisse pas.
+   
+   
+   Documentation:
+   -------------
+   La documentation U4.84.01 de COMB_SISM_MODAL.
+   Aucun impact de documentation V n'est à réaliser.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.84.01
+VALIDATION
+    sdld301b
+DEJA RESTITUE DANS : 10.3.19
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 03/31/2011 - 07:05:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014721 DU 2010-03-04 08:12:52
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Bug dans le calcul des forces nodales sur les DST et Q4G
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Réf : http://www.code-aster.org/forum2/viewtopic.php?id=13597
+   
+   Un utilisateur du forum s'est aperçu que si on applique la modélisation 'DST' sur une
+   seule maille distordue (un parallélogramme) des forces nodales d'un côté et un
+   encastrement de l'autre, alors on ne récupère pas la totalité du chargement à l'encastrement !
+   L'équilibre des forces est bien vérifié mais grâce à des réactions nodales non nulles au
+   lieu d'application des forces ...
+   
+   Analyse
+   =======
+   
+   On peut reproduire le problème sur un cas encore plus simple :
+   - une seule maille
+   - coefficient de Poisson nul
+   - encastrée sur un bord
+   - application d'une force linéique sur le bord opposé (flexion)
+   
+   En modélisation 'DST', on observe alors des réactions nodales non nulles et non
+   négligeables aux points d'application du chargement. On observe par ailleurs que
+   l'amplitude de ces forces varie avec l'épaisseur.
+   En modélisation 'Q4G', c'est pire puisque les forces nodales calculées sont identiquement
+   nulles. On ne détecte ainsi aucune réaction d'appui.
+   En modélisation 'DKT', tout se passe bien.
+   
+   Il y a 2 bugs qui font que le cisaillement n'est pas pris en compte dans le calcul des
+   contraintes et des forces nodales.
+   
+   * SIEF_ELGA : les contraintes aux points de Gauss sont mal calculées. Le tenseur des
+   contraintes est incomplet car les déformations sont calculées uniquement en EPXX, EPYY et
+   EPXY. Cela semble du au fait qu'en 7.2.7 on a décidé de calculer les vraies contraintes et
+   non les efforts généralisés dans SIEF_ELGA.
+   
+   ==> je corrige en calculant les déformations généralisées (produit de la matrice B par le
+   vecteur U) puis en construisant le tenseur des déformations linéarisées à partir des
+   déformations généralisées (tel qu'indiqué dans la doc R3.07.03)
+   De plus je prends comme facteur de correction du cisaillement KCIS = 5.D0/6.D0 et
+   j'indique bien dans la doc que le coefficient A_CIS (donné dans AFFE_CARA_ELEM) n'est
+   utilisé qu'en COQUE_1D et COQUE_3D.
+   
+   Impact : dxsief.f
+   
+   * FORC_NODA : le calcul des forces nodales s'effectue en réalisant l'intégrale du produit
+   de la matrice Bt (transposée de la matrice des déformations) par le vecteur des efforts
+   généralisés. Ce dernier est calculé par intégration du tenseur des contraintes dans
+   l'épaisseur mais le cisaillement (2 composantes d'efforts tranchants) était aussi oublié
+   (ce qui est en fait cohérent avec l'oubli précédemment).
+   
+   ==> je corrige en rajoutant les 2 efforts tranchants au vecteur des efforts généralisés
+   
+   Impact : dxeffi.f
+   
+   Validation
+   ==========
+   
+   Il existe un seul test dans la base qui calcul FORC_NODA sur les éléments de plaque avec
+   cisaillement : HSLS01A.
+   Malheureusement le chargement thermique imposé provoque de la flexion pure (sans
+   cisaillement donc) et on observe donc une concordance parfaite avec la solution analytique
+   du problème étudié.
+   
+   On modifie les tests suivants pour la validation :
+   
+   - SSLS200A : ce test qui vérifie tous les éléments de plaque et coque est NOOK suite à la
+   correction (non-régression sur la somme absolue des contraintes)
+   - SSLS27 : ce test est enrichi d'une modélisation B (DST) et C(Q4G) pour valider le calcul
+   par rapport à la solution A (DKT)
+   
+   Résultats faux ?
+   ================
+   
+   Concernant les forces nodales 
+   -----------------------------
+   
+   Les forces nodales sont bien fausses, en particulier sur les Q4G.
+   Néanmoins, dans la mesure où ni les DST ni les Q4G ne sont utilisables en non-linéaire,
+   l'incidence des erreurs sur FORC_NODA/REAC_NODA est limité. En effet il est rare
+   d'utiliser (pour des éléments de structures autres que les poutres) en linéaire les forces
+   nodales qui n'ont pas de sens physique.
+   
+   Concernant les contraintes aux points de Gauss
+   ----------------------------------------------
+   
+   Les composantes SIXZ et SIYZ étaient toujours nulles pour les DST et Q4G alors que ces
+   éléments tiennent compte du cisaillement transverse. On pouvait donc se rendre compte de
+   l'anomalie.
+   
+   Concernant d'autres options utilisant les contraintes
+   -----------------------------------------------------
+   
+   Aucune autre option que FORC_NODA n'utilise les contraintes aux points de Gauss pour les
+   modélisation DST et Q4G (les énergies ENER_* et ENEL_* émettent un message d'erreur dans
+   le TE pour ces éléments, les contraintes équivalentes sont calculées uniquement aux noeuds)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2.7
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.2.7
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.42.01, V3.03.027
+VALIDATION
+    astout,ssls200a,ssls27
+DEJA RESTITUE DANS : 10.3.19
+NB_JOURS_TRAV  : 15.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 03/31/2011 - 07:05:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016415 DU 2011-02-15 08:40:47
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    fdlv102a, fdlv104a plantage alxc3xa9atoire lors des restitutions
+FONCTIONNALITE
+   Cette fiche est résolue grâce à la fiche 16481.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fdlv102a, fdlv104a
+DEJA RESTITUE DANS : 10.3.17
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR bargelli     BARGELLINI Renaud      DATE 03/31/2011 - 07:05:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016147 DU 2011-01-05 08:51:37
+TYPE anomalie concernant Code_Aster (VERSION 10.4)
+TITRE
+    ROUSS_PR : Prise en compte de la variation de la tempeature incorrecte
+FONCTIONNALITE
+   RESULTATS FAUX :
+   Les calculs thermomécaniques (avec variation de température) dans lesquels les paramètres matériaux 
+   élastiques (E et nu) des lois ROUSS_PR et ROUSS_VISC devaient dépendre de la température étaient 
+   faux ; les écarts peuvent être grands, notamment dans le cas de fortes variations des coefficients 
+   élastiques. Les erreurs portent en particulier sur les niveaux de contrainte et de porosité.
+   
+   
+   PROBLEME :
+   Les comportements ROUSS_PR et ROUSS_VISC (même routine) ne prennent pas correctement en compte la 
+   variation des propriétés mécanique avec la température. Cela est mis en évidence par les cas test de 
+   type comp008.
+   
+   CAUSE :
+   Le comportement est écrit de façon incrémentale et les termes liés à la variation de matrice élastique 
+   sont tout bonnement oubliés.
+   
+   CORRECTION :
+   On ajoute les termes dans le fortran.
+   
+   VALIDATION :
+   On ajoute un cas test à comp008 qui permet de vérifier que la modification de température est bien 
+   prise en compte.
+   Le test est archi NOOK sans surcharge (sur les contraintes et surtout sur la porosité), et OK avec la 
+   surcharge.
+   
+   IMPACT :
+   lcrous.f
+   lcplas.f
+   
+   IMPACT DOC :
+   La doc R5.03.07 est écrite sans les termes dépendants de la variation de rigidité ; on la met à jour.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.07
+VALIDATION
+    comp008n
+DEJA RESTITUE DANS : 10.3.21
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 03/31/2011 - 07:05:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015165 DU 2010-06-08 12:40:04
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    ODYMAT: MODE_ITER_SIMULT - option PLUS_PETITE (NMAX_FREQ)
+FONCTIONNALITE
+   PROBLEME
+   =========
+     Le bon fonctionnement de MODE_ITER_SIMULT sur un calcul modal
+     de structure libre (type Cadyro) dépend des paramètres numériques
+     fixés dans le fichier de commande.
+   
+   ANALYSE
+   =======
+    * Il s'agit d'un pb modal généralisé réel symétrique résolu par le
+   solveur modal par défaut (METHODE='SORENSEN'). Avec l'option par défaut
+   (OPTION='PLUS_PETITE') la calcul s'arrête sur le message
+   LA VALEUR MAXIMALE EST INFERIEURE A LA VALEUR DE CORPS RIGIDE ON LA 
+   MODIFIE, ELLE DEVIENT: -3.94784E-03
+   ON DIMINUE LA VALEUR DE DECALAGE DE:  5.00000E+00 POURCENT
+   ELLE DEVIENT:                           -4.14523E-03
+   ...
+   ON DIMINUE LA VALEUR DE DECALAGE DE:  5.00000E+00 POURCENT
+   ELLE DEVIENT:                           -5.03856E-03
+      
+      !-------------------------------------------------------------------!
+      ! <EXCEPTION> <ALGELINE3_68>            !
+      ! -> La matrice de raideur est singulière malgre la strategie de 
+           décalage  (structure avec des modes de corps rigide).
+       !   -> Risque Conseil : 
+      ! Utiliser l'option 'BANDE' avec une borne minimale de la bande de 
+           fréquence légèrement négative (ou positive) 
+      !-------------------------------------------------------------------!
+   
+   Avec l'option 'BANDE' le calcul aboutit.
+   
+    * Le problème vient du fait que la matrice dynamique que l'on
+   construit, la matrice de travail de l'algo s'écrit
+                        Q= K- shift* M
+   avec K la matrice de raideur (ici singulière car structure libre).
+   Pour que le solveur modal puisse fonctionner il faut que cette matrice
+   de travail soit inversible. Or, si on choisit l'option plus petite
+       shift=0 et donc cette matrice est singulière.
+   
+   Comme cette valeur du shift ne sert qu'à orienter la recherche spectrale
+   on peut changer un peu sa valeur cela n'aura pas d'incidences sur la
+   partie du spectre recherchée. C'est donc ce que fait l'algo de prépara
+   tion de données qui doit donner au solveur modal une matrice de travail
+   inversible.
+   On va imposer shift=CALC_FREQ/SEUIL_FREQ (en général 0.05 ou 0.1, une
+     valeur en deça de laquelle on considère que les modes sont nuls).
+   puis on va retenter de factoriser la matrice de travail
+                          Q= K- SEUIL_FREQ* M 
+   Si cela ne suffit pas, on décale ce shift de CALC_FREQ/PREC_SHIFT%. On 
+   fait cela NMAX_ITER_SHIFT (=5 par défaut) fois et si cela ne suffit pas, 
+   on s'arrête en erreur fatale. C'est la cas ici.
+   
+   RQ. Ces infos se trouvent ds le chapitre 3 de la doc R5.01.01 
+   et font l'objet du TP 2 de la formation dynamique (slides et 
+   corrections dispo sous 
+   http://www.code-aster.org/V2/spip.php?article9)
+   
+   Avec l'option 'BANDE' (ici [-1,150], on prend comme shift la valeur
+   médiane shift=-1+150/2 et la matrice de travail est inversible. Donc
+   tout est OK. Le solveur modal va pouvoir bosser !
+   
+   SOLUTIONS
+   =========
+     Solutions fonctionnelles
+     ------------------------
+     * Augmenter la valeur de SEUIL_FREQ (ou PREC_SHIFT): avec 0.1 au lieu 
+      de 0.01 (ou 0.5 au lieu de 0.05 par ex). Cela
+       marche dès le premier décalage. On aurait put augmenter aussi
+       NMAX_ITER_SHIFT ou PREC_SHIFT, mais c'est plus coûteux et moins 
+       efficace.
+   
+     * L'option BANDE proposée dans la doc et ds le msg.
+    
+     * L'autre solveur modal 'TRI_DIAG' avec son option spécifique de pré-
+      capture de modes rigides (OPTION='MODE_RIGIDE').
+   
+     Solution numérique
+     ------------------
+     * Proposer la même méthode de pré-capture pour Sorensen (fiche EL8614).
+   
+     Améliorations fonctionnelles
+     ----------------------------
+      * Améliorer le message d'erreur.
+   68: _("""
+     -> La matrice de raideur est singulière malgre la strategie de décalage
+   (structure avec des modes de corps rigide).
+   
+     -> Risque & Conseil :
+     Pour passer avec l'option 'PLUS_PETITE', augmenter la valeur de
+     SEUIL_FREQ (0.1 par exemple) ou de PREC_SHIFT (0.5 par exemple). 
+     En fait, il est plutot conseille d'utiliser l'option 'BANDE'. Ici avec
+     une borne minimale de la bande de fréquence légèrement négative (ou
+     positive).
+     A defaut, si vous n'arrivez pas a capter tous les modes rigides, 
+     essayer la methode TRI_DIAG avec OPTION='MODE_RIGIDE'.
+   """),
+   
+      * Augmenter la valeur par défaut de SEUIL_FREQ: 0.1 au lieu de 0.05 ?
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.52.03
+VALIDATION
+    informatique, non-regression,fonctionnel
+DEJA RESTITUE DANS : 10.3.21
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016610 DU 2011-03-16 13:47:42
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    message d'erreur FETI incorrect
+FONCTIONNALITE
+   PROBLEME
+   ========
+      Mauvais libellé du msg d'erreur FETI lors de la non convergence du
+      solveur d'interface associé.
+   ANALYSE
+   =======
+      Dans cette situation, le msg pointe vers un mesg dédié à un autre
+      solveur itératif, le GCPC, ALGELINE4_3.
+          ==> L'erreur date de 2007 et a été introduite lors de la conver
+           sion générales des msgs d'erreurs.
+           Donc soit FETI n'est pas utilisé, soit il cv toujours lorsqu'il
+           l'est !
+   
+       Je recréé un msg dédié: ALGELINE4_8
+   8 : _("""
+    Erreur lors de la resolution du systeme lineaire d'interface de FETI :
+    Non convergence  avec le nombre d'iterations autorisees :  %(i1)d
+      norme du residu (absolu)  :  %(r1)f
+      norme du residu (relatif) :  %(r2)f
+   
+    Conseils :
+     * Vous pouvez augmenter le nombre d'iterations autorisees 
+      (SOLVEUR/NMAX_ITER).
+     * Vous pouvez activer le preconditionneur si cela n'est pas fait 
+      (PRE_COND='LUMPE').
+     * Vous pouvez verifier votre interface via INFO_FETI (cf. U2.08.03).
+     * Vous pouvez verifier le nombre de modes rigides en mode INFO=2.
+   """),
+   
+   SOURCES RESTITUEES
+   ==================
+     * ALFETI.F et ALGELINE4.PY.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    informatique
+DEJA RESTITUE DANS : 10.3.21
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR debonnieres  DE BONNIERES Philippe   DATE 03/31/2011 - 07:05:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016458 DU 2011-02-22 13:13:10
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Probl?me lors de la variation de la T? dans les lois viscoplastiques type Lemaitre
+FONCTIONNALITE
+   Lors de tests effectues par Joumana dans le cadre du projet LOCO, elle a constate que la 
+   loi de Lemaitre ne donnait pas des resultats satisfaisants dans le cas où la température 
+   T varie et où les coefficients élastiques varient avec T.
+   
+   En fait cette loi avait ete programmee initialement en semi-implicite et il manquait un 
+   element à la generalisation au cas theta=1 (implicite pur). J'ai corrigé ce bug dans les 
+   routines NMVPIR et NMVPLE. La nouvelle formulation fonctionne maintenant pour theta=0.5 
+   et pour theta = 1.0 .
+   
+   Les comportements concernés sont :
+   LEMAITRE
+   LEMAITRE_IRRA
+   VISC_IRRA_LOG
+   GRAN_IRRA_LOG
+   LEMA_SEUIL
+   LMARC_IRRA
+   
+   Validation:
+   2 nouveaux tests COMP010A et COMP010B
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2.25
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.2.25
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.07.110
+VALIDATION
+    COMP010A,COMP010B
+DEJA RESTITUE DANS : 10.3.21
+NB_JOURS_TRAV  : 6.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 03/31/2011 - 07:05:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016608 DU 2011-03-16 07:54:58
+TYPE anomalie concernant Code_Aster (VERSION 10.4)
+TITRE
+    X-FEM : bug dans CALC_G  avec pression fonction sur les levres
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Dans X-FEM, on plante dans CALC_G, option CALC_G si on applique une pression sur les
+   lèvres de la fissure :
+   
+      ! <EXCEPTION> <CALCULEL2_71>                                                          
+                 !
+      !                                                                                     
+                 !
+      ! on ne trouve pas dans les arguments de la routine CALCUL de champ à associer au
+   parametre: PBASECO !
+      !   - option: CALC_G_F                                                                
+                 !
+      !   - type_element: MECA_XH_PENTA6      
+   
+   
+   Solution :
+   ----------
+   
+   Ce bug est dû à l'oubli de l'option CALC_G lors de la restitution de la prise en compte
+   d'une pressio n sur les lèvres X-FEM (et aussi d'un manque de validation...).
+   
+   On corrige les routines d'appel à calcul.f.
+   
+   impact :
+   mecagl.f, op0100.f
+   
+   On rajoute dans ssnv185c un CALC_G qui teste cela + des tests sur la valeur de G.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.04.185
+VALIDATION
+    ssnv185c
+DEJA RESTITUE DANS : 10.3.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR brie         BRIE Nicolas           DATE 03/31/2011 - 07:05:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016140 DU 2011-01-04 09:18:02
+TYPE express concernant Code_Aster (VERSION 10.3)
+TITRE
+    mauvais classement de sdll136a (non lineaire)
+FONCTIONNALITE
+   1. Probleme
+   
+   Le cas-test SDLL136a etait classe en lineaire d'apres la 3eme lettre de la nomenclature.
+   Or ce cas-test contient des chocs qui ont effectivement lieu (attention : tous les
+   cas-tests avec le schema ITMI de DYNA_TRAN_MODAL ont le mot-cle CHOC dans le .comm, mais
+   ce sont des obstacles fictifs, situes tres loin de la structure, necessaires a cause de la
+   programmtion d'ITMI. Seul SDLL136a contient des chocs effectifs). Il faut donc le renommer
+   en SDNL136a.
+   
+   -------------------------------------------------------------------------
+   2. Solution
+   
+   On supprime le cas-test sdll136a. On cree un nouveau cas-test sdnl136a.
+   
+   --------------------------------------------------------------------------
+   3. Impact documentaire
+   
+   La doc de validation de ce cas-test (anciennmement V2.02.136) a ete renommee en V5.02.136
+   et quelques modifications ont ete repercutees pour etre en coherence avec cette nouvelle
+   classification.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.3.16
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V2.02.136, V5.02.136
+VALIDATION
+    sdnl136a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT sdnl136a                      macocco K.MACOCCO          648    648      0
+ CASTEST AJOUT ssls27b                       macocco K.MACOCCO          178    178      0
+ CASTEST MODIF sdll112a                      macocco K.MACOCCO          766      4      2
+ CASTEST MODIF sdll112b                      macocco K.MACOCCO          793      4      2
+ CASTEST MODIF ssls200a                      macocco K.MACOCCO          243     19     13
+ CASTEST MODIF ssnv185c                      macocco K.MACOCCO          529     78     52
+ CASTEST SUPPR sdll136a.comm                 macocco K.MACOCCO          649      0    649
+CATALOPY MODIF commande/comb_sism_modal      macocco K.MACOCCO          119      3      3
+ FORTRAN MODIF algeline/alfeti               macocco K.MACOCCO         1129      3      3
+ FORTRAN MODIF algorith/asefen               macocco K.MACOCCO          241     11      2
+ FORTRAN MODIF algorith/asveri               macocco K.MACOCCO          295      8      3
+ FORTRAN MODIF algorith/lcplas               macocco K.MACOCCO          129      3      3
+ FORTRAN MODIF algorith/lcrous               macocco K.MACOCCO          416     23      6
+ FORTRAN MODIF algorith/nmvpir               macocco K.MACOCCO          545      6      6
+ FORTRAN MODIF algorith/nmvple               macocco K.MACOCCO          301      5      4
+ FORTRAN MODIF algorith/op0109               macocco K.MACOCCO          429      5      2
+ FORTRAN MODIF calculel/mecagl               macocco K.MACOCCO          479     41     29
+ FORTRAN MODIF calculel/op0100               macocco K.MACOCCO         1074      3      4
+ FORTRAN MODIF elements/dxeffi               macocco K.MACOCCO          138     16     11
+ FORTRAN MODIF elements/dxsief               macocco K.MACOCCO          220     49     44
+  PYTHON MODIF Comportement/beton_umlv_fp    macocco K.MACOCCO           39      1      1
+  PYTHON MODIF Messages/algeline3            macocco K.MACOCCO          451     12      4
+  PYTHON MODIF Messages/algeline4            macocco K.MACOCCO          298     15      2
+  PYTHON MODIF Messages/seisme               macocco K.MACOCCO          164      7      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         826       826              +826
+ MODIF :   21        8798       316     198      +118
+ SUPPR :    1         649               649      -649
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   24       10273      1142     847      +295 

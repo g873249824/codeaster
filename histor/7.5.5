@@ -1,0 +1,544 @@
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhlv L.VIVAN   DATE  le 22/11/2005 a 18:29:27
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-338
+   NB_JOURS_TRAV  : 3
+   POUR_LE_COMPTE_DE   : E.LONGATTE
+   INTERET_UTILISATEUR : NON
+   TITRE :  sagrappe et probleme de convergence
+   FONCTIONNALITE
+     a ce jour le code émet des messages d'Alarme :
+     <A> <DYNA_NON_LINE> <MECANISME> CALCUL DE L'ERREUR RESIDUELLE DANS LA
+        RESOLUTION DU MODELE DANS LE MECANISME DE COMMANDE
+        SOMME(F) > 1.0D-3 , SOMME(F) =   1.3800E+01
+        F =  -1.6941E-21  0.0000E+00  0.0000E+00  0.0000E+00  8.4703E-22
+              0.0000E+00 -1.3800E+01  0.0000E+00 -2.6157E-12
+   DETAIL
+     routine gfcomm :
+     - zone manchette thermique adaptateur
+       l'accélération dans la section de passage Am est égale à
+         DUM = (UM-UMM1)/DT
+       alors qu'elle doit etre déduite de UA :
+         IF (UA.EQ.ZERO) THEN
+            DUM = ZERO
+         ELSE
+            DUM = AT/AM*D2Z - AA/AM*(UA-UAM1)/DT
+         ENDIF
+     - zone carter/mécanisme de levée
+       l'accélération dans la section de passage Ai est égale à
+         DUM = (UI-UIM1)/DT
+       alors qu'elle doit etre déduite de UA :
+         IF (UML.EQ.ZERO) THEN
+            DUI = ZERO
+         ELSE
+            DUI = AT/AI*D2Z - AML/AI*(UML-UMLM1)/DT
+         ENDIF
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  OUI  DEPUIS : 8.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI  DEPUIS : 7.2.2
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage du test fdnl100a: vérification que les messages d'Alarme
+     correspondant au mécanisme n'existent plus
+     passage du cas test sur clayastr et clp50a8
+
+
+-----------------------------------------------------------------------
+--- AUTEUR durand C.DURAND   DATE  le 22/11/2005 a 18:00:36
+
+------------------------------------------------------------------------
+CORRECTION AL 2005-423
+   NB_JOURS_TRAV  : 0.
+   INTERET_UTILISATEUR : NON
+   TITRE :  typage crea_champ_prod
+   FONCTIONNALITE crea_champ
+   DETAILS
+     pb signalé par Pascale Noyret dans le cadre de la recette d'EFICAS.
+     Le typage dans crea_champ.capy est dynamique en fonction du TYPE_CHAM
+     donné. Or, tous les champs possibles permis par ce typage dynamique
+     n'existent pas nécessairement dans accas.capy.
+     Donc on encapsule dans un try/except.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+-----------------------------------------------------------------------
+--- AUTEUR f1bhhaj J.ANGLES   DATE  le 21/11/2005 a 11:35:02
+
+--------------------------------------------------------------------------------
+CORRECTION AL 2005-416
+   NB_JOURS_TRAV : 1
+   INTERET_UTILISATEUR : NON
+   TITRE : CALC_FATIGUE
+   FONCTIONNALITE : Cela concerne la commande CALC_FATIGUE
+   DETAILS : L'arrêt fatal avait lieu dans la routine paqnoe.f après un test
+     trop sévère qui interdisait des cas licites. Ce test a été modifié ainsi
+     que le calcul de la valeur testée. Nous avons également modifié la routine
+     paqmai.f pour les mêmes raisons.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : SSLV135E et calcul FATHER sur 1000 pas de temps.
+
+--------------------------------------------------------------------------------
+CORRECTION AL 2005-429
+   NB_JOURS_TRAV : 1
+   INTERET_UTILISATEUR : NON
+   TITRE : CALC_FATIGUE et POST_FATIGUE
+   FONCTIONNALITE : Cela concerne la commande CALC_FATIGUE
+   DETAILS : Les routines fgpic2 et avpic2 doivent réaranger l'historique de chargement
+     de tel sorte que le chargement débute par la valeur maximale, en valeur absolue.
+     Cela n'était pas fait dans le cas où le pic de plus grande valeur absolue
+     était négatif. Pour cette raison les résultats n'étaient pas forcément faux.
+     IMPACT SUR LES RESULTATS.
+     - Il y a un impact uniquement pour les critères qui utilisent la méthode RAINFLOW.
+     - Si le chargement est périodique et symétrique l'impact est nul, les résultats sont OK.
+     - Si le chargement est non périodique et long (beaucoup de sous-cycles), l'impact sur les
+       résultats est négligeable.
+     - Si le chargement est non périodique et court (peu de sous-cycles), l'impact sur
+       les résultats reste faible. Dans ce cas un certain nombre de sous-cyles aura une
+       amplitude différente et leur nombre modifié de quelques unités.
+
+   RESU_FAUX_VERSION_EXPLOITATION :  OUI   DEPUIS : 3.03.28 POUR POST_FATIGUE ET CALC_FATIGUE
+                                           (chargement uniaxial)
+                                           DEPUIS : 7.02.05 POUR CALC_FATIGUE
+                                           (chargement multiaxial)
+   RESU_FAUX_VERSION_DEVELOPPEMENT : OUI   DEPUIS : 8.0.0 POUR CALC_FATIGUE
+                                           (chargement multiaxial)
+   RESTITUTION_VERSION_EXPLOITATION :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : SDNL112B SZLZ100A SZLZ101A SZLZ102A SZLZ103A SZLZ107A SZLZ108A
+                SZLZ109A SZLZ111A SZLZ111B SSLV135C SSLV135D
+
+--------------------------------------------------------------------------------
+CORRECTION AL 2005-430
+   NB_JOURS_TRAV : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  MEMOIRE
+   FONCTIONNALITE :
+     Augmenter la mémoire dans zzzz183a.para (cas test éolien offshore))
+     NEW7.5.4, le test zzzz183a manque de MEMOIRE
+     <E> <JJALLS03>  MEMOIRE INSUFFISANTE POUR ALLOUER UN SEGMENT DE VALEURS
+                     DE LONGUEUR : 7355730
+   DETAILS :
+     On passe la mémoire de 300 à 500 Mo dans zzzz183a.para suite au message :
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   NON
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : SSLV183A
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mcourtoi M.COURTOIS   DATE  le 21/11/2005 a 13:01:41
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-433
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  Impression d'une courbe à partir d'une table contenant des trous
+   FONCTIONNALITE
+      Lorsque l'on extrait deux colonnes d'une table pour tracer une courbe,
+      il faut supprimer les lignes dont une des deux "cellules" est vide.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      étude jointe
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mjbhhpe J.L.FLEJOU   DATE  le 21/11/2005 a 11:34:52
+
+-----------------------------------------------------------------------------------
+CORRECTION AL 2005-434
+   NB_JOURS_TRAV  : 0.15
+   INTERET_UTILISATEUR : OUI
+   TITRE :  AFFE_CARA_ELEM
+   FONCTIONNALITE :
+     Blindage du comportement de AFFE_CARA_ELEM lorsque des éléments ne sont pas affectés
+     Emission d'alarmes supplémentaires
+   DETAILS
+     Analyse du cas fourni par l'utilisateur
+     Le 1er AFFE_CARA_ELEM émet l'alarme suivante : Un discret n'est pas affecté
+       LE MODELE MO       CONTIENT :  808 ELEMENT(S) POUTRE
+                                        1 ELEMENT(S) DISCRET
+       <A> <AFFE_CARA_ELEM> LE NOEUD G02Q02   N'A PAS ETE AFFECTE PAR UNE MATRICE.
+
+     Le 2nd AFFE_CARA_ELEM n'a pas le temps d'émettre l'alarme il plante avant.
+     En fait AFFE_CARA_ELEM analyse le modèle et trouve 808 poutres et 1 discret.
+     On s'attend donc a affecter 808 poutres or ce n'est pas le cas.
+     Il faut donc blinder le source.
+     Ajout d'alarmes dans AFFE_CARA_ELEM
+     S'il existe des POUTRES ou des BARRES ou des CABLES dans le modèle et qu'aucune
+     occurence d'affectation n'existe pour ces éléments on émet une alarme.
+     !!!! POUR LA SUITE CA PLANTE QUAND MEME !!!!
+     Par la suite le calcul risque de planter car des éléments ne seront pas affectés.
+     Liste des fichiers modifiés:  op0019.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.42.01
+       EXPL_ : Indiquer que la commande AFFE_CARA_ELEM doit être exhaustive pour
+               tous les éléments de structure du modèle.
+   VALIDATION
+     Passage de l'étude liée à la fiche
+
+-----------------------------------------------------------------------------------
+REALISATION EL 2005-303
+   NB_JOURS_TRAV  : 0.05
+   INTERET_UTILISATEUR : OUI
+   TITRE :  Poutres Multi-Fibres
+   FONCTIONNALITE :
+     La limite de 1000 mailles dans une section n'a pas de raison d'exister
+     !!! CECI N'EST PAS UNE EL, MAIS UNE AL !!!
+   DETAILS
+     On enlève le test de vérification, le dimensionnement du vecteur était
+     fait avec un WKVECT.
+     Liste des fichiers modifiés: pmfitg.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Passage du cas test ssnl119a en augmentant le nombre de maille
+
+
+-----------------------------------------------------------------------
+--- AUTEUR nicolas O.NICOLAS   DATE  le 17/11/2005 a 07:50:54
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'AL 2005-196
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : IMPR_GENE
+   FONCTIONNALITE: IMPR_GENE
+   DETAILS
+     La routine IMPR_GENE manque de cas test, utilisee sur un concept
+     harm_gene, mode_gene ou tran_gene, elle n'imprime que les valeurs
+     sur la premiere composante generalisee.
+     En fait, il s'agit d'une confusion des genres entre la notion de
+     composantes generalisees et de nombre de mode. Du coup, l'impression
+     etait incomplete car on recuperait toujours un nombre de composantes
+     egal a 1.
+     Routine modifiee : irgene.f, irvgen.f, op0159.f
+     Catalogue        : impr_gene.capy
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   NON
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Cas test : sdls08a
+     On integre dans ce cas test la procedure d'impression des concepts
+     harm_gene, mode_gene, vect_asse_gene  que l'on valide
+     par un test_fichier
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'AL 2005-215
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : PROJ_VECT_BASE
+   FONCTIONNALITE: PROJ_VECT_BASE
+   DETAILS
+     Lorsque la base de mode est le resultat d'une restitution en base
+     physique de modes generalises un concept MODE_MECA est cree mais sans
+     que son REFE soit bien rempli. Du coup, la projection d'un vecteur
+     assemble plante salement car il ne trouve pas dans le REFE de quoi
+     recuperer la numerotation.
+     Le travail sur les REFD ainsi que la modification dans la routine
+     op0072.f permet de regler le probleme
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   NON
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Cas test : sdls08a
+     On integre dans ce cas test la projection du vecteur assemble sur
+     le resultat de la resitution sur base physique d'un mode_gene
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'AL 2005-202
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : REST_BASE_PHYS
+   FONCTIONNALITE: REST_BASE_PHYS
+   DETAILS
+     La commande REST_BASE_PHYS ne prends pas en compte le contenu de
+     NOM_CHAM pour un concept dyna_harmo.
+     Il y avait un oubli dans la routine harm75 qui empechait le bon
+     fonctionnement dans le cas de plusieurs type de CHAM a traiter
+     J'en profite pour corriger une coquille dans op0060 de DYNA_LINE_HARM
+     Routine modifiee harm75.f et op0060.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Cas test : sdls08a
+     On integre dans ce cas test la resitution d'un concept harm_gene avec
+     des NOM_CHAM mulitples
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'AL 2005-282
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : DEFI_BASE_MODALE test sdlv402a sur Rocks
+   FONCTIONNALITE: DEFI_BASE_MODALE
+   DETAILS
+     Le test sdlv402a s'arrete de maniere aleatoire sur Linux Rocks. En fait, la
+     programmation de la routine ritz99.f est pourrie. On teste un nbre de
+     modes mais on envoie pas toujours le bon en fonction des cas aux routines
+     moco99 et mgco99.
+     Remise en conformite de toute la routine ritz99.f !
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Cas test : sdlv402a passe sur Rocks
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'AL 2005-292
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : REST_BASE_PHYS et COMB_MATR_ASSE
+   FONCTIONNALITE: COMB_MATR_ASSE
+   DETAILS
+     On plantait dans REST_BASE_PHYS si la matrice de raideur generalisee
+     complexe etait obtenue par COMB_MATR_ASSE.
+     LE PB NE VENAIT PAS DE LA MISE AU CARRE DES REFD PAR O. NICOLAS EN 8.1.5
+     mais bien d'un oubli de la prise en compte des matrices generalisees
+     complexes dans COMB_MATR_ASSE.
+     Je corrige donc la routine op0031
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Cas test : sdlv124a
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'AL 2005-265
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : DYNA_LINE_HARM et partie imaginaire
+   FONCTIONNALITE: DYNA_LINE_HARM
+   DETAILS
+     Lorsque on utilise DYNA_LINE_HARM sans amortissement et avec une charge
+     dans le mot cle EXCIT, on obtient une partie imaginaire non nulle egale
+     a la partie reelle.
+     On peut donc parier sur un second membre identique en partie reelle et
+     imaginaire au lieu d'un reel pur.
+     2 coquilles dans les routines nmdomc et nmdome : coefficient reel entre
+     identique en partie imaginaire et reel
+     Mauvaise gestion de fonc_mult par rapport a fonc_mult_c
+     Je corrige donc les routine nmdomc.f et nmdome.f et je supprime la
+     restriction que j'avais mise dans le capy de DYNA_LINE_HARM
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI   DEPUIS : 6.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI   DEPUIS : 6.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Etude utilisateur du web
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'AL 2005-313
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : DYNA_LINE_HARM et AMORTISSEMENT REDUIT
+   FONCTIONNALITE: DYNA_LINE_HARM
+   DETAILS
+     Lorsque on utilise DYNA_LINE_HARM avec une matrice de rigidite complexe et
+     un amortissement reduit, on obtient un plantage
+     Le calcul de la matrice d'amortissement reposant sur les valeurs de
+     la matrice de rigidite, le cas de valeurs complexes n'a pas ete prevu
+     initialemement.
+     Je corrige la routine dylema.f afin de traiter le cas ou la matrice de
+     raideur est complexe
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Cas test : sdlv402a
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'EL 2005-220
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE : PRE_IDEAS et IDEAS V11
+   FONCTIONNALITE : PRE_IDEAS
+   DETAILS
+     A l'occasion du passage d'IDEAS en V11, la coutume ancestrale des gens
+     d'Ideas veut que l'on change le numero (dataset) designant les groupes.
+     On passe donc de 2467 en V10 a 2477 en V11
+     Donc ajout de la 11eme version de ce numero dans la routine presup.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Etude utilisateur
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   REPORT EN V7 DE L'AL 2005-364
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : PROJ_CHAMP sur POUTRE
+   FONCTIONNALITE : PROJ_MESU_MODAL
+   DETAILS
+     En fait, j'avais implique a tort PROJ_CHAMP car la routine buggee est une
+     pj*dco.f mais cette fiche ne concerne que PROJ_MESU_MODAL car PROJ_CHAMP
+     ne sait pas actuellement projete sur maillage 1D.
+     En fait, la routine PJ5DCO etait doublement incorrect : mauvaise
+     initialisation d'un vecteur qui provoquait des resultats differents en debug
+     et nodebug et confusion entre la dimension du maillage (2) et le nombre de
+     coordonnees d'un noeud du maillage (3).
+     Je corrige donc PJ5DCO.F et emet une EL pour integrer la methode dans
+     PROJ_CHAMP (c.f JP)
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI   DEPUIS : 6.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI   DEPUIS : 6.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Cas test perso (en attente de cas test MEIDEE dans Aster)
+
+
+-----------------------------------------------------------------------
+--- AUTEUR rezette C.REZETTE   DATE  le 21/11/2005 a 11:56:17
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-385
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE : P.BADEL
+   INTERET_UTILISATEUR : NON
+   TITRE :  Observation
+   FONCTIONNALITE
+   DETAILS :
+     On reporte dans la version d'exploitation les modifications de la fiche
+     AL2005_262 portant sur les vérifications de la cohérence du mot-clé
+     observation (vérification que les composantes observées sont présentes sur
+     les entités géométriques).
+     Mise à jour du cas-test fdnv100a: ce cas-test a été privé du groupe de noeuds
+     P15 pour l'observation car l'unique noeud de ce groupe ne contenait pas les
+     composantes que l'on désirait observer.
+     Source modifiée  : dyobs1.f
+     Cas-test modifié : fdnv100a
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   NON
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : fdnv100a
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF fdnl100a                      cibhhlv L.VIVAN            333     25     25
+ CASTEST MODIF fdnv100a                      rezette C.REZETTE          329      2      2
+ CASTEST MODIF sdnl112b                      f1bhhaj J.ANGLES           490      1      1
+ CASTEST MODIF sslv135c                      f1bhhaj J.ANGLES          1184      1      1
+ CASTEST MODIF sslv135d                      f1bhhaj J.ANGLES           780      1      1
+ CASTEST MODIF szlz100a                      f1bhhaj J.ANGLES           314      1      1
+ CASTEST MODIF szlz101a                      f1bhhaj J.ANGLES           153      1      1
+ CASTEST MODIF szlz102a                      f1bhhaj J.ANGLES           335      1      1
+ CASTEST MODIF szlz103a                      f1bhhaj J.ANGLES           258      1      1
+ CASTEST MODIF szlz105a                      f1bhhaj J.ANGLES           299      1      1
+ CASTEST MODIF szlz105b                      f1bhhaj J.ANGLES           302      1      1
+ CASTEST MODIF szlz107a                      f1bhhaj J.ANGLES           147      1      1
+ CASTEST MODIF szlz108a                      f1bhhaj J.ANGLES           298      1      1
+ CASTEST MODIF szlz109a                      f1bhhaj J.ANGLES           178      1      1
+ CASTEST MODIF szlz111a                      f1bhhaj J.ANGLES           202      1      1
+ CASTEST MODIF szlz111b                      f1bhhaj J.ANGLES           202      1      1
+ CASTEST MODIF zzzz183a                      f1bhhaj J.ANGLES           227      1      1
+CATALOPY MODIF commande/crea_champ            durand C.DURAND           150      6      2
+CATALOPY MODIF commande/impr_gene            nicolas O.NICOLAS           59      1      3
+ FORTRAN MODIF algeline/op0031               nicolas O.NICOLAS          216     16     20
+ FORTRAN MODIF algorith/dylema               nicolas O.NICOLAS          300     20      2
+ FORTRAN MODIF algorith/dyobs1               rezette C.REZETTE          259     67      5
+ FORTRAN MODIF algorith/gfcomm               cibhhlv L.VIVAN            442     24     15
+ FORTRAN MODIF algorith/harm75               nicolas O.NICOLAS          251     23     20
+ FORTRAN MODIF algorith/nmdomc               nicolas O.NICOLAS          261      5      4
+ FORTRAN MODIF algorith/nmdome               nicolas O.NICOLAS          845      5      4
+ FORTRAN MODIF algorith/op0072               nicolas O.NICOLAS          257     17      9
+ FORTRAN MODIF algorith/pj5dco               nicolas O.NICOLAS          240     22     36
+ FORTRAN MODIF algorith/ritz99               nicolas O.NICOLAS          260     85     44
+ FORTRAN MODIF elements/pmfitg               mjbhhpe J.L.FLEJOU          70      1      5
+ FORTRAN MODIF modelisa/op0019               mjbhhpe J.L.FLEJOU         534     18      2
+ FORTRAN MODIF prepost/avpic2                f1bhhaj J.ANGLES           167     12     10
+ FORTRAN MODIF prepost/fgpic2                f1bhhaj J.ANGLES            98     32     24
+ FORTRAN MODIF prepost/irgene                nicolas O.NICOLAS          163      2      2
+ FORTRAN MODIF prepost/irvgen                nicolas O.NICOLAS          247     33      4
+ FORTRAN MODIF prepost/op0157                nicolas O.NICOLAS          193      1      1
+ FORTRAN MODIF prepost/paqmai                f1bhhaj J.ANGLES           450     14      9
+ FORTRAN MODIF prepost/paqnoe                f1bhhaj J.ANGLES           365     25     12
+ FORTRAN MODIF stbtrias/presup               nicolas O.NICOLAS          195      2      2
+ FORTRAN MODIF stbtrias/slegro               nicolas O.NICOLAS          352      4      4
+ FORTRAN MODIF utilitai/exisd                nicolas O.NICOLAS          223     19      2
+  PYTHON MODIF Utilitai/Table               mcourtoi M.COURTOIS         710     23     20
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   42       13338       519     303      +216
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   42       13338       519     303      +216 

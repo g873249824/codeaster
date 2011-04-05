@@ -1,0 +1,332 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 02/06/2009 - 10:25:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 008268 DU 2004-11-22 00:00:00
+TYPE evolution concernant Code_Aster (VERSION 6.x)
+TITRE
+   routine FOINTE potentiellement dangereuse
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans la routine fointe.f, pour des raisons de performance, on sauvegarde d'un appel à
+   l'autre des informations concernant la fonction évaluée : adresses d'objets jeveux, nombre
+   de paramètres, ...
+   Remarque : cette "astuce" est assez efficace comme le montre la fiche 13094.
+                                                                                            
+                                                                         
+   Concernant la sauvegade des adresses jeveux d'un appel à l'autre, on est protégé de tout
+   mouvement mémoire car on force ces objets à rester au meme endroit en mémoire grace à
+   l'utilisation de la routine JEVEUT.
+                                                                                            
+                                                                         
+   Mais cette stratégie est dangereuse en cas de cycles destruction / re-création :
+                                                                                            
+                                                                         
+   Si on détruit une fonction et qu'on la re-crée (avec un autre contenu) sous le meme nom,
+   elle sera réallouée à une adresse mémoire qui n'a aucune raison d'etre l'adresse précédente.
+   L'évaluation de cette fonction avec fointe sera alors fausse.
+                                                                                            
+                                                                         
+                                                                                            
+                                                                         
+   Analyse:
+   ---------
+   J'ai fait un petit essai simulant la destruction / re-création d'une fonction dans une boucle.
+                                                                                            
+                                                                         
+   En mode "mémoire dynamique" (défaut) :
+       Le calcul va jusqu'au bout (sans erreur) et les résultats sont faux.
+   En mode "mémoire statique" :
+       Le calcul s'arrete en erreur numérique dans la routine fointe.f (utilisation d'un
+   nombre NaN).
+                                                                                            
+                                                                         
+                                                                                            
+                                                                         
+   Evolution proposée:
+   -------------------
+   Jean-Pierre a déjà modifié JEVEUX à ma demande pour mettre à "Undef" le segment mémoire
+   d'un objet lorsqu'on le détruit. Mais en réalité, il ne l'a fait que pour JEVEUX "statique".
+   Je propose donc de faire la meme chose en mémoire "dynamique" (routine jjlidy.f
+   aimablement modifiée par Jean-Pierre).
+                                                                                            
+                                                                         
+   Remarque : je pense que l'on peut effectivement se "payer" systématiquement une mise à
+   Undef de la mémoire lorsqu'on détruit un objet JEVEUX. C'est, a priori,  une opération pas
+   plus couteuse que celle qui consiste à initialiser l'objet à "0" lorsqu'on le crée.
+                                                                                            
+                                                                         
+                                                                                            
+                                                                         
+   Conclusion:
+   -----------
+   Après correction, un cycle destruction / re-création d'une fonction provoque toujours une
+   erreur numérique à l'exécution.
+   Ce qui est très bien comme ça !
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  8268
+     jjlidy.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR brie         BRIE Nicolas           DATE 02/06/2009 - 10:25:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013377 DU 2009-05-05 14:51:30
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   Choc discret dans DTM : amortissement tangentiel mal calculxc3xa9
+FONCTIONNALITE
+   1) Analyse du probleme
+   - Dans le mot-cle facteur CHOC de DTM, si on renseigne RIGI_TAN et pas AMOR_TAN, le code
+   calcule automatiquement une valeur optimisee pour AMOR_TAN. Mais la formule utilisee pour
+   calculer une raideur intermediaire était fausse.
+   - Si l'utilisateur renseigne AMOR_TAN avec la valeur 0, tout se passe comme si le mot-cle
+   n'était pas renseigne.
+   
+   ----------------------
+   2) Impact sur les sources
+   - Dans le catalogue de commande dyna_tran_modal.capy, on supprime la valeur par défaut 0.
+   - Dans la routine mdchst.f :
+          * on corrige la formule de calcul de la raideur.
+          * on calcule un amortissement tangentiel optimise seulement si le mot-cle AMOR_TAN
+   est absent du fichier de commande. Si c'est le cas, on affiche un message d'information
+   (contenu dans algorith16.py) qui donne la valeur calculee par le code.
+   
+   ----------------------
+   3) Pas d'impact documentaire, car la doc correspondait a ce qui est decrit ci-dessus.
+   
+   ----------------------
+   4) Validation
+   Ensemble des cas-tests DTM utilisant RIGI_TAN.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.4.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas-tests DTM utilisant RIGI_TAN
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 02/06/2009 - 10:25:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013375 DU 2009-05-05 12:41:02
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Nettoyage du code source de GLRC_DAMAGE
+FONCTIONNALITE
+   La loi de comportement GLRC_DAMAGE initialement implémentée dans EPX (F95) a été dupliquée
+   dans Code_Aster.
+   Le passage du code F95 à F77 a entraîné une quantité impressionnante de donnée surabondante :
+   _variables déclarées non utilisées
+   _arguments de fonctions inutiles
+   _...
+   
+   Le but de cette fiche est de remettre à plat les 48 routines Aster qui constituent GLRC_DAMAGE
+   
+   A l'issu du nettoyage :
+   _Suppressions de l'ensemble des variables déclarées mais non utilisées (370/370)
+   _Suppressions de l'ensemble des arguments de routines inutiles (32/32)
+   _Suppressions de boucle Do i = 1, 100000000 (6/9)
+   _Commentaires des sources
+   
+   Sources impactées :
+   
+   te0409.f, dxglrc.f, maglrc.f, glrcmm.f, glrcdd.f, glrcad.f, mppffn.f, d0mpfn.f, ddmpfn.f,
+   tanmat.f, critnu.f, dndiss.f, brbagl.f, dxktan.f, cdnfon.f, d2diag.f, damage.f, matmul.f,
+   fplass.f, gplass.f, nmnet1.f, nmnet2.f, restzo.f, d1cro2.f, d1crit.f, d2crit.f, d2cro2.f,
+   distfo.f, hplass.f, dfuuss.f, dfplgl.f, draac2.f, dracsy.f, dclass.f, draacn.f, dclhoa.f,
+   dclsma.f, nwtpol.f, di2epx.f, dpolyh.f, dpolyn.f, xifonc.f, norrm3.f, norrm6.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Cas test GLRC_DAMAGE
+NB_JOURS_TRAV  : 10.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR andriam      ANDRIAMBOLOLONA Hari   DATE 02/06/2009 - 10:25:08
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013374 DU 2009-05-05 08:58:37
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Qualification des mots-clxc3xa9s dans le catalogue de CALC_ESSAI
+FONCTIONNALITE
+   En rédigeant la doc de CALC_ESSAI, on s'est rendus compte que certains mots-clés
+   obligatoires dans la doc ne l'étaient pas dans le capy, alors qu'ils devraient l'être.
+   
+   C'est le cas des mots-clés facteurs GOURP_NO_CAPTEURS  et GROUP_NO_EXTERIEUR lorsqu'on
+   veut effectuer une modification structurale en non-interactif.
+   
+   A l'inverse, il est souhaitable de modifier le catalogue sur le mot-clé RESOLUTION (mcf
+   MODIFSTRUCT) de manière à ce qu'il soit facultatif et fixé par défaut à 'ES'.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.90.01
+VALIDATION
+   les cas tests qui font appel xc3xa0 CALC_ESSAI
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013383 DU 2009-05-06 11:20:17
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   Cas-test sdls139a et sdlv125a cassxc3xa9s avec python 2.5 (CALC_ESSAI)
+FONCTIONNALITE
+   Dans le cadre de la fiche 13374 (catalogue de CALC_ESSAI), on s'est rendus compte que les
+   cas-tests du titre ne passaient pas sur nos machines locales, qui tournent avec python 2.5.
+   
+   La partie incriminée est un bout de python lorsqu'on initialise les matrices pour
+   l'identification d'effort. On avait : 
+   
+   inv_S = complex(1,0)*S[:], S étant un numerical array
+   la matrice inv_S est de la bonne taille, c'est à dire la même que S.
+   
+   Mais avec python 2.5, inv_S devient une matrice de taille 0 (zeros((O,),'D').
+   Pour corriger, on remplace cette ligne par :
+   
+   inv_S = zeros(S.shape,'D')
+   
+   Et cela marche sur la bull comme en local sur nos machines.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   les cas tests qui font appel xc3xa0 CALC_ESSAI
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 02/06/2009 - 10:25:08
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013294 DU 2009-04-08 07:54:33
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   IMPR_RESU dans fichier message
+FONCTIONNALITE
+   Problème :
+   ----------
+   "Je voudrais imprimer mon champ dans le fichier message et la commande suivante ne semble pas
+   fonctionner :
+   
+   IMPR_RESU(FORMAT='ASTER',UNITE=6,RESu=_F(CHAM_GD=xxx))"
+   
+   
+   Analyse :
+   ---------
+   "J'ai compris mon erreur grâce à Nicolas Sellenet : il faut FORMAT='RESULTAT' et non
+   FORMAT='ASTER', qui n'imprime que le maillage. Or ici précisément, je ne donnais que le
+   CHAM_GD, sans maillage. Résultat, je n'ai rien.
+   
+   Il faudrait peut être une petite alarme si FORMAT=ASTER mais pas de maillage. Cas pour
+   lequel IMPR_RESU ne ferait donc rien."
+   
+   
+   Solution :
+   ----------
+   Je rajoute un message qui prévient l'utilisateur que IMPR_RESU au format ASTER sans
+   MAILLAGE ne fait rien.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   unitaire
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+CATALOPY MODIF commande/calc_essai           macocco K.MACOCCO          157      8      8
+CATALOPY MODIF commande/dyna_tran_modal      macocco K.MACOCCO          248      2      2
+ FORTRAN MODIF algorith/mdchst               macocco K.MACOCCO          374      7      6
+ FORTRAN MODIF elements/brbagl               macocco K.MACOCCO          165     70     37
+ FORTRAN MODIF elements/cdnfon               macocco K.MACOCCO           58     19      5
+ FORTRAN MODIF elements/critnu               macocco K.MACOCCO           77     25     21
+ FORTRAN MODIF elements/d0mpfn               macocco K.MACOCCO           65     17     16
+ FORTRAN MODIF elements/d1crit               macocco K.MACOCCO           89     43     39
+ FORTRAN MODIF elements/d1cro2               macocco K.MACOCCO          130     54     46
+ FORTRAN MODIF elements/d2crit               macocco K.MACOCCO          130     51     50
+ FORTRAN MODIF elements/d2cro2               macocco K.MACOCCO          218     60     60
+ FORTRAN MODIF elements/d2diag               macocco K.MACOCCO           63     17     12
+ FORTRAN MODIF elements/damage               macocco K.MACOCCO           79     24      6
+ FORTRAN MODIF elements/dclass               macocco K.MACOCCO           48     16      9
+ FORTRAN MODIF elements/dclhoa               macocco K.MACOCCO          128     67     45
+ FORTRAN MODIF elements/dclsma               macocco K.MACOCCO           51     11      6
+ FORTRAN MODIF elements/ddmpfn               macocco K.MACOCCO           89     23     18
+ FORTRAN MODIF elements/dfplgl               macocco K.MACOCCO           46     15     14
+ FORTRAN MODIF elements/dfuuss               macocco K.MACOCCO           62     26     22
+ FORTRAN MODIF elements/di2epx               macocco K.MACOCCO           58     21      8
+ FORTRAN MODIF elements/distfo               macocco K.MACOCCO          103     30     15
+ FORTRAN MODIF elements/dndiss               macocco K.MACOCCO          358    128    104
+ FORTRAN MODIF elements/dpolyh               macocco K.MACOCCO           49     18     11
+ FORTRAN MODIF elements/dpolyn               macocco K.MACOCCO           48     21      8
+ FORTRAN MODIF elements/draac2               macocco K.MACOCCO           91     29      9
+ FORTRAN MODIF elements/draacn               macocco K.MACOCCO          169     73     58
+ FORTRAN MODIF elements/dracsy               macocco K.MACOCCO          186     47     20
+ FORTRAN MODIF elements/dxglrc               macocco K.MACOCCO          435     77     91
+ FORTRAN MODIF elements/dxktan               macocco K.MACOCCO          133     22     22
+ FORTRAN MODIF elements/fplass               macocco K.MACOCCO           41     13     13
+ FORTRAN MODIF elements/glrcad               macocco K.MACOCCO          338    106     65
+ FORTRAN MODIF elements/glrcdd               macocco K.MACOCCO          232     88     44
+ FORTRAN MODIF elements/glrcmm               macocco K.MACOCCO          119     32     44
+ FORTRAN MODIF elements/gplass               macocco K.MACOCCO           50     13     13
+ FORTRAN MODIF elements/hplass               macocco K.MACOCCO           55     27     24
+ FORTRAN MODIF elements/maglrc               macocco K.MACOCCO          182     16     49
+ FORTRAN MODIF elements/matmul               macocco K.MACOCCO           50     16      3
+ FORTRAN MODIF elements/mppffn               macocco K.MACOCCO           62     26     45
+ FORTRAN MODIF elements/nmnet1               macocco K.MACOCCO           72     32     27
+ FORTRAN MODIF elements/nmnet2               macocco K.MACOCCO           81     39     31
+ FORTRAN MODIF elements/norrm3               macocco K.MACOCCO           35      8      1
+ FORTRAN MODIF elements/norrm6               macocco K.MACOCCO           35      7      1
+ FORTRAN MODIF elements/nwtpol               macocco K.MACOCCO           66     36     25
+ FORTRAN MODIF elements/restzo               macocco K.MACOCCO           63     21     46
+ FORTRAN MODIF elements/tanmat               macocco K.MACOCCO          198     47     27
+ FORTRAN MODIF elements/xifonc               macocco K.MACOCCO           47     14      4
+ FORTRAN MODIF jeveux/jjlidy                 macocco K.MACOCCO           67      8      2
+ FORTRAN MODIF prepost/op0039                macocco K.MACOCCO          970      4      1
+  PYTHON MODIF Meidee/meidee_calcul_turbulent    macocco K.MACOCCO          447      3      3
+  PYTHON MODIF Messages/algorith16           macocco K.MACOCCO          496      7      1
+  PYTHON MODIF Messages/prepost3             macocco K.MACOCCO          222      6      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   51        7835      1590    1238      +352
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   51        7835      1590    1238      +352 

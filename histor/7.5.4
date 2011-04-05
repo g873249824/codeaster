@@ -1,0 +1,947 @@
+
+
+-----------------------------------------------------------------------
+--- AUTEUR adbhhvv V.CANO   DATE  le 24/10/2005 a 11:04:44
+
+--------------------------------------------------------------------------------
+CORRECTION AL 2005-401
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE CALC_META CATALOGUE NON CONFORME A LA DOC ASTER
+   FONCTIONNALITE
+    Pour introduire l'état métallurgique initial, on utilise sous ETAT_INIT
+    soit l'option EVOL_THER en précisant NUME_INIT ou INST_INIT
+    soit l'option META_INIT_ELNO
+    Le catalogue python n'est pas clair à ce niveau.
+  DETAIL
+    Changement du catalogue calc_meta.capy
+      AVANT
+         ETAT_INIT       =FACT(statut='o',
+           regles=(UN_PARMI('NUME_INIT', 'INST_INIT', 'META_INIT',),),
+           EVOL_THER       =SIMP(statut='f',typ=evol_ther ),
+           NUME_INIT       =SIMP(statut='f',typ='I' ),
+           INST_INIT       =SIMP(statut='f',typ='R'),
+             b_inst     =BLOC(condition="(INST_INIT != None)",
+               PRECISION   =SIMP(statut='f',typ='R',defaut=1.0E-3),
+               CRITERE     =SIMP(statut='f',typ='TXM',defaut="RELATIF",into=("RELATIF","ABSOLU")),
+                             ),
+           META_INIT       =SIMP(statut='f',typ=carte_var2_r ),),
+
+      MAINTENANT
+         ETAT_INIT       =FACT(statut='o',
+            regles=(UN_PARMI('EVOL_THER', 'META_INIT'),),
+            EVOL_THER       =SIMP(statut='f',typ=evol_ther ),
+            META_INIT       =SIMP(statut='f',typ=carte_var2_r ),
+            b_etat     =BLOC(condition="EVOL_THER != None",
+               regles=(UN_PARMI('NUME_INIT', 'INST_INIT',),),
+               NUME_INIT       =SIMP(statut='f',typ='I'),
+               INST_INIT       =SIMP(statut='f',typ='R'),
+               b_inst     =BLOC(condition="INST_INIT != None",
+                  PRECISION   =SIMP(statut='f',typ='R',defaut=1.0E-3),
+                  CRITERE     =SIMP(statut='f',typ='TXM',defaut="RELATIF",into=("RELATIF","ABSOLU"))
+               ),),),
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+-----------------------------------------------------------------------
+--- AUTEUR assire A.ASSIRE   DATE  le 09/11/2005 a 10:41:10
+
+------------------------------------------------------------------------------
+REALISATION EO 2005-106
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE  Acces a VALE_CONT depuis STANLEY
+   FONCTIONNALITE
+     Le champ VALE_CONT (informations de contact) est disponible dans Stanley.
+   DETAILS
+     On ajoute l'option VALE_CONT dans cata_champs.py.
+     Fichier modifié: cata_champs.py
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+   test perso
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 2.
+   INTERET_UTILISATEUR : OUI
+   FONCTIONNALITE  Amelioration diverses dans STANLEY
+   DETAILS
+   - Ajout d'un mot-clé facultatif DISPLAY dans la commande STANLEY. Sous
+     certaines configurations, la variable DISPLAY n'etait pas definie et donc
+     les utilisateurs n'arrivaient meme pas a lancer une fois Stanley pour
+     creer leur configuration personalisé (dans laquelle figure le display...)
+   - Suppression du message warning callit etc...
+   - Correction : la commande xmgrace etait systematiquement prise dans
+     aster.repout meme si la variable correspondante etait redefinie.
+   - Amelioration pour le mode WINDOWS de Stanley : on peut maintenant mettre
+     un sous-repertoire du repertoire de partage : dans la configuration
+     WINDOWS, pour la variable 'machine_gmsh_tmp', il faut ajouter le
+     sous-repertoire avec un \ : par exemple "PARTAGE\toto" signifie que le
+     nom de partage Windows est PARTAGE et que dedans on utilise un
+     sous-repertoire toto.
+     Dorenavent, on peut utiliser cette configuration Windows avec des
+     serveurs Samba (sous Unix ou Linux) ou des serveurs Microsoft (pour
+     lesquels le nom de partage abouti dans un repertoire dont l'utilisateur
+     n'a pas les droits d'ecriture).
+     - Exemple 1 : machine Portalis (pour EDF) avec un accès samba à une
+       machine Unix, cad une lettre de lecteur montée automatiquement vers un
+       compte Unix. Exemple pour EDF / AMA, utilisateur 'assire':
+       . serveur samba Unix : clayrd02.der.edf.fr
+       . login Unix : assire
+       . sous Samba, le nom de partage est le nom d'utilisateur
+       --> Dans Stanley, mettre :
+           mode = WINDOWS
+           machine_gmsh       = clayrd02.der.edf.fr
+           machine_gmsh_login = assire
+           machine_gmsh_pass  = mot_de_passe
+           machine_gmsh_tmp   = assire\tmp
+       Ne pas oublier de creer le repertoire /home/assire/tmp !
+     - Exemple 2 : machine sous serveur Microsoft. Exemple pour EDF / AMA :
+       . serveur Microsoft : clas0003.cla.edfgdf.fr
+       . login Microsoft : assire-aim
+       . le nom de partage est dans ce cas : USERS
+       . il faut definir un sous-repertoire car le home de l'utilisateur n'est
+         pas directement le repertoire partagé, c'est :
+         clas0003.cla.edfgdf.fr\USERS\assire-aim
+       Note : il faut se baser sur la configuration sous Windows pour
+       "deviner" la configuration samba a utiliser...
+       --> Dans Stanley, mettre :
+           mode = WINDOWS
+           machine_gmsh       = clas0003.cla.edfgdf.fr
+           machine_gmsh_login = assire-aim
+           machine_gmsh_pass  = mot_de_passe
+           machine_gmsh_tmp   = USERS\ASSIRE-AIM\tmp
+       Ne pas oublier de creer le repertoire tmp dans son repertoire partagé !
+     Note : afin de determiner les configurations qui fonctionnent, il peut
+     etre utile de simuler à la main l'operation avec la commande smbclient
+     depuis le serveur Aster :
+     smbclient //serveur/nom_de_partage password -U user
+     Tant que cette commande ne fonctionne pas, Stanley ne pourra pas
+     fonctionner!
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.81.31
+       EXPL_ : Modif doc de Stanley
+   VALIDATION
+     test perso
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-396
+   NB_JOURS_TRAV : 0.2
+   POUR_LE_COMPTE_DE : JP
+   INTERET_UTILISATEUR : NON
+   TITRE :  "CREA_CHAMP/AFFE/VARI_R se plante en écrasement aval"
+   FONCTIONNALITE
+     Il s'agit d'une erreur d'utilisation. Pour créer un champ de variables internes
+     par affectation sur les mailles, il ne faut pas utiliser le mot clé AFFE avec
+     la grandeur VARI_R  (car celle-ci n'a qu'une seule composante).
+     Je modifie le code (routine CARAFF) pour ne plus s'arrêter dans un écrasement mais
+     par un message plus "user friend" :
+     <F> ON NE PEUT PAS CREER UN CHAMP DE VARI_R AVEC LE MOT CLE FACTEUR AFFE (VOIR U2.01.09)
+   DETAILS
+     Liste des fichiers modifiés:
+       caraff.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+-----------------------------------------------------------------------
+--- AUTEUR boyere E.BOYERE   DATE  le 07/11/2005 a 17:25:39
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-355
+   NB_JOURS_TRAV  : 1.5
+   INTERET_UTILISATEUR : NON
+   TITRE VARIABLE NON INITIALISEE DANS DYNA_TRAN_EXPLI
+   FONCTIONNALITE
+     DYNA_TRAN_EXPLI plantait sur ROCKS de facon mysterieuse.
+     Comme on pouvait s'en douter, c'etait du a une variable non initialisee.
+     Puisqu'elle n'est pas exploitee actuellement pour DYNA_TRAN_EXPLI, cela ne
+     posait pas de probleme sauf pour un compilo plus conscencieux.
+   DETAILS
+     La variable IALGO enregistre le type de methode d'integration temporelle
+     utilisee et est exploitee, il me semble, par le contact continu.
+     Elle n'etait pas initialisee pour l'integration explicite dans NDLECT,
+     la routine de lecture des operandes de dynamique.
+     J'ai affectee le numero 6 a DYNA_TRAN_EXPLI.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage des cas tests qui posaient problemes
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-383
+   NB_JOURS_TRAV  : 1.5
+   INTERET_UTILISATEUR : NON
+   TITRE VARIABLES NON INITIALISEES DANS RECU_FONCTION(RESU_GENE)
+   FONCTIONNALITE
+     Sur ROCKS avec compilateur INTEL, RECU_FONCTION avec un RESU_GENE plantait
+     sur certaines syntaxes.
+     C'etait du a un oubli d'initialisation de deux variables locales.
+   DETAILS
+     Dans RFRGEN on utilise les variables MONMOT(1) et MONMOT(2)
+     pour savoir si la restitution du calcul transitoire sur base modale
+     vers l'espace physique est en multi_appui et/ou avec correction statique.
+     Ils n'etaient pas initialises ce qui pouvait poser probleme sur
+     des RECU_GENE successifs. Seul le compilo INTEL a exhume le probleme
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage des cas tests qui posaient problemes
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhlv L.VIVAN   DATE  le 08/11/2005 a 14:21:21
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-134
+   NB_JOURS_TRAV  : 2
+   POUR_LE_COMPTE_DE   : X.DESROCHES
+   INTERET_UTILISATEUR : NON
+   TITRE :  objet .DESR des éléments de COQUE
+   FONCTIONNALITE
+     - Pour les éléments de la famille DKT (JNI079), l'objet .DESR est créé
+       sur la base globale, ce qui est anormal.
+     - Pour les éléments de la famille COQUE_3D, des valeurs stockées dans
+       l'objet .DESR sont transmises d'une option à une autre.
+   DETAIL
+     - en v7 :
+       * pour les éléments de la famille DKT, l'objet .DESR est créé
+         sur la base volatile.
+       * pour les éléments de la famille COQUE_3D, voir fiche AL2004-440
+     - en v8 :
+       * pour les éléments de la famille DKT, l'objet .DESR est supprimé
+         voir fiche EL 2005-260
+       * pour les éléments de la famille COQUE_3D, voir fiche AL2004-440
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+--------------------------------------------------------------------------
+CORRECTION AL 2004-440
+   NB_JOURS_TRAV  : 3
+   POUR_LE_COMPTE_DE   : X.DESROCHES
+   INTERET_UTILISATEUR : NON
+   TITRE :  ssls129b en mode debugjeveux
+   FONCTIONNALITE
+     En mode debugjeveux, ce test ne converge pas.
+     Sans mode debugjeveux, ce test converge en 3 itérations.
+   DETAIL
+     correction liée à la fiche AL 2005-134
+     On écrit un coefficient dans le .DESR lors du calcul de l'option RIGI_MECA_TANG
+     On lit ce coefficient pour le calcul de l'option RAPH_MECA
+     En mode debugjeveux, ce coefficient est égal à 0.
+     Sans mode debugjeveux, ce coefficient est égal à la valeur calculée
+     pour la dernière maille quelle que soit la maille. Ceci provoque une
+     convergence en 3 itérations car ce coefficient dépend de la topologie
+     de la maille.
+   SOLUTION:
+     - dans le catalogue d'élément GENER_MECQ32 on ajoute un mode local
+       CCACO3D  = CACO3D   ELEM__         (CRF      )
+       CRF : Coefficient de Rotation Fictive
+     - dans les catalogues d'options FULL_MECA, RAPH_MECA, RIGI_MECA_TANG
+       et RIGI_MECA on ajoute ce champ afin qu'il soit transmis à CALCUL
+     - dans merimo, on crée un champ local afin de stocker ce coefficient.
+     - dans vdxnlr, si l'option est egale à RAPH_MECA, on lit le coefficient
+       dans le champ, sinon pour les autres options on ecrit ce coefficient
+       dans le champ.
+
+     Suite à ces corrections, le cas test passe en 1 itération
+
+     On a supprimé les instructions suivantes
+     dans caurtg, forngr, pk2cau, vdgnlr, vdpnlr :
+       IF (ZR(LZR+1550-1).LE.SQRT(R8PREM())) THEN
+          ZR(LZR+1550-1) = UN
+       ENDIF
+
+     Dans jni080, on initilise
+       ZR(LZR+1550-1) = R8NNEM()
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage des 90 tests validant COQUE_3D
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-380
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : J.PELLET
+   INTERET_UTILISATEUR : NON
+   TITRE :  bug dans sinoz2 (indicateurs d'erreur)
+   FONCTIONNALITE
+     La routine sinoz2 utilise les services de la routine ELREF6 pour
+     accéder aux fonctions de forme des éléments finis. Mais elle le fait
+     en dehors de la routine CALCUL. Malheureusement, la routine ELREF6
+     ne peut être appellée que "sous CALCUL" car ELREF6 utilise des variables
+     en COMMON initialisées par CALCUL.
+
+   DETAIL
+     1) Les tests sslv111b/d ont été passés en mode "debug_jeveux".
+        Ils terminent OK.
+     2) ELREF6 a été blindé pour que l'on ne puisse l'appeler que "sous CALCUL".
+        Ajout CALL ASSERT(IACTIF.EQ.1)
+     3) Modification de SINOZ2 pour qu'elle utilise ELRFVF au lieu de ELREF6.
+        Nouvel utilitaire:
+      SUBROUTINE UTELVF ( ELREFA, FAMIL, NOMJV, NPG, NNO )
+C ----------------------------------------------------------------------
+C BUT: RECUPERER LES VALEURS DES FONCTIONS DE FORME
+C ----------------------------------------------------------------------
+C   IN   ELREFA : NOM DE L'ELREFA (K8)
+C        FAMIL  : NOM DE LA FAMILLE DE POINTS DE GAUSS :
+C                 'FPG1','FPG3',...
+C   VAR  NOMJV  : NOM JEVEUX POUR STOCKER LES FONCTIONS DE FORME
+C   OUT  NPG    : NOMBRE DE POINTS DE GAUSS
+C        NNO    : NOMBRE DE NOEUDS DU TYPE_MAILLE
+C ----------------------------------------------------------------------
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_D : D6.00.01
+       EXPL_ : ajout de la routine UTELVF
+   VALIDATION
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-321
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : N.TARDIEU
+   INTERET_UTILISATEUR : OUI
+   TITRE :  AFFE_CHAR_MECA et ORIEMA
+   FONCTIONNALITE
+     L'utilisateur, avec crea_maillage, a dupliqué des mailles et affecté
+     dessus d'autres éléments finis, qui partagent tous leurs noeuds avec
+     les mailles d'origine. L'utilisateur ne veut charger que l'un des deux
+     éléments finis superposés.
+     En affectant le PRES_REP sur la maille de bord MA17 (group_MA=' FACE_SUP'),
+     le code émet un message Fatal :
+     <F> <AFFE_CHAR_MECA> <ORIEMA> LA MAILLE DE PEAU MA17 S'APPUIE SUR PLUS
+         D'UNE MAILLE VOLUMIQUE
+         MAILLE VOLUMIQUE 1 :  >MA16    <
+         MAILLE VOLUMIQUE 2 :  >M9MA16  <
+   DETAIL
+     On assouplit le traitement :
+     Si la maille de peau s'appuie sur plusieurs mailles de volume, le code
+     verifie que les noeuds des mailles de volume ont les memes coordonnées.
+     (récupération de AR_MIN dans le maillage, test en relatif)
+     Si c'est le cas, le code émet un message d'Alarme,
+     Sinon le code s'arrete en Fatal.
+     Pour l'étude jointe, le code émet maintenant un message d'Alarme:
+     <A> <AFFE_CHAR_MECA> <ORIEMA> LA MAILLE DE PEAU MA17 S'APPUIE SUR PLUS
+         D'UNE MAILLE VOLUMIQUE
+         MAILLE VOLUMIQUE 1 :  >MA16    <
+         MAILLE VOLUMIQUE 2 :  >M9MA16  <
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage de l'étude associée
+
+
+-----------------------------------------------------------------------
+--- AUTEUR d6bhhjp J.P.LEFEBVRE   DATE  le 27/10/2005 a 08:48:04
+
+-------------------------------------------------------------------------------
+CORRECTION AL 2005-345
+   NB_JOURS_TRAV  : 2.5
+   INTERET_UTILISATEUR : NON
+   TITRE  Temps système dans CALC_ELEM
+   FONCTIONNALITE limiter les appels à JERECU
+   DETAILS
+   Depuis l'introduction de l'appel à la routine JERECU dans
+   chaque commande pour récupérer les petits enregistrements sur la
+   base volatile, de nombreux cas tests ont vu leur temps système s'accroitre.
+   La correction porte sur deux points :
+     - la modification de l'objet système JEVEUX $$USADI pour introduire
+       un compteur du nombre d'objet détruit par enregistrement et ainsi
+       il ne devient plus nécessaire de relire un enregistrement pour
+       savoir si on peut récupérer de l'espace libre.
+     - de compter le nombre d'objets détruits et de ne déclencher effectivement
+       le processus de récupération qu'au-delà d'un certain seuil.
+       Le seuil est pour le moment fixé en dur à 500 et n'est pas accessible
+       par le fichier de commande. Evolution à mettre en oeuvre si le besoin
+       s'en fait sentir, en passant un paramètre dans DEBUT/POURSUITE
+   La mise en oeuvre de ces corrrections permet de diminuer sensiblement le temps système
+   sur clayastr :
+   avant (version 8.1.14)
+   ======================
+   forma12c * CALC_ELEM  44.27 :  7.48 :  51.75 *
+   forma12c * CALC_ELEM  81.68 :  9.90 :  91.58 *
+   ssnp303c * CALC_ELEM   8.92 :  8.15 :  17.07 *
+   ssnp303c * CALC_ELEM   4.55 :  2.18 :   6.73 *
+    rccm06a * CALC_ELEM   9.43 :  1.68 :  11.12 *
+    rccm06a * CALC_ELEM  20.03 :  7.92 :  27.95 *
+   ssnv160c * CALC_ELEM   4.03 :  7.83 :  11.87 *
+   ssnv183a * CALC_ELEM  12.23 : 24.63 :  36.87 *
+   ssnv183a * CALC_ELEM  15.45 : 37.52 :  52.97 *
+   ssnp312b * CALC_ELEM  14.85 : 11.22 :  26.07 *
+
+   après (version 8.1.19 surchargée)
+   ======================
+   forma12c * CALC_ELEM   0.20 :  0.00 :   0.20 *
+   forma12c * CALC_ELEM  35.75 :  0.52 :  36.27 *
+   forma12c * CALC_ELEM  36.45 :  1.28 :  37.73 *
+   forma12c * CALC_ELEM  42.95 :  2.78 :  45.73 *
+   ssnp303c * CALC_ELEM   6.22 :  0.10 :   6.32 *
+   ssnp303c * CALC_ELEM   3.77 :  0.02 :   3.78 *
+    rccm06a * CALC_ELEM   9.43 :  0.23 :   9.67 *
+    rccm06a * CALC_ELEM   9.17 :  0.20 :   9.37 *
+    rccm06a * CALC_ELEM   9.37 :  0.63 :  10.00 *
+    rccm06a * CALC_ELEM  19.85 :  2.37 :  22.22 *
+   ssnv160c * CALC_ELEM   3.75 :  0.03 :   3.78 *
+   ssnv183a * CALC_ELEM   9.82 :  0.10 :   9.92 *
+   ssnv183a * CALC_ELEM  10.47 :  0.28 :  10.75 *
+   ssnp312b * CALC_ELEM  13.42 :  1.23 :  14.65 *
+
+   Le .para du test mtlp100a est modifié et passe à 32 Mo
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   VALIDATION : ssnv183a
+   IMPACT_DOCUMENTAIRE : NON
+
+
+-----------------------------------------------------------------------
+--- AUTEUR durand C.DURAND   DATE  le 08/11/2005 a 09:38:52
+
+------------------------------------------------------------------------
+CORRECTION AL 2005-335
+   NB_JOURS_TRAV  : 0.
+   INTERET_UTILISATEUR : NON
+   TITRE mémoire cas tests
+   FONCTIONNALITE  ssnp123a
+   DETAILS
+     ajustement de la mémoire pour ssnp123a : de 16Mo à 32Mo
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   NON
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION cas tests
+
+------------------------------------------------------------------------
+CORRECTION AL 2005-399
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE :  floating point exception
+   FONCTIONNALITE  :  defi_materiau / elas_fo
+   DETAILS
+     Le pb vient de la discrétisation de la fonction du coef de dilatation :
+      ALPHA=DEFI_FONCTION (NOM_PARA='TEMP',
+                           VALE=(0.0, 1.00E-5,
+                                 0.01, 1.00E-5),
+                           PROL_GAUCHE='CONSTANT',
+                           PROL_DROITE='CONSTANT',);
+     Ca pose probleme ensuite dans alfint.f
+     En effet, la température de référence vaut (par défaut) zéro et,
+     en balayant les abscisses de ALPHA, si abs(Ti-Tref)<PRECISION,
+     on prend la dérivée en Ti-1.
+     Le hic, c'est que par défaut Tref=0. et PRECISION=1. (cf catalogue de
+     defi_materiau/elas_fo). Donc dans ce cas, les 2 abscisses satisfont
+     le critère et pour 0.01, Ti-1 sera 0.
+     La solution consiste à serrer le PRECISION à une valeur inférieure à 0.01
+     Je blinde la programmation en testant l'égalité stricte de Ti-Tref
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   VALIDATION : étude jointe
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.43.01
+       EXPL_ :  mot clé PRECISION sous ELAS_FO, dire que ça ne sert pas
+                que pour le cas TEMP_DEF_ALPHA mais aussi à discriminer comme
+		ici la température de référence parmi les abscisses de ALPHA
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mcourtoi M.COURTOIS   DATE  le 25/10/2005 a 08:50:04
+
+-------------------------------------------------------------------------------
+CORRECTION AL 2005-397
+   NB_JOURS_TRAV  : 1
+   INTERET_UTILISATEUR : NON
+   TITRE :  Risque d'encombrement de la mémoire
+   FONCTIONNALITE
+      En cas garde inutilement des objets en mémoire dans plusieurs cas :
+      1. En cas de levée d'exception car on arrête la commande en cours
+         sans être passer par les JEDEMA prévus dans la programmation.
+      => le correction consiste à faire des JEDEMA dans UTFINM (juste avant
+         de lever l'exception) pour ramener la marque à 1.
+         (restitué la semaine dernière)
+      2. getvectjev retourne la copie d'un vecteur JEVEUX dans une liste
+         Python. Un objet temporaire est créé en cas de recopie d'un répertoire
+         de noms (pour en faire un vecteur contigu). Je le détruis depuis
+         getvectjev ; et pour simplifier la lecture, je remplace
+         CALL_JELIBE(nomsd) par CALL_JEMARQ() et CALL_JEDEMA() autour de
+         l'appel à la routine fortran.
+         Rem : contrairement à ce que j'ai mis dans la fiche, le vecteur
+               à recopier est bien libéré.
+      3. Même type de "ménage" autour des routines qui appellent du JEVEUX
+         au moins pour le principe de précaution (!) : getcolljev, putvectjev,
+         putcolljev, aster_GetResu.
+         Je pense que mettre CALL_JEMARQ/CALL_JEDEMA dans les routines C
+         qui appellent du fortran devrait être systématique (exception les
+         GETxxx et OPSEXE...).
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      zzzz180a (getvectjev sur '.VALE'), zzzz189a (getvectjev sur '.NOMA')
+
+
+-----------------------------------------------------------------------
+--- AUTEUR vabhhts J.PELLET   DATE  le 07/11/2005 a 17:01:23
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-237
+   NB_JOURS_TRAV : 1
+   INTERET_UTILISATEUR : NON
+   TITRE "en NEW7 ECLA_PG ne fonctionne pas sur les elements de barre"
+   FONCTIONNALITE
+     L'étude jointe avec l'anomalie s'arretait en erreur fatale dans la
+     commande CREA_RESU / ECLA_PG (générée par STANLEY) lorsque l'utilisateur
+     voulait voir les variables internes sur son modèle qui contenait des
+     éléments de barre.
+     On modifie les catalogues de ces éléments de barre (et des autres qui lui
+     ressemblaient : poutres multifibres, ...) pour que les ELREFE de ces éléments
+     soient reconnus de ECLA_PG.
+     Cette correction n'est à faire qu'en version 7 car elle a été faite en NEW8.1.4
+     lorsque j'ai introduit les variables de commandes.
+     Par ailleurs, je modifie un peu (en NEW7 et NEW8) la routine ECLPGM pour qu'elle
+     émette un message d'erreur plus clair lorsqu'on utilise ECLA_PG et qu'aucun élément
+     du modèle de peut etre "éclaté".
+   DETAILS
+   Liste des fichiers modifiés:
+     eclpgm.f
+     gener_ctecp1.cata   gener_ctecp2.cata   gener_me2db1.cata   gener_me2dt1.cata
+                         gener_me2tr1.cata   gener_mebar1.cata   gener_mecap1.cata
+     gener_medit1.cata   gener_medtr1.cata   gener_mepct1.cata   gener_mepde1.cata
+     gener_mepdg1.cata   gener_mepdt1.cata   gener_mepmf1.cata   gener_mepmf2.cata
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-348
+   NB_JOURS_TRAV : 0.2 (JP:0.2)
+   INTERET_UTILISATEUR : NON
+   TITRE :  "DKT et COMP_ELAS"
+   FONCTIONNALITE
+     L'utilisateur (qui n'avait pas lu toute la documentation, ni suivi la formation
+     aux calculs non-linéaires) ne comprenait pas le message :
+       <F> <STAT_NON_LINE> <TE0031> COMP_ELAS NON VALIDE.
+     Ce mesage veut dire que les coques DKT ne sont pas programmées pour traiter
+     le mot clé COMP_ELAS des commandes STAT_NON_LINE et DYNA_NON_LINE.
+     Xavier Desroches (responsable des coques) ne souhaite pas développer cette
+     fonctionalité pour l'instant (puisque COMP_INCR suffit).
+     Je me contente donc juste de modifier le message pour le rendre plus clair.
+       <F> <STAT_NON_LINE> <TE0031> COMP_ELAS NON PROGRAMME POUR LES MODELISATIONS
+           DKT. IL FAUT UTILISER COMP_INCR.
+   DETAILS
+     Liste des fichiers modifiés:  te0031.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+REALISATION EL 2005-233
+   NB_JOURS_TRAV : 0.2
+   INTERET_UTILISATEUR : NON
+   TITRE :  "Redondances dans les catalogues d'éléments finis"
+   FONCTIONNALITE
+     On "blinde" le lecteur de catalogues d'éléments finis pour que l'on ne puisse plus
+     déclarer plusieurs fois une même option dans un catalogue.
+     On corrige les 2 catalogues "coupables" relevés par Mathieu. Il n'y en avait que 2.
+   DETAILS
+     Liste des fichiers modifiés:
+       imprime.py
+       gener_medit1.cata  met3seg4.cata
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX   (H1)
+   NB_JOURS_TRAV : 0.7 (AA+JP)
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE
+     Stanley se plante salement lorsqu'il fait ECLA_PG /VARI_ELGA sur un group_ma
+     de face.
+     Ce problème (venu du rex Web) est en fait une erreur d'utilisation :
+     On ne peut visualiser les contraintes et variables internes que sur les
+     éléments "volumiques" de la modélisation.
+     Ici l'utilisateur postraitait VARI_ELGA sur un group_ma de "face".
+     Le problème Aster était que le message d'erreur était incompréhensible :
+     "Objet XXXXX.DIME inexistant dans les bases ouvertes"
+     La correction du fortran consiste donc à s'arrêter plus proprement :
+     On émet une simple alarme.
+     Par ailleurs, Aimery réfléchit à essayer de mettre au point un mécanisme
+     général de "trappage" de toutes les erreurs Aster dans STANLEY pour que
+     l'utilisateur interactif n'ait pas tout à refaire.
+   DETAILS
+   1) on corrige un petit bug de DISMCE : on oubliait d'arreter l'utilisateur
+      quand le cham_elem n'existait pas.
+   2) dans la routine ECLPGR, on teste l'existence du champ projeté.
+      Si ce champ n'existe pas, on émet une message d'alarme :
+      <A> <CREA_RESU> <ECLPGR> ECLA_PG : CHAMP VIDE NOM_CHAM:  >VARI_ELGA       <
+          NUME_ORDRE :  1
+      Le fait que ce ne soit pas un message d'erreur permet de ne pas planter STANLEY
+   3) on blinde DISMOI pour se protéger des routines DISMXX mal écrites :
+      vérification que si CODMES='F' alors IERD=0
+      => on corrige un bug dans DISMMO : IERD=0 mal placé
+   4) je modifie légèrement la routine RSINFO.f pour qu'elle ne se plante pas
+      la SD_RESULTAT est entièrement vide.
+   Liste des fichiers modifiés:
+     chligr.f  dismce.f  dismmo.f  dismoi.f  eclpgr.f  rsinfo.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-381
+   NB_JOURS_TRAV : 0.6
+   INTERET_UTILISATEUR : OUI
+   TITRE  "CALCUL n'arrête plus les utilisateurs demandant des calculs non programmés"
+   FONCTIONNALITE
+   Normalement, quand un utilisateur demande un calcul impossible, il doit être arrêté
+   par le message :
+    <E> <CALC_MATR_ELEM> <CALCUL>  LE TYPE_ELEMENT: xxxxxxx         NE SAIT PAS
+     ENCORE CALCULER L'OPTION: yyyyyyy       . ON ARRETE TOUT.
+   Malheureusement, depuis janvier 2003, ce message d'erreur n'était plus émis.
+   Le calcul continuait avec des "trous" dans la modélisation.
+   Risque de résultats faux :
+   --------------------------
+      La liste des calculs qui auraient du s'arrêter et qui ne l'étaient pas est donnée ci-dessous
+      dans la rubrique DETAILS.
+      Quand l'option non calculée est de type "rigidité", on peut espérer que la matrice globale
+      produite après assemblage ne soit pas factorisable et que l'utilisateur soit arrêté par
+      un message de type "pivot nul".
+      Quand l'option non calculée est de type "post-traitement pur" (que l'on visualise), l'utilisateur
+      prudent est encore averti s'il regarde ses images : il y a des "zones noires"
+      En revanche, lorsque l'option non calculée est de type "chargement" et que ce chargement se superpose
+      avec d'autres chargements, il n'est pas évident de remarquer a posteriori le déficit de chargement.
+      Signalons encore que ce "garde fou" (malheureusement inopérant entre 1/2003 et 10/2005)
+      est doublé d'un autre garde fou lorsqu'aucun type_element ne sait faire le calcul demandé :
+      <F> <CALC_MATR_ELEM> <CALCUL> LE CALCUL DE L'OPTION : RIGI_MECA        N'EST
+        POSSIBLE POUR AUCUN DES TYPES D'ELEMENTS  DU LIGREL.
+      Grâce à ce 2ème garde fou, on peut dire que les études faites avec des modèles homogènes
+      (1 seule modélisation) n'ont pas pu entrainer de résultats faux.
+   DETAILS
+     On corrige le source python coupable : Lecture_Cata_Ele/imprime.py
+     On corrige également un catalogue d'éléments incorrect (gener_megrm2.cata) :
+     l'option REFE_FORC_NODA était mal orthographiée.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI   DEPUIS : 7.0.6
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX   (H1006)
+   NB_JOURS_TRAV : 0.1
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE
+     On ajoute l'option M_GAMMA "-1" dans le catalogue des éléments finis qui auraient du
+     calculer cette option et qui ne le faisaient pas !
+     Ce problème concernait les modélisations mécaniques sivantes :
+        '2D_FLUIDE'
+        '2D_FLUI_PESA'
+        '2D_FLUI_STRU'
+        '3D_FAISCEAU'
+        '3D_FLUIDE'
+        'AXIS_FLUIDE'
+        'AXIS_FLUI_STRU'
+        'FLUI_STRU'
+     Cela permet d'être arrêté par une erreur fatale lorsque l'on fait un
+     calcul dynamique qui nécessite la prise en compte de l'energie
+     cinétique et que celle-ci n'est pas calculée par tous les éléments du modèle.
+   DETAILS
+     Liste des fichiers modifiés:
+      imprime.py
+      gener_me2fl2.cata  gener_me2fp2.cata  gener_me2fs1.cata  gener_me3df3.cata  gener_me3fl3.cata
+      gener_meafs1.cata  gener_meaxf2.cata  gener_mefls1.cata  gener_mefls2.cata  gener_megrm2.cata
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI   DEPUIS : 7.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX   (H1)
+   NB_JOURS_TRAV : 0.5 (JP+LS)
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE
+   Mieux tester le modèle crée par AFFE_MODELE
+   --------------------------------------------
+   Lionel Salmona m'a fait remarquer (et je l'ai constaté) que lorsque l'utilisateur d'AFFE_MODELE
+   affectait (par exemple) une modélisation 3D sur un maillage 2D, AFFE_MODELE ne disait pas grand chose
+   et on pouvait s'arrêter plus loin avec un message d'erreur assez obscur dans STAT_NON_LINE.
+   J'avais fait déjà une EL dans AFFE_MODELE (EL 2004-217) qui devait alerter l'utilisateur en émettant des alarmes :
+     <A> <AFFE_MODELE> <INITEL> LA MAILLE M1       PORTE UN ELEMENT FINI DE BORD.
+         MAIS ELLE NE BORDE AUCUN ELEMENT AYANT UNE "RIGIDITE". CELA PEUT ENTRAINER
+         DES PROBLEMES DE "PIVOT NUL" LORS DE LA RESOLUTION.
+   Je n'ai pas pu transformer cette <A>larme en erreur <F>atale car cette situation est utilisée lorque
+   l'on fait du contact sur une surface rigide : la surface rigige ne borde aucun élément volumique.
+   J'ajoute donc une nouvelle vérification:
+   lorsqu'aucun élement "principal" n'existe dans le modèle, on émet l'erreur <F> suivante :
+     <F> <AFFE_MODELE> <INITEL> LE MODELE MO      N'A PAS D'ELEMENTS FINIS
+         "PRINCIPAUX".
+   Finalement, cette erreur ne peut pas être fatale : je la transforme en <A>larme car certains tests utilisent
+   des modèles "sans rigidité". Par exemple :
+      - dans sdls105  : INTERF=  AFFE_MODELE
+      - dans fdlv112a : CALC_MATR_AJOU
+   DETAILS
+     Liste des fichiers modifiés:  initel.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   POUR_LE_COMPTE_DE : J.P. LEFEBVRE
+   NB_JOURS_TRAV  : 0.0
+   INTERET_UTILISATEUR : NON
+   TITRE :  Portabilite de la fonction C hdfwsv
+   FONCTIONNALITE
+     Correction signalée par P.Badel suite au portage sur le cluster
+     du Lamsid :
+     On ajoute l'include <stdlib.h> dans la fonction C hdfwsv qui par
+     son absence provoque une erreur avec la version compilée sur AMD64
+     avec le compilateur pgi
+   DETAILS
+     Liste des fichiers modifiés:  hdfwsv.c
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   VALIDATION : liste restreinte
+   IMPACT_DOCUMENTAIRE : NON
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   (En fait realisation el 2005-194 Mais on ne peut plus ... car la fiche a été soldée)
+   NB_JOURS_TRAV  : 0.5 (pour la V7)
+   POUR_LE_COMPTE_DE : X. DESROCHES
+   INTERET_UTILISATEUR : OUI
+   TITRE : CALC_NO avec des éléments tuyaux
+   FONCTIONNALITE : le calcul de l'option M_GAMMA n'était pas activé pour des
+     éléments tuyaux. Par conséquence le calcul des reactions nodales ne
+     fonctionnaient pour ces memes éléments.
+   DETAIL :
+     Cette option est rajouté dans le te0582 qui calculait la matrice de masse
+     et de rigidité. Le calcul dans le te0582 se fait donc en récupérant la
+     matrice de masse et en la multipliant par le vecteur d'accélération
+     récupérée par ailleurs.
+     A cette occasion, on fait le ménage dans plusieurs routines qui
+     traitent des tuyaux en supprimant des variables entrantes dans plusieurs
+     routines ( celles-ci n'etaient que des objets de travail).
+     De plus, lorsque plusieurs modélisations étaient présentés dont une était
+     TUYAU_XXX, le code faisait le calcul des réactions nodales mais oubliait
+     le terme m*accélération pour les tuyaux. On avait donc des résultats faux
+     dans ce cas la. Dans le cas où seule une modélisation TUYAU_XXX était
+     présente, le code s'arretait en erreur fatale car il ne pouvait calculer
+     l'option M_GAMMA nulle part.
+   Liste des fichiers modifiés:
+     te0582.f  tumass.f
+     gener_metu61.cata  met3seg3.cata      met3seg4.cata
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  OUI  DEPUIS : 7.0.6
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI  DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : sdnl113a
+     Ce cas test faisait deja un test sur des réactions nodales sur un tuyau.
+     Mais il s'agissait d'un cas test de non-régression et de toute facon
+     l'accélération au noeud testé était quasi nulle. D'où une variation quasi
+     inexistante de la solution. Par précaution, on rajoute donc un test sur un
+     noeud où la variation entre la valeur avec correction et sans correction
+     du terme M_GAMMA est significative (mais ca reste de la non régression).
+
+/////////////////////////////////////////////////////////////
+///// Dernière minute :              ////////////////////////
+/////////////////////////////////////////////////////////////
+ Je suis obligé d'augmenter la mémoire des 2 tests :
+   ssnl106g/h    16 Mo -> 32 Mo
+ On peut imaginer que celà est du à la taille des objets catalogues
+ qui a un peu augmenté du fait que les options "-1" sont maintenant
+ stockées (voir AL 2005-381).
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+       C MODIF supervis/astermodule         mcourtoi M.COURTOIS        3753     27     25
+       C MODIF utilitai/hdfwsv               vabhhts J.PELLET           124      2      2
+ CASTEST MODIF ssnl106g                      vabhhts J.PELLET           240      1      1
+ CASTEST MODIF ssnl106h                      vabhhts J.PELLET           240      1      1
+ CASTEST MODIF ssnp123a                       durand C.DURAND           225      1      1
+CATALOGU MODIF compelem/grandeur_simple__    cibhhlv L.VIVAN            533      4      1
+CATALOGU MODIF options/full_meca             cibhhlv L.VIVAN             83      8      7
+CATALOGU MODIF options/raph_meca             cibhhlv L.VIVAN             81      6      5
+CATALOGU MODIF options/rigi_meca             cibhhlv L.VIVAN             47      3      3
+CATALOGU MODIF options/rigi_meca_tang        cibhhlv L.VIVAN             84      5      4
+CATALOGU MODIF typelem/gener_ctecp2          vabhhts J.PELLET            79      7      7
+CATALOGU MODIF typelem/gener_me2db1          vabhhts J.PELLET           195      5      5
+CATALOGU MODIF typelem/gener_me2dt1          vabhhts J.PELLET           144      5      5
+CATALOGU MODIF typelem/gener_me2fl2          vabhhts J.PELLET            95      2      1
+CATALOGU MODIF typelem/gener_me2fp2          vabhhts J.PELLET            84      2      1
+CATALOGU MODIF typelem/gener_me2fs1          vabhhts J.PELLET            43      2      1
+CATALOGU MODIF typelem/gener_me2tr1          vabhhts J.PELLET           148      5      5
+CATALOGU MODIF typelem/gener_me3df3          vabhhts J.PELLET            61      2      1
+CATALOGU MODIF typelem/gener_me3fl3          vabhhts J.PELLET           103      2      1
+CATALOGU MODIF typelem/gener_meafs1          vabhhts J.PELLET            43      2      1
+CATALOGU MODIF typelem/gener_meaxf2          vabhhts J.PELLET            67      2      1
+CATALOGU MODIF typelem/gener_mebar1          vabhhts J.PELLET           193      5      5
+CATALOGU MODIF typelem/gener_mecap1          vabhhts J.PELLET           142      5      5
+CATALOGU MODIF typelem/gener_mecq32          cibhhlv L.VIVAN            233      6      5
+CATALOGU MODIF typelem/gener_medit1          vabhhts J.PELLET           159      5     11
+CATALOGU MODIF typelem/gener_medtr1          vabhhts J.PELLET           199      5      5
+CATALOGU MODIF typelem/gener_mefls1          vabhhts J.PELLET            54      2      1
+CATALOGU MODIF typelem/gener_mefls2          vabhhts J.PELLET            48      3      3
+CATALOGU MODIF typelem/gener_megrm2          vabhhts J.PELLET           192      2      2
+CATALOGU MODIF typelem/gener_mepct1          vabhhts J.PELLET           233      5      5
+CATALOGU MODIF typelem/gener_mepde1          vabhhts J.PELLET           268      6      6
+CATALOGU MODIF typelem/gener_mepdg1          vabhhts J.PELLET           215      5      5
+CATALOGU MODIF typelem/gener_mepdt1          vabhhts J.PELLET           268      6      6
+CATALOGU MODIF typelem/gener_mepmf1          vabhhts J.PELLET           172      6      6
+CATALOGU MODIF typelem/gener_mepmf2          vabhhts J.PELLET           212      5      5
+CATALOGU MODIF typelem/gener_metu61          vabhhts J.PELLET           266      4      3
+CATALOGU MODIF typelem/met3seg3              vabhhts J.PELLET           257      4      3
+CATALOGU MODIF typelem/met3seg4              vabhhts J.PELLET           262      4      5
+CATALOPY MODIF commande/calc_meta            adbhhvv V.CANO              50      9      6
+CATALOPY MODIF commande/stanley               assire A.ASSIRE            31      2      1
+ FORTRAN AJOUT elements/utelvf               cibhhlv L.VIVAN             94     94      0
+ FORTRAN AJOUT modelisa/oriem0               cibhhlv L.VIVAN            102    102      0
+ FORTRAN MODIF algorith/merimo               cibhhlv L.VIVAN            453     40     34
+ FORTRAN MODIF algorith/ndlect                boyere E.BOYERE           189      3      1
+ FORTRAN MODIF calculel/calcul               cibhhlv L.VIVAN            328      2      2
+ FORTRAN MODIF calculel/chligr               vabhhts J.PELLET           149      5      1
+ FORTRAN MODIF calculel/eclpgm               vabhhts J.PELLET           366      3      1
+ FORTRAN MODIF calculel/eclpgr               vabhhts J.PELLET           345      9      1
+ FORTRAN MODIF calculel/elref6               cibhhlv L.VIVAN            202      5      1
+ FORTRAN MODIF calculel/initel               vabhhts J.PELLET           172     19      8
+ FORTRAN MODIF calculel/sinoz2               cibhhlv L.VIVAN            466     36     51
+ FORTRAN MODIF elements/caurtg               cibhhlv L.VIVAN            174      1      9
+ FORTRAN MODIF elements/forngr               cibhhlv L.VIVAN            527      1      7
+ FORTRAN MODIF elements/jni079               cibhhlv L.VIVAN            215      2      6
+ FORTRAN MODIF elements/jni080               cibhhlv L.VIVAN           1065      5     11
+ FORTRAN MODIF elements/pk2cau               cibhhlv L.VIVAN            334      1      5
+ FORTRAN MODIF elements/te0031               vabhhts J.PELLET           334      3      2
+ FORTRAN MODIF elements/te0582               vabhhts J.PELLET           109     15      4
+ FORTRAN MODIF elements/tumass               vabhhts J.PELLET           298      3      6
+ FORTRAN MODIF elements/vdgnlr               cibhhlv L.VIVAN           1129      1     14
+ FORTRAN MODIF elements/vdpnlr               cibhhlv L.VIVAN           1322      1     10
+ FORTRAN MODIF elements/vdxnlr               cibhhlv L.VIVAN            488     12      8
+ FORTRAN MODIF jeveux/jeinif                 d6bhhjp J.P.LEFEBVRE       563     11      5
+ FORTRAN MODIF jeveux/jelibf                 d6bhhjp J.P.LEFEBVRE       277      1      1
+ FORTRAN MODIF jeveux/jelihd                 d6bhhjp J.P.LEFEBVRE       577      6      4
+ FORTRAN MODIF jeveux/jerecu                 d6bhhjp J.P.LEFEBVRE       170     11      6
+ FORTRAN MODIF jeveux/jetass                 d6bhhjp J.P.LEFEBVRE       249      9      7
+ FORTRAN MODIF jeveux/jxecrb                 d6bhhjp J.P.LEFEBVRE       126      5      5
+ FORTRAN MODIF jeveux/jxecro                 d6bhhjp J.P.LEFEBVRE       279     11      9
+ FORTRAN MODIF jeveux/jxlibd                 d6bhhjp J.P.LEFEBVRE       106     11      7
+ FORTRAN MODIF jeveux/jxliro                 d6bhhjp J.P.LEFEBVRE       103      3      3
+ FORTRAN MODIF modelisa/acevdi               vabhhts J.PELLET           107      2      1
+ FORTRAN MODIF modelisa/alfint                durand C.DURAND           216      9      1
+ FORTRAN MODIF modelisa/oriema               cibhhlv L.VIVAN            401     60     33
+ FORTRAN MODIF utilitai/caraff                assire A.ASSIRE           162      8      4
+ FORTRAN MODIF utilitai/dismce               vabhhts J.PELLET           140      3      2
+ FORTRAN MODIF utilitai/dismlg               vabhhts J.PELLET           359      1      1
+ FORTRAN MODIF utilitai/dismmo               vabhhts J.PELLET           259      2      2
+ FORTRAN MODIF utilitai/dismoi               vabhhts J.PELLET           138      6      2
+ FORTRAN MODIF utilitai/dismte               vabhhts J.PELLET           196      6      3
+ FORTRAN MODIF utilitai/modexi               vabhhts J.PELLET            94      1      1
+ FORTRAN MODIF utilitai/rfrgen                boyere E.BOYERE           264      3      1
+ FORTRAN MODIF utilitai/rsinfo               vabhhts J.PELLET           505      5      5
+  PYTHON MODIF Lecture_Cata_Ele/imprime      vabhhts J.PELLET           947     19      1
+  PYTHON MODIF Macro/stanley_ops              assire A.ASSIRE            75     12      3
+  PYTHON MODIF Stanley/cata_champs            assire A.ASSIRE           158     12      1
+  PYTHON MODIF Stanley/gmsh                   assire A.ASSIRE           317     90     39
+  PYTHON MODIF Stanley/stanley                assire A.ASSIRE          2067     28     10
+  PYTHON MODIF Stanley/xmgrace                assire A.ASSIRE           281     21      7
+  PYTHON MODIF Utilitai/sup_gmsh              assire A.ASSIRE          1133      1      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         196       196              +196
+ MODIF :   88       28860       707     514      +193
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   90       29056       903     514      +389 

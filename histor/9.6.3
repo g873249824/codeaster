@@ -1,0 +1,381 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 09/02/2010 - 21:34:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014567 DU 2010-02-05 08:59:20
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW9.6.2, suppression de message xc3xa0 revoir
+FONCTIONNALITE
+   En 9.6.2, les messages suivants ont été supprimés à tord :
+   
+   SUPERVIS_40 SUPERVIS_41 SUPERVIS_57 SUPERVIS_6 SUPERVIS_69 SUPERVIS_70
+   SUPERVIS_89 SUPERVIS_90 SUPERVIS_91 SUPERVIS_92 TEST0_1
+   
+   On les réintroduits.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   asrest
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR peyrard      PEYRARD Christophe     DATE 09/02/2010 - 21:34:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014226 DU 2009-11-24 13:57:46
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Temps initial dans DEFI_FONC_ELEC
+FONCTIONNALITE
+   la solution au bug constaté par Themis consiste à reprogrammer plus proprement
+   DEFI_FONC_ELEC en python. Le source d'op0064.f était illisible et, manifestement, omettait
+   de retrancher un temps initial dans l'évaluation des exponentielles de la fonction.
+   
+   Ainsi, DEFI_FONC_ELEC est maintenant une macro python. Je propose de livrer aussi en
+   version 9, puisque c'est l'unique moyen qu'on a trouver de corriger le bug. A cette
+   occasion, Christophe Peyrard a revu quelques points dans la doc U4.MK.10.
+   
+   Développement validé, outre l'étude Themis en objet, par le passage des tests employant
+   cette commande : sdll102a sdll102b sdnl101a yyyy103a yyyy103c yyyy103d.
+   De plus, je modifie sdll102b afin de décaler toutes les listes d'instants de 1 s. C'est en
+   effet la non nullité de l'instant initial qui avait déclenché la détection du bug.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 2.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.MK.10
+VALIDATION
+   sdll102a sdll102b sdnl101a yyyy103a yyyy103c yyyy103
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 09/02/2010 - 21:34:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014422 DU 2010-01-14 13:07:07
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW10.1.6, les cas-tests sdll102a et sdll102b s'arretent en erreur_<F> sur Calibre4
+FONCTIONNALITE
+   Erreur
+   ======
+   On a ce message concernant la fonction issue de DEFI_FONC_ELEC :
+   
+   Les abscisses de la fonction FONC ne sont pas strictement croissantes
+   
+   
+   Correction
+   ==========
+   
+   On utilisait Numeric.arange(debut, fin, pas).
+   Sur certaines machines, sans doute à cause des erreurs d'arrondi, la dernière valeur "fin"
+   n'est pas dans la liste.
+   
+   On modifie le mode de génération de la liste d'instants dans DEFI_FONC_ELEC pour être
+   insensible aux arrondis suivant les différentes versions de python.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdll102a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 09/02/2010 - 21:34:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014061 DU 2009-10-19 08:16:28
+TYPE evolution concernant Code_Aster (VERSION 7.0)
+TITRE
+   message d'erreur en cas d'option non calculable
+FONCTIONNALITE
+   Problème :
+   ----------
+   Cette erreur a été détectée par Christophe Mansoulie, stagiaire LAMSID/Manchester dans le
+   cadre
+   de ses travaux avec MACR_ECREVISSE. Toutefois le problème est lié à STAT_NON_LINE et pas à
+   MACR_ECREVISSE, comme le montre l'étude jointe.
+   Le problème est le suivant. On a un modèle contenant à la fois du 3D et des COQUE_3D. On
+   applique
+   une pression à l'aide de AFFE_CHAR_MECA_F sur les éléments 3D. Problème le calcul s'arrête en
+   Erreur fatale parce qu'on ne sait pas calculer l'option CHAR_MECA_PRES_F sur les coques
+   (elements
+   MEC3TR7H).
+                                                                                            
+                         
+   Voici le message obtenu :
+   !-------------------------------------------------------------------------------------------!
+      ! <F> <CALCULEL_30>                                                                   
+        !
+      !                                                                                     
+        !
+      !                                                                                     
+        !
+      !   -> Le TYPE_ELEMENT MEC3TR7H  ne sait pas encore calculer l'OPTION: 
+   CHAR_MECA_PRES_F.   !
+      !      On ne calcule donc rien sur les éléments de ce type.                           
+        !
+      !                                                                                     
+        !
+      !   -> Risque & Conseil :                                                             
+        !
+      !      Vérifiez que l'option incomplètement calculée est bien une option de
+   post-traitement !
+      !      et que le déficit de calcul n'entraine pas de résultats faux.                  
+        !
+      !                                                                                     
+        !
+      !                                                                                     
+        !
+      !                                                                                     
+        !
+      ! Cette erreur est fatale. Le code s'arrete.                                          
+        !
+     
+   !-------------------------------------------------------------------------------------------!
+                                                                                            
+                         
+                                                                                            
+                         
+   Le message dit qu'il faut vérifier que cela n'entraîne pas de résultats faux, mais cela
+   s'arrête
+   en erreur fatale. J'imagine qu'il suffit donc de transformer l'erreur fatale en alarme. Ou
+   alors il
+   ne faut calcul l'option CHAR_MECA_PRES_F que pour les éléments concernés ce chargement.
+                                                                                            
+                         
+                                                                                            
+                         
+   Analyse :
+   ------------
+   Effectivement, le message imprimé n'est pas très bon : c'est le meme en cas d'alarme ou
+   d'erreur fatale !
+   Le conseil est idiot en cas d'erreur fatale !!
+                                                                                            
+                         
+   Ce problème (de mavais conseil) a été résolu dans le cadre de la fiche 14225 : maintenant,
+   il n'y a plus que des erreurs Fatales !
+                                                                                            
+                         
+   En ce qui concerne la question du calcul de CHAR_MECA_PRES_F par les élements de coque_3D,
+   le problème vient d'une mauvaise correction de la fiche 13104 : il ne fallait pas mettre
+   des "-1" dans le catalogue des éléments de coque pour l'option CHAR_MECA_PRES_F.
+                                                                                            
+                         
+   La "bizarrerie" de la programmation (qui n'accepte que les fonctions nulles) vient du fait
+   que si le modèle est "mixte" (3D + coque) et que l'utilisateur veut mettre de la pression
+   sur le bord du 3D et sur les coques, il doit utiliser les 2 mots clés PRES_REP et FORCE_COQUE.
+                                                                                            
+                         
+   Sur les coques, la carte PRES_REP contient une fonction nulle, et le te00ij bizarre permet
+   de continuer. Avec le "-1", on est arrêté.
+                                                                                            
+                         
+                                                                                            
+                         
+   Correction :
+   ------------
+   Je "défais" la correction de la fiche 13104 en retirant les "-1" des 2 catalogues
+   (coques3D et DKT).
+   Mais pour que l'utilisateur soit moins désorienté par le message element_92, je le modifie :
+                                                                                            
+                         
+   Avant :
+      la pression doit être nulle pour la maille  %(k1)s
+                                                                                            
+                         
+   Après :
+      Erreur utilisateur :
+        Vous essayez d'appliquer une pression (comme fonction) non nulle sur un élément de coque.
+        (AFFE_CHAR_MECA_F/PRES_REP/PRES) pour la maille  %(k1)s
+        La programmation ne le permet pas.
+                                                                                            
+                         
+      Conseil :
+         Pour appliquer une telle presssion, il faut utiliser AFFE_CHAR_MECA_F/FORCE_COQUE/PRES
+                                                                                            
+                         
+                                                                                            
+                         
+   Validation :
+   ------------
+   L'étude jointe peut maintenant calculer le chargement extérieur, mais elle se plante en
+   erreur numérique quelque part dans nmresi.f
+   Je n'ai pas cherché à en savoir plus ...
+                                                                                            
+                         
+   NEW9 :
+   ------
+   Je pense qu'il faut reporter cette correction en NEW9
+                                                                                            
+                         
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  14061
+     te0032.f  te0403.f
+     elements4.py
+     gener_mecq32.cata  gener_medkt2.cata
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude jointe
+NB_JOURS_TRAV  : 0.4
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 09/02/2010 - 21:34:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014569 DU 2010-02-05 14:18:17
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Amélioration couverture de code de certains TE
+FONCTIONNALITE
+   Problème :
+   ----------
+   Le TE suivant ne sont validés par aucun cas test :
+   TE    | Option
+   ------+------------------
+   TE276 | RESI_THER_PARO_R
+   TE278 | RESI_THER_PARO_F
+   TE305 | RESI_THER_COEH_R
+   TE306 | RESI_THER_COEH_R
+   TE319 | SOUR_ELGA_ELEC  
+   TE388 | MTAN_THER_PARO_R
+   TE389 | MTAN_THER_PARO_F
+   TE503 | RIGI_THER_COET_R
+   TE523 | RIGI_THER_COET_R
+   
+   
+   Solution :
+   ----------
+   Christophe m'a fournit des cas tests modifiés pour corriger ce défaut de couverture.
+   
+   Il a aussi découvert un bug dans le TE0523 qu'il a corrigé. Cette correction est à
+   reporter en 9.
+   
+   
+   Résultats faux :
+   ----------------
+   Depuis l'introduction de TE0523, celle-ci est fausse. TE0523 correspond à l'option
+   RIGI_THER_COET_R. Elle sert à calculer un terme d'échange (condition de Fourier linéaire).
+   
+   
+   Impact :
+   --------
+   te0523.f
+   tpll101a.comm
+   tpll101a.mmed
+   tpll101b.comm
+   tpll101b.med
+   tplv101c.comm
+   tplv105a.comm
+   tpna01c.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 4.0.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 4.0.2
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V4.02.101 V4.04.101
+VALIDATION
+   cas tests modifixc3xa9s
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 09/02/2010 - 21:34:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014490 DU 2010-01-25 06:59:07
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   En NEW10.1.7, les cas-tests sslp108c, sslp313f et ssnp102b s'arretent en erreur_<F> sur Bull
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   En NEW10.1.7, les cas-tests sslp108c, sslp313f et ssnp102b s'arretent en erreur_<F> sur Bull.
+   
+   
+   
+   Solution :
+   ----------
+   
+   les lignes étranges ci-dessus ont été rajoutés en 10.1.7  
+       IF ((IRET1+IRET2).EQ.0) THEN
+           TEMP = 0.D0
+           TREF = 0.D0
+         ENDIF
+   
+   ce qui signifie que si les 2 codes retour sont OK, IRET1+iRET2  vaut 0 et on met TEMP et
+   TREF à 0....
+   
+   
+   Je mettrais plutot 
+         IF (IRET1.EQ.1) TEMP = 0.D0
+         IF (IRET2.EQ.1) TREF = 0.D0
+   
+   Cela corrige les 3 tests sur Bull
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   les 3 tests en question
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT tplv101c                      macocco K.MACOCCO          158    158      0
+ CASTEST MODIF sdll102b                      macocco K.MACOCCO          228      7      7
+ CASTEST MODIF tpll101a                      macocco K.MACOCCO          119     78     88
+ CASTEST MODIF tpll101b                      macocco K.MACOCCO          123     80     81
+ CASTEST MODIF tplv105a                      macocco K.MACOCCO          231    202    155
+ CASTEST MODIF tpna01c                       macocco K.MACOCCO          342    310    215
+CATALOGU MODIF typelem/gener_mecq32          macocco K.MACOCCO          307      2      2
+CATALOGU MODIF typelem/gener_medkt2          macocco K.MACOCCO          372      2      2
+CATALOPY MODIF commande/defi_fonc_elec       macocco K.MACOCCO           73      7      4
+ FORTRAN MODIF algorith/nmplru               macocco K.MACOCCO          195      3      5
+ FORTRAN MODIF calculel/te0523               macocco K.MACOCCO          129      2      2
+ FORTRAN MODIF elements/te0032               macocco K.MACOCCO          270      2      1
+ FORTRAN MODIF elements/te0403               macocco K.MACOCCO          117      2      1
+ FORTRAN SUPPR utilitai/op0064               macocco K.MACOCCO          478      0    478
+  PYTHON AJOUT Macro/defi_fonc_elec_ops      macocco K.MACOCCO          192    192      0
+  PYTHON MODIF Macro/calc_essai_ops          macocco K.MACOCCO          230      2      2
+  PYTHON MODIF Messages/elements4            macocco K.MACOCCO          292      8      2
+  PYTHON MODIF Messages/supervis             macocco K.MACOCCO          452     52      1
+  PYTHON MODIF Messages/test0                macocco K.MACOCCO           83      8      1
+  PYTHON MODIF Utilitai/Utmess               macocco K.MACOCCO          648     20      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         350       350              +350
+ MODIF :   17        4211       787     570      +217
+ SUPPR :    1         478               478      -478
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   20        5039      1137    1048       +89 

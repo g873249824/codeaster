@@ -1,0 +1,345 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 04/07/2007 - 17:17:42
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010828 DU 2007-05-03 11:47:25
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   POST_ELEM INTEGRALE
+FONCTIONNALITE
+   Objectifs
+   ---------
+   1) verifier que le champ NOM_CHAM de POST_ELEM/INTEGRALE 
+   est de type ELGA:
+   Nous avons introduit dans la routine peeint.f un appel a 
+   DISMOI pour recuperer le type du champ. Si ce champ n'est 
+   pas de type 
+   ELGA, on emet le message d'erreur:
+   "Seuls les champs de type ELGA (champs par element aux 
+   points de Gauss) sont autorises pour NOM_CHAM de 
+   POST_ELEM/INTEGRALE."
+   
+   2) determiner pourquoi l'integrale est nulle et NUCMP non 
+   trouvee.
+   L'integrale est nulle car justement la variable NUCMP n'a 
+   pas ete trouvee.
+   Pourquoi?
+   
+   La variable NUCMP correspond dans la routine peecal au 
+   numero de la composante VMIS de la
+   liste ordonnee des composantes de la grandeur SIEF_R. 
+   La composante VMIS est la 32eme des 107 composantes 
+   possibles pour cette grandeur --> NUCMP=32
+   
+   L'anomalie provient du fait que c'est precisement ce numero 
+   qui est utilise pour recuperer les valeurs reelles du champ 
+   alors qu'il aurait fallu
+   utiliser le numero de la composante VMIS de la liste des 
+   composantes de ce champ.
+   Ce champ comporte 15 composantes dont VMIS figure en 1ere 
+   position.
+   --> NUCMP=1
+   
+   Ainsi l'appel suivant:
+   CALL CESEXI('C',JCESD,JCESL,IMA,IPT,1,NUCMP,IAD)
+   renvoit une adresse IAD=0 car le NUCMP est superieur a 15.
+   Le calcul de l'integrale etant realise lorsque IAD >0, on 
+   obtient donc une integrale nulle.
+   
+   Pour corriger cette anomalie, nous avons supprime les 
+   lignes de code de peecal.f qui
+   determinaient le pointeur JCMPGD, et nous avons introduit a 
+   la place un appel a jeveuo (CALL JEVEUO
+   (RESOUT//'.CESC','L',JCMPGD)). 
+   Ainsi la recherche de la position de la composante VMIS est 
+   realisee a partir de la liste
+   des composantes du champ et non plus a partir des 
+   composantes de la grandeur du champ.
+   
+   3) Pourquoi le calcul POST_ELEM/INTEGRALE passe en 3D?
+   Le developpement de POST_ELEM/INTEGRALE a ete valide en 3D 
+   avec pour composantes SIXX,SIYY et SIZZ.
+   L'anomalie n'est pas liee a la dimension du probleme mais 
+   aux composantes choisies. En effet, pour ces composantes, 
+   leur position dans la liste des
+   composantes du champ est la meme que dans la liste des 
+   composantes de la grandeur. Donc
+   tout se passait bien !
+   
+   Validation
+   ----------
+   nous avons :
+   - passe l'etude fournie avec un champ aux noeuds par 
+   element dans
+    POST_ELEM/INTEGRALE pour verifier le message d'erreur.
+   - passe l'etude fournie avec un champ aux points de Gauss 
+   par 
+   element dans POST_ELEM/INTEGRALE pour verifier que 
+   l'integrale est non 
+   nulle.
+   - enrichi le cas-test sslv140a par une occurrence 
+   supplementaire de POST_ELEM/INTEGRALE
+   pour tester la composante VMIS.
+   - passe tous les cas-tests contenant POST_ELEM/INTEGRALE 
+   (ssnv194b)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.12
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de l'etude fournie + sslv140a et ssnv194b
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 04/07/2007 - 17:17:42
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010959 DU 2007-06-08 10:56:16
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   un bug dans prosmo.f
+FONCTIONNALITE
+   Problème :
+   ----------
+   Lorque l'on force la routine prosmo.f à découper son objet KLISTE en plusieurs blocs (ce
+   qui n'arrive normalement que pour les gros modèles), le test ssnv128f s'arrête par
+   écrasement mémoire dans prosmo.f
+   
+   
+   Solution:
+   ---------
+   La routine prosmo.f était effectivement bugguée : le découpage en blocs n'était pas correct.
+   Je corrige cette routine.
+   
+   Résultats faux :
+   -----------------
+   Je pense que le bug ne pouvait conduire qu'à des écrasements de mémoire JEVEUX
+   ("écrasement aval ....") et que le programme ne pouvait pas donner de résultats faux.
+   
+   Néanmoins, je propose de corriger cette anomalie en NEW9 et NEW8 car elle empêche de
+   réaliser de grosses études avec du contact-frottement.
+   
+   Remarque pour CS (mise à jour de la version 8):
+   -----------------------------------------------
+   La routine prosmo.f est identique en NEW8 et NEW9.
+   
+   Remarque pour Nicolas :
+   -----------------------
+   Je joins à cette fiche la routine prosmo.f corrigée pour que tu puisse vérifier (ou
+   infirmer) que c'était bien la cause de l'anomalie  10457.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv128f + surcharge
+NB_JOURS_TRAV  : 0.7
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010951 DU 2007-06-07 08:35:04
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   NEW9.0.29, le test hpla100c termine NOOK (BCR)
+FONCTIONNALITE
+   L'ordre de rangement des points/sous-points de Gauss dans les COQUE_3D était différent des
+   autres éléments du code. La fiche 10701 a corrigé ce problème.
+   
+   Malheureusement il restait quelques routines qui conservaient l'ancien rangement (FORNGR,
+   VDGNLR et VDPNLR). Il s'agit de routines de post traitement d'où les résultats NOOK sur
+   le champ SIEF_ELNO_ELGA.
+   
+   
+   RESULTAT_FAUX si :
+    * Modélisation = COQUE_3D
+    * STAT_NON_LINE / GREEN_GR
+    * calcul des opions SIEF_ELNO_ELGA ou SIGM_ELNO_COQUE
+   
+   
+   Cette correction est à reporter en NEW8 car la fiche 10701 a été aussi corrigée en NEW8.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hpla100c
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 04/07/2007 - 17:17:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010306 DU 2006-11-24 09:35:40
+TYPE anomalie concernant Code_Aster (VERSION 9.2)
+TMA : CS
+TITRE
+   CALC_NO, VARI_ELNO_ELGA
+FONCTIONNALITE
+   Le nombre de composante est passé à 100 (il y avait effectivement une limite en dur à 30
+   dans le fichier des grandeurs simples).
+   
+   Vu avec Jean-Michel : le nombre de variables internes pour un comportement polycristal
+   peut etre énorme ( 1600 ). Il est donc vain de vouloir agrandir le champ jusqu'à 1600
+   variables. La solution proposée ci-dessus permet de faire passer les cas les plus courant
+   (tout le monocristal par exemple).
+   La solution à débattre serait un champ aux noeuds définis dynamiquement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de l'xc3xa9tude fournie
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 04/07/2007 - 17:17:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010983 DU 2007-06-15 14:44:48
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   STA8.5.0 : 8 cas-tests en erreur dans CALC_ELEM / ERRE_ELEM_SIGM sous Calibre
+FONCTIONNALITE
+   Lors de la dernière mise à jour, une des routines n'a pas subi l'évolution nécessaire : uthk.
+   
+   Du coup il y avait un mauvais dimensionnement d'un des tableaux locaux. Par conséquence,
+   les tests s'arretaient tous en segmentation fault sur Calibre4.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tous les cas tests incriminxc3xa9s
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 04/07/2007 - 17:17:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010968 DU 2007-06-12 07:30:47
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   Problxc3xa8me d'impression des rxc3xa9sultats de contact
+FONCTIONNALITE
+   En testant la méthode de contact continu et en visualisant ses résultats via un IMPR_RESU, 
+                 IMPR_RESU(UNITE=6,RESU=_F(RESULTAT=RESU,),);
+   Olivier a trouvé des NaN, sur certains noeuds de contact.
+   
+   Ceci est du à une faute de frappe dans la routine mmmres.f :
+               INTEGR = INT(ZR(JCMCF)+22*(IZONE-1)+1)
+   au lieu de 
+               INTEGR = INT(ZR(JCMCF+22*(IZONE-1)+1))
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage du feti009a
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR rose         ROSE Christian         DATE 04/07/2007 - 17:17:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011029 DU 2007-06-29 11:19:53
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   performances mutl_front
+FONCTIONNALITE
+   Restitution de travaux de Christian Rose :
+   
+   Suite la note de A. Assire, certains temps de calcul ont été
+   analysés. Ainsi pour les cas AGREGAT_FIN (432 919 inconnues), MULT_FRONT demande 1081
+   secondes:
+   400 pour la factorisation numrique (MULFR8)
+   600 pour factorisation symbolique (MLTPRE), ce qui est anormal.
+   
+   L'essentiel des 600 secondes est passe dans la boucle 80 de preml0.
+   Cette boucle oubliee servait  dtecter l'existence d'anomalies 
+   liees aux lagranges. Cette boucle avait ete introduite en 2001 suite  un bogue du a un
+   probleme de changement de connectivite (Voir l'histor 6.0.39)
+   
+   Le probleme avait ete corrige dans facsmb, la boucle 80 de preml0
+   pouvant etre utile en cas de doute, en effectuant la detection d'une anomalie.
+   
+   De toute facon le probleme du a prosmo decrit ci dessous ne doit plus se produire
+   desormais car la renumerotation est faite sur les noeuds et non plus sur les ddl.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   diverses xc3xa9tudes
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR kham         KHAM Marc              DATE 04/07/2007 - 17:17:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010956 DU 2007-06-07 16:30:47
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   CONTACT METHOdE CONTINUE : routine mmmres.f
+FONCTIONNALITE
+   L'erreur suivante (problème position de la parenthèse) dans 
+   mmmres.f (post-traitement de la méthode continue):
+   
+   INTEGR = INT(ZR(JCMCF)+22* (IZONE-1)+1)
+   au lieu de
+   INTEGR = INT(ZR(JCMCF+22*(IZONE-1)+1))
+   
+   a déjà été corrigée en version 9. Il s'agit d'un report 
+   dans la version 8.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas-test
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+CATALOGU MODIF compelem/grandeur_simple__    salmona L.SALMONA          620     11      2
+ FORTRAN MODIF algeline/preml0               salmona L.SALMONA          182     34     41
+ FORTRAN MODIF algorith/mmmres               salmona L.SALMONA         1045      2      2
+ FORTRAN MODIF calculel/uthk                 salmona L.SALMONA          365      2      2
+ FORTRAN MODIF elements/forngr               salmona L.SALMONA          521      8     12
+ FORTRAN MODIF elements/vdgnlr               salmona L.SALMONA         1122      9     10
+ FORTRAN MODIF elements/vdpnlr               salmona L.SALMONA         1301     12     12
+ FORTRAN MODIF modelisa/prosmo               salmona L.SALMONA          384      7      5
+ FORTRAN MODIF utilitai/peecal               salmona L.SALMONA          209      7      8
+ FORTRAN MODIF utilitai/peeint               salmona L.SALMONA          206      6      2
+  PYTHON MODIF Messages/utilitai2            salmona L.SALMONA          421      6      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   11        6376       104      97        +7
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   11        6376       104      97        +7 

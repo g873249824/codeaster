@@ -1,0 +1,1486 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 05/10/2009 - 17:09:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013960 DU 2009-10-01 09:30:40
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Petits problxc3xa8mes Ecrevisse
+FONCTIONNALITE
+   Suite à la dernière restitution, il y a eu un petit loupé :
+   - En NEW9, les cas-test ont été oubliés
+   - En NEW9/NEW10, correction d'un petit bug qui n'apparait que dans le cas où l'on veut
+   appeler CALC_ECERVISSE (donc sans la macro) et sans specifier le mot-clé LOGICIEL. Dans
+   les cas normaux d'utilisation il n'y a pas de problème.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz218a et zzzz218b
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 06/10/2009 - 17:49:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013402 DU 2009-05-12 12:35:20
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 10.0.1 et NEW 9.4.11, le cas-test perf005a est NOOK sur Calibre5.
+FONCTIONNALITE
+   Le cas-test perf005a est NOOK sur Calibre5 depuis 10.0.1 et 9.4.11.
+   
+   En effet, le TEST_TEMPS vérifie que le test tourne en 8 secondes.
+   Il tourne en 6 sur Calibre 5.
+   Il suffit de faire :
+   
+   TEST_TEMPS(
+      RESU = (_F(
+         COMMANDE  = 'STAT_NON_LINE',
+         MACHINE   = ('all', 'Calibre5'),
+         VALE      = (  6.,     4.),
+         CRITERE   = 'ABSOLU',
+         PRECISION = 2.,
+         TYPE_TEST = 'USER', ),
+            _F(
+         COMMANDE  = 'STAT_NON_LINE',
+         MACHINE   = ('all', 'Calibre5'),
+         VALE      = (  8.,     6.),
+         CRITERE   = 'ABSOLU',
+         PRECISION = 2.,
+         TYPE_TEST = 'USER+SYS',),
+      ),
+   )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perf005a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013822 DU 2009-09-04 12:07:20
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Arret CPU en PAR_LOT='NON'
+FONCTIONNALITE
+   Problème
+   ========
+   Erreur lors d'un calcul en arrêt CPU en PAR_LOT='NON' :
+   
+      Validation du concept 'U2'.
+   Traceback (most recent call last):
+     File "/aster/v10/NEW10/bibpyt/Execution/E_SUPERV.py", line 375, in ?
+       main()
+     File "/aster/v10/NEW10/bibpyt/Execution/E_SUPERV.py", line 371, in main
+       ier=appli.main()
+     File "/aster/v10/NEW10/bibpyt/Execution/E_SUPERV.py", line 366, in main
+       return self.Execute()
+     File "/aster/v10/NEW10/bibpyt/Execution/E_SUPERV.py", line 212, in Execute
+       j.exec_compile()
+     File "./Eficas/Noyau/N_JDC.py", line 239, in exec_compile
+       self.traiter_user_exception(exc_val)
+     File "./Eficas/Execution/E_JDC.py", line 274, in traiter_user_exception
+       self.fini_jdc(exc_val)
+     File "./Eficas/Execution/E_JDC.py", line 295, in fini_jdc
+       assert fin_etape != None, "Il manque l'étape FIN !"
+   AssertionError: Il manque l'étape FIN !
+   
+   
+   Solution
+   ========
+   
+   Depuis la 10.0.12, en cas d'arrêt sur une exception, on exécute la commande FIN du jeu de
+   commandes. Or en PAR_LOT='NON', la liste des étapes est construite commande par commande
+   et donc FIN n'est pas encore dans cette liste.
+   
+   Etre en PAR_LOT='OUI' résoud le problème.
+   
+   Dans ce cas (si on ne trouve pas FIN dans la liste d'étapes), il faut faire comme avant et
+   exécuter la commande FIN standard telle que prise dans le catalogue.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   reproduit sur un test simple
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013811 DU 2009-09-02 13:22:19
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   IGNORE_ALARM='SUPERVIS_1' ne fonctionne pas en POURSUITE
+FONCTIONNALITE
+   IGNORE_ALARM permet de désactiver l'affichage de certaines alarmes dans le jeu de commandes.
+   L'utilisateur ayant conscience de l'apparition d'une alarme en désactive l'affichage
+   (diagnostique du job devient OK), ce qui lui permet d'être alerter si une autre alarme
+   apparait (diagnostique <A>_ALARM).
+   
+   Il y avait un cas particulier où l'alarme n'était pas désactivée :
+   
+   POURSUITE(IGNORE_ALARM='SUPERVIS_1',PAR_LOT='NON',)
+   FIN()
+   
+   Car en effet, la mise en oeuvre du mécanisme était faite, en PAR_LOT='NON', juste après
+   l'appel à l'op de POURSUITE.
+   
+   Détail :
+     - le mécanisme est activé dans le sd_prod de DEBUT/POURSUITE
+     - on passe par sd_prod dans la phase de création du concept sortant et dans la phase de
+   validation.
+     - le mécanisme ne doit pas être activé plusieurs fois
+     - il faut donc le mettre en place au premier passage dans sd_prod et non le second.
+   
+   Existe en version 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   poursuite xc3xa9lxc3xa9mentaire
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013437 DU 2009-05-19 14:26:54
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Plantage dans CALC_TABLE (appele par POST_K1_K2_K3)
+FONCTIONNALITE
+   Problème
+   ========
+   
+   L'utilisateur fait :
+   
+   POURSUITE(...)
+   AK1 = POST_K1_K2_K3(...)
+   
+   et obtient ce message :
+   
+   /opt/aster/NEW9/bibc/supervis/astermodule.c 1800 : erreur a l appel de gcucon dans la
+   partie Python
+   Traceback (most recent call last):
+     File "./Python/Build/B_ETAPE.py", line 701, in gcucon
+       elif B_utils.Typast(AsType(objet_sd)).upper() == concep.strip():
+     File "./Python/Build/B_utils.py", line 192, in Typast
+       if issubclass(t, ASSD):
+   TypeError: issubclass() arg 1 must be a class
+   
+   
+   Explication
+   ===========
+   
+   La base est un peu grosse... mais en fait, le pick.1 seul suffit à comprendre
+   ce qui s'est passé :
+   
+   import sys, pickle
+   sys.path.append('Python')
+   fpick='pick.1'
+   file=open(fpick,'r')
+   context=pickle.load(file)
+   file.close()
+   
+   print context['AK1']
+   [None, None, None, None]
+   
+   => AK1 a été utilisé dans la première partie du calcul en tant que liste de concepts :
+   AK1[0] = COMMANDE(...)
+   ...
+   
+   
+   Solution
+   ========
+    - contournement : AKxx = POST_K1_K2_K3(...)
+   
+    - Dans gcucon (dit si un concept existe avant la commande courante), on fait un test :
+    
+    if B_utils.Typast(AsType(objet_sd)).upper() == concep.strip()
+   
+    Deux problèmes dans Typast :
+     - gérer les listes (et non seulement les tuples)
+   
+   -   if type(ty) == tuple: 
+   +   if type(ty) in (list, tuple): 
+   
+     - respecter la spécif qui dit qu'elle retourne une chaine de caractères (et non None
+   quand on n'a rien trouvé) :
+   
+   +   if t is None : return ""
+   ...
+   -   return None
+   +   return ""
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013713 DU 2009-08-13 07:42:38
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   comportement different de SDVERI entre PAR_LOT=NON/OUI
+FONCTIONNALITE
+   Problème
+   ========
+   
+   En PAR_LOT='NON' + SDVERI='OUI', le calcul s'arrête sur une erreur <E> : objet
+   PRCH....DEEQ interdit.
+   
+   En PAR_LOT='OUI' + SDVERI='OUI', le calcul passe sans problème, alors qu'un IMPR_CO
+   m'informe que l'objet PRCH....DEEQ pourtant interdit existe toujours...
+   
+   
+   Solution
+   ========
+   
+   Le calcul ressemble à ceci :
+   
+   U1=CREA_CHAMP( AFFE=_F( ... ))
+   
+   U2=CREA_CHAMP( AFFE=_F( ... ))
+   
+   DETRUIRE(CONCEPT=_F(NOM=U1,))
+   
+   U1=CREA_CHAMP( ASSE=_F( ... ))
+   
+   C'est juste après ce dernier CREA_CHAMP que le calcul s'arrête en PAR_LOT='NON'.
+   
+   
+   Fonctionnement de SDVERI :
+   
+   U1=CREA_CHAMP( AFFE=_F( ... ))
+    ---> on vérifie que les objets créés par ce CREA_CHAMP sont licites : quels sont les
+   nouveaux objets autorisés (=ceux appartenant à U1) : pas d'objet en dehors de U1, U1.xxxx
+   connu dans le catalogue sd_cham (*)
+   
+   U2=CREA_CHAMP( AFFE=_F( ... ))
+    ---> idem pour U2
+   
+   DETRUIRE(CONCEPT=_F(NOM=U1,))
+    ---> U1 "marqué comme détruit" (**)
+   
+   U1=CREA_CHAMP( ASSE=_F( ... )) (***)
+    ---> si U1 est un nouveau concept (par exemple s'il a été détruit comme c'est le cas
+   ici), on vérifie comme en (*).
+    ---> si U1 existait déjà et est enrichi (présence de reuse=U1), on fait la même
+   vérification qu'en (*).
+    ---> si U1 existait déjà (et pas de reuse), on en déduit qu'il a été produit par ailleurs
+   et donc déjà vérifié. Pas d'autre sd produite donc pas de nouveaux objets autorisés.
+   
+   
+    - En PAR_LOT='OUI', U1 est bien vu comme détruit, donc en (***), on est dans le 1er cas.
+   
+    - En PAR_LOT='NON', U1 n'est pas vu comme détruit, donc en (***), on se retrouve dans le
+   3ème cas. Or ce CREA_CHAMP (option ASSE) produit plus d'objets dans U1 que le premier qui
+   a produit U1 (option AFFE). La présence de ces "nouveaux" objets n'ayant pas été déjà
+   notés comme vérifiés déclenche une erreur.
+   
+   
+   En (***), pour savoir si U1 existait avant ou pas, on appele
+   get_contexte_avant(etape_courante).
+   Pour cela, le superviseur refait à chaque fois l'inventaire des sd produites par les
+   étapes précédentes.
+   Le bug est en (**) dans op_init de DETRUIRE : U1 est dans le get_contexte_avant("3ème
+   CREA_CHAMP").
+   
+   
+   Ce comportement existe depuis la 9.1.5 (cf. issue10561) avec l'ajout de l'attribut
+   'executed', on exécutait l'op_init que la première fois.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   fichiers joints
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 06/10/2009 - 17:49:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013631 DU 2009-07-20 14:35:45
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug crea_resu
+FONCTIONNALITE
+   Le problème est situé la routine CRTYPE. La première variable de type caractère à imprimer
+   dans le message d'alarme ALGORITH11_87 est incorrecte.
+   Le nom du champ à remplacer est effectivement mal récupéré, on pointe en dehors d'un objet
+   de travail. Il faut utiliser le nom rendu par la routine RSEXCH. 
+   
+   On remplace :
+   
+           DO 70 J = 1,NBINST
+             IF (J.GE.2) CALL JEMARQ()
+             CALL JERECU('V')
+             ICOMPT = ZI(JCPT+J-1)
+             TPS = ZR(JINST+J-1)
+             CALL RSEXCH(RESU,NSYMB,ICOMPT,NOMCH,IRET)
+             IF (IRET.EQ.0) THEN
+               CALL RSADPA(RESU,'L',1,'INST',ICOMPT,0,IAD,K8B)
+               VALKK(1) = ZK8(JCHAM+ICOMPT-1)
+               VALKK(2) = CHAMP(1:8)
+               VALR(1) = ZR(IAD)
+               VALR(2) = TPS
+               VALR(3) = PREC
+               CALL U2MESG('A','ALGORITH11_87',2,VALKK,0,0,3,VALR)
+   par :
+           DO 70 J = 1,NBINST
+             IF (J.GE.2) CALL JEMARQ()
+             CALL JERECU('V')
+             ICOMPT = ZI(JCPT+J-1)
+             TPS = ZR(JINST+J-1)
+             CALL RSEXCH(RESU,NSYMB,ICOMPT,NOMCH,IRET)
+             IF (IRET.EQ.0) THEN
+               CALL RSADPA(RESU,'L',1,'INST',ICOMPT,0,IAD,K8B)
+               VALKK(1) = NOMCH
+               VALKK(2) = ZK8(JCHAM+J-1)
+               VALR(1) = ZR(IAD)
+               VALR(2) = TPS
+               VALR(3) = PREC
+               CALL U2MESG('A','ALGORITH11_87',2,VALKK,0,0,3,VALR)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   l'xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013712 DU 2009-08-13 07:17:57
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug dans la commande DETRUIRE
+FONCTIONNALITE
+   Problème :
+   ==========
+   La commande DETRUIRE est buguée lorsque l'on cherche à un détruire un objet en donnant une
+   chaine de caractères.
+   La chaine de caractères est tronquée à L-1 (L étant la longueur utile), ce qui peut
+   provoquer la destruction de nombreux objets.
+   
+   Correction :
+   ============
+   On remplace l'instruction de la ligne 129 de OPS007 :
+                     CALL JEDETC(KLAS,KCH(1:L-1),ZI(JPO+II-1))
+   par   
+                     CALL JEDETC(KLAS,KCH(1:L),ZI(JPO+II-1))
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test personnel
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 06/10/2009 - 17:49:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010728 DU 2007-03-30 14:29:47
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   Combinaison lineaire de matrices symetrique et non symetriques (mtcmbl)
+FONCTIONNALITE
+   Problème :
+   ----------
+   Combiner des matrices symétriques et non symétriques avec COMB_MATR_ASSE
+   
+   
+   Solution :
+   ----------
+   Jacques a déjà modifié mtcmbl pour rendre cela possible. Ce qui restait à faire était de
+   modifier op0031.f pour éviter qu'il ne créé systématiquement une matrice résultat
+   symétrique même en présence d'une matrice à combiner non symétrique.
+   
+   J'en profite aussi pour modifier matimp.f dont l'impression d'une matrice non symétrique
+   n'était pas très clair, exemple :
+   """
+    MATRICE SYMETRIQUE : F
+   
+           ILIG        JCOL      VALEUR
+              1           1   6.000000000000000E+00
+              1           2   3.000000000000000E+00
+              1           2   7.000000000000000E+00    <======== Terme triangulaire
+   inférieur, on préfère voir ILIG = 2 et JCOL = 1
+              2           2   1.100000000000000E+01
+   """
+   
+   Je rajoute aussi qq tests sur les matrices à combiner dans mtcmbl.f :
+   - Vérifier que le nombre de bloc est cohérent avec le caractère symétrique ou non des
+   matrices à combiner,
+   - Vérification de la symétrie des matrices à combiner avec celle de la matrice résultat.
+   
+   
+   Validation :
+   ------------
+   Je rajoute un cas test combinant des matrices symétriques et non symétriques (validation
+   visuelle grace à imprsd.f).
+   Je valide aussi sur l'ensemble des cas tests utilisant COMB_MATR_ASSE.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas tests comb_matr_asse + nouveau cas test
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013651 DU 2009-07-24 13:45:56
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Probleme MODE_ITER_SIMULT
+FONCTIONNALITE
+   Problème :
+   ----------
+   MODE_ITER_SIMULT (via la routine WPFOPR) appelle MTCMBL qui permet de combiner des
+   matrices symétriques ou non.
+   
+   Pour combiner des matrices, on procède en 2 temps. On commence par définir la matrice
+   résultat en appelant MTDEFS puis on combine les matrices (via MTCMBL) en placant le
+   résultat dans la matrice qu'on vient de définir.
+   
+   Dans le cadre de la fiche 10728, on ajoute à MTCMBL un vérification qui consiste à
+   regarder la cohérence en terme de symétrie entre les matrices d'entrée et la matrice
+   résultat. En clair, si on combine des matrices non symétriques et qu'on place le résultat
+   dans une matrice symétrique, on plante dans un ASSERT.
+   
+   L'ajout de cette vérification fait planter les cas tests sdll141a, b, c, d et sdll140a.
+   
+   
+   Analyse :
+   ---------
+   Dans WPFOPR, on ne vérifiait pas le caractère symétrique ou non des matrices à combiner
+   avant de définir la matrice résultat. Dans sdll141a, b, c, d et sdll140a, on utilisait
+   donc une matrice symétrique pour définir la matrice résultat.
+   
+   
+   Solution :
+   ----------
+   On rajoute une boucle sur les matrices à combiner et si on trouve une matrice non
+   symétrique, on l'utilise pour construire la matrice résultat.
+   
+   
+   Validation :
+   ------------
+   Tous les cas tests utilisant MODE_ITER_SIMULT.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas tests MODE_ITER_SIMULT
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013652 DU 2009-07-24 14:00:15
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Probleme DYNA_ISS_VARI
+FONCTIONNALITE
+   Problème :
+   ----------
+   DYNA_ISS_VARI utilise DYNA_LINE_HARM qui appelle MTCMBL.
+   
+   Le problème de cette fiche est le même que celui de la fiche 13651.
+   
+   L'ajout de la vérification sur la combinaison de matrices non symétriques fait planter le
+   cas test sdls118a.
+   
+   
+   Solution :
+   ----------
+   On rajoute dans OP0060 (DYNA_LINE_HARM) une boucle sur les matrices à combiner et si on
+   trouve une matrice non symétrique, on l'utilise pour construire la matrice résultat.
+   
+   
+   Validation :
+   ------------
+   Tous les cas tests utilisant DYNA_LINE_HARM.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas tests DYNA_LINE_HARM
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013698 DU 2009-08-07 14:07:18
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW9.5.3, le cas-test ssnv209c s'arrete par manque de temps sur Bull.
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   ssnv209c s'
+      !-----------------------------------------------------------------------------------!
+      ! <EXCEPTION> <MECANONLINE_79>                                                      !
+      !                                                                                   !
+      !                                                                                   !
+      !    Arret par manque de temps CPU au numéro d'instant : 1                          !
+      !                                  lors de l'itération : 5                          !
+      !       - Temps moyen par itération : 1.280000                                      !
+      !       - Temps cpu restant         : 2.270000                                      !
+      !                                                                                   !
+      !    La base globale est sauvegardée. Elle contient les pas archivés avant l'arret. !
+      !                                                                                   !
+      !                                                                                   !
+      !                                                                                   !
+      !                                                                                   !
+      !-----------------------------------------------------------------------------------!
+   """
+   
+   
+   Solution :
+   ----------
+   Modifier le .para en le passant de 200 à 250.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv209c
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013602 DU 2009-07-07 11:48:00
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   erreur pre_gmsh
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   erreur a l'ouverture d'un fichier gmsh avec la commande pre_gmsh
+   """
+   
+   
+   Solution :
+   ----------
+   Résolue par la fiche 13547.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   aucune
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 06/10/2009 - 17:49:56
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013686 DU 2009-08-06 16:27:33
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   CREA_CHAMP - erreur developpeur
+FONCTIONNALITE
+   Problème:
+    ---------
+    L'utilisateur se plaint d'un message incompréhensible (assert).
+                                                                                            
+                                                                                            
+                               
+    Solution:
+    ---------
+    On émet un vrai message d'erreur :
+                                                                                            
+                                                                                            
+                               
+      MQUPIPO=CREA_CHAMP(INFO=1,
+                        ASSE=(_F(NOM_CMP_RESU='DX',
+                                 NOM_CMP='PRE1',
+                                 CUMUL='NON',
+                                 CHAM_GD=CHDEPL,
+                                 COEF_R=1.0,
+                                 TOUT='OUI'),
+                              _F(NOM_CMP_RESU='DY',
+                                 NOM_CMP='PRE1',
+                                 CUMUL='NON',
+                                 CHAM_GD=CHDEPL,
+                                 COEF_R=1.0,
+                                 TOUT='OUI')),
+                        TYPE_CHAM='NOEU_DEPL_R',
+                        PROL_ZERO='OUI',
+                        OPERATION='ASSE',
+                        MODELE=MO_PIPO,
+                        );
+                                                                                            
+                                                                                            
+                               
+   !------------------------------------------------------------------------------------------------!
+   !.<F>.<CALCULEL4_4>..............................................................................!
+   !................................................................................................!
+   !.Erreur.:.......................................................................................!
+   !...On.cherche.à.modifier.le."type".(réel(R),.complexe(C),.entier(I),.fonction(K8)).d'un.champ...!
+   !...C'est.impossible.............................................................................!
+   !...Types.incriminés.:.K8.et.R...................................................................!
+   !Conseils.:......................................................................................!
+   !.Il.s'agit.peut-etre.d'une.erreur.de.programmation..............................................!
+   !.S'il.s'agit.de.la.commande.CREA_CHAMP,.vérifiez.le.mot.clé.TYPE_CHAM...........................!
+   !------------------------------------------------------------------------------------------------!
+                                                                                            
+                                                                                            
+                               
+   L'utilisateur doit alors comprendre qu'il est impossible de créer un champ 'NOEU_DEPL_R'
+   en "assemblant" des morceaux de champs de "fonctions/K8" (CHDEPL).
+    
+   Liste des fichiers impactés par la correction de la fiche:  13686
+     chsut1.f
+     calculel4.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 0.15
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013717 DU 2009-08-13 14:00:47
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug dans la commande CREA_MAILLAGE
+FONCTIONNALITE
+   Problème:
+   ---------
+   Dans la commande CREA_MAILLAGE, si on détruit TOUS les GROUP_MA du maillage, le code
+   s'arrete brutalement.
+                                                                                            
+                           
+   Correction:
+   -----------
+   Comme suggéré par Alexandre, dans la routine cmdgma.f, on se protège pour ne pas chercher
+   à créer une collection ayant 0 objets.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  13717
+     cmdgma.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 06/10/2009 - 17:49:56
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013805 DU 2009-09-01 15:52:15
+TYPE express concernant Code_Aster (VERSION 10.1)
+TITRE
+   Amelioration du message CALCULEL5_84
+FONCTIONNALITE
+   Problème :
+   ========
+   Je suis tombé sur le message CALCULEL5_84 qui n'était pas clair et ne m'a pas permis de
+   résoudre mon problème.
+   
+   Analyse :
+   =======
+   Ce message est émis par elref6.f dans le cas où le triplet (nomte elrefe famille) n'est
+   pas trouvé dans le cataele.
+   Le message n'était pas compréhensible car certaines valeurs affichées étaient tronquées
+   (valk sous-dimensionné).
+   
+   Correction :
+   ==========
+   On reformule le message etle renomme DVP_5.
+   
+    Erreur de programmation :
+     On ne trouve pas le triplet ( %(k1)s )
+     correspondant à (nomte elrefe famille).
+     Vérifiez le catalogue d'éléments !
+     L'elrefe ou la famille de points de Gauss ne sont pas définis.
+   
+   Impacts :
+   =======
+   elref6.f
+   calcuel5.py
+   dvp.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   affichage message
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013968 DU 2009-10-01 16:19:49
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   Depuis 10.0.19 plantage dans QIRE_ELEM_SIGM en 2D
+FONCTIONNALITE
+   Problème :
+   ========
+   Depuis 10.0.19, le test joint plante dans QIRE_ELEM_SIGM en 2D.
+   Erreur FPE
+   
+   Analyse :
+   =======
+   Il s'agit d'une faute de frappe, à la place de * on a mis **.
+   On arrivait ainsi à des valeurs très importantes (Infinity) multipliée par zéro.
+   
+   Correction :
+   ==========
+   601,605c601,605
+   <               CHMOX(IN)=S*CHPX(IN)-UNSURS**CHDX(IN)
+   <               CHMOY(IN)=S*CHPY(IN)-UNSURS**CHDY(IN)
+   <               SIMO11(IN)=S*SIGP11(IN)-UNSURS**SIGD11(IN)
+   <               SIMO22(IN)=S*SIGP22(IN)-UNSURS**SIGD22(IN)
+   <               SIMO12(IN)=S*SIGP12(IN)-UNSURS**SIGD12(IN)
+   ---
+   >               CHMOX(IN)=S*CHPX(IN)-UNSURS*CHDX(IN)
+   >               CHMOY(IN)=S*CHPY(IN)-UNSURS*CHDY(IN)
+   >               SIMO11(IN)=S*SIGP11(IN)-UNSURS*SIGD11(IN)
+   >               SIMO22(IN)=S*SIGP22(IN)-UNSURS*SIGD22(IN)
+   >               SIMO12(IN)=S*SIGP12(IN)-UNSURS*SIGD12(IN)
+   
+   Impact :
+   ======
+   te0378.f
+   
+   sslv113c
+   sslv113d
+   ssnp130a
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test joint
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013829 DU 2009-09-08 11:39:25
+TYPE express concernant Code_Aster (VERSION 10.1)
+TITRE
+   Bug option QI(Z1/Z2)_ELEM_SIGM
+FONCTIONNALITE
+   Problème :
+   ========
+   On s'arrête dans le calcul de l'option QIZ1_ELEM_SIGM avec le message suivant :
+   
+         Objet JEVEUX inexistant dans les bases ouvertes : >&&MECA01.CHARGESD< 
+         l'objet n'a pas été créé ou il a été détruit                          
+   
+   Correction :
+   ==========
+   Il s'agit d'erreurs de frappe :
+   
+   609c609
+   <           CALL MEDOM2(MODELE,MATE,CARA,KCHAP,NCHARP,CTYP,
+   ---
+   >           CALL MEDOM2(MODELE,MATE,CARA,KCHAD,NCHARD,CTYP,
+   616c616
+   <           CALL RSEXC2(1,1,RESUP,'SIGM_NO'//OPTION(8:9)//'_ELGA  ',
+   ---
+   >           CALL RSEXC2(1,1,RESUP,'SIGM_NO'//OPTION(3:4)//'_ELGA  ',
+   621c621
+   <           CALL RSEXC2(1,1,RESUD,'SIGM_NO'//OPTION(8:9)//'_ELGA  ',
+   ---
+   >           CALL RSEXC2(1,1,RESUD,'SIGM_NO'//OPTION(3:4)//'_ELGA  ',
+   653,654d652
+   <           CALL ERGLOB(CHELEM,.FALSE.,.FALSE.,OPTION,IORDR,
+   <      &                TIME  ,RESUCO ,LERES1)
+   
+   Impact :
+   ======
+   meca01.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage test
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 06/10/2009 - 17:49:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013701 DU 2009-08-10 08:23:14
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   DEBORST et ENDO_ISOT_BETON
+FONCTIONNALITE
+   Il s'agit d'une etude simple en C_PLAN avec ENDO_ISOT_BETON en activant DEBORST  et cela
+   plante tout de suite, pour le motif : erreur de programmation : condition non respectée
+   dans nmcpl3, ligne 87. Call assert(cpl.eq.1). sur la Bull : cela tourne (même si cela ne
+   converge pas au bout de quelques pas de temps).
+   
+   Correction :  Il s'agit d'une vraie erreur de programmation dans nmcpl3 :
+   
+   ......CONV = (ICP.GE.NCPMAX .OR. ABS(SIGP(3)).LT.PRECR)   
+   ......IF(.NOT. CONV) THEN
+   .........IF((CPL .EQ. 2) .AND. ABS(DSIDEP(3,3)).GT.PRECR) THEN 
+   ............DEPS(3) = DEPS(3) - SIGP(3)/DSIDEP(3,3) => correction de DEPS33 en CPLAN
+   .........ELSEIF(ABS(DSIDEP(2,2)).GT.PRECR) THEN           
+   ............CALL ASSERT(CPL .EQ. 1)
+   ............DDEZZ = -(SIGP(3) - DSIDEP(3,2)/DSIDEP(2,2)*SIGP(2))
+   ............etc... traitement du cas 1D
+   .........ENDIF  
+   ......ENDIF     
+   
+   Donc on tombe sur le call assert, en CPLAN (pour CPL=2), si DSIDEP(3,3) est petit. Cela
+   n'arrivait pas pour les comportements standard. Mais avec endommagement, cela peut
+   arriver. La  programmation est modifiée pour traiter indépendamment les cas C_PLAN (CPL=2)
+   et 1D (CPL=1). 
+   
+   A corriger en V9 et V10
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   fichier joint
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013533 DU 2009-06-16 11:26:32
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   EQUI_ELNO_SIGM : difference entre VMIS et VMIS_SG
+FONCTIONNALITE
+   Problème signalé : CALC_ELEM/EQUI_ELNO_SIGM : il n'y a pas égalité (en valeur absolue)
+   entre les composantes VMIS et VMIS_SG.
+   
+   Il y a (au moins) 2 bugs :
+   Actuellement, (voir te0330) quand on calcule les invariants aux noeuds des éléments
+   (EQUI_ELNO_SIGM), on commence par calculer ces valeurs aux points de Gauss
+   (EQUI_ELGA_SIGM), puis on effectue pour toutes les composantes de EQUI_ELNO_SIGM le
+   passage PG-NOEUDS (PPGAN2).
+   
+   Premier bug : le champ EQUI_ELNO_SIGM ne comporte (en 3D) que 7 cmp, alors que la champ
+   EQUI_ELGA_SIGM en comporte 16 (il y a  en plus les vecteurs propres, qui commencent à 7) :
+   
+   ECOEQPG  = SIEF_R   ELGA__ RIGI    (VMIS     TRESCA   PRIN_1   PRIN_2   PRIN_3   VMIS_SG
+   VECT_1_X VECT_1_Y VECT_1_Z VECT_2_X VECT_2_Y VECT_2_Z
+                                       VECT_3_X VECT_3_Y VECT_3_Z TRSIG    )
+   ECOEQNO  = SIEF_R   ELNO__ IDEN__  (VMIS     TRESCA   PRIN_1   PRIN_2   PRIN_3   VMIS_SG
+   TRSIG )
+   
+   Or on demande l'extrapolation aux noeuds pour les 7 composantes. Résultat : ce que l'on
+   croit être la cmp TRSIG aux noeuds est en fait l'extrapolation de VECT_1_X !
+   
+   Deuxième bug : l'extrapolation d'un champ signé comme VMIS_SG ne conduit pas au même
+   résultat que l'extrapolation de la valeur absolue multipliée par l'extrapolation du champ
+   de signes ! (il suffit de remplace "extrapolation" par "moyenne" pour s'en convaincre. Si
+   on veut ête cohérent avec la définition de VMIS_SG, il faut prendre le champ VMIS, après
+   passage aux noeuds (ELNO), et le multiplier par le signe de TRSIG extrapolé aux noeuds.
+   
+   Alors on obtient des résultats corrects :
+    M44  VMIS        TRESCA       PRIN_1       PRIN_2       PRIN_3       VMIS_SG        
+    N67  8.14703E+01 9.19135E+01 -1.07222E+02 -1.97747E+01 -1.53087E+01 -8.14703E+01 
+   
+   Erwan a testé cette correction sur un cas industriel, et a priori ça donne bien les
+   résultats attendus.
+   Attention, pour restituer, il faut modifier certaines valeurs de référence du cas test
+   sdlv129a (.comm et .com1). Tous les tests NOOK peuvent être modifiés, y compris ceux
+   indiqués comme étant ANALYTIQUE (ici, on a indiqué analytique au sens où la valeur de
+   référence était bien calculée à la main, mais à partir de la valeur des contraintes issues
+   d'Aster). 
+   
+   De meme le test wtna108a est à modifier : les test_resu sur VMIS_SG étaient manifestement
+   faux.
+   
+   
+   Les résultats sont faux pour la CMP VMIS_SG depuis l'introduction des directions
+   principales en 7.3.23.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.3.23
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.3.23
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdlv129a +wtna108a + tests utilisant VMIS_SG
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013824 DU 2009-09-07 08:10:38
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   probleme avec le systeme de glissement UNIAXIAL
+FONCTIONNALITE
+   L'étude consiste à utiliser un système de glissement UNIAXIAL, avec un comportement
+   simplifié :
+   ACIER=DEFI_MATERIAU(ELAS_ORTH=_F(...),
+                       ECOU_VISC1=_F(N=n,  K=t0,  C=0.,),
+                       ECRO_ISOT1=_F(R_0=0.0,  Q=0.0,  B=0.0,  H=0.0, ),
+                       ECRO_CINE1=_F(D=0.0,),);
+   MONO1=DEFI_COMPOR(MONOCRISTAL=_F(MATER=ACIER,
+   				 ECOULEMENT='ECOU_VISC1',
+   				 ECRO_ISOT='ECRO_ISOT1',
+   				 ECRO_CINE='ECRO_CINE1',
+   				 ELAS='ELAS_ORTH',
+   				 FAMI_SYST_GLIS='UNIAXIAL',),);
+   
+   Le calcul passe en OCTAEDRIQUE mais plante en UNIAXIAL en erreur numérique.
+   
+   Analyse et solution : le bug vient de la routine lcmmvx : on y trouve les lignes :
+               IF (DP.GT.0.D0) THEN
+                  SEUIL=1.D0
+               ELSE
+                  SEUIL = MAX(SEUIL, CRIT/RP)
+               ENDIF
+   ici DP = 0 (on n'a pas atteint le seuil). Mais RP=0 lui aussi (voir données matériau).
+   D'ou le plantage. La solution consiste simplement à remplacer les lignes précédentes (où
+   on voulait calculer un seuil négatif, ce qui est désormais inutile) par :
+   IF (DP.GT.0.D0) THEN
+      SEUIL=1.D0
+   ELSE
+      SEUIL = 0.D0
+   ENDIF
+   
+   Alors cela tourne (voir fichier joint)
+   
+   Restit aussi en version 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   le test joint
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013850 DU 2009-09-10 15:52:29
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW10.0.16, le cas-test forma01c est NOOK sur Bull, Rocks et Calibre5.
+FONCTIONNALITE
+   En NEW10.0.16, le cas-test forma01c est NOOK sur Bull, Rocks et Calibre5.
+   Le test incorrect est le suivant:
+   " ---- RESULTAT:  RESUT    NUME_ORDRE:   2 NOM_CHAM: EQUI_ELNO_SIGM                      
+                   
+   REFERENCE: NON_REGRESSION   VERSION: 7.01.13         
+   NOOK              RELA   121.772 % VALE: 2.6175287340061D+08
+    MAX              TOLE     0.100 % REFE: 1.1802765666400D+08
+   
+   Ce test était cassé suite à la fiche 13533 : modification du calcul de VMIS_SG
+   
+   On répare en changeant la valeur de référence
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   forma01c
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 06/10/2009 - 17:49:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013866 DU 2009-09-11 15:23:48
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   MN10 - CONTACT - Glissiere methode continue et projection hors-zone
+FONCTIONNALITE
+   Fiche express
+   =============
+   
+   Dans la méthode continue, lorsque l'on est en GLISSIERE='OUI', tout point ayant été
+   contactant le reste jusqu'à la fin du calcul.
+   Or il peut arriver qu'un point soit exclus du contact faute d'appariement (projection
+   hors-zone), dans ce cas son statut de contact est remis à 0. On ne remet par contre pas le
+   statut glissière à 0.
+   
+   Par ailleurs je déplace la mise à zéro du statut de contact de MMMBCA à MAPPAR dans le cas
+   de la projection hors-zone. Cela devrait permettre de construire les matrices de contact
+   en tenant compte plus rapidement du non-appariement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout mxc3xa9thode continue
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013814 DU 2009-09-03 08:37:51
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Quelques imprecisions dans le C : malloc non libere (free), ecrasements, ...
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En parcourant un peu le C d'Aster au cours de la fiche 13803, j'ai découvert quelques
+   allocations (par malloc) non suivies d'une libération (par free). Il y a en outre un
+   écrasement mémoire.
+   
+   Analyse
+   =======
+   
+   * libérations oubliées dans 
+   
+   hdfrat (hdfrat.c) : nom
+   aster_getcolljev (astermodule.c) : nom, val
+   aster_GetResu (astermodule.c) : liscmp, nom, val
+   aster_rcvale (astermodule.c) : nomres
+   
+   remarque : il n'y a absolument rien de grave là dedans. Seulement quelques octets perdus.
+   
+   * écrasement mémoire dans aster_GetResu (astermodule.c) : le tableau val est dimensionné à
+   1. Son pointeur est passé à la routine Fortran TAILSD appelée dans le cas "LIST_RESULTAT".
+   Or dans ce cas, on écrit 3 valeurs dans le tableau VAL.
+   
+   remarque : aster_GetResu ne semble être appelée que pour la vérification des SD.
+   
+   ---------------------------------
+   
+   impacts : hdfrat.c, astermodule.c
+   à faire en V9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013803 DU 2009-09-01 14:07:52
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   MPICM1A - chaine de caracteres OPTMPI pour choix des operations
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En compilant une version MPI d'Aster avec les compilateurs Gnu sur Calibre 5 (ou machine
+   perso) on tombe sur un ASSERT dans MPICM1A la routine qui réalise les opérations MPI.
+   Il se produit car une chaîne de caractères ne vaut pas la valeur attendue.
+   
+   Analyse
+   =======
+   
+   Il s'avère que le schéma d'appel est le suivant :
+   
+   ........... F77 ........... C ........... F90 ...........
+   ......... amumpp ..-->.. mpicm1 ..-->.. mpicm1a .........
+   
+   Le problème se situe dans le passage des longueurs des chaînes de caractères : le détour
+   éphémère par le C (essentiellement pour de la compilation par directive) fait perdre la
+   vraie longueur de la chaîne créée dans AMUMPP. En effet cette longueur est disponible à
+   l'arrivée dans le C, mais on l'ignore et on renvoie la chaîne à MPICM1A avec la longueur
+   donnée par strlen. Cette longueur n'est juste que si la chaîne comporte le caractère nul
+   '\0'. Ce qui n'est pas le cas des chaînes Fortran par défaut (car elle porte
+   intrinsèquement leur longueur).
+   
+   Solution
+   ========
+   
+   On crée des chaînes de caractères temporaires dans le C en recopiant la chaîne Fortran (de
+   longueur connue) et la complétant par le caractère nul.
+   
+   Impact : mpicm1.c, fetmpi.c, mummpi.c
+   
+   Remarque : Mathieu a émis une fiche pour changer complètement l'activation des routines
+   MPI (fiche 13838) en se passant du C pour tout mettre dans le F90 (où la compilation
+   conditionnelle existe aussi).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   aster mpi+gnu
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 06/10/2009 - 17:49:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013846 DU 2009-09-10 08:32:05
+TYPE express concernant Code_Aster (VERSION 10.1)
+TITRE
+   X-FEM : bug dans POST_MAIL_XFEM
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Dans le post-traitement pour la visu X-FEM, si une maille n'appartient à aucun groupe de
+   mailles, alors on plante violemment dans la routine xpogma.f :
+   
+   OBJET DE COLLECTION CONTIG DE LONGUEUR NULLE
+   
+   Solution :
+   ----------
+   
+   Cela est dû à une mauvais ordre d'appel : 
+   il faut d'abord faire    
+      CALL JELIRA(JEXNUM(LISTGR,IMA),'LONMAX',NGRM,K8B)
+      IF (NGRM.EQ.0) GOTO 999
+   
+   puis 
+      CALL JEVEUO(JEXNUM(LISTGR,IMA),'L',IAGMA)
+    ...
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test x-fem
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 06/10/2009 - 17:50:00
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013804 DU 2009-09-01 14:32:20
+TYPE anomalie concernant Code_Aster (VERSION 9.6)
+TITRE
+   Revue du modele GLRC_DM
+FONCTIONNALITE
+   Objectifs
+   -----------
+   
+   Cette revue consiste en :
+   _la vérification du modèle théorique (FV+SF)
+   _la vérification de la cohérence du fortran avec le modèle théorique (SF)
+   _la mise à jour et amélioration des cas tests ssns106 (NS via SF)
+   _la rédaction de la doc V (NS via SF)
+   _mise à jour et enrichissement de la doc R (FV)
+   
+   Réalisations
+   -------------
+   
+   Modèle théorique
+   ~~~~~~~~~~~~~~~~~
+   
+   Le calcul de la composante du seuil d'endommagement en membrane montre qu'une erreur a été
+   introduite dans le modèle. En effet, le terme lié à Eps_zz dans la partie déviatorique n'a
+   pas lieu d'être.
+   
+   La correction de l'ensemble des équations découlant a été réalisée. 
+   
+   Pour finir, une erreur dans le calcul de la contribution C_e^mm à la matrice tangente a
+   été trouvée. 
+   
+   Modifications du sources
+   ~~~~~~~~~~~~~~~~~~~~~~~~~
+   
+   Les modifications apportées correspondent essentiellement à la mise en conformité du code
+   source avec la documentation théorique corrigée.
+   
+   Dans le cas du béton armé, le modèle considère qu'il n'y a pas d'endommagement en
+   compression ce qui se traduit par un GMC = 1. Or dans le code, on a GMC = 0. Cela a pour
+   conséquence de ne pas donner les résultats attendus lors de compression. Le code a été
+   corrigé pour être en accord avec la théorie. De plus, nous avons mis en place la
+   possibilité à l'utilisateur soit de définir un GMC différent de 1 soit d'imposer une
+   limite en compression au travers de la variable SYC.
+   
+   L'implémentation de l'intégration locale de la loi de comportement GLRC_DM a été revue. En
+   effet, cette intégration utilise un algorithme de prédiction/correction. Dans la version
+   initialement développé, lors de l'étape de prédiction, un découplage membrane ? flexion du
+   critère d'endommagement est utilisé pour calculer les valeurs des variables
+   d'endommagement à l'itération 0. Afin d'améliorer la prédiction, nous avons repris en
+   compte le couplage. On est amené à résoudre un polynôme du quatrième ordre. Pour ce faire,
+   nous avons utilisé l'algorithme des valeurs propres de la matrice compagnon.
+   
+   L'amélioration de la prédiction permet de diminuer le nombre d'itérations nécessaires de
+   l'algorithme de Newton-Raphson pour l'intégration de la loi de comportement.
+   
+   Pour finir, une erreur dans la programmation du calcul de la matrice tangente a été corrigée.
+   
+   Validations
+   ~~~~~~~~~~~~
+   
+   Les cas tests ssns106 ont été modifiés et enrichis par Navid Saeedi qui a fait un gros
+   travail d'harmonisation. La documentation associée au cas test a été entièrement réécrite
+   par Navid.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.21
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.3.21
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.05.106, R7.01.32
+VALIDATION
+   ssns106
+NB_JOURS_TRAV  : 20.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 06/10/2009 - 17:50:00
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013895 DU 2009-09-18 07:44:59
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   repere local pour la gyroscopie des discrets
+FONCTIONNALITE
+   Lors de la livraison de la gyroscopie pour les éléments discrets, le passage du repère
+   local au repère global a été omis. 
+   
+   Je modifie donc la te009 (celle de la gyroscopie pour les discrets) en ajoutant le passage
+   par la matrice de rotation du repère local au repère global.
+   J'ajoute une modélisation au test SDLL141 (gyroscopie d'une poutre en rotation) où on
+   remplace la masse de la poutre par des discrets équivalents et on fait faire une rotation
+   de 45 degrés à la poutre.
+   
+   Depuis l'introduction de la gyroscopie, il y avait un risque de résultats faux si on
+   calculait la gyroscopie d'éléments discrets définis dans un repère local.
+   
+   Je modifie aussi légèrement le catalogue de CALC_MATR_ELEM (et la routine meamgy) pour ne
+   plus rendre le matériau obligatoire. Ainsi on peut calculer la gyroscopie de systèmes
+   constitués exclusivement d'éléments discrets (J'en avais besoin pour des test
+   supplémentaires).
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.1.16
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v2.02.141
+VALIDATION
+   SDLL141e
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013823 DU 2009-09-07 06:01:30
+TYPE anomalie concernant Code_Aster (VERSION 9.6)
+TITRE
+   En NEW9.5.4, les cas-tests sdls01b et shlv100a s'arretent en erreur_<F> sur Bull, Cal4, Cal5 et Rocks
+FONCTIONNALITE
+   En 10.0.13 Xavier a amélioré MODI_REPERE pour qu'il puisse traiter les champs complexes.
+   L'évolution a été effectuée en NEW10 et les tests sdls01b et shlv100a ont été complétés
+   pour valider l'extension de MODI_REPERE.
+   En revanche en NEW9 on a décidé de ne pas ajouter cette possibilité mais, simplement,
+   d'arrêter l'utilisateur s'il tente d'employer MODI_REPERE sur un champs complexe.
+   Par erreur, MODI_REPERE a été ajouté aux tests sdls01b et shlv100a en NEW9 aussi.
+   Il suffit donc de remettre ces deux cas tests dans la version NEW9 dans leur état
+   antérieur à l'évolution introduite en 10.0.13.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SDLS01b et SHLV100a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013908 DU 2009-09-18 08:22:12
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Affichages alarmants dans DYNA_TRAN_MODAL en INFO=2
+FONCTIONNALITE
+   Emile Luzzato a constaté que l'affichage en INFO=2 de DYNA_TRAN_MODAL avec CHOC produit
+   des messages inquiétants.
+   
+   Par exemple :
+   
+   <<
+      Au noeud de choc N351
+     
+   
+      Pour le noeud n0 : 99999999
+       - Raideur locale DEPX : 5.27412e+60
+       - Raideur locale DEPY : 1454282773709208787705547989822834009440256.000000
+       - Raideur locale DEPZ : 377.867340  
+   >>
+   
+   En fait, il s'agit uniquement d'un affichage indicatif. Il n'a pas de conséquences sur le
+   calcul.
+   Comme l'intérêt de son information est loin d'être évident, je préfère l'ôter que de réparer.
+   
+   Mais ce choix ne préjuge pas des évolutions à apporter sur les schémas en temps
+   disponibles (ou à introduire) dans DYNA_TRAN_MODAL pour traiter les chocs, avec leur
+   corollaire, les heuristiques de choix de pas de temps.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sur xc3xa9tude
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 06/10/2009 - 17:50:01
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013886 DU 2009-09-16 14:03:48
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Messages mal formates
+FONCTIONNALITE
+   Probleme
+   ========
+   Quelques messages mal formates ds grappefluide.py et factor.py.
+   (Le 3ieme fichier soupçonne ds la fiche, context_info.py, ne comporte
+   finalement pas d'erreur de ce type).
+   
+   Solution
+   ========
+   Dans grappefluide je change les msgs:
+    -3: il manquait l'unite, le metre.
+    -5 et 6: le de float.
+   Dans factor.py:
+    -62: j'ai retouche le msg pour tenir compte d'une restit reçente 
+   (SOLVEUR/POST_TRAITEMENTS si MUMPS).
+    -73: corrections de pourcentages mal formates: % au lieu de %%.
+   
+   Sources modifiees
+   ==================
+   PY: factor.py, grappefluide.py.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   informatique
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 07/10/2009 - 15:59:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013990 DU 2009-10-07 11:52:01
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   WRITE inutile
+FONCTIONNALITE
+   Problème :
+   ----------
+   Thomas a repéré un WRITE(6,*) inutile dans ircam1.
+   
+   
+   Solution :
+   ----------
+   Le supprimer en NEW9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   aucune
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF forma01c                      macocco K.MACOCCO          336     47     43
+ CASTEST MODIF perf001a                     sellenet N.SELLENET          67      1      1
+ CASTEST MODIF sdls01b                       macocco K.MACOCCO          256      1     53
+ CASTEST MODIF shlv100a                      macocco K.MACOCCO          440      1    236
+ CASTEST MODIF ssla200a                      macocco K.MACOCCO         1329      9      9
+ CASTEST MODIF ssla200b                      macocco K.MACOCCO         1361      9      9
+ CASTEST MODIF sslp200a                      macocco K.MACOCCO         1468      9     10
+ CASTEST MODIF sslp200b                      macocco K.MACOCCO         1290      9      9
+ CASTEST MODIF sslp201a                      macocco K.MACOCCO         1219      9      9
+ CASTEST MODIF sslp201b                      macocco K.MACOCCO         1215     10     10
+ CASTEST MODIF sslv113c                      macocco K.MACOCCO          189      7      7
+ CASTEST MODIF sslv113d                      macocco K.MACOCCO          189      7      7
+ CASTEST MODIF sslv200a                      macocco K.MACOCCO         1096     11     11
+ CASTEST MODIF sslv200b                      macocco K.MACOCCO         1057      8      8
+ CASTEST MODIF ssnp130a                      macocco K.MACOCCO          325     45     37
+ CASTEST MODIF ssns106a                      macocco K.MACOCCO          957    841    630
+ CASTEST MODIF ssns106b                      macocco K.MACOCCO         1423   1314    626
+ CASTEST MODIF ssns106c                      macocco K.MACOCCO         1534   1437    734
+ CASTEST MODIF ssns106d                      macocco K.MACOCCO          419    327    434
+ CASTEST MODIF ssns106e                      macocco K.MACOCCO          533    350    283
+ CASTEST MODIF ssns106f                      macocco K.MACOCCO          737     40     42
+ CASTEST MODIF ssns106g                      macocco K.MACOCCO          493      8     14
+ CASTEST MODIF ssnv209c                      macocco K.MACOCCO          505      2      1
+ CASTEST MODIF wtna108a                      macocco K.MACOCCO          362      5      4
+ CASTEST MODIF zzzz218a                       assire A.ASSIRE           370      1      3
+ CASTEST MODIF zzzz218b                       assire A.ASSIRE           359      1      3
+CATALOPY MODIF commande/calc_matr_elem       macocco K.MACOCCO          155      2      2
+       C MODIF hdf/hdfrat                    macocco K.MACOCCO           65      2      1
+       C MODIF supervis/astermodule          macocco K.MACOCCO         4174      8      2
+       C MODIF utilitai/fetmpi               macocco K.MACOCCO           61     21      4
+       C MODIF utilitai/mpicm1               macocco K.MACOCCO           46     13      4
+       C MODIF utilitai/mummpi               macocco K.MACOCCO           50     12      5
+ FORTRAN MODIF algeline/cmdgma               macocco K.MACOCCO          119      3      3
+ FORTRAN MODIF algeline/mtcmbl               macocco K.MACOCCO          259     12      4
+ FORTRAN MODIF algeline/op0031               macocco K.MACOCCO          207     14      6
+ FORTRAN MODIF algeline/wpfopr               macocco K.MACOCCO          190     36      3
+ FORTRAN MODIF algorith/crtype               macocco K.MACOCCO          441      3      3
+ FORTRAN MODIF algorith/lcmmvx               macocco K.MACOCCO          126      2      2
+ FORTRAN MODIF algorith/mappar               macocco K.MACOCCO          416      5      1
+ FORTRAN MODIF algorith/mdptem               macocco K.MACOCCO          193      3     22
+ FORTRAN MODIF algorith/mmmbca               macocco K.MACOCCO          401      1      2
+ FORTRAN MODIF algorith/nmcpl3               macocco K.MACOCCO          101     14     11
+ FORTRAN MODIF algorith/op0060               macocco K.MACOCCO          734     18      4
+ FORTRAN MODIF calculel/chsut1               macocco K.MACOCCO          145      7      3
+ FORTRAN MODIF calculel/elref6               macocco K.MACOCCO          197      2      7
+ FORTRAN MODIF calculel/matimp               macocco K.MACOCCO          201      6      5
+ FORTRAN MODIF calculel/meamgy               macocco K.MACOCCO          103      2      2
+ FORTRAN MODIF calculel/meca01               macocco K.MACOCCO          726      4      6
+ FORTRAN MODIF elements/crgdm                macocco K.MACOCCO          123     14     22
+ FORTRAN MODIF elements/gldloc               macocco K.MACOCCO          174     40     58
+ FORTRAN MODIF elements/lcgldm               macocco K.MACOCCO          517    130    112
+ FORTRAN MODIF elements/te0009               macocco K.MACOCCO          104     17      8
+ FORTRAN MODIF elements/te0330               macocco K.MACOCCO          161     19      2
+ FORTRAN MODIF elements/te0378               macocco K.MACOCCO          687      6      6
+ FORTRAN MODIF prepost/ircam1               sellenet N.SELLENET         355      1      2
+ FORTRAN MODIF prepost/xpogma                macocco K.MACOCCO           80      6      2
+ FORTRAN MODIF supervis/ops007               macocco K.MACOCCO          136      2      2
+  PYTHON MODIF Build/B_utils                 macocco K.MACOCCO          199      4      3
+  PYTHON MODIF Cata/ops                      macocco K.MACOCCO          488      7      4
+  PYTHON MODIF Execution/E_JDC               macocco K.MACOCCO          374     11      2
+  PYTHON MODIF Macro/calc_ecrevisse_ops       assire A.ASSIRE           799      1      1
+  PYTHON MODIF Macro/macr_ecre_calc_ops       assire A.ASSIRE           638      2      2
+  PYTHON MODIF Macro/macr_ecrevisse_ops       assire A.ASSIRE           711      1      1
+  PYTHON MODIF Messages/calculel4            macocco K.MACOCCO          348     12      1
+  PYTHON MODIF Messages/calculel5            macocco K.MACOCCO          337      4      5
+  PYTHON MODIF Messages/dvp                  macocco K.MACOCCO           78     10      1
+  PYTHON MODIF Messages/factor               macocco K.MACOCCO          324      2      3
+  PYTHON MODIF Messages/grappefluide         macocco K.MACOCCO          103      4      4
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   68       35375      4992    3576     +1416
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   68       35375      4992    3576     +1416 

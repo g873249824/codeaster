@@ -1,0 +1,756 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR g8bhhxd      DESROCHES X.           DATE 09/11/2006 - 09:10:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009955 DU 2006-08-21 14:51:08
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TMA : CS
+TITRE
+   POST_RELEVE_T ("erreur numerique" apresINTE_MAIL_3D )
+FONCTIONNALITE
+   Une corection avait ete faite sur les GROUP_NO et pas sur
+   les chemins. On repare cet oubli.
+   
+   la routine rvcpnc recupere le nombre de composantes et
+   leurs valeurs dans le champ fourni.
+   la routine exchem extrait les valeurs dans le champ et
+   remplit a R8VIDE si le DDL
+   (noeud-composante) n'existe pas.
+   la routine rvchl3 interpole la grandeur en fonction de la
+   position du chemin dans la
+   maille. Il faut tester la valeur recuperee par rapport a
+   R8VIDE. Si celle-ci n'existe pas
+   on ne fait pas l'interpolation.
+   
+   Validation :
+   ajout de POST_RELEVE_T et INTE_MAIL_3D dans le test
+   sslv135a
+   TT = POST_RELEVE_T( ACTION=_F(  GROUP_NO = 'TOUT',
+   INTITULE = 'SIEF',
+   RESULTAT = EVOLNOT,
+   NUME_ORDRE=1,
+   NOM_CHAM='SIEF_ELNO_ELGA',
+   TOUT_CMP = 'OUI',
+   OPERATION = 'EXTRACTION')
+   )
+   
+   IM = INTE_MAIL_3D ( MAILLAGE = MAILLAGE ,
+   INFO = 2 ,
+   DEFI_SEGMENT = _F( ORIGINE   =  ( 0. ,
+   1. , 0.3 ),
+   EXTREMITE =  ( 2. ,
+   1. , 0.3 ), ) , )
+   
+   TC = POST_RELEVE_T( ACTION=_F(  CHEMIN = IM ,
+   INTITULE = 'SIEF',
+   RESULTAT = EVOLNOT,
+   NUME_ORDRE=1,
+   NOM_CHAM='SIEF_ELNO_ELGA',
+   TOUT_CMP = 'OUI',
+   OPERATION = 'EXTRACTION')
+   )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv115a
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009938 DU 2006-07-28 15:20:16
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   Plantage de l'option ERZ2_ELEM_SIGM sur Debian et Clayastr en NEW8
+FONCTIONNALITE
+   Il s'agit d'un debordement de tableau dans le calcul des
+   contraintes lissees, qui sert au calcul de ZZ2.
+   Ce debordement se produisait car on supposait dans la
+   programmation que tous les elements etaient contenus
+   dans le meme grel (groupe d'elements), ce qui etait vrai
+   jusque la.
+   Or ici, ca n'est plus vrai, car il y a un tres grand
+   nombre d'elements (23000) et on cree un nouveau grel a
+   partir de 12800.
+   Ce bug produisait un plantage dans ce cas mais
+   n'affectait pas les resultats dans les autres cas.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage des fichiers associes
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 09/11/2006 - 09:10:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010099 DU 2006-10-03 07:44:54
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   LIAISON_MAILLE plus sympa
+FONCTIONNALITE
+   Suite a ma 1ere tentative d'asrest :
+   -------------------------------------
+   1) je modifie un peu le fortran et l'histor
+   2) Pour la NEW7, je signale a CS que le fichier que j'avais joint (calirc.f en NEW7)
+   n'est
+   pas a prendre en compte. Il faut refaire un "diff" a partir de calirc en NEW8.
+   
+   
+   Concernant l'evolution souhaitee :
+   ----------------------------------
+   On fait (a peu pres) ce qui etait prevu :
+   On ne lie pas un noeud esclave a une maille maitre si :
+   - ce noeud apparient a la connectivite de la maille.
+   - l'utilisateur n'a pas utilise les mots cles TRAN, CENTRE, ANGL_NAUT
+   
+   Sous ces conditions, la relation est une tautologie qu'il ne faut pas ecrire.
+   
+   La correction est faite pour AFFE_CHAR_MECA et AFFE_CHAR_THER.
+   On peut aussi considerer que c'est une AL et la corriger en NEW7.
+   
+   
+   
+   
+   Concernant le probleme des messages peu clairs et trop nombreux :
+   -----------------------------------------------------------------
+   1) Il s'agit d'une erreur d'utilisation   :
+   Patrick n'avait pas bien compris comment utiliser LIAISON_MAIL :
+   il faisait :
+   LIAISON_MAIL=(
+   _F( GROUP_MA_ESCL= 'GE', GROUP_MA_MAIT='GM1')
+   _F( GROUP_MA_ESCL= 'GE', GROUP_MA_MAIT='GM2')
+   _F( GROUP_MA_ESCL= 'GE', GROUP_MA_MAIT='GM3')
+   
+   
+   Parce qu'il croyait que la liaison ne se faisait que sur les noeuds a peu pres en
+   vis a vis. Il pensait lier les noeuds de GE "petit morceau" par "petit morceau". Alors
+   qu'en realite, chaque occurence de LIAISON_MAIL lie TOUS les noeuds esclaves.
+   Du coup, il etait normal qu'il voit apparaitre des messages lui indiquant que
+   certains noeuds etaient projetes sur des mailles lointaines.
+   => il faut ameliorer un peu la documentation d'AFFE_CHAR_MECA (U4.44.01).
+   
+   
+   2) Les messages sur les mailles lointaines etaient de simples messages (pour avoir la
+   liste de TOUS les noeuds). On les replace par des alarmes (=> on n'en verra que 5)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.44.01
+VALIDATION
+   petit essai perso + etude de Patrick
+NB_JOURS_TRAV  : 0.6
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010105 DU 2006-10-04 13:05:47
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   temps de calcul anormal pour IMPR_RESU
+FONCTIONNALITE
+   A l'occasion de l'introduction de la macro SIMU_POINT_MAT2D, Jean-Michel s'est rendu
+   compte que le cout CPU varie plus que lineairement avec le nombre de pas de temps
+   calcules.
+   
+   
+   Le probleme ne vient pas de STAT_NON_LINE mais d'IMPR_RESU et plus particulierement de
+   l'impression du "titre" du champ :
+   ------>
+   CHAMP PAR ELEMENT AUX POINTS DE GAUSS DE NOM SYMBOLIQUE  VARI_ELGA
+   NUMERO D'ORDRE: 47 INST:  2.35000E-01
+   
+   
+   
+   
+   En effet, lorsqu'on imprime le titre d'un champ d'une SD_RESULTAT (titreb.f), on utilise
+   une routine (rsutor.f) qui recherche, pour un nom de champ donne a quel nom symbolique
+   et
+   quel numero d'ordre correspond ce champ.
+   
+   Cette recherche se fait en parcourant l'objet .TACH et elle est d'autant plus longue que
+   le nombre de pas de temps est grand.
+   D'ou le cout CPU variant plus que lineairement.
+   
+   
+   J'ai donc modifie rsutor.f pour tirer parti du fait qu'en general, on imprime les
+   champs
+   dans l'ordre des numeros d'ordre croissants.
+   
+   
+   J'ai obtenu le gain suivant (pour 1600 pas de temps sur mon IBM T23)
+   STAT_NON_LINE + IMPR_RESU  :
+   avant  : 1570 s
+   apres  :  650 s
+   
+   
+   Cette evolution fait donc gagner 920 s pour un IMPR_RESU de 1600 pas de temps sur un
+   poste
+   IBM T23.
+   
+   
+   
+   Liste des fichiers impactes par la correction de cette fiche:
+   rsutor.f  titreb.f
+   
+   Remarque pour CS :
+   Je mets en piece jointe les fichiers mis a jour pour la V7
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie par JMP
+NB_JOURS_TRAV  : 0.7
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE E.              DATE 09/11/2006 - 09:10:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010119 DU 2006-10-06 13:58:05
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   Amelioration de deux cas tests modaux
+FONCTIONNALITE
+   Le passage sur la BULLe a mis en evidence des difficultes avec trois cas tests dans le
+   calul modal.
+   Pour deux d'entre eux il s'agit de tests qu'une legere modification permet de faire
+   tourner sans probleme.
+   
+   Dans SDLL506a, on utilise dorenavant la methode de calul par defaut des modes, i.e.
+   MODE_ITER_SIMULT. Les resultats sont inchanges.
+   
+   Dans SDNL120a, on fait passer la tolerance sur la precision des modes de 2.E-6 a 3.E-6.
+   
+   En revanche, il y a une difficulte notable avec YYYY115a.
+   La methode MULTI_FRONTALE rencontre des difficultes pour factoriser la matrice (K-w2M).
+   
+   Sur la COMPAQ on a :
+   <FACTOR>   TERME DIAGONAL MAXIMUM :     816462369757226.
+   <FACTOR>   TERME DIAGONAL (NON NUL) MINIMUM :    1.00000000000000
+   <FACTOR>  NB MAX. DECIMALES A PERDRE :                    10
+   <FACTOR>  NB DECIMALES PERDUES       :                     5
+   
+   Sur la BULL on a :
+   <FACTOR>   TERME DIAGONAL MAXIMUM :     816462369757219.
+   <FACTOR>   TERME DIAGONAL (NON NUL) MINIMUM :    1.00000000000000
+   <FACTOR>   EPSILON CHOISI  :   7.458340731200208E-155
+   <FACTOR>  NB MAX. DECIMALES A PERDRE :                    10
+   <FACTOR>  NB DECIMALES PERDUES       :                    15
+   
+   Il reste a eclaircir pourquoi avec les memes donnees d'entree, une machine perd 5
+   decimales tandis que l'autre en perd 15 !!!
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SDLL506a, SDNL120a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR cibhhlv      VIVAN L.               DATE 09/11/2006 - 09:10:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010135 DU 2006-10-12 10:49:47
+TYPE express concernant Code_Aster (VERSION 7.7)
+TITRE
+   V7 cas test : suppression de la virgule apres la parenthese fermante d'une commande
+FONCTIONNALITE
+   suppression de la virgule apres la parenthse fermante d'une commande dans les cas tests
+   suivants en V7 :
+   hsna102a, b, c, d, e
+   sslp105a
+   ssnv160c, d
+   ssnv163a, b, c
+   ssnv169b, c
+   ssnv174a
+   ssnv180a
+   wtnv112a
+   wtnv123c
+   wtnv126a, b
+   zzzz200c
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   restitution des tests
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR g8bhhxd      DESROCHES X.           DATE 09/11/2006 - 09:10:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 008430 DU 2005-02-10 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 7.4)
+TITRE
+   Contact et recherche lineaire dans test soudage htna100a
+FONCTIONNALITE
+   Restitution du test modifie par EC2-MS (L. Depradeux).
+   
+   On identifie les plages de temps de mise en contact de la piece avec ses brides et  on
+   substitue a la charge de contact des dirichlets uniquement actifs pendant ces instants.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.42.100
+VALIDATION
+   cas test htna100a
+NB_JOURS_TRAV  : 15.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 09/11/2006 - 09:10:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010171 DU 2006-10-20 15:59:30
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   quelques tests casses en NEW8 sur la Bull
+FONCTIONNALITE
+   Quelques cas tests casses en NEW8 sur bull :
+   ---------------------------------------------
+   
+   
+   1) ssna102d : manque de temps CPU
+   Solution proposee : j'augmente le .para :  -> 400s
+   
+   
+   2) ssna111b : manque de temps CPU
+   Solution proposee :  j'augmente le .para :  -> 600s
+   
+   
+   3) J'emets une fiche d'AL pour signaler :
+   * ssna102d :
+   - que le temps CPU est brutalement passe (sur alphaserver) de 65s a 150s le
+   21/9/06 (STAT_NON_LINE)
+   - que le temps CPU sur bull est presque 2 fois superieur a celui de l'alpha
+   :
+   150 s sur alpha ; 280 sur bull.
+   * ssna111b :
+   - que le temps CPU est brutalement passe (sur alphaserver) de 150s a 280s le
+   21/9/06
+   - que le temps CPU sur bull est presque 2 fois superieur a celui de l'alpha
+   :
+   280 s sur alpha ; 500 sur bull.
+   
+   
+   4) Les test XFEM suivants sont OK si  :
+   - JPL corrige le bug qu'il a trouve dans te0533.f
+   - j'augmente PCENT_PIVOT pour ssnv182b.comm
+   - remarque : ssnv186e est deja casse sur alphaserver.
+   
+   
+   Tests OK :
+   ssnv182b
+   ssnv182e
+   ssnv182f
+   
+   
+   ssnv186a
+   ssnv186b
+   ssnv186c
+   ssnv186d
+   ssnv186f
+   ssnv186g
+   ssnv186h
+   routines modifiees : te0533.f (restit JPL)
+   
+   
+   5) Le test sdls112a s'arrete avec un message "erreur dans la partie Python"
+   Ce test est OK en "debug".
+   
+   
+   5.1) J'ameliore astermodule.c pour que le message d'erreur soit plus complet :
+   - nom de la commande
+   - nom et numero d'occurence pour les mots cles facteur et simple.
+   5.2) Je trouve un bug dans PROJ_MESU_MODAL (routine mpmod2.f) :
+   si MODE_GENE, on ecrase le tableau VECT car NBCMPI(=6) > 3
+   => j'ajoute un ASSERT et j'emets une fiche d'AL pour Hari.
+   routines modifiees : mpmod2.f , astermodule.c
+   
+   
+   6) Le test sslv134e s'arrete avec un message "NOM DE COLLECTION ..."
+   Le probleme vient d'un bug dans la routine mebilg.f :
+   On detruit 2 champs CHTIME et CHTIMV alors que ces 2 variables ne sont pas
+   initialisees. Du coup, par malchance, on detruit parfois des objets qu'on ne devrait pas
+   detruire !
+   routines modifiees : mebilg.f, jenonu.f
+   
+   
+   7) Le test sdll23a s'arrete par le message d'op0109 (CALC_SISM_MODAL):
+   CALL UTDEBM('F','OP0109','INCOHERENCE')
+   CALL UTIMPI('L','LE MODE DYNAMIQUE: ',1,IM)
+   CALL UTIMPI('L','NE PARTICIPE PAS A LA DIRECTION: ',1,ID)
+   
+   
+   Le probleme vient du fait que la boucle 40 d'op0109.f est mal programmee :
+   - on cherche le noeud qui a la plus grande participation dans les directions X,Y et
+   Z
+   - pour cela, on teste DX (resp.  DY et DZ) par rapport a 0. (sans tolerance)
+   - Si 1 noeud a 1 DX /= 0., on est content !  mais si on n'a pas de chance, si un
+   mode est rigoureusement orthogonal a OX alors on s'arrete avec le message
+   d'erreur
+   fatal.
+   
+   
+   Quand on regarde de plus pres (je l'ai fait avec Georges Devesa), on s'apercoit que
+   la
+   boucle 40 ne sert qu'a imprimer un bloc d'informations sur le fichier RESULAT :
+   
+   
+   CONTRIBUTION GENERALISEE MAXI
+   MODE      FREQUENCE   DIR     DEPLACEMENT          FORCE  LOCALISATION
+   1    2.46730D-01     X     3.65402D-44    1.52043D-44      C
+   Y     1.03677D+00    4.31401D-01      C
+   Z     3.15675D-32    1.31352D-32      C
+   2    4.16070D-01     X     6.12222D-47    8.95812D-48      C
+   Y     3.19393D-32    4.67341D-33      C
+   Z     1.03677D+00    1.51702D-01      C
+   3    7.39322D+00     X     1.48099D-33    6.86319D-37      C
+   Y     9.96173D-01    4.61644D-04      B
+   Z     1.57185D-32    7.28425D-36      B
+   
+   
+   En accord avec C. Durand, je supprime la boucle 40 d'op0109.f.
+   Le test sdll23a est alors repare.
+   
+   
+   
+   
+   
+   
+   Modifs a reporter en NEW7 :
+   ---------------------------
+   - mebilg.f
+   - mpmod2.f
+   - te0533.f
+   - op0109.f ?
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests casses passes sur la bull
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR g8bhhxd      DESROCHES X.           DATE 09/11/2006 - 09:10:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010167 DU 2006-10-20 14:15:30
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TMA : CS
+TITRE
+   POST_RELEVE_T
+FONCTIONNALITE
+   Un POST_RELEVE_T d'un champ de grandeur VARI_R sur une
+   operation MOYENNE s'arrete
+   en ERREUR avec le message suivant :
+   
+   TU_VARI=POST_RELEVE_T(ACTION=_F(INTITULE='VARI',
+   GROUP_NO='LESC',
+   RESULTAT=U_NOR,
+   
+   NOM_CHAM='VARI_ELNO_ELGA',
+   NOM_CMP='V1',
+   OPERATION='MOYENNE',
+   INST=1.),);
+   !-----------------------------------------------------
+   -------------------!
+   ! <F>
+   <TABLE0_1>
+   !
+   ! Erreur dans les donnees. Le parametre VARI n'existe
+   pas dans la table. !
+   ! Cette erreur est fatale. Le code
+   s'arrete.                             !
+   !-----------------------------------------------------
+   -------------------!
+   
+   Les champs dont la grandeur est VARI_R ont un traitement
+   specifique.
+   Les noms utilisateur V1, V2,... n'existent que lors de
+   l'impression (commandes IMPR_RESU
+   et POST_RELEVE_T).
+   C'est pour cette raison que lorsque l'utilisateur
+   demande V1, V2,..., le code
+   traduit par VARI + une liste de numeros 1,2,...
+   Un "flip-flop" est fait a la lecture des donnees puis a
+   l'ecriture des resultats.
+   Dans le cas de l'anomalie, le "flip-flop retour" n'a pas
+   ete pris en compte pour
+   une operation MOYENNE.
+   correction dans rvpost.f, rvaffm.f et rvtamo.f
+   validation dans ssnv503a
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de l'etude + ssnv503a
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE E.             DATE 09/11/2006 - 09:11:02
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010136 DU 2006-10-12 15:48:01
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TITRE
+   Blindage de DEFI_FOND_FISS
+FONCTIONNALITE
+   Blindage de DEFI_FOND_FISS : on verifie que les mailles surfaciques des levres
+   contiennent
+   bien les noeuds du fond.
+   Si on ne definie pas correctement les levres (ou le fond), on a le message d'erreur
+   suivant:
+   
+   <F> <DEFI_FOND_FISS> <GVERIF> Le noeud N49     du fond de fissure n est
+   
+   rattache a aucune maille surfacique de la levre inferieure : verifier les
+   
+   
+   groupes de mailles
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pabhhhh      TARDIEU N.             DATE 09/11/2006 - 09:11:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010180 DU 2006-10-25 08:21:54
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   Variables non initialisees
+FONCTIONNALITE
+   Le programme valgrind (http://valgrind.org) permet de detecter des variables non
+   initialisees par un programme lors de son execution.
+   Son utilisation est tres simple : valgrind mon_executable.
+   
+   En lancant de cette maniere une petite etude Code_Aster, on detecte facilement un
+   certain
+   nombre de variables non initialisees.
+   
+   - JEECRA :  variable IGUARD non initialisee et non utilisee
+   
+   - BISSEC : variable GRAIN0 non initialisee
+   
+   - ACEINC : on tentait d'acceder a la composante 14 du tableau NBOCC alors que NBOCC est
+   dimensionne a 13 dans l'appelant OP0019.
+   
+   - CADDLI : on va chercher par un GETVTX la valeur d'un mot cle facultatif. Comme il est
+   absent du jeu de commandes, GETVTX ne modifie pas la chaine de sortie. Or en entree,
+   cette
+   chaine n'etait pas initialisee.
+   
+   - CRESO1 : on teste la variable d'impression FETI quelle que soit la methode de
+   resolution. Dans tous les autres cas, cette variable est non-ititialisee.
+   
+   - TE0032 : pour l'option CHAR_MECA_PRES_R, le booleen GLOBAL n'etait pas initialise. On
+   l'initialise a .FALSE.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Passage des tests
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+--- AUTEUR g8bhhxd      DESROCHES X.           DATE 09/11/2006 - 09:11:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009955 DU 2006-08-21 14:51:08
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TMA : CS
+TITRE
+   POST_RELEVE_T ("erreur numerique" apresINTE_MAIL_3D )
+FONCTIONNALITE
+   Une corection avait ete faite sur les GROUP_NO et pas sur
+   les chemins. On repare cet oubli.
+   
+   la routine rvcpnc recupere le nombre de composantes et
+   leurs valeurs dans le champ fourni.
+   la routine exchem extrait les valeurs dans le champ et
+   remplit a R8VIDE si le DDL
+   (noeud-composante) n'existe pas.
+   la routine rvchl3 interpole la grandeur en fonction de la
+   position du chemin dans la
+   maille. Il faut tester la valeur recuperee par rapport a
+   R8VIDE. Si celle-ci n'existe pas
+   on ne fait pas l'interpolation.
+   
+   Validation :
+   ajout de POST_RELEVE_T et INTE_MAIL_3D dans le test
+   sslv135a
+   TT = POST_RELEVE_T( ACTION=_F(  GROUP_NO = 'TOUT',
+   INTITULE = 'SIEF',
+   RESULTAT = EVOLNOT,
+   NUME_ORDRE=1,
+   NOM_CHAM='SIEF_ELNO_ELGA',
+   TOUT_CMP = 'OUI',
+   OPERATION = 'EXTRACTION')
+   )
+   
+   IM = INTE_MAIL_3D ( MAILLAGE = MAILLAGE ,
+   INFO = 2 ,
+   DEFI_SEGMENT = _F( ORIGINE   =  ( 0. ,
+   1. , 0.3 ),
+   EXTREMITE =  ( 2. ,
+   1. , 0.3 ), ) , )
+   
+   TC = POST_RELEVE_T( ACTION=_F(  CHEMIN = IM ,
+   INTITULE = 'SIEF',
+   RESULTAT = EVOLNOT,
+   NUME_ORDRE=1,
+   NOM_CHAM='SIEF_ELNO_ELGA',
+   TOUT_CMP = 'OUI',
+   OPERATION = 'EXTRACTION')
+   )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv115a
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND C.              DATE 09/11/2006 - 09:11:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010174 DU 2006-10-23 16:51:23
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   CALC_FONCTION mot cle SPEC_OSCI Supprimer les valeurs par defaut
+FONCTIONNALITE
+   A la demande du SEPTEN, on supprime la valeur par defaut (9.81) pour le mot cle NORME de
+   CALC_FONCTION / SPEC_OSCI.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.32.04
+VALIDATION
+   tests concernes
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE E.             DATE 09/11/2006 - 09:11:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010091 DU 2006-10-02 16:40:42
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   NEW8.3.15, les tests hpla101a et b, hplp100b s'arretent en ERREUR (Alphaserver)
+FONCTIONNALITE
+   Ces tests sont des originaux : ils ne plantaient que sur clayastr en nodebug (OK en debug
+   et sur clpaster...)
+   
+   Explication : dans la routine gver2d (operateur CALC_THETA, option BANDE), on fait un
+   jedtr sur un objet de travail qui n'est pas toujours cree --> dans les 3 presents tests,
+   on detruisait par erreur la geometrie !
+   La localisation du probleme a ete grandement facilitee par l'utilisation du logiciel
+   valgrind (et avec l'aide de Nicolas).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hpla101a/b, hplp100b
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF hsna102a                      cibhhlv L.VIVAN            220      9     14
+ CASTEST MODIF hsna102b                      cibhhlv L.VIVAN            222      9     14
+ CASTEST MODIF hsna102c                      cibhhlv L.VIVAN            255     10     15
+ CASTEST MODIF hsna102d                      cibhhlv L.VIVAN            237      9     14
+ CASTEST MODIF hsna102e                      cibhhlv L.VIVAN            227      9     13
+ CASTEST MODIF htna100a                      cibhhlv L.VIVAN           1206    333    118
+ CASTEST MODIF sdll506a                      cibhhlv L.VIVAN            500      2      2
+ CASTEST MODIF sdls300a                      cibhhlv L.VIVAN            147      6    515
+ CASTEST MODIF sdnl120a                      cibhhlv L.VIVAN            528      2      2
+ CASTEST MODIF sslp105a                      cibhhlv L.VIVAN            519     40     52
+ CASTEST MODIF sslv115a                      cibhhlv L.VIVAN            378     68      4
+ CASTEST MODIF ssna102d                      cibhhlv L.VIVAN            314      1      1
+ CASTEST MODIF ssna111b                      cibhhlv L.VIVAN            222      1      1
+ CASTEST MODIF ssnv160c                      cibhhlv L.VIVAN            327     22     23
+ CASTEST MODIF ssnv160d                      cibhhlv L.VIVAN            328     24     41
+ CASTEST MODIF ssnv163a                      cibhhlv L.VIVAN            241      3      5
+ CASTEST MODIF ssnv163b                      cibhhlv L.VIVAN            220      3      4
+ CASTEST MODIF ssnv163c                      cibhhlv L.VIVAN            221      3      4
+ CASTEST MODIF ssnv169b                      cibhhlv L.VIVAN            203      3      5
+ CASTEST MODIF ssnv169c                      cibhhlv L.VIVAN            218      3      4
+ CASTEST MODIF ssnv174a                      cibhhlv L.VIVAN            265     12     13
+ CASTEST MODIF ssnv180a                      cibhhlv L.VIVAN            276     15     17
+ CASTEST MODIF ssnv503a                      cibhhlv L.VIVAN            413     12      2
+ CASTEST MODIF wtnv112a                      cibhhlv L.VIVAN            438      2      5
+ CASTEST MODIF wtnv123c                      cibhhlv L.VIVAN            833      8     13
+ CASTEST MODIF wtnv126a                      cibhhlv L.VIVAN            842     17     21
+ CASTEST MODIF wtnv126b                      cibhhlv L.VIVAN            809     17     24
+ CASTEST MODIF zzzz200c                      cibhhlv L.VIVAN            464      2      6
+CATALOPY MODIF commande/calc_fonction        cibhhlv L.VIVAN            207      2      2
+ FORTRAN MODIF algorith/mdfext               cibhhlv L.VIVAN            141      3      1
+ FORTRAN MODIF algorith/mdrecf               cibhhlv L.VIVAN            230      9      3
+ FORTRAN MODIF algorith/op0109               cibhhlv L.VIVAN            424      3     49
+ FORTRAN MODIF calculel/bissec               cibhhlv L.VIVAN            345      2      1
+ FORTRAN MODIF calculel/sinoz2               cibhhlv L.VIVAN            469      7      4
+ FORTRAN MODIF elements/creso1               cibhhlv L.VIVAN            195     12     14
+ FORTRAN MODIF elements/gver2d               cibhhlv L.VIVAN            186      3      3
+ FORTRAN MODIF elements/gverif               cibhhlv L.VIVAN            867     97      4
+ FORTRAN MODIF elements/te0032               cibhhlv L.VIVAN            271      2      1
+ FORTRAN MODIF elements/zzcalb               cibhhlv L.VIVAN             65      6      3
+ FORTRAN MODIF jeveux/jeecra                 cibhhlv L.VIVAN            281      1     11
+ FORTRAN MODIF modelisa/caddli               cibhhlv L.VIVAN            353      2      1
+ FORTRAN MODIF modelisa/calirc               cibhhlv L.VIVAN            530     27      1
+ FORTRAN MODIF postrele/rvaffm               cibhhlv L.VIVAN            145      4      4
+ FORTRAN MODIF postrele/rvchl3               cibhhlv L.VIVAN            151      9      1
+ FORTRAN MODIF postrele/rvpost               cibhhlv L.VIVAN            279      3      3
+ FORTRAN MODIF postrele/rvtamo               cibhhlv L.VIVAN            273     35     11
+ FORTRAN MODIF utilitai/rsutor               cibhhlv L.VIVAN            114     59     58
+ FORTRAN MODIF utilitai/titreb               cibhhlv L.VIVAN            491      7      7
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   48       17090       938    1134      -196
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   48       17090       938    1134      -196 

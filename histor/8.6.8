@@ -1,0 +1,686 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 03/06/2008 - 11:08:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012130 DU 2008-05-28 05:41:59
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Erreur de compilation de la routine vpqzla en version 9.2.26 sous Calibre 4
+FONCTIONNALITE
+   En NEW9
+   --------
+   Restit de vpqzla pour pb FORMAT.
+   Machine: claui2t2 sous calibre 4 avec gcc/g77 3.3.
+   + Suite demande de Mathieu:
+   Rajout du cas-test sensd09b: modif des valeurs de TEST_RESU
+   qui ont un peu bougé sur CALIBRE 5 (2.10-4 pour une tolérance
+   à 1.10-4 en absolu, valeur de référence=0).
+   
+   En NEW8
+   -------
+   Lors de la restit précédente (en 8.6.7) j'ai oublié de 
+   joindre le test modifié SENSD09B (on change 
+   l'approche 'COMPLEXE' en approche 'REEL', cf. fiche AL12125).
+   je corrige ici cet impair.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.2.26
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   non rxc3xa9gression, informatique
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 02/06/2008 - 16:56:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012128 DU 2008-05-27 12:45:00
+TYPE anomalie concernant Code_Aster (VERSION 8.7)
+TITRE
+   Catalogue AFFE_CHAR_MECA_F/CONTACT m?ode continue
+FONCTIONNALITE
+   Les catalogues AFFE_CHAR_MECA/CONTACT et AFFE_CHAR_MECA_F/CONTACT sont différents en
+   version 8. Des évolutions sur la méthode continue (FOND_FISSURE, RACCORD_LINE_QUAD,
+   VECT_ORIE_POU entre autres) n'ont pas été reportées dans AFFE_CHAR_MECA_F, d'où un
+   plantage au moment du GETVTX dans CAZOCC.f.
+   Par ailleurs on enlève APPARIEMENT='RIGIDE' dans AFFE_CHAR_MECA/CONTACT qui ne mène à rien
+   dans le Fortran (anticipation qui n'a pas été rendue) et n'est d'ailleurs pas présent dans
+   AFFE_CHAR_MECA_F/CONTACT.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout contact
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 04/06/2008 - 18:16:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012134 DU 2008-05-28 08:37:53
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Usage de -checkbounds
+FONCTIONNALITE
+   Questionnement:
+   ---------------
+   L'usage de l'option de compilation -CheckBounds (ou -CB) peut-il nous aider à trouver des
+   bugs dans Code_Aster ?
+                                                                                            
+                                   
+   Analyse:
+   --------
+   J'ai recompilé avec -CB les 2400 routines qui n'utisent les commons JEVEUX ZI, ...
+   J'ai ensuite fait passer 350 petits tests.
+                                                                                            
+                                   
+   Après analyse des problèmes détectés, les routines posant problème sont :
+                                                                                            
+                                   
+    * mkkvec  variable RESU
+    * chpve2  variable CHAINE
+                                                                                            
+                                   
+    * u2mesg  variable CH1
+                                                                                            
+                                   
+    * preml2  variable DEBFAC
+                                                                                            
+                                   
+    * dxhmft  variable HMFT2
+    * dsxhlt  variable HLT2
+    * dsqcis  variable TB
+    * dsqci2  variable TB
+    * dstcis  variable TA
+    * dsqbfb  variable BFB
+    * dstbfb  variable BFB
+    * dxqfor  variable FNO
+                                                                                            
+                                   
+    En réalité, seules les 2 premières routines sont vraiment bugguées et doivent etre corrigées.
+                                                                                            
+                                   
+    Pour u2mesg, le problème vient de l'instruction :
+         SUITE = (LEN(CH1) .GT. 1) .AND. (CH1(2:2) .EQ. '+')
+         En effet, la norme de fortran77 indique que l'expression booléenne doit etre
+   entièrement évaluée.
+         Si LEN(CH1)=1, on va évaluer CH1(2:2) ce qui n'est pas très sain.
+                                                                                            
+                                   
+    Pour preml2.f, le problème vient de :
+         SUBROUTINE PREML2(N1,DIAG,COL,DELG,XADJ1,ADJNC1,
+        +     ESTIM,ADRESS,PAREND,FILS,FRERE,ANC,NOUV,SUPND,
+        +     DHEAD,QSIZE,LLIST,MARKER,
+        +     DECAL,LGSN,DEBFAC,DEBFSN,SEQ,LMAT,ADPILE,
+        ...
+         INTEGER LFRONT(N1),NBLIGN(N1),LGSN(N1),DEBFAC(N1),DEBFSN(N1)
+        ...
+        *        'LONGUEUR DE LA FACTORISEE ',(DEBFAC(N1+1)-1)
+                                                                                            
+                                   
+        Le tableau DEBFAC, argument de la routine est déclaré de longueur N1 mais on cherche
+        à imprimer DEBFAC(N1+1)
+                                                                                            
+                                   
+        En réalité, il n'y a pas de problème car le tableau passé en argument est bien de
+   longueur N1+1 (routine mltpre.f).
+        Il suffit juste de corriger la décalaration de DEBFAC dans preml2 : DEBFAC(N1+1)
+                                                                                            
+                                   
+                                                                                            
+                                   
+    Pour les 8 autres, le problème est lié à l'initialisation d'un tableau à 2 dimensions.
+         Par exemple pour la routine dsqcis.f :
+         REAL*8 TA(6,12)
+                                                                                            
+                                   
+         DO 100 K = 1 , 72
+            TB(K,1) = 0.D0
+    100  CONTINUE
+                                                                                            
+                                   
+   Correction :
+   ------------
+   On corrige toutes ces routines. Ainsi, si on souhaite retenter un passage en -CheckBounds,
+   ces routines ne nous arreteront plus.
+                                                                                            
+                                   
+                                                                                            
+                                   
+   Impact documentaire:
+   --------------------
+   Un paragraphe "Wiki" a été ajouté par TDS et JP sur l'usage (et les limites) de
+   -CheckBounds dans le document D10: Pour déboguer Aster.
+                                                                                            
+                                   
+                                                                                            
+                                   
+   NEW8 :
+   -----
+   Les routines chpve2 et mkkvec doivent etre egalement corrigées en NEW8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de 350 petits tests
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 04/06/2008 - 18:16:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012057 DU 2008-04-30 12:25:07
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Souci de changement de type des concepts pendant l'ecriture en MED
+FONCTIONNALITE
+   Problème :
+   ==========
+   Il n'est pas possible de faire un LIRE_RESU au format MED sans plantage avec le message :
+      !----------------------------------------------------------------------------!
+      ! <F> <UTILITAI6_80>                                                         !
+      !                                                                            !
+      !                                                                            !
+      ! Concept résultat T : la variable INST est inconnue pour le type 
+   MODE_MECA. !
+      !                                                                            !
+      !                                                                            !
+      !                                                                            !
+      ! Cette erreur est fatale. Le code s'arrete.                                 !
+      !----------------------------------------------------------------------------!
+   
+   Le problème survient au moment de l'écriture des variables d'accès. Pour un concept du
+   type MODE_MECA les variables d'accès peuvent être FREQ ou NUME_MODE. Or on ne prévoyait
+   que le cas où la variable d'accès est INST.
+   
+   Correction :
+   ============
+   Après enquêtes et investigations, il semble qu'en dynamique les paramètres sont
+   nécessaires à de nombreuses commandes. Malheureusement les fichiers med ne permettent pas
+   de stocker ces paramètres. Aucun test n'a pas permis de faire remonter d'erreur (il n'y a
+   pas de test en fait...)
+   
+   On décide donc d'interdire au niveau du fortran l'utilisation de LIRE_RESU pour les
+   structures de données de type :
+   - DYNA_TRAN
+   - DYNA_HARMO
+   - HARM_GENE
+   - MODE_MECA
+   - MODE_MECA_C
+   
+   On s'arrête en erreur fatale avec le message suivant :
+      !-------------------------------------------------------------------------!
+      ! <F> <UTILITAI5_40>                                                      !
+      !                                                                         !
+      !                                                                         !
+      !  LIRE_RESU ne sait pas lire les structures de données de type MODE_MECA !
+      !                                                                         !
+      !                                                                         !
+      !                                                                         !
+      ! Cette erreur est fatale. Le code s'arrete.                              !
+      !-------------------------------------------------------------------------!
+   
+   Impact :
+   ========
+   op0150.f
+   utilitai5.py
+   
+   Nota :
+   ======
+   * Il n'existe pas de cas test validant LIRE_RESU format MED pour des SD autres que
+   evol_noli ou evol_ther.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.02.01
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 04/06/2008 - 18:16:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011015 DU 2007-06-25 15:30:34
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Comportement anormal de Stanley en PAR_LOT='OUI'
+FONCTIONNALITE
+   Fiche restituée une première fois en 8.5.2 et 9.1.5, puis retour en arrière via la 11135.
+   
+   Dans un jeu de commandes qui calcule plusieurs concepts résultat :
+   RESU1 = MECA_STATIQUE(...)
+   RESU2 = MECA_STATIQUE(...)
+   
+   Si on insère STANLEY() entre les deux et qu'on est en PAR_LOT='OUI', Stanley nous propose
+   de choisir parmi RESU1 et RESU2 alors que RESU2 n'a pas encore été calculé.
+   
+   Pour corriger cela, on ajoute un attribut "executed" aux ASSDs (concepts). Dans la
+   première réalisation, on utilisait l'attribut "executed" de l'étape qui produit le
+   concept... mais l'étape est perdue en POURSUITE.
+   
+   On fait de même pour tous les concepts récupérés dans le jdc (modèle, cham_mater...).
+   
+   
+   Impacts :
+   - N_ASSD.py : ajout de l'attribut "executed", initialisé à 0,
+   
+   - E_ETAPE.py : on marque le concept : self.sd.executed=1,
+   
+   - ops.py : après avoir lu le pick.1, il faut mettre à jour jdc.sds_dict dont les ASSDs ne
+   contiennent pas les attributs dépicklés,
+   
+   - stanley.py : on utilise la valeur de "concept.executed" pour savoir si on propose le
+   concept à l'utilisateur.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 04/06/2008 - 18:16:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012123 DU 2008-05-26 11:45:57
+TYPE express concernant Code_Aster (VERSION 8.7)
+TITRE
+   Plantage dans mmmab2 sur Calibre5
+FONCTIONNALITE
+   Objet
+   =====
+   
+   Les test de méthode CONTINUE qui font du contact-frottant plantent sur Calibre 5 dans
+   MMMAB2.f salement en nodebug.
+   
+   Analyse
+   =======
+   
+   Le bug a été trouvé par Jacques et Jean-Pierre. Il se trouve dans la routine MKKVEC
+   appelée (uniquement) par MMMAB2
+   
+   C --- INITIALISATIONS
+   C
+         DO 11 I = 1,3
+           DO 12 J = 1,3
+             MAT(I,J) = 0.D0
+   12      CONTINUE
+           RESU(J) = 0.D0
+   11    CONTINUE
+         THETA = 1.D0
+   
+   On a écrit RESU(J) au lieu de RESU(I). Or à la fin de la boucle sur J, ce dernier vaut
+   J=4, on fait donc RESU(4) = 0.D0, et comme RESU est un argument en entrée, on écrase au delà.
+   
+   A savoir
+   ========
+   
+   Le bug a été découvert grâce à une option bien pratique des compilateurs : l'option "check
+   bounds". Sur le compilateur Intel, elle se présente ainsi :
+   
+   -CB    Performs run-time checks on whether array subscript and substring references are
+   within declared bounds (same as the -check bounds option).
+   
+   Elle permet d'obtenir la remontée suivante :
+   
+   ------------------------------------------------------------------------------------------------------------------------
+    
+   INSTANT DE CALCUL :  1.000000000E+00
+    
+   ------------------------------------------------------------------------------------------------------------------------
+   |     CONTACT    |     CONTACT    |     CONTACT    |   ITERATIONS   |     RESIDU     |   
+    RESIDU     |     OPTION     |
+   |    CONTINU     |    CONTINU     |    CONTINU     |     NEWTON     |     RELATIF    |   
+    ABSOLU     |   ASSEMBLAGE   |
+   |   ITER. GEOM.  |   ITER. FROT.  |   ITER. CONT.  |                | RESI_GLOB_RELA |
+   RESI_GLOB_MAXI |                |
+   ------------------------------------------------------------------------------------------------------------------------
+   forrtl: severe (408): fort: (2): Subscript #1 of the array RESU has value 4 which is
+   greater than the upper bound of 3
+   
+   Image              PC                Routine            Line        Source             
+   asteru_jpl         0000000001F9E956  Unknown               Unknown  Unknown
+   asteru_jpl         0000000001F9DB56  Unknown               Unknown  Unknown
+   asteru_jpl         0000000001F11232  Unknown               Unknown  Unknown
+   asteru_jpl         0000000001EDA0E2  Unknown               Unknown  Unknown
+   asteru_jpl         0000000001ED9068  Unknown               Unknown  Unknown
+   asteru_jpl         00000000004933AE  mkkvec_                    52  mkkvec.f
+   asteru_jpl         0000000000493AD0  mmmab2_                    40  mmmab2_jpl.f
+   asteru_jpl         0000000000E6A639  te0364_                   370  te0364.f
+   asteru_jpl         0000000000910304  te0000_                  1261  te0000.f
+   asteru_jpl         0000000000613998  calcul_                   472  calcul.f
+   asteru_jpl         0000000000EE74A0  mmcmat_                   149  mmcmat.f
+   asteru_jpl         0000000000D9F12F  mmcmem_                    69  mmcmem.f
+   asteru_jpl         00000000009D308F  nmdepl_                   300  nmdepl.f
+   asteru_jpl         00000000007A4EA8  op0070_                   304  op0070.f
+   asteru_jpl         0000000000599772  ex0000_                   258  ex0000.f
+   asteru_jpl         00000000004E6750  execop_                    90  execop.f
+   asteru_jpl         00000000004D26EE  expass_                    82  expass.f
+   asteru_jpl         0000000000499BD7  aster_oper               2635  astermodule.c
+   
+   Correction
+   ==========
+   
+   On remplace RESU(J) par RESU(I) dans MKKVEC.
+   
+   A faire en v8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tous tests mxc3xa9thode continue
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 04/06/2008 - 18:16:56
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012140 DU 2008-05-30 08:12:02
+TYPE express concernant Code_Aster (VERSION 9.2)
+TITRE
+   Calibre5 : tests hsns101b, ssls124a
+FONCTIONNALITE
+   1. le test hsns101b s'arrete dans STAT_NON_LINE avec le message :
+   
+   |     2        X | 1.64003E-04  X | 2.24918E-02   |TANGENTE        |
+      !--------------------------------------------!
+      ! <F> <ELEMENTS4_61>                         !
+      !  préconditions non remplies                !
+      ! Cette erreur est fatale. Le code s'arrete. !
+      !--------------------------------------------!
+   
+   Analyse : il s'agit d'une vérification dans la routine zeroco (recherche de zero de
+   fonction par la méthode de cordes). Les valeurs de la fonction pour les bornes extremes
+   doivent etre de signe contraire (on vérifie que Y(1) < 0 et  Y(2) > 0). Cette routine est
+   appelée dans le cas présent par nmchdp (intégration du comportement de Chaboche). 
+   
+   il se trouve que dans ce test (hsns101) on compare VMIS_CINE_LINE avec VMIS_CIN1_CHAB en
+   annulant certains coefficients de la loi CIN1_CHAB.
+   Du coup dans nmchdp, la borne X(2) initiale conduit à Y(2)= 0 (à la  précision machine
+   près), au lieu d'une valeur Y(2) > 0 (on obtient en fait immédiatement la solution). Du
+   coup on active l'erreur (et cela se passait seulement sur calibre5).
+   
+   La solution consiste à vérifier que Y(1) et Y(2) sont non nulles (à la  précision
+   RESI_INTE_RELA) avant l'appeler zeroco. Sinon, on sort de la routine puisque l'on a trouvé
+   la solution.
+   
+   Validation : tous les tests _CIN1_ et _CIN2_
+   
+   RESTITUTION: NEW9 SEULEMENT
+   
+   2. Le test ssls124a plante en pivot presque nul. Jacques a regardé : dans ce test (SHB8)
+   on cherche à évaluer la robustesse de l'élément pour une épaisseur relative de plus en
+   plus petite. Cela se traduit par des décimales perdues dans la résolution par MULT_FRONT.
+   Pour le cas incriminé, on en perdait 12. On met NPREC=18 (sans que cela dégrade la solution !)
+    
+   RESTITUTION : NEW9 et NEW8
+   
+   3. test sdls114b : Jacques a trouvé : erreur de dimensionnement :
+   52c52
+   <       REAL*8 DU1DL(3,3),DU2DL(3,3),DU3DL(3,3),COURB(3,3,3)
+   ---
+   >       REAL*8 DU1DL(3,4),DU2DL(3,4),DU3DL(3,4),COURB(3,3,3)
+   
+   RESTITUTION : NEW9 et NEW8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hsns101b, ssls124a
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011977 DU 2008-04-14 06:55:40
+TYPE anomalie concernant Code_Aster (VERSION 9.3)
+TITRE
+   En NEW9.2.19, le cas-test sdnv105a s'arrete en ERREUR_<F> sur Calibre.
+FONCTIONNALITE
+   Il s'agit d'une mauvaise initialisation des variables DEFAM 
+   et DEFAP dans NMISOT, pour les composantes 5 et 6, pour les 
+   problèmes plans. On est ici en C_PLAN, et on initialise 
+   seulement les 4 premières composantes. 
+   
+   or on fait :
+         DO 110 K=1,3
+           DEPSTH(K)   = DEPS(K) -COEF
+        &                -(DEFAP(K)-DEFAM(K))
+           DEPSTH(K+3) = DEPS(K+3)-(DEFAP(K+3)-DEFAM(K+3))
+           DEPSMO = DEPSMO + DEPSTH(K)
+    110  CONTINUE
+   
+   j'initialise donc tout à zero, et cela se passe bien.
+   
+   Cette mauvaise initialisation existait seulement depuis la 
+   9.2.11.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdnv105a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 04/06/2008 - 18:16:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012119 DU 2008-05-23 12:52:46
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 8.6.6, le cas-test ascou22a s?arrete en ERREUR_<F> sur Rocks.
+FONCTIONNALITE
+   A priori, il suffit de mettre 1950Mo dans le .para comme en version 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ascou22a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011899 DU 2008-03-31 13:41:35
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : DeltaCad
+TITRE
+   IMPR_RESU au format MED pour les QU8 xc3xa0 4 points de Gauss
+FONCTIONNALITE
+   Anomalie
+   --------
+   Code_Aster s'interrompt dans IMPR_RESU/MED lors de l'ecriture d'un champ de contraintes
+   aux points de gauss sur des elements ayant pour mailles des QUAD8 et pour famille de
+   points de Gauss la famille FPG4.
+   
+   Explication
+   ------------
+   Lors du passage de l'etude fournie avec la demande en INFO=2, nous avons 
+   decele une anomalie lors de la creation d'un profil.
+   Dans cette etude, Code-Aster cree un profil med pour permettre de distinguer les mailles
+   QUAD8 a 9 points de Gauss de celles a 4 points de Gauss.
+   Le profil des QUAD8 a 9 points de Gauss etait incorrect.
+   Il s'agissait d'un probleme de pointeur dans le tableau PROMED de la routine ircmpe.f.
+   
+   Concernant le probleme initial, il n'etait pas lie aux mailles QUAD8 a 4 points de Gauss
+   mais plutôt a l'impression d'un champ de QUAD8 ayant 2 profils et 2 localisations de
+   points de Gauss pour le meme numero d'ordre.
+   
+   Or il est specifie dans la doc med que:
+   " A etape de calcul fixee (couple <numero du pas de temps, numero d'ordre>) et maillage fixe:
+   - une seule selection par profil est possible et,
+   - une seule definition de points de Gauss est possible".
+   
+   Ce n'etait pas le cas avec l'etude fournie !
+   Au numero d'ordre 29, on cherchait a stocker un champ aux points de
+   Gauss portant sur des mailles de type QUAD8, alors qu'on y avait deja
+   stocke un champ (celui correspondant au profil de la famille de points de gauss FPG9).
+   
+   Nous avons donc introduit une verification pour blinder le code:
+   Avant d'ecrire un cham_elem dans le fichier med, on verifie que pour une
+   sequence de calcul donnee et maillage fixe, aucun champ n'est present.
+   En d'autres termes, avant d'ecrire un champ, on verifie que la "place est libre", i.e.
+   pour un numero d'ordre donne et type geometrique donne et type d'entite donne, aucun champ
+   ne doit être present.
+   
+   Nous avons effectue cette verification dans ircam1.f :
+   - tout d'abord, on fait appel a la routine EFNPDT de la librairie med pour recuperer les
+   indices du pas de temps dans le champ (= nombre de numeros d'ordre) pour un champ, type
+   d'entite et type geometrique donnes.
+   - ensuite, on boucle sur ces indices et on appelle la routine med EFPDTI
+   afin de recuperer les numeros d'ordre relatifs aux donnees precedentes.
+   - enfin on verifie si le numero d'ordre associe au champ que l'on veut ecrire ne fait pas
+   partie de la liste des numeros d'ordre issue de EFPDTI.
+   
+   Dans le cas où il y a identification du numero d'ordre, on emet une erreur fatale dont le
+   contenu du message est le suivant:
+     -> Des elements finis differents s'appuient sur un meme type de maille   
+       (QUAD8). 
+        Le nombre de valeurs a ecrire est different entre ces deux types     
+        d'elements, on ne peut pas ecrire le champ complet au format med.    
+     -> Risque & Conseil:
+        Veuillez utiliser la restriction geometrique GROUP_MA de l'operateur
+        IMPR_RESU pour specifier les mailles a considerer.
+   
+   impact: ircmpe.f, ircam1.f
+   
+   Validation
+   ----------
+   - passage de l'etude fournie
+   - liste de cas-tests restreinte a la commande IMPR_RESU/MED (83 cas-tests).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests MED
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 04/06/2008 - 18:16:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012049 DU 2008-04-29 14:20:12
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Stockage en double dans STAT_NON_LINE
+FONCTIONNALITE
+   Symptome.
+   Instant 0.14s - Convergé
+      CHAMP STOCKE : DEPL             INSTANT :  1.40000E-01  NUMERO D'ORDRE :     7
+      CHAMP STOCKE : SIEF_ELGA        INSTANT :  1.40000E-01  NUMERO D'ORDRE :     7
+      CHAMP STOCKE : VARI_ELGA        INSTANT :  1.40000E-01  NUMERO D'ORDRE :     7
+   Instant 0.16s - Manque de temps CPU
+      CHAMP STOCKE : DEPL             INSTANT :  1.40000E-01  NUMERO D'ORDRE :     8
+      CHAMP STOCKE : SIEF_ELGA        INSTANT :  1.40000E-01  NUMERO D'ORDRE :     8
+      CHAMP STOCKE : VARI_ELGA        INSTANT :  1.40000E-01  NUMERO D'ORDRE :     8
+   
+   On stocke effectivement en double
+   
+   
+   Quand on manque de temps CPU au milieu d'un pas de temps ou que l'on a un défaut de
+   convergence quelconque (comportement, contact, etc), on force l'archivage du pas de temps
+   précédent.
+   Si l'utilisateur a choisi de tout archiver, l'opération est inutile car on a déjà stocké
+   le aps de temps précédent et l'on va stocker en double le même pas de temps (mais avec un
+   numéro d'ordre différent).
+   Si l'utilisateur n'a pas choisi de tout archiver. L'opération est utile (elle permettra de
+   faire une poursuite).
+   
+   Proposition  de correction
+   
+   Le principe et de tester si l'instant n'a pas déjà été sauvé.
+   Lors de l'archivage dans nmarch, on compare l'instant au numéro d'ordre précédent avec
+   celui qu'on veut stocker.
+   S'il s'avère être EXACTEMENT (Différence: 0.D0) le même, on n'archive pas.
+   
+   C
+   C --- INSTANT DEJA ARCHIVE ?
+   C
+   IF (NUMARC.GE.2) THEN
+     CALL RSADPA(RESULT,'L',1,'INST',NUMARC-1,0,JINST,K8BID)
+     INSTAN = ZR(JINST)
+     IF (INSTAP.EQ.INSTAN)) THEN
+       GOTO 999
+     ENDIF
+   ENDIF 
+   
+   A faire en 8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnp125a en CPU limite
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ascou22a                      macocco K.MACOCCO          376      1      1
+ CASTEST MODIF sdnv105a                      macocco K.MACOCCO         1267      2      2
+ CASTEST MODIF sensd09b                      boiteau O.BOITEAU          191      3      4
+ CASTEST MODIF ssls124a                      macocco K.MACOCCO          412      2      2
+CATALOPY MODIF commande/affe_char_meca        desoza T.DESOZA          1008      2      2
+CATALOPY MODIF commande/affe_char_meca_f      desoza T.DESOZA           687     21      5
+ FORTRAN MODIF algorith/mkkvec               macocco K.MACOCCO          106      2      2
+ FORTRAN MODIF algorith/nmarch               macocco K.MACOCCO          375     18      3
+ FORTRAN MODIF elements/te0461               macocco K.MACOCCO          475      2      2
+ FORTRAN MODIF prepost/ircam1                macocco K.MACOCCO          346     19      4
+ FORTRAN MODIF prepost/ircmpe                macocco K.MACOCCO          477      7      2
+ FORTRAN MODIF utilitai/chpve2               macocco K.MACOCCO           86      4      4
+ FORTRAN MODIF utilitai/op0150               macocco K.MACOCCO          930      9      1
+  PYTHON MODIF Cata/ops                      macocco K.MACOCCO          459      6      2
+  PYTHON MODIF Execution/E_ETAPE             macocco K.MACOCCO          264      4      1
+  PYTHON MODIF Messages/prepost4             macocco K.MACOCCO          444     10      1
+  PYTHON MODIF Messages/utilitai5            macocco K.MACOCCO          291      5      1
+  PYTHON MODIF Noyau/N_ASSD                  macocco K.MACOCCO          123      4      1
+  PYTHON MODIF Stanley/stanley               macocco K.MACOCCO         3175      2      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   19       11492       123      42       +81
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   19       11492       123      42       +81 

@@ -1,0 +1,788 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 22/04/2008 - 10:26:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011922 DU 2008-04-04 09:15:34
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   En NEW8.6.4, le cas-test feti007a est NOOK sur Rocks.
+FONCTIONNALITE
+   Objet
+   =====
+   Le cas-test feti007a est NOOK sur la machine Rocks.
+   "
+   REFERENCE: NON_REGRESSION  
+   NOOK DY           RELA     0.176 % VALE: 6.9664719226748D-05
+            N22      TOLE     0.150 % REFE: 6.9542419895401D-05
+    ---- RESULTAT:  RESU     NUME_ORDRE:   1 NOM_CHAM: DEPL                                 
+               
+   "
+   Solution
+   ========
+   On augmente la tolérance en le faisant passer de 0.15% à 0.2%.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   feti007a
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 21/04/2008 - 14:21:09
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011875 DU 2008-03-25 14:12:29
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   ABNORMAL_ABORT avec Stanley
+FONCTIONNALITE
+   Il s'agit d'un problème lors de la relecture sur Bull de la base HDF construite sur une
+   plate-forme 32 bits.
+   Les deux objets sytème JEVEUX $$ACCE et $$USADI ont une longueur qui peut varier d'un
+   facteur 2 suivant la plate-forme, cette particularité n'était pas correctement prise en
+   compte lors de la première écriture sur la base JEVEUX en début d'exécution. Un écrasement
+   mémoire se produisait lors  de la fermeture de la base et de leur écriture, ces objets
+   ayant été redimensionnés.
+   La correction est effectuée dans les routines JEINIF et JELIBF, elle doit être reportée en
+   version 8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   l'xc3xa9tude fournie avec la fiche
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 07/05/2008 - 09:04:09
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011574 DU 2007-12-18 10:34:46
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   Amelioration message LIRE_RESU
+FONCTIONNALITE
+   Anomalie:
+   --------
+   
+   Une anomalie est apparue dans LIRE_RESU lorsque l'un des numéros d'ordre
+   fournis par l'utilisateur (derrière le mot-clé NUME_ORDRE) ne figure pas
+   dans les numéros d'ordre du résultat Med.
+   
+   Le problème est du à l'initialisation de ZI(JSNI+IORD-1) de l'op0150.f (ligne 788) en
+   l'absence de l'identification faite à la ligne 783.
+   
+   Correction:
+   ----------
+   Le problème était du à l'utilisation d'une variable non initialisée.
+   (Plus précisément, les valeurs du tableau ZI(JSNI) de l'op0150.f (ligne 788) n'étaient pas
+   toutes initialisées, notamment lorque le numéro d'ordre
+   Aster ne correspondait pas au numéro d'ordre Med pour lire le résultat Med.
+   
+   Dorénavant, lorsque le  numéro d'ordre fourni par l'utilisateur
+   ne figure pas dans les numéros d'ordre du résultat Med, l'alarme
+   suivante est émise:
+    "Le numéro d'ordre xxxx que vous avez renseigné ne figure pas
+     dans la liste des numéros d'ordre du résultat med. 
+     Conséquence: le champ correspondant ne figurera pas dans la 
+     SD Résultat xxxx."
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 07/05/2008 - 09:04:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011789 DU 2008-02-21 15:28:54
+TYPE anomalie concernant Code_Aster (VERSION 9.2)
+TITRE
+   Stat_non_line + Contact avec reuse
+FONCTIONNALITE
+   Objet
+   =====
+   
+   La méthode GCP est mise en défaut en modifiant le cas-test SSNA102E afin de réaliser un
+   incrément de charge nul.
+   Par ailleurs ce même test est NOOK en mode "debug" et atteint le maximum d'itérations de
+   contact (fixé en dur à 2*Noeuds_Esclaves) sur clpaster.
+   
+   Analyse
+   =======
+   
+   Jean-Luc et Nicolas ont trouvé un bug dans l'algorithme de GCP. Il s'agit du calcul des
+   forces nodales de contact par l'algorithme.
+   Les algorithmes 'CONTRAINTE' et GCP tels qu'ils sont implémentés dans Code_Aster (approche
+   globale-locale du contact) renvoient naturellement des quantités totales. C'est à dire que
+   l'on ne calcule pas des incréments. Ainsi AT.MU représente l'effort total de contact sur
+   la structure.
+   
+   Or ce que faisait GCP, c'était bien de renvoyer un effort total mais maladroitement calculé :
+   MU était initialisé à chaque début de pas de temps (grâce à ITERAT) et ensuite incrémenté
+   pendant les itérations de *Newton*. On sauvegardait en entrée dans GCP, MU dans MU0 et on
+   renvoyait finalement AT.(MU-MU0)
+   C'est problématique dans la mesure où les multiplicateurs de Lagrange ne conservent aucune
+   signification physique d'une itération de Newton sur l'autre à cause des possibles
+   ré-appariements.
+   
+   Solution
+   ========
+   
+   On initialise MU en début d'algorithme à 0. Et on renvoie bien AT.MU.
+   
+   Validation
+   ==========
+   
+   Tous les tests méthode GCP.
+   Sur l'étude de Jean-Luc, on retrouve un nombre d'itérations proche du cas REAC_GEOM='SANS'.
+   
+   Version d'exploitation
+   ======================
+   
+   Modif à reporter en 8.
+   
+   Pas de résultats faux : si les forces renvoyées sont réellement fausses alors il ne peut y
+   avoir équilibre (le déplacement lui étant correct) donc convergence.
+   ==> touchait seulement REAC_GEOM='CONTROLE' ou 'AUTOMATIQUE'
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.50
+VALIDATION
+   tout test utilisant GCP
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 07/05/2008 - 09:04:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011798 DU 2008-02-22 12:27:16
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Ordre d'affichage de  IMPR_TABLE (IMPR_FONCTION ...)
+FONCTIONNALITE
+   Lorsqu'on fait IMPR_TABLE d'une table_fonction avec IMPR_FONCTION='OUI', les fonctions ne
+   sont pas imprimées dans leur ordre d'apparition dans la table.
+   
+   On corrige cela.Lorsqu'on fait IMPR_TABLE d'une table_fonction avec IMPR_FONCTION='OUI',
+   les fonctions ne
+   sont pas imprimées dans leur ordre d'apparition dans la table.
+   
+   On corrige cela.
+   
+   On en profite pour ajouter le nom de la fonction dans ce cas :
+   
+   ## Courbe 0
+   ## Fonction REPSMF2 .S001001001                                                    
+     1.95312E+00  7.87581E+11  0.00000E+00
+     3.90625E+00  5.85484E+11  0.00000E+00
+   ...
+   
+   On en profite pour ajouter le nom de la fonction dans ce cas :
+   
+   ## Courbe 0
+   ## Fonction REPSMF2 .S001001001                                                    
+     1.95312E+00  7.87581E+11  0.00000E+00
+     3.90625E+00  5.85484E+11  0.00000E+00
+   ...
+   
+   
+   A reporter en version 8 : impr_table_ops, Graph, co_fonction
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdll116a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 07/05/2008 - 09:04:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011859 DU 2008-03-20 12:40:39
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : DeltaCad
+TITRE
+   DEFI_COMPOR + debug-jeveux => 3 tests cassxc3xa9s
+FONCTIONNALITE
+   Problème :
+   -----------
+   4 tests de DEFI_COMPOR se plantent en debug_jeveux :
+   sdll122a
+   sdll130b
+   ssll102k
+   ssll111a
+                                                                                            
+                           
+   Analyse :
+   ---------
+   Le problème se passe dans CALC_ELEM.
+   Dans cette commande, on cherche plusieurs fois à créer le champ de matériau codé (routine
+   rcmfmc.f).
+   Remarque : ce n'est pas anormal car le champ de matériau peut changer d'un numéro d'ordre
+   à l'autre.
+                                                                                            
+                           
+   Pour éviter de recoder le cham_mater à chaque fois, on teste l'existence des objets créés
+   lors du codage (objets .CODI). S'ils existent, on ressort rapidement de la routine rcmfmc.f
+                                                                                            
+                           
+   Malheureusement, le nom des objets .CODI créés a changé (quand ???) :
+             MATER              .CODI  ->    MATER   .00001     .CODI
+             123456789012345678901234        123456789012345678901234
+                                                                                            
+                           
+   Du coup, quand on recode un cham_mater, on détruit et on recrée :
+       la carte    .MATE_CODE
+       les objets  .MATE_CODE.GRP  et  .MATE_CODE.NGRP
+                                                                                            
+                           
+   Le problème vient des objets .GRP et .NGRP (qui ne servent que pour les "multi-matériaux"
+   (DEFI_COMPOR)).
+   Ces objets étant détruits et reconstruits, ils changent de place en mémoire alors que la
+   routine rcmaco.f a stocké leur adresse (obtenue par JEVEUT) dans les objets .CODI.
+   La routine rcmaco.f étant programmée pour ne pas recoder 2 fois le meme matériau, elle ne
+   recrée pas les objets .CODI qui contiennent alors l'adresse de l'objet .GRP détruit.
+                                                                                            
+                           
+                                                                                            
+                           
+   Correction:
+   -----------
+   La routine rcmfmc.f est maintenant plus radicale : si la carte de matériau codé .MATE_CODE
+   existe, on ressort tout de suite.
+                                                                                            
+                           
+   NEW8 :
+   ------
+   Correction à reporter en NEW8 :
+   rcmfmc.f :
+   74c76
+   < C     -- SI LES OBJETS .CODI EXISTENT, C'EST QUE L'ON A DEJA APPELE
+   ---
+   > C     -- SI MATE EXISTE, C'EST QUE L'ON A DEJA APPELE
+   77,82c79,80
+   <       CALL JEEXIN ( MATE(1:19)//'.VALE', IRET )
+   <       IF ( IRET .NE. 0 ) THEN
+   <         CH19 = ZK8(JCHEV)
+   <         CALL JEEXIN ( CH19//'.CODI', IRETC )
+   <         IF ( IRETC .NE. 0 ) GOTO 9999
+   <       ENDIF
+   ---
+   >       CALL EXISD('CARTE',MATE,IRET)
+   >       IF (IRET.GT.0) GOTO 9999
+                                                                                            
+                           
+                                                                                            
+                           
+                                                                                            
+                           
+   Détails :
+   ----------
+   Correction d'un petit bug dans un utilitaire de debug (imptou.f)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   4 tests cassxc3xa9s
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011860 DU 2008-03-20 12:42:25
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   sensibilitxc3xa9 + debug-jeveux => 4 tests cassxc3xa9s
+FONCTIONNALITE
+   Problème :
+   -----------
+   4 tests de sensibilité se plantent en debug_jeveux :
+   sensd11a
+   sensd11b
+   sensd11c
+   sensd11d
+                                                                                            
+                           
+   Analyse et correction :
+   -----------------------
+   Les routines semore.f et semoco.f sont coupables. Elles font :
+                                                                                            
+                           
+               CALL VECHDE(TYPCAL,MODELE(1:8),NCHAR,LCHAR,MATE,
+        &                  CARELE(1:8),R8BID,VAPRIN,K24BID,
+        &                  K19BID,K24BID,LIGRMO,
+        &                  NOPASE,VECHMP)
+               CALL ASASVE(VECHMP,NUMEDD,VTYP,VACHMP)
+               CALL JEVEUO(VACHMP,'L',IRET)
+               CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEC)
+                                                                                            
+                           
+                                                                                            
+                           
+   C ET POUR LA DERIVATION PAR RAPPORT A LA MASSE
+               TYPCAL = 'MECM'
+               CALL VECHDE(TYPCAL,MODELE(1:8),NCHAR,LCHAR,MATE,
+        &                  CARELE(1:8),R8BID,VAPRIN,K24BID,
+        &                  K19BID,K24BID,LIGRMO,
+        &                  NOPASE,VECHMP)
+               CALL ASASVE(VECHMP,NUMEDD,VTYP,VACHMP)
+               CALL JEVEUO(VACHMP,'L',IRET)
+               CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEM)
+                                                                                            
+                           
+   Le probème est que les 2 appels successifs à ASASVE créent le meme VACHMP.
+   Le 2ème appel écrase le 1er et invalide l'adresse JDVEC.
+                                                                                            
+                           
+   Solution :
+   ----------
+   Il faut recopier  ZK24(IRET)(1:19)//'.VALE' dans un vecteur temporaire entre les 2 appels.
+                                                                                            
+                           
+   Détails :
+   ---------
+   Dans les 2 routines semore.f et semoco.f, il y a aussi un problème JEVEUX :
+   On demande un accès en lecture alors que l'on écrit.
+                                                                                            
+                           
+                                                                                            
+                           
+   NEW8 :
+   ------
+                                                                                            
+                           
+   semore.f :
+   -----------
+   245c245
+   <             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','L',JDVEC)
+   ---
+   >             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEC)
+   272c271
+   <             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','L',JDVEC)
+   ---
+   >             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEC)
+   297c295,304
+   <             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','L',JDVEC)
+   ---
+   >             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEC)
+   >
+   >
+   > C           ATTENTION : LE BLOC SUIVANT VA ECRASER VACHMP.
+   > C           IL FAUT DONC RECOPIER DANS UN OBJET TEMPORAIRE :
+   >             CALL JEDETR('&&SEMORE.TMP1')
+   >             CALL JEDUPO(ZK24(IRET)(1:19)//'.VALE','V','&&SEMORE.TMP1',
+   >      &           .FALSE.)
+   >             CALL JEVEUO('&&SEMORE.TMP1','E',JDVEC)
+   >
+   308c314
+   <             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','L',JDVEM)
+   ---
+   >             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEM)
+                                                                                            
+                           
+   semoco.f :
+   -----------
+   240c240
+   <             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','L',JDVEC)
+   ---
+   >             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEC)
+   267c267
+   <             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','L',JDVEC)
+   ---
+   >             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEC)
+   292c292,301
+   <             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','L',JDVEC)
+   ---
+   >             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEC)
+   >
+   >
+   > C           ATTENTION : LE BLOC SUIVANT VA ECRASER VACHMP.
+   > C           IL FAUT DONC RECOPIER DANS UN OBJET TEMPORAIRE :
+   >             CALL JEDETR('&&SEMOCO.TMP1')
+   >             CALL JEDUPO(ZK24(IRET)(1:19)//'.VALE','V','&&SEMOCO.TMP1',
+   >      &           .FALSE.)
+   >             CALL JEVEUO('&&SEMOCO.TMP1','E',JDVEC)
+   >
+   303c312
+   <             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','L',JDVEM)
+   ---
+   >             CALL JEVEUO(ZK24(IRET)(1:19)//'.VALE','E',JDVEM)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   4 tests rxc3xa9parxc3xa9s
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 07/05/2008 - 09:04:11
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011879 DU 2008-03-25 16:34:50
+TYPE evolution concernant Code_Aster (VERSION )
+TMA : CS
+TITRE
+   RECU_FONCTION
+FONCTIONNALITE
+   Le tri de la fonction en sortie de RECU_FONCTION avait été désactivé en version 8.3.16 à
+   cause d'un problème dans CALC_FLUI_STRU.
+   
+   On rétablit le tri systématique de la fonction résultat de RECU_FONCTION (dans rftabl).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests RECU_FONCTION
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 07/05/2008 - 09:04:11
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011853 DU 2008-03-19 09:58:47
+TYPE anomalie concernant Code_Aster (VERSION 9.3)
+TITRE
+   Alarme dans SDLL109[a,b,d]
+FONCTIONNALITE
+   Jean-Luc a remarqué en travaillant sur les cas tests sdll109abcd qu'ils provoquent une
+   émission d'alarme à propos du pas de temps.
+   Le pas de temps utilisé est 2 ms pour un pas préconisé de 1,5 ms.
+   Le pas conseillé par l'heuristique n'est pas obligatoire (Il y a une marge de sécurité.),
+   c'est pour cela que l'utilisateur peut passer outre.
+   J'ai pu vérifier, dans ce cas, qu'en raffinant le pas de temps, on ne change pas
+   notablement les résultats.
+   Commme ces tests sont issus d'un autre code (POUX), je préfère garder le pas de temps tel
+   qu'il est, avec l'alarme.
+   
+   En revanche, en utilisant le pas de temps raffiné, je me suis aperçu d'une erreur dans
+   REST_BAS_PHYS lorsqu'on veut interpoler des calculs de contraintes issus de
+   DYNA_TRAN_MODAL sur une liste d'instants différente que celle utilisée pour le calcul.
+   L'erreur provoque un plantage JEVEUX mais pas de résultats faux.
+   Je corrige.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdld109
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 07/05/2008 - 09:04:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011906 DU 2008-04-01 14:00:22
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MN10 - LIAISON_UNILATER buggxc3xa9e
+FONCTIONNALITE
+   Objet
+   =====
+   
+   Erwan a remarqué (fiche 11840) qu'en remplaçant une condition de contact sur un bloc
+   infiniment rigide par une condition de type liaison unilatérale, le calcul ne convergeait
+   plus.
+   
+   Analyse
+   =======
+   
+   Il y a effectivement quelques petits bugs dans le traitement d'une CL de type
+   LIAISON_UNILATER : 
+   
+   - les efforts nécessaires à l'imposition de la CL quand celle-ci est activée (équivalent
+   d'une réaction d'appui) ne sont pas intégrés au résidu, on ne peut donc jamais atteindre
+   l'équilibre
+   - ces efforts sont faux car on oublie de remettre à zéro le vecteur qui les stockent (or
+   on les calcule par cumul)
+   - la condition n'est pas appliquée dans le bon sens (au lieu de faire comme indiqué dans
+   la doc : Somme(alpha_i.p_i) < r, on fait Somme(-1.0*alpha_i.p_i) < r)
+   - le jeu n'est pas réactualisé et si on fait plus d'une itération de Newton, la condition
+   n'est plus correctement appliquée
+   
+   Corrections
+   ===========
+   
+   nmassf.f : efforts extérieurs
+   algocu.f : raz de AT.MU et calcul final du jeu
+   cusign.f : inversion des signes
+   creaun.f : passage d'affichage en INFO=2
+   nmcere.f  nmcese.f  nmceta.f  nmdepl.f  nmfext.f  nmpich.f  nmrepl.f  op0070.f :
+   conséquence de l'ajout de la SD RESOCU en arguments de nmassf
+   
+   Version d'exploitation
+   ======================
+   
+   Les modifs sont à faire en 8.
+   
+   Il est possible que la condition n'ait pas été correctement appliquée car le jeu n'était
+   pas recalculé en fin d'algorithme. Il faudrait encore fabriquer un cas-test pour illustrer
+    la chose.
+   Dans les autres cas, si la condition était activée, il ne pouvait pas y avoir convergence
+   par le système n'était théoriquement pas équilibré.
+   
+   Validation
+   ==========
+   
+   * Sur un cas-test existant (hplp310a), un cylindre fissuré dont une seule moitié est
+   modélisée, on remplace la condition de contact avec un bloc infiniment rigide par CL
+   unilatérale sur le déplacement vertical (modélisation B)
+   * Ajout d'un nouveau cas-test avec deux mailles qui s'écrasent l'une sur l'autre : une
+   modélisation avec contact (A) et une modélisation par LIAISON_UNILATER (B)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.11
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.02.310, V1.01.237
+VALIDATION
+   hplp310a, hplp310b, zzzz237a, zzzz237b
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 07/05/2008 - 09:04:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011942 DU 2008-04-08 07:35:23
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   STAT_NON_LINE et forces suiveuses
+FONCTIONNALITE
+   Charges de type EVOL_CHAR.
+   
+   Les charges de type EVOL_CHAR sont traitées à part dans la routine VECGME qui calcule le
+   second membre.
+   Qu'on les donne comme suiveuses (TYPE_CHARG='SUIV') ou non, elles sont considérés comme
+   suiveuses !
+   
+   Le traitement est fait dans la routine NMVGME.
+   Donc, TOUTES les charges EVOL_CHAR sont suiveuses
+   Pour ne pas s'arreter en erreur fatale dans VECGME dans les deux cas-tests cocernés, il
+   faut modifier VECGME comme suit.
+   
+   IF (TAB(K).EQ.1) THEN
+      SOMME = SOMME + 1
+   ENDIF
+   
+   En:
+   EVOLCH= ZK24(JCHAR+ICHA-1) (1:8)//'.CHME.EVOL.CHAR'
+   CALL JEEXIN(EVOLCH,IER)
+   
+   IF ((TAB(K).EQ.1).OR.(IER.GT.0))  THEN
+     SOMME = SOMME + 1
+   ENDIF
+   
+   Ca devrait fonctionner.
+   Il faut faire une évolution pour faire entrer le cas EVOL_CHAR dans le canevas standard
+   des charges suiveuses.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 07/05/2008 - 09:04:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011945 DU 2008-04-08 13:19:13
+TYPE express concernant Code_Aster (VERSION 8.6)
+TITRE
+   MACR_ASPIC_MAIL : message d'alarme erronxc3xa9
+FONCTIONNALITE
+   Anomalie
+   ========
+   Dans MACR_ASPIC_MAIL, on vérifie que la longueur des tubes (corps et tubulure) correspond
+   exactement à la longueur d'amortissement (à 0,1% près).
+   Il y a un problème si on détecte que la longueur du corps (XMAX) n'est pas la bonne : on
+   affiche le message d'erreur aspic0_13 correspondant à la longueur de la tubulure (ZMAX),
+   en indiquant les valeurs fournies et calculées de ZMAX.
+   Ainsi, si on se trompait sur XMAX on avait l'impression de se tromper sur ZMAX et on ne
+   savait pas quel paramètre corrigé.
+   Cette erreur a été identifiée suite à un appel d'UTO (M. Turlure)
+   
+   Correction
+   =========
+   On fait les corrections suivantes :
+   - on distingue le message correspondant au corps et à la tubulure
+   - on transforme l'erreur fatale en alarme
+   - l'alarme n'est émise que si la longueur fournie est inférieure à la longueur
+   d'amortissement (c'est ce qui était déjà fait dans Ascouf)
+   
+   La correction est à reporter en v8 (lignes 488 à 500).
+   
+   Validation
+   ==========
+   validation sur la base des cas test aspic existant
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.PC.10
+VALIDATION
+   aspic*
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 07/05/2008 - 09:04:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012000 DU 2008-04-17 13:12:14
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   DYNA_NON_LINE : modifications HHT complet : report fiche 11950 en NEW8
+FONCTIONNALITE
+   On a deux objectifs, concernant le schéma HHT complet (MODI_EQUI='OUI') dans 
+   DYNA_NON_LINE :
+   - prise en compte correct des efforts imposés non constants dans le temps,
+   - corriger le premier pas en poursuite afin de recoller exactement au résultat 
+   qui serait obtenu d'une seule traite (sans reprise donc).
+   Le schéma HHT incomplet : MODI_EQUI = 'NON' ne doit pas être impacté.
+   
+   En NEW8, la routine nminit n'a pas subit les memes développements qu'en NEW9. La nouvelle
+   routine nmihht ne peut être appelé dans nminit sans de grosses modifications. On choisit
+   alors d'appeler la routine nmihht dans op0070. 
+   
+   
+   Routines à modifier :
+   OP0070
+   NMCHAR
+   NMCHSV
+   Routine à ajouter :
+   NMIHHT
+   
+   Pour la validation, il y a un nouveau cas-test : SDLD31A
+   De plus, il faut repasser tous les cas-tests qui font du HHT (avec ou sans 
+   MODI_EQUI), dont :
+   demo002a
+   fdnv100a
+   forma12d
+   miss06a
+   sdls115a
+   sdnd100c
+   sdnl111c
+   sdnl111d
+   sdnl111e
+   sdnv104a
+   sdnv104b
+   sdnv104c
+   sdnv104d
+   sdnv104e
+   sdnv105a
+   sdnv105b
+   sdnv105c
+   sslp100c
+   yyyy103a
+   yyyy103c
+   
+   Parmi ces cas-tests, il faudra reporter les modifications de valeurs de 
+   référence ou de tolérance dans 2 cas :
+   
+   - sdls115a : pour HHT complet avec alpha=-0,02 la valeur ne bouge quasiment pas (on reste
+   dans la tolérance de 5.E-4), en revanche pour alpha=-0,3, la valeur de non regression
+   passe de 4.5610687297459E-05 à 3.7151134640486E-05.
+   
+   - sdnv105a : une tolérance est portée de 0.06 à 0.07.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : V2.01.031
+VALIDATION
+   sdld31a, cas-tests avec HHT
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT hplp310b                      macocco K.MACOCCO          860    860      0
+ CASTEST AJOUT sdld31a                       macocco K.MACOCCO          467    467      0
+ CASTEST MODIF feti007a                      cnguyen C.NGUYEN           183      2      2
+ CASTEST MODIF hplp310a                      macocco K.MACOCCO          860    207   1310
+ CASTEST MODIF sdls115a                      macocco K.MACOCCO          306      2      2
+ CASTEST MODIF zzzz140a                      macocco K.MACOCCO          165      3      3
+CATALOPY MODIF entete/accas                  macocco K.MACOCCO         1162      8      4
+ FORTRAN AJOUT algorith/nmihht               macocco K.MACOCCO          137    137      0
+ FORTRAN MODIF algorith/algocg               macocco K.MACOCCO          563      4     22
+ FORTRAN MODIF algorith/algocu               macocco K.MACOCCO          517     16      1
+ FORTRAN MODIF algorith/cfalgo               macocco K.MACOCCO          193      2      2
+ FORTRAN MODIF algorith/cusign               macocco K.MACOCCO           78      2      2
+ FORTRAN MODIF algorith/mecgme               macocco K.MACOCCO          280     14      5
+ FORTRAN MODIF algorith/nmceta               macocco K.MACOCCO          423     13     10
+ FORTRAN MODIF algorith/nmchar               macocco K.MACOCCO          529     24     17
+ FORTRAN MODIF algorith/nmchsv               macocco K.MACOCCO          140     31      3
+ FORTRAN MODIF algorith/nmdepl               macocco K.MACOCCO          314      8      6
+ FORTRAN MODIF algorith/nmfext               macocco K.MACOCCO          158     20      5
+ FORTRAN MODIF algorith/nmpich               macocco K.MACOCCO          138     11     11
+ FORTRAN MODIF algorith/nmprta               macocco K.MACOCCO          324      2      2
+ FORTRAN MODIF algorith/nmrepl               macocco K.MACOCCO          358     15     11
+ FORTRAN MODIF algorith/op0070               macocco K.MACOCCO          979     24     10
+ FORTRAN MODIF algorith/rcmfmc               macocco K.MACOCCO          230      4      8
+ FORTRAN MODIF algorith/semoco               macocco K.MACOCCO          417     14      5
+ FORTRAN MODIF algorith/semore               macocco K.MACOCCO          471     14      5
+ FORTRAN MODIF algorith/tran75               macocco K.MACOCCO          555      7      5
+ FORTRAN MODIF algorith/vecgme               macocco K.MACOCCO          269     14      4
+ FORTRAN MODIF jeveux/jeinif                lefebvre J-P.LEFEBVRE       615      4      4
+ FORTRAN MODIF jeveux/jelihd                lefebvre J-P.LEFEBVRE       592     12      2
+ FORTRAN MODIF modelisa/creaun               macocco K.MACOCCO          291      5      1
+ FORTRAN MODIF supervis/debut                macocco K.MACOCCO           90      9      3
+ FORTRAN MODIF utilitai/rftabl               macocco K.MACOCCO          114      3      5
+  PYTHON MODIF Macro/impr_table_ops          macocco K.MACOCCO          236     10     12
+  PYTHON MODIF Macro/macr_aspic_mail_ops     macocco K.MACOCCO          917      5      4
+  PYTHON MODIF Messages/mecanonline          macocco K.MACOCCO          363      5      1
+  PYTHON MODIF Messages/supervis             macocco K.MACOCCO          205     13      1
+  PYTHON MODIF Utilitai/Graph                macocco K.MACOCCO         1208      4      3
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    3        1464      1464             +1464
+ MODIF :   34       14243       531    1491      -960
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   37       15707      1995    1491      +504 

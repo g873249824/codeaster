@@ -1,0 +1,973 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mazet        MAZET Sylvain          DATE 30/06/2009 - 16:38:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013418 DU 2009-05-14 14:32:42
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   En NEW10.0.3, le cas-test ssnv209c s'arrete en erreur_<F> sur Calibre 5.
+FONCTIONNALITE
+   Problème:
+   ---------
+   Lors d'une convergence forcée de la boucle des statuts de contact,
+   on calcule les nouveaux seuils de frottement sur des pressions de 
+   contact qui n'ont pas convergé. Ces seuils peuvent être proche de zéro 
+   pour les points qui étaient décollés et qui repassent en mode contactant
+   (reac==0, jeu<0).
+   
+   Cela entraine une instabilité numérique. Les seuils sont plus petit que 1e-15,
+   et sont utilisés dans l'assemblage des matrices de frottement (te0533, te0534) car ils
+   passent 
+   le test:
+   IF (SEUIL(ISSPG).NE.0.D0) THEN
+   
+   Solution:
+   ---------
+   Dans le TE de calcul des seuils de frottement (te0548), on annule ce seuil si 
+   sa valeur absolue est plus petite qu'un epsilon (=1e-11).
+   
+   Cela résoud les cas ssnv209 b et c sur Calibre 5, sans perturber les autres
+   cas, et sans changer les résultats sur Bull.
+   
+   Bug:
+   ----
+   J'en profite pour corriger un bug sur l'intégration simpson des triangles dans elraga.f.
+   
+   Sources modifiées:
+   ------------------
+   te0548.f : annulation du seuil de frottement si en dessus d'un seuil.
+   elraga.f : bug fix das l'integration simpson pour les triangles
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv209b, ssnv209c
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 30/06/2009 - 16:38:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013395 DU 2009-05-10 21:16:48
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.4.11, le cas-test feti010a s?arrete en ERREUR_<F> sur Calibre 4 et 5.
+FONCTIONNALITE
+   Problème:
+   ---------
+   En NEW 9.4.11, le cas-test feti010a s'arrete en ERREUR_<F> sur Calibre 4 et 5.
+                                                                                            
+                           
+   Analyse:
+   --------
+   Il y a 2 erreurs différentes dont la 2ème ne se voit que sur Calibre 4 :
+                                                                                            
+                           
+   E1) un bug dans la routine jxecro.f qui fait que l'écriture sur disque des vecteurs de I4
+   (de longueur impaire) provoque un écrasement sur les machines pour lesquelles les entiers
+   sont des I8 (bull et Calibre 5)
+                                                                                            
+                           
+   E2) un bug dans la routine asretm.f (assemblage des matrices) : on écrit parfois dans un
+   objet JEVEUX à une mauvaise adresse.
+                                                                                            
+                           
+                                                                                            
+                           
+   Corrections:
+   ------------
+   E1) Jean-Pierre m'a proposé une correction de la routine jxecro.f
+   E2) Je modifie la routine asretm.f :
+   71c71,72
+   <           CALL JEVEUO('&&ASSMAM.TMP2','E',JTMP2)
+   ---
+   > C         -- IL NE FAUT PAS QUE .TMP2 SOIT LIBERE :
+   >           CALL JEVEUT('&&ASSMAM.TMP2','E',JTMP2)
+                                                                                            
+                           
+                                                                                            
+                           
+   Validation:
+   -----------
+   Le test feti010a est OK sur calibre4, calibre5 et bull en "debug" et "nodebug"
+                                                                                            
+                           
+   Résultats FAUX :
+   ----------------
+   Erreur E1) :
+   ------------
+   L'usage des objets JEVEUX de type INTEGER*4 ('S') est pour l'instant très limité dans Aster :
+                                                                                            
+                           
+   Objets "Feti" :
+       alfeti.f:      CALL WKVECT(K24IPI,'V V S',DIMGI,IPIV)
+       creaco.f:      CALL WKVECT('&&FETSKP.IDCO','V V S',NBMATO+1,IDCO)
+       creaco.f:      CALL WKVECT('&&FETSKP.CO','V V S',NBLIEN,CO)
+       fetggt.f:      CALL WKVECT(NOM1,'V V S',NBPROC,IACH1)
+       fetggt.f:      CALL WKVECT(NOM2,'V V S',NBPROC,IACH2)
+       fetskp.f:      CALL WKVECT('&&FETSKP.VELO','V V S',NBMATO,VELO)
+       fetskp.f:      CALL WKVECT('&&FETSKP.EDLO','V V S',NBLIEN,EDLO)
+       fetskp.f:      CALL WKVECT('&&FETSKP.NMAP','V V S',NBMATO,NMAP)
+                                                                                            
+                           
+                                                                                            
+                           
+   Objets "non Feti" :
+       calsvd.f:      CALL WKVECT('&&CALSVD.IWORK','V V S',8*NM2,JIWORK)
+       reliem.f:      CALL WKVECT('&&RELIEM.INDIC_MAILLE','V V S',MAX(NBMA,1),ITRMA)
+       reliem.f:      CALL WKVECT('&&RELIEM.INDIC_NOEUD','V V S',NBNO,ITRNO)
+                                                                                            
+                           
+   Dans les 2 routines non-feti (calsvd et reliem) les objets sont des objets de travail qui
+   sont créés et détruits dans la meme routine. Ils ne sont donc jamais déchargés sur disque.
+   Il ne peut pas y avoir de résultat faux.
+                                                                                            
+                           
+   Conclusion : l'erreur E1 n'a pu provoquer des résultats faux qu'avec FETI
+                                                                                            
+                           
+   Erreur E2) :
+   ------------
+   les résultats faux ne peuvent avoir eu lieu qu'avec le solveur FETI (voir argumentaire
+   ci-dessous). Mais la probabilité d'etre arreté par une erreur fatale est grande
+   (assemblage d'un terme à une adresse invalide).
+   Conclusion : l'erreur E2 n'a pu provoquer des résultats faux qu'avec FETI
+                                                                                            
+                           
+   Conclusion :
+   ------------
+   Il n'y a pu avoir des résultats faux du fait de ces 2 erreurs qu'avec le solveur FETI.
+                                                                                            
+                           
+                                                                                            
+                           
+   Détails:
+   --------
+   E2) Le problème concerne l'objet '&&ASSMAM.TMP2' :
+                                                                                            
+                           
+   La programmation ressemble à :
+                                                                                            
+                           
+   assmam.f :
+           ...
+           CALL WKVECT('&&ASSMAM.TMP2','V V I',LGTMP2,JTMP2)
+           ...
+           DO 130 IDD=0,NBSD  ! boucle sous-domaines FETI
+               ...
+               IF (LFETI) CALL JEMARQ()
+               ...
+               CALL ASSMA3(...,JTMP2,LGTMP2,...)
+               ...
+               IF (LFETI) CALL JEDEMA()
+               ...
+   130    CONTINUE
+                                                                                            
+                           
+   assma3.f :
+          ...
+          CALL ASRETM(...,LGTMP2,JTMP2,...)
+                                                                                            
+                           
+   asretm.f :
+         ...
+   C     Si la dimension de .TMP2 est insuffisante, on l' agrandit
+         IF (2*NBTERM.GT.LGTMP2) THEN
+             LGTMP2 = 2*LGTMP2
+             CALL JUVECA('&&ASSMAM.TMP2',LGTMP2)
+   C         -- IL NE FAUT PAS QUE .TMP2 SOIT LIBERE :
+             CALL JEVEUT('&&ASSMAM.TMP2','E',JTMP2)
+         ENDIF
+                                                                                            
+                           
+   L'objet .TMP2 est en principe en mémoire pendant toute la durée de la routine assmam.f car
+   il porte la "marque" de cette routine. C'est pourquoi la routine asretm.f ne fait de
+   JEVEUO sur lui (ce qui serait trop couteux en CPU). Si on doit l'agrandir, on le fait dans
+   asretm.f et il revient en mémoire avec la marque courante dans asretm.f.
+                                                                                            
+                           
+   Si le solveur n'est pas FETI, comme il n'y a pas de JEMARQ entre assmam.f et asretm.f, la
+   marque dans asretm.f est la meme que celle dans assmam.f. Du coup, l'objet est toujours
+   "U"tilisé et il n'est jamais déchargé sur disque. Tout va bien.
+                                                                                            
+                           
+   En revanche, si le solveur est FETI, on passe dans JEMARQ/JEDEMA à chaque sous-domaine et
+   la marque courante dans asretm.f est celle de assmam.f + 1. Du coup, l'objet est "libéré"
+   entre chaque sous-domaine sans qu'on refasse JEVEUO dessus. Si par malheur, la mémoire
+   vient à manquer et que le mécanisme de récupération (jjldyn.f) est lancé, l'adresse de
+   l'objet (JTMP2) devient invalide. C'est ce qui se passe dans le test feti10a.
+                                                                                            
+                           
+   La solution à ce problème consiste à remplacer dans asretm.f l'appel à JEVEUO par celui à
+   JEVEUT. De cette façon, l'objet ne sera jamais "libéré" par le JEDEMA.
+                                                                                            
+                           
+                                                                                            
+                           
+   NEW9:
+   -----
+   Les corrections des routines jxecro.f et asretm.f sont à reporter en NEW9.
+   
+   NB_JOURS_TRAV : 3.2 = OB(1) + JP(2) + JPL(0.2)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   feti10a
+NB_JOURS_TRAV  : 3.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013431 DU 2009-05-18 12:29:41
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   CREA_CHAMP /TABLE
+FONCTIONNALITE
+   Problème:
+   ---------
+   Lorsque l'on cherche à transformer une table en cham_elem ELGA, si par malchance,
+   l'élément a plus de points de Gauss que de noeuds, on est arreté par un message injuste :
+                                                                                            
+                           
+      !--------------------------------------------------------------------!
+      ! <EXCEPTION> <MODELISA9_5>                                          !
+      !                                                                    !
+      !  incoherence entre maille et point dans la table T3 maille : M2126 !
+      !  point  : 16                                                       !
+      !  nombre de points de la maille: 15                                 !
+      !--------------------------------------------------------------------!
+    Or la maille M2126 est un PENTA15, qui comporte 15 noeuds et 21 points de Gauss.
+                                                                                            
+                           
+                                                                                            
+                           
+   Solution :
+   ----------
+   On corrige la routine tabchs.f pour ajuster les vérifications :
+                                                                                            
+                           
+   cham_elem / elno :
+   5 : _("""
+    Erreur utilisateur :
+      On cherche à créer un cham_elem / ELNO à partir d'une table (%(k1)s).
+      La maille  %(k2)s a %(i2)d noeuds mais dans la table, une ligne concerne le noeud
+   numéro %(i1)d
+   """),
+                                                                                            
+                           
+   cham_elem / elga :
+   33 : _("""
+   Erreur utilisateur (création d'un cham_elem à partir d'une table):
+      Le numéro du point ou du sous-point est en dehors des limites autorisées
+      Table : %(k1)s
+      Maille: %(k2)s
+      Point : %(i1)d
+      Sous-point : %(i2)d
+   """),
+                                                                                            
+                           
+                                                                                            
+                           
+   Validation :
+   ------------
+   1) Essais perso pour visualiser les différents messages d'erreur.
+   2) Je modifie le test zzzz126a pour tester la présence de "cases vides" dans les tables à
+   transformer en champs.
+                                                                                            
+                           
+   NEW9:
+   -----
+   Reporter en NEW9 la correction de tabchs.f :
+   238c238,240
+   < C        (V5) ON VERIFIE LA COHERENCE : POINT/MAILLE
+   ---
+   > C        (V5) POUR LES CHAMPS ELNO ON VERIFIE SI LE NUMERO DE NOEUD
+   > C             EST POSSIBLE :
+   >          IF(TYPCHS(1:4).EQ.'ELNO')THEN
+   240d241
+   <          IF(TYPCHS(1:4).NE.'ELEM')THEN
+                                                                                            
+                           
+                                                                                            
+                           
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  13431
+     tabchs.f
+     modelisa9.py
+     zzzz126a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz126a
+NB_JOURS_TRAV  : 0.7
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013475 DU 2009-06-04 08:13:29
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   parallelisme='DISTRIBUE_MC' pas effcace du tout !
+FONCTIONNALITE
+   Problème:
+   ---------
+   Pour le solveur "mumps distribué", la répartition des mailles entres les différents
+   processeurs
+     PARALLELISME= / 'DISTRIBUE_MC'
+                   / 'DISTRIBUE_MD'
+   est mal faite.
+                                                                                            
+                           
+   Correction:
+   -----------
+   Il y a 3 coquilles dans la routine crsvmu.f dont les conséquences sont :
+                                                                                            
+                           
+     'DISTRIBUE_MC' :
+           -> Toutes les mailles sont affectées au processeur 0 !!!
+     'DISTRIBUE_MD' :
+           -> le monitoring est erroné (nombre de mailles par proc)
+           -> le mot clé CHARGE_PROC0_MA est sans influence (i.e. la charge est répartie
+   équitablement entre les processeurs).
+                                                                                            
+                           
+   Resultats FAUX ?
+   -----------------
+   Non. Le problème ne concerne que la répartition de la charge de calcul entre les processeurs.
+                                                                                            
+                           
+                                                                                            
+                           
+   Validation :
+   ------------
+   Quelques essais perso pour vérifier que les mailles se répartissent comme elles le doivent
+   entre 4 processeurs.
+   J'ai également vérifié le role du mot cle CHARGE_PROC0_MA.
+                                                                                            
+                           
+   Version NEW10 :
+   --------------
+   On ne corrige rien dans le cadre de cette fiche car elle va etre modifiée dans le cadre
+   des fiches 11392 et 13139.
+                                                                                            
+                           
+   Version NEW9 :
+   --------------
+   Les modifications à reporter dans crsvmu.f en NEW9 sont :
+   203,204c203
+   <           NMP0=MAX(NBMAMO,(DIST0*NMPP)/100)
+   ---
+   >           NMP0=(DIST0*NMPP)/100
+   218c215
+   <             IF (PLEIN0) RANG=RANG+1
+   ---
+   >             IF (PLEIN0) KRANG=KRANG+1
+   233c230
+   <           NMP0=MAX(NBMAMO,(DIST0*NMPP)/100)
+   ---
+   >           NMP0=(DIST0*NMPP)/100
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essais perso
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013483 DU 2009-06-08 07:30:59
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   un bug dans la routine detgnm.f
+FONCTIONNALITE
+   Problème:
+   ---------
+   Jean-Michel a mis en évidence un problème concernant la commande DEFI_GROUP/DETR_GROUP_NO.
+   Dans une boucle de destruction de groupes de noeuds, il est arreté par un message du type :
+   Le répertoire de longueur 38 ne contient pas 39.
+                                                                                            
+                                                                  
+   Analyse :
+   ---------
+   Le problème vient de la routine detgnm.f :
+     * On note le nombre de groupes avant la destuction  :  NBTGP
+     * On calcule le nombre de groupes à détruire        :  NBGMDE
+     * On crée une nouvelle collection .GROUPNO (ou .GROUPMA) de dimension (NBTGP - NBGMDE)
+     * puis on recopie les groupes qui n'ont pas été détruits.
+                                                                                            
+                                                                  
+   Malheureusement, NBTGP peut etre parfois sur-dimensonné car il est obtenu par NMAXOC (au
+   lieu de NUTIOC).
+   Du coup, on est arreté lorsque l'on cherche à recopier un groupe qui n'existe pas.
+                                                                                            
+                                                                  
+   Ce qui est étonnant, c'est que ce problème ne se soit pas manifesté plus rapidement : le
+   bug existe depuis la version 8.1.6.
+   Il faut croire que le "sur-dimensionnement" des collections .GROUPENO et .GROUPEMA n'est
+   pas si fréquent que cela.
+    
+                                                                                            
+                                                                  
+   Correction :
+   ------------
+   On corrige la routine detgnm.f :
+   65c65
+   <             CALL JELIRA(MA//GROUP(IG),'NMAXOC',NBTGP,KBID)
+   ---
+   >             CALL JELIRA(MA//GROUP(IG),'NUTIOC',NBTGP,KBID)
+                                                                                            
+                                                                  
+   NEW9 :
+   ------
+   reporter la correction ci-dessus en version 9
+                                                                                            
+                                                                  
+   NB_JOURS_TRAV : 0.55 (JMP:0.5, JP=0.05)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   JMP a testxc3xa9 la correction
+NB_JOURS_TRAV  : 0.55
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 30/06/2009 - 16:38:26
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013337 DU 2009-04-23 07:01:21
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Segmentation fault dans IMPR_RESU/FORMAT='MED' sur 32bits
+FONCTIONNALITE
+   Problème :
+   ----------
+   Plantage à l'impression le champ SIEF_ELGA_DEPL issue d'une modélisation comportant des
+   poutres (POU_D_T) et des DKT, pour lesquelles il est nécessaire de calculer les
+   composantes SIXX, SIYY, SIZZ, SIXY, SIXZ, SIYZ, N, VY, VZ, MT, MFY et MFZ.
+   
+   
+   Analyse :
+   ---------
+   Le problème vient de ircmva qui ne verifie jamais ce que lui renvoit la routine cesexi qui
+   dans certains cas peut renvoyer des adresses négatives lorsque la composante demandée dans
+   un cham_elem_s n'est pas encore remplie. Ici, c'est le cas puisque certaines composantes
+   ne sont pas calculées sur toutes les mailles.
+   
+   
+   Solution :
+   ----------
+   Rajouter un IF qui vérifie la positivité de l'adresse retournée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   unitaire
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 30/06/2009 - 16:38:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013424 DU 2009-05-15 12:42:33
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Affichages dans STAT_NON_LINE (bis)
+FONCTIONNALITE
+   Jacot a trouvé l'origine de la défaillance des affichages en temps: on utilisait NINT au
+   lieu de INT dans IMPFOT. On corrige.
+   Pour le problème d'affichage des itérations de la boucle de géométrie, j'ai un peu plus
+   ramé mais j'ai enfin obtenu un affichage satisfaisant.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   visuelle
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 30/06/2009 - 16:38:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013493 DU 2009-06-09 15:54:15
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW9.5.1, le cas-test ssnp110c s'arrete par manque de temps sur Bull.
+FONCTIONNALITE
+   Problème :
+   ----------
+   Le test ssnp110c manque de temps CPU en version 9.5.1
+                                                                                            
+                           
+   Correction :
+   ------------
+   Le temps consommé par ce test sur bull est proche de la limite du .para
+   On augmente donc cette limite pour etre plus tranquile : 100s -> 150s
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnp110c
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 30/06/2009 - 16:38:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013463 DU 2009-05-28 12:44:49
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   SANS_GROUP_NO mxc3xa9thode CONTINUE : petit bug
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Il y a un petit bug dans la méthode CONTINUE pour le traitement de SANS_GROUP_NO :
+   lorsqu'il y a plusieurs zones de contact et que la première ne contient pas le mot-clé 
+   SANS_GROUP_NO alors les SANS_GROUP_NO éventuellement présents dans les zones suivantes
+   sont ignorés.
+   
+   Le cas-test SSNA102D modifié joint à la fiche le montre.
+   
+   Correction
+   ==========
+   
+   Le problème vient du fait que l'utilitaire MMINFP ("DISMOI" méthode continue par zone) ne
+   regarde la présence de SANS_GROUP_NO (et SANS_GROUP_NO_FR) que sur la 1ère zone de
+   contact, il ignore dans ce cas l'argument IZONE.
+   On corrige dans MAPPAR/MMINFP.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssna102d modifixc3xa9
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 30/06/2009 - 16:38:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013355 DU 2009-04-29 12:02:17
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   commande CALC_TABLE
+FONCTIONNALITE
+   Si OPERATION='FILTRE', CRIT_COMP='REGEXP' (filtre par expression régulière) dans
+   CALC_TABLE, VALE_K est obligatoire puisque c'est ici qu'on fournit l'expression régulière.
+   La doc est ok, pas le catalogue.
+   On corrige calc_table.capy.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   8 tests calc_table REGEXP
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013529 DU 2009-06-15 16:26:12
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW10.0.5, le cas-test zzzz159f s'arrete anormalement Bull, Rocks, Calibre 4 et 5.
+FONCTIONNALITE
+   Il s'agit du test 'python' du recalage (sans appel à MACR_RECAL).
+   
+   Il y a deux modules utils.py, un dans Code_Aster et un dans as_run.
+   Or les imports sont mal faits dans as_run (il manque le niveau package).
+   
+   Il y a donc un conflit au moment de l'import de la classe ASTER_PROFIL :
+   
+   File "/home/aster/ASTK/ASTK_SERV/lib/as_profil.py", line 33, in ?
+   from utils import get_absolute_path
+   
+   
+   Contournement (provisoire) : on modifie l'ordre des ajouts dans sys.path dans zzzz159f.comm.
+   
+   De plus, ce test nécessite la présence de mem_aster dans le .para qui n'y est plus. On le
+   remet.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz159f
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR brie         BRIE Nicolas           DATE 30/06/2009 - 16:38:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012635 DU 2008-10-16 08:32:30
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   MN18 - DYNA_TRAN_MODAL : contact penalise + frottement
+FONCTIONNALITE
+   1) Analyse du problème
+   ----------------------
+   Dans le schéma ADAPT de DTM, à la fin d une itération de calcul, on archive soit l
+   itération actuelle, soit l itération précédente (on choisit celle qui est la plus près d
+   un instant d archivage demandé par l utilisateur). Il faut donc avoir gardé en mémoire les
+   grandeurs de l itération précédente. Ceci était bien fait pour les grandeurs cinématiques
+   (déplacements, vitesses, accélarations) mais pas pour les grandeurs de choc (forces
+   notamment). Quand c est l itération précédente qui est archivée, on archivait donc bien la
+   cinématique de cette itération précédente, mais avec les forces de choc de l'itération
+   actuelle. D où l impression d un mauvais calcul des forces de contact. Le calcul était
+   juste mais pas le stockage.
+   
+   2) Impact sur les sources
+   -------------------------
+   Dans la routine mdadap.f, on rajoute un vecteur permettant de garder en mémoire les
+   grandeurs de choc de l itération précédente. Quand c est cette itération précédente qui
+   est archivée, on archive désormais ce nouveau vecteur.
+   
+   3) Pas d'impact documentaire
+   
+   4) Validation
+   -------------
+   Cas-test avec DTM    +    cas-test où on vérifie la cohérence du bilan énergétique et l
+   adéquation entre la cinématique et les forces de choc.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.4.7
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.4.7
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso + cas-tests avec DTM
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 30/06/2009 - 16:38:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012974 DU 2008-12-11 14:11:39
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   Implantation du schxc3xa9ma en temps de Krenk dans DYNA_NON_LINE
+FONCTIONNALITE
+   Afin de disposer d'un schéma d'intégration en temps de conception moderne : 
+   qui apporte en particulier :
+   - une bonne maîtrise du bilan énérgétique (contrairement à HHT),
+   - une dissipation numérique HF (pilotée par un paramètre KAPPA) type 
+   accélération moyenne modifiée, voire HHT,
+   - une compatibilité d'usage avec les stratégies multidomaines 
+   (contrairement à HHT) qui permet de contrôler la dissipation aux interfaces,
+   - une bonne adaption aux grandes rotations.
+   
+   Ce travail s'inscrit dans le cadre de la thèse de N. Mahjoubi.
+   
+   Ce schéma se base sur une vision "continue" des quantités en temps. Il est 
+   d'ordre 1 (donc adapté aux problèmes irréguliers) et vient donc bien 
+   compléter les schémas existants.
+   Formellement il ressemble au theta-schéma.
+   
+   On le programme en vitesse ou en déplacement et on en profite pour corriger 
+   la fiche 12914 qui concernait le theta-schéma.
+   
+   Informatiquement, c'est un schéma, comme HHT, où l'on a besoin de quantités 
+   du pas précédents (dont les efforts extérieurs).
+   
+   Impact informatique :
+   
+   dyna_non_line.capy avec la syntaxe suivante :
+     b_krenk   = BLOC(condition="SCHEMA=='KRENK'",
+        KAPPA=SIMP(statut='f',typ='R',defaut=1.0,val_min=1.0,val_max=100.),),
+   On modifie aussi la plage de variation du paramètre THETA pour le 
+   THETA_SCHEMA (il peut varier de 0.5 à 100 maintenant).
+   Plus KAPPA ou THETA est grand plus on dissipe et si l'on veut comparer les 
+   amortissements, en gros il suffit de prendre THETA = KAPPA / 2 (on a 
+   équivalence des schémas dans un cas : KAPPA = 1.).
+   
+   ndcrdy.f
+   ndfdyn.f
+   ndiner.f
+   ndlect.f
+   ndnpas.f
+   ndthet.f
+   ndynlo.f
+   ndynre.f
+   nmassv.f
+   nmequi.f
+   Pour les fortran, l'impact est principalement groupé sur la récupération 
+   des arguments, la définition des coefficients pour les termes dans 
+   l'équation d'équilibre et les prédicteurs.
+   Pour la résolution en vitesse avec Krenk ou le theta-schéma, dans le second 
+   membre de l'équilibre, on a un terme du type coef.K.V (pour tous les autres 
+   schémas ce terme est du type coef.M.V) et on doit retirer les contributions 
+   liées aux multiplicateurs de Lagrange : usage de ZERLAG dans NDFDYN.
+   
+   La validation se fait avec le cas-test "analytique" SDLD31A où l'on compare 
+   la solution Code_Aster avec une référence Matlab sur un système masse-
+   ressort.
+   
+   Les erreurs sur le theta schémas pouvaient engendrer des résultats faux.
+   Pour arriver à ces résultats faux, il faut avoir des conditions aux limites 
+   par multiplicateurs de Lagrange et une résolution en vitesse. Cette petite 
+   erreur introduite est croissante quand le paramètre theta augmente. Cette 
+   erreur se cumule au cours des pas de temps : sur des tests très simples, il 
+   faut plusieurs milliers de pas pour qu'elle devienne sensible.
+   Pour des valeurs de l'ordre de 0.5 à 0.7 l'erreur est très faible (voire 
+   négligeable. En revanche, pour theta de 1, on peut observer des divergences 
+   nettes.
+   
+   En cas de vol libre (sans effort externe imposé) à vitesse constante, pour 
+   les schémas en vitesse, on obtient un RESI_GLOB_RELA nulle : tous les 
+   termes pour le dénominateur : efforts extérieurs et effets d'inertie sont 
+   nuls. C'est normal. On pourrait contourner cela en calculant de manière 
+   approché un pseudo terme ,d'inertie.
+   Au lieu de M.A on pourrait mettre un terme du type M . V / dt.
+   Je ne fais pas ce choix aujourd'hui et il faut donc ne pas utiliser 
+   RESI_GLOB_RELA lors des phases de vol libre avec un schéma en vitesse.
+   Pour cela il faut modifier quelques fichiers de commandes des cas-tests 
+   cocnernés :
+   sdnl111f
+   sdnv100d
+   sdnv100e
+   sdnv100i
+   On ajoute donc, sous le mot-clé facteur, CONVERGENCE l'option :
+   RESI_GLOB_MAXI = 1.E-5
+   La valeur imposée est recalée par rapport aux résultats de résidu global 
+   maxi dans le .mess des cas-tests.
+   
+   Par la suite, on pourra se poser la question du choix du terme d'inertie 
+   pour le dénominateur du résidu relatif et ce pour tous les schémas en 
+   dynamique.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.17
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.53.01, V2.01.031, R5.05.05
+VALIDATION
+   sdld31a et tous les cas-test DNL
+NB_JOURS_TRAV  : 15.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 30/06/2009 - 16:38:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013477 DU 2009-06-04 09:33:52
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   PAL 1048 : VISU : instant n?tifs
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   pb Aster : présence de Nan dans un fichier MED.
+   """
+   
+   
+   Solution :
+   ----------
+   Problème déjà corrigé par la fiche 13337.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   unitaire
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 30/06/2009 - 16:38:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013492 DU 2009-06-09 15:37:19
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   XFEM : piquage RCV620TY + fissure rectangulaire (suite fiche 13231)
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   En STA9.5 :
+   
+   Un calcul X-FEM avec des mailles quadratiques et MUMPS plante sauvagement dans STAT_NON_LINE (
+   alors qu'il passe sans problème sur un maillage linéaire) :
+   ---------------------------------------------------------------------
+    
+   INSTANT DE CALCUL :  1.000000000E+00
+    
+   ---------------------------------------------------------------------
+   |   ITERATIONS   |     RESIDU     |     RESIDU     |     OPTION     |
+   |     NEWTON     |     RELATIF    |     ABSOLU     |   ASSEMBLAGE   |
+   |                | RESI_GLOB_RELA | RESI_GLOB_MAXI |                |
+   ---------------------------------------------------------------------
+   Memory fault (core dumped) 
+   <E>_FICHIER_CORE  L'execution a produit un fichier core.
+   
+   
+   Le même calcul avec MULT_FRONT par défaut plante par perte de 32 décimales sur le noeud
+   N59163, composante H1X.
+   
+   
+   
+   Solution :
+   ----------
+   
+   Le problème est dû au mauvais conditionnement de la matrice de rigidité lorsque la level
+   set coupe un petit bout d'élément.
+   Normalement, ce genre de pb arrive si un HEXA est coupé dans un angle.
+   La stratégie mise en place pour éviter ce pb est buguée pour les éléments quadratiques.
+   Dans xstan2, on vérifie que les pbs arrivent sur des mailles HEXA (ce qui est le cas ici)
+   et coupées en 3 points (dans un angle). Ce qui est aussi le cas ici
+   Mais le nombre de points d'intersection en quadratique n'est en fait pas calculé (dans
+   te0510 + xcface) car normalement, NINTER ne sert qu'au contact et que les éléments
+   quadratiques ne gèrent pas le contact.
+   Donc NINTER est mis à  -1 pour les mailles quadratiques.
+   
+   Ce qui fait que la stratégie n'est pas enclanchée (car NINTER .ne. 3).
+   
+   je corrige donc la routine xstan2.f
+   
+   maintenant, on vérifie seulement le type de maille (HEXA) et plus NINTER
+   
+   
+   Avec cette correction, MULT_FRONT par défaut plante par perte de 12 décimales.
+   Ce qui démontre que la stratégie, prévue pour limiter la perte à 8 décimales avec des
+   éléments linéaires, n'est pas suffisante sur des éléments quadratiques.
+   
+   Je ne sais pas traiter pour le moment correctement ce pb.
+   Je propose d'autoriser NPREC = 13 dans STAT_NON_LINE/SOLVEUR.
+   Le calcul se passe sans problème
+   (avec la correction mentionnée précédemment)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 30/06/2009 - 16:38:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013540 DU 2009-06-18 16:32:33
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Plantage en poursuite sur discrets non-symxc3xa9triques/symxc3xa9triques en STA9, OLD9, NEW10
+FONCTIONNALITE
+   Le problème vient effectivement d'appels manquant à NOCART. En fait on crée sur la base
+   globale la carte mais on ne la remplie pas.
+   
+   Quand on utilise une base classique, en relecture cela passe. Quand on utilise une base
+   hdf, cela ne passe plus : LIMA$$LONG n'existe pas car la carte n'a pas été remplie.
+   
+   En NEW10, Le problème n'est pas totalement réglé par la fiche 13471 (comme je l'aurais
+   cru), il faut modifier alcart (cf Jacques pour des explications claires).
+   
+   Pour la NEW9, je joins les fichiers à la fiche (fortran et cas test).
+   
+   Il faut donc mettre : 
+   - les appels aux NOCART qui manquent sur CARTDI dans acearp et acearm (en NEW9).
+      CALL NOCART(CARTDI, 3,' ','NOM',1,ZK8(JD),0,' ',1), juste après le 1er AFFDIS
+      CALL NOCART(CARTDI,-3,' ','NUM',KK,' ',ZI(JDDI),LIGMO,1), juste après le 2nd AFFDIS 
+   - ajouter un CALL JEVEUO en 'E' dans alcart pour que la collection soit en mémoire (en
+   NEW9, NEW10).
+   
+   Modif NEW9 : 
+   acearp, acearm, alcart
+   
+   Modif NEW10 (la fiche 13471 modifie comme il faut acearp, acearm) : 
+   alcart
+   
+   Cas tests restitués en NEW9, NEW10 
+   AFFE_CARA_ELEM/RIGI_PARASOL : ssnl130a.com1 (poursuite sur base HDF)
+   
+   Remarque :
+   =========
+   Les comportements entre base jeveux et base HDF différent. Dans ce dernier cas, les objets
+   associés à une collection sont recréés et mis en mémoire dans la commande POURSUITE pour
+   être réécrits au format standard. Or si aucun objet de collection n'a été chargé en
+   mémoire, le fichier HDF ne contriendra aucune référence. Dans le cas ci-dessus, il s'agit
+   d'un des objets systéme : le vecteur des longueurs des OC.
+   Il serait possible de disposer d'un comportement identique dans les 2 cas en mofifiant
+   légèrement les routines jjlchd.f et jjlihd.f.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas tests
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdnl111f                      macocco K.MACOCCO          213      2      1
+ CASTEST MODIF sdnv100d                      macocco K.MACOCCO          369      2      2
+ CASTEST MODIF sdnv100e                      macocco K.MACOCCO          374      2      2
+ CASTEST MODIF sdnv100i                      macocco K.MACOCCO          373      2      2
+ CASTEST MODIF ssnl130a                      macocco K.MACOCCO          167      4      3
+ CASTEST MODIF ssnp110c                      macocco K.MACOCCO          377      2      1
+ CASTEST MODIF ssnp122a                      macocco K.MACOCCO          305      2      2
+ CASTEST MODIF zzzz159f                      macocco K.MACOCCO          177      3      3
+CATALOPY MODIF commande/calc_table           macocco K.MACOCCO          121      2      2
+ FORTRAN MODIF algorith/crsvmu               macocco K.MACOCCO          328      4      4
+ FORTRAN MODIF algorith/impfot               macocco K.MACOCCO           85      7      7
+ FORTRAN MODIF algorith/mdadap               macocco K.MACOCCO          628     10      5
+ FORTRAN MODIF algorith/mminfp               macocco K.MACOCCO          474      3      3
+ FORTRAN MODIF algorith/ndfdyn               macocco K.MACOCCO          146     23      7
+ FORTRAN MODIF algorith/ndiner               macocco K.MACOCCO          139      4      5
+ FORTRAN MODIF algorith/ndnpas               macocco K.MACOCCO          533     23     11
+ FORTRAN MODIF algorith/nmassv               macocco K.MACOCCO          363      9      4
+ FORTRAN MODIF algorith/nmequi               macocco K.MACOCCO          131      5      6
+ FORTRAN MODIF algorith/xstan2               macocco K.MACOCCO          257     10      4
+ FORTRAN MODIF assembla/asretm               macocco K.MACOCCO           76      3      2
+ FORTRAN MODIF calculel/alcart               macocco K.MACOCCO          130      4      2
+ FORTRAN MODIF elements/elraga               macocco K.MACOCCO         1408      2      2
+ FORTRAN MODIF elements/te0548               macocco K.MACOCCO          159      7      1
+ FORTRAN MODIF jeveux/jxecro                 macocco K.MACOCCO          240     13     11
+ FORTRAN MODIF modelisa/acearm               macocco K.MACOCCO          248      3      1
+ FORTRAN MODIF modelisa/acearp               macocco K.MACOCCO          495      4      1
+ FORTRAN MODIF modelisa/tabchs               macocco K.MACOCCO          469      4      3
+ FORTRAN MODIF prepost/ircmva                macocco K.MACOCCO          289      8      4
+ FORTRAN MODIF soustruc/detgnm               macocco K.MACOCCO          125      2      2
+ FORTRAN MODIF utilitai/ndynlo               macocco K.MACOCCO          252     16     13
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   30        9451       185     116       +69
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   30        9451       185     116       +69 

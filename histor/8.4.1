@@ -1,0 +1,344 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 09/01/2007 - 14:59:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010394 DU 2006-12-18 08:04:55
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   erreurs de compil detectees par g77 -Wall
+FONCTIONNALITE
+   Je me suis aperçu (avec Lionel Vivan) que le compilateur g77 émettait un warning lors de
+   la compilation de rc32r1.f pour signaler qu'un tableau dimensionné à 2 était utilisé pour
+   l'indice 3.
+   
+   J'ai donc compilé toutes les routines f77 d'aster pour voir si g77 détecterait d'autres
+   anomalies. 
+   La récolte est heureusement maigre :
+   - rc32r1.f : débordement du tableau VALEI
+   - irmpga.f : format incorrect ligne 162
+   - vechde.f : débordement des tableaux LCHIN et LPAIN
+   
+   Correction (en NEW9 et NEW8) :
+     On corrige les 3 petites bévues.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE E.             DATE 09/01/2007 - 14:59:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010371 DU 2006-12-08 09:36:16
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TMA : CS
+TITRE
+   Test rccm04a en version NEW9.0 sur Bull
+FONCTIONNALITE
+   Avec la version NEW9 sur la machine de référence Bull, le test rccm04a s'arrete de façon
+   aléatoire en erreur dans la commande POST_RCCM. 
+   Correction : dans la routine rc32r1, le vecteur VALEI est dimensionné à 2 et on écrit en
+   position 3.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rccm04a
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 09/01/2007 - 14:59:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010380 DU 2006-12-12 17:28:18
+TYPE anomalie concernant Code_Aster (VERSION 8.4)
+TITRE
+   AFFE_CHAR_MECA, FACE_IMPO + SANS_GROUP_MA
+FONCTIONNALITE
+   Si dans AFFE_CHAR_MECA, on fait DDL_IMPO et FACE_IMPO+SANS_GROUP_MA ou SANS_MAILLE, çà
+   plante salement.
+   
+   En effet, on essaie de faire GETVR8 sur les valeurs de ces mots-clés qui sont des chaines
+   de caractères !
+   
+   Je doute que SANS_GROUP_MA/SANS_MAILLE aient été testés lors de la restit 8.2.17... ou pas
+   en présence de DDL_IMPO (ce qui est le but du SANS_GROUP_MA me semble-t-il).
+   
+   Pour corriger, j'ajoute SANS_GROUP_MA et SANS_MAILLE dans ddlfac.f dans la liste des
+   mots-clés qui ne contiennent pas de ddl.
+   
+   Ajout d'un nouveau test fourni par JP 'zzzz219a' qui teste les 2 mots-clés.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz219a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010367 DU 2006-12-07 15:13:39
+TYPE anomalie concernant Code_Aster (VERSION 8.4)
+TITRE
+   bug combinaison de fonctions (CALC_FONCTION)
+FONCTIONNALITE
+   En cas de combinaison de fonctions, un bug faisait qu'à droite, on limitait le domaine de
+   définition à la borne la plus faible des deux fonctions alors que le prolongement était
+   autorisé.
+   
+   Au delà de cette valeur, l'évaluation de la fonction résultat est différente, le
+   prolongement linéaire étant activé plus tôt d'où RESU_FAUX...
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0.20
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   pas d'ajout dans zzzz100a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 09/01/2007 - 14:59:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010309 DU 2006-11-24 12:37:45
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   quelques bugs dans POSt_MAIL_XFEM et POST_CHAM_XFEM
+FONCTIONNALITE
+   A l'occasion de la mise à jour par Samuel de la docD de la SD FISS_XFEM, j'ai mis à jour
+   le catalogue des SD (et les routines de vérification pour cette SD).
+   Puis pour vérifier la cohérence de la docD et du catalogue de la SD, j'ai passé 14 tests
+   XFEM en SDVERI='OUI'
+                                                                                            
+                           
+   Pour que ces 14 tests soient OK, j'ai du corriger 4 anomalies :
+    1) un  bug dans op0196.f (POST_CHAM_XFEM) :
+       les cham_no 'DEPL' de la SD_RESULTAT étaient tous créés avec le meme nom !
+       => le transitoire contenait pour tous les instants du calcul le meme champ de déplacement.
+       => RESULTATS FAUX
+    2) je corrige un petit bug dans op0187.f (POST_MAIL_XFEM) :
+       Il faut écrire 'CHNO' dans le champ DOCU de l'objet '.COORDO  .DESC'
+    3) je corrige un petit bug dans op0187.f (POST_MAIL_XFEM) :
+       l'objet COORDO.VALE doit etre redimensionné à 3*NBNO
+    4) je corrige un petit bug dans op0196.f (POST_CHAM_XFEM) :
+       le cham_elem '.DEP_RESU' était créé par erreur sur la base globale
+   
+                           
+   Détails :
+   ---------
+   1) On met à jour le catalogue des SD pour XFEM
+      => modif routines verij1.f et verij6.f
+   2) Suite à un problème d'agla CRP + recursivité :
+       - je renomme 2 routines :
+            verij7.f -> verija.f
+            verij2.f -> verijb.f
+       Les 2 nouvelles routines sont mises dans F90/recursive/*.f + fermeture/*.f.
+       La fonctionalité SDVERI='OUI' devient donc indisponible si l'on n'a pas de compilateur
+   f90.
+   
+   
+   2) On met SDVERI='OUI' dans 14 tests XFEM :
+      adls102a     ascou01a        sslv311a        ssnv173a        ssnv173b  ssnv173c  
+   ssnv182a   ssnv182d   ssnv185g        ssnv185i  ssnv185j   ssnv186d   ssnv191a   ssnv191b
+   
+   En NEW8 : 
+   ---------
+   On se contente de reporter ces petites corrections en NEW8, sans basculer les tests en
+   SDVERI='OUI.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : D4.10.02
+VALIDATION
+   14 tests XFEM en SDVERI='OUI'
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010060 DU 2006-09-21 11:46:23
+TYPE evolution concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   AFFE_CHAR_MECA sur maille de bord avec plus d'une maille support
+FONCTIONNALITE
+   Objectif
+   --------
+   Le but est d'assouplir MODI_MAILLAGE/ORIE_PEAU_xxxx pour traiter le cas des mailles
+   volumiques dupliquees.
+   
+   L'evolution a consisté a appliquer la convention suivante:
+   - si plusieurs mailles support bordent la meme maille de peau mais qu'elles sont du meme
+   cote : ok, la maille de peau est donc oriente de sorte que la normale soit sortante par
+   rapport aux mailles support.
+   - si plusieurs mailles support bordent la meme maille de peau mais qu'elles sont de part
+   et d'autre de la maille de peau, alors une erreur fatale est emise car on ne peut pas
+   orienter logiquement la maille de peau.
+   
+   Impact
+   ------
+   oriem0.f, utmasu.f
+   
+   A faire en version d'exploitation (NEW8) :
+   ------------------------------------------
+   Il faut supprimer l'alarme "La maille de peau s'appuie sur plus d'une maille support" de
+   la routine utmasu.f (L124). Car cette alarme n'est en principe déclanchée que lorsque les
+   mailles multiples ont la même connectivité. Il n'y a donc pas de problème d'orientation.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010377 DU 2006-12-12 10:20:31
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   MODI_MAILLAGE (STA8)
+FONCTIONNALITE
+   correction identique à la fiche 10390
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de l'etude
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010390 DU 2006-12-15 15:14:45
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Segmentation Fault dans UTMASU.F
+FONCTIONNALITE
+   Le problème venait d'une erreur de programmation dans la routine utmavo.f :
+    La liste des mailles voisines est une collection contigue dont certains éléments sont de
+   longueur nulle.
+    Lors de la déclaration de la longueur de chaque élément (JEECRA/LONMAX), on se protégeait
+   de la longueur nulle en remplaçant 0 par 1.
+    Mais dans la déclaration du LONT de la collection, on ne faisait pas la meme correction.
+    Dans la routine utmasu.f, on exploitait alors la collection au delà de sa longueur réelle.
+                                                                                            
+                           
+    Je me suis persuadé que cette erreur ne devait pas entrainer de résultats faux mais
+   plutot des "segmentation fault".
+                                                                                            
+                           
+    Correction à faire en 8 et 9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie sur clpaster
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR kxbadng      ADOBES A.              DATE 09/01/2007 - 14:59:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010379 DU 2006-12-12 16:50:14
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   DEFI_FLUI_STRU/Connors : erreur dans le calcul du coefficient de masse ajoutee
+FONCTIONNALITE
+   Dans la routine connor.f, l'une des étapes du calcul du coefficient de masse 
+   ajoutée consiste à calculer un diamètre équivalent deq obtenu comme suit (où de 
+   désigne le diamètre extérieur du tube) : 
+   
+   si le pas est carré : (deq/de)=(1.07+0.56p)p
+   
+   si le pas est triangulaire : (deq/de)=(0.96+0.5p)p
+   
+   Où p désigne le pas réduit, c'est à dire le pas du faisceau divisé par le 
+   diamètre extérieur des tubes.
+   
+   Dans la routine connor.f, on avait bien appliqué les formules ci-dessus mais en 
+   confondant pas et "pas réduit". Cette erreur a été corrigée.
+   
+   L'impact sur les résultats est de l'ordre du pourcent et les valeurs de non 
+   régression des cas-tests concernés ont été modifiées en conséquence.
+   
+   Ce bogue a été corrigé en même temps qu'ont été livrées les évolutions 10364 et 
+   10342.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Passage des cas tests validant DEFI_FLUI_STRU
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND C.              DATE 09/01/2007 - 14:59:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010418 DU 2007-01-04 10:13:55
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   harmonisation catalogue CALC_FONCTION / MACR_SPECTRE
+FONCTIONNALITE
+   en cohérence avec la commande CALC_FONCTION qu'elle appelle, rendre le mot clé NORME
+   obligatoire dans le catalogue de MACR_SPECTRE, sans valeur par défaut.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdll138a
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT zzzz219a                        vivan L.VIVAN             85     85      0
+ CASTEST MODIF sdll134a                        vivan L.VIVAN            277      3      3
+ CASTEST MODIF sdll138a                        vivan L.VIVAN            661      2      1
+CATALOPY MODIF commande/macr_spectre           vivan L.VIVAN             70      2      2
+ FORTRAN MODIF algeline/connor                 vivan L.VIVAN            285      4      4
+ FORTRAN MODIF algorith/vechde                 vivan L.VIVAN            589      2      2
+ FORTRAN MODIF modelisa/ddlfac                 vivan L.VIVAN             85      4      2
+ FORTRAN MODIF modelisa/oriem0                 vivan L.VIVAN            143     89     18
+ FORTRAN MODIF postrele/rc32r1                 vivan L.VIVAN            269      2      2
+ FORTRAN MODIF prepost/irmpga                  vivan L.VIVAN            300      2      2
+ FORTRAN MODIF prepost/op0187                  vivan L.VIVAN            903      3      1
+ FORTRAN MODIF prepost/op0196                  vivan L.VIVAN            566      4      4
+ FORTRAN MODIF prepost/utmasu                  vivan L.VIVAN            157     15     19
+ FORTRAN MODIF prepost/utmavo                  vivan L.VIVAN            214      2      2
+ FORTRAN MODIF utilitai/juveca                 vivan L.VIVAN            179     40     36
+  PYTHON MODIF Messages/jeveux                 vivan L.VIVAN            167      7      1
+  PYTHON MODIF Messages/prepost4               vivan L.VIVAN            425     12      1
+  PYTHON MODIF Utilitai/t_fonction             vivan L.VIVAN            636      2      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1          85        85               +85
+ MODIF :   17        5926       195     102       +93
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   18        6011       280     102      +178 

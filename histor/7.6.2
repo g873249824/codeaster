@@ -1,0 +1,588 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR acbhhcd      DEVESA G.              DATE 31/01/2006 - 11:57:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009143 DU 2005-10-25 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+TITRE
+   DYNA_TRAN_MODAL
+FONCTIONNALITE
+   Comme suppose par Olivier, il faut bien intervenir dans la routine MDTR74 et
+   tromper alors la valeur de la variable d'appel TYPBAS qui sera transmise en
+   aval a la routine MDACCE pour l'inversion de la matrice de masse generalisee.
+   On modifie TYPBAS pour se retrouver dans le cas d'une matrice pleine a
+   inverser (type generique BASE_MODA) plutot que dans celui des matrices
+   diagonales (type generique MODE_MECA ou MODE_GENE).
+   On teste la modification sur une etude inspiree du test SDNL105D modifie.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   etude
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009321 DU 2006-01-03 18:12:42
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   DYNA_NON_LINE et AMORTISSEMENT
+FONCTIONNALITE
+   Le probleme vient du fait que l'on prend en compte 2 fois l'amortissement
+   mecanique. La premiere fois par une force de correction -C.V calculee quand on
+   a des elements solides absorbants. La seconde fois en activant le calcul de la
+   matrice d'amortissement via l'option AMOR_MECA s'il existe de l'amortissement
+   AMOR_ALPHA dans un materiau.
+   Pour avoir le bon resultat, il faut ne le prendre qu'une fois. Pour cela, on
+   cree une option specifique AMOR_MECA_ABSO pour les elements solides absorbants
+   3D_ABSO et DP_ABSO a la place de l'option AMOR_MECA.
+   On la teste dans le cas test SDLV120A qui presentait un suramortissement quand
+   on mettait AMOR_ALPHA = 0. On lance alors DYNA_LINE_TRAN par 2 chemins:
+   Avec une force de correction sans matrice d'amortissement et avec une matrice
+   d'amortissement calculee avec l'option AMOR_MECA_ABSO avec une force de
+   correction nulle.
+   Dans tous les cas, on se recale sur les resultats initiaux sans AMOR_ALPHA et
+   sur ceux du calcul avec DYNA_NON_LINE.
+   Parmi les modifications :
+   - On cree donc la nouvelle option AMOR_MECA_ABSO
+   - On l'affecte a la place d'AMOR_MECA dans les catalogues des elements ME3DA2
+   et MEDPA1
+   - On la renseigne dans le catalogue de CALC_MATR_ELEM
+   - On modifie les sources de OP0009 et MEAMME
+   - On modifie le test SDLV120A
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V2.04.120
+VALIDATION
+   cas test
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE E.              DATE 31/01/2006 - 14:26:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009242 DU 2005-11-25 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+TITRE
+   CALC_NO et option REAC_NODA
+FONCTIONNALITE
+   Lionel Salmona (CS) a repere deux erreurs dans le calcul des reactions nodales en
+   dynamique.
+   1/ Dans DYNA_NON_LINE, une erreur de signe faisait
+   que l'on retranchait l'inertie (masse*acceleration)
+   plutot que de l'ajouter a aux forces nodales dans OP0106.
+   Les reactions nodales etaient donc d'autant plus fausses
+   que les effets inertiels etaient grands.
+   2/ Dans la meme routine OP0106, on oubliait les resultats
+   de type DYNA_TRANS (issus de DYNA_LINE_TRAN ou d'une restitution
+   dans l'espace physique d'un calcul transitoire sur base modale
+   par DYNA_TRAN_MODAL) parmi les concepts resultats
+   avec une variation dans le temps.
+   Resultat : on ne prenait pas en compte la fonction
+   multiplicatrice des charges dans le calcul des reactions nodales.
+   Les reactions nodales etaient donc fausses
+   aux points d'application de contraintes ou forces.
+   D'un autre cote, ce sont des points
+   ou on est a priori peu interesse par les reactions nodales.
+
+   Emmanuel
+
+   PS :
+   a/ Je preconise une RTA pour valider les reactions nodales en dynamique.
+   b/ Il reste a programmer la prise en compte des effets de l'amortissement.
+
+   PS : 1/ Je preconise une RTA pour faire le point sur la validation des reactions nodales
+   en dynamique.
+   2/
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 1.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 1.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   forma12 a et b
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 31/01/2006 - 22:00:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009207 DU 2005-11-16 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+TMA : CS
+TITRE
+   astk, CALC_ELEM ou rcp ?
+FONCTIONNALITE
+   Dans les routines mecalm.f et thaclm.f ajout de l'instruction:
+   CALL GETRES(K8B,K16B,NOMCMD)
+   afin d'initialiser la variable NOMCMD.
+   Cette variable est utilisee dans les appels a UTMESS et UTDEBM.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   RAS
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR d6bhhjp      LEFEBVRE J.P.          DATE 30/01/2006 - 12:46:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009236 DU 2005-11-24 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+TITRE
+   solveur multi-frontal et OpenMP
+FONCTIONNALITE
+   Suite aux obsvervations de Christian Rose et apres suppression des directives OpenMP dans
+   les routines mlfmlt.f et mltdrb.f, le resultat du test yyyy106b est le suivant :
+
+   --- Fin de tous les cas tests       :  le 20/01/2006 a 13:20:01
+   --- Voici les resultats :
+
+   Temps CPU   Temps SYS   Temps Total Temps Job
+   yyyy106a  OK_ALARME                       641.00       19.90      660.90      662.47
+   --------  ---------  ----------------  ---------   ---------   ---------   ---------
+   1      1          0                641.00       19.90      660.90      662.47
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   yyyy106a sur AlphaServer
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009375 DU 2006-01-19 10:39:34
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   catalogue de la commande CREA_RESU
+FONCTIONNALITE
+   Lors de l'asrest, le test ssll107b (POST_ELEM / CARA_GEOM) s'est arrete en erreur
+   numerique dans la routine TBAJLI appelee par PECAGE. Ce probleme a pu etre reproduit
+   en
+   mode debug (sans surcharge) et a ete corrige en modifiant la routine PECAG2 : deux
+   elements de la table contenaient des valeurs invalides, le mot cle ORIG_INER n'ayant
+   pas
+   ete renseigne.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   tous les tests contenant CREA_RESU
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009363 DU 2006-01-16 09:10:29
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   menage dans les fichiers de tests
+FONCTIONNALITE
+   Les fichiers .msup ont ete supprimes avec le compte d'administration sous les
+   repertoire
+   /aster/v7/NEW7/astest et /aster/v8/NEW8/astest le 19/01/06.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   aucune
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009277 DU 2005-12-19 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   LIRE_PLEXUS
+FONCTIONNALITE
+   L'affectation de la variable K80BM a ' ' en tete de la routine OP0184 permet d'eviter la
+   remanence et d'executer correctement le test avec la version NEW8 INTEL
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   test zzzz112a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009135 DU 2005-10-24 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+TITRE
+   DEBUT et format HDF
+FONCTIONNALITE
+   J'ai supprime le mot cle FORMAT_HDF dans la commande DEBUT ou il n'a pas le lieu
+   d'etre,
+   autrefois les catalogues des commandes DEBUT et POURSUITE devaient etre strictement
+   identiques, ce n'est plus le cas.
+   J'en profite pour supprimer les references a la base LOCALE encore presentes en
+   version de
+   developpement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   test perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR gnicolas     Gerald NICOLAS         DATE 31/01/2006 - 17:41:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009251 DU 2005-12-02 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+TMA : DeltaCad
+TITRE
+   IMPR_RESU / LIRE_RESU au format MED
+FONCTIONNALITE
+   Il est apparu des problemes geometriques lors des passages Aster <--> MED.
+   En effet, la description de certaines mailles est differente entre Aster et
+   Med, notamment en ce qui concerne l'ordre des noeuds.
+   Ces problemes peuvent survenir lorsque:
+   - Code Aster genere un fichier de maillage au format MED
+   (par un IMPR_RESU au format MED a partir d'un concept maillage issu de
+   LIRE_MAILLAGE).
+   - Code Aster lit en entree un fichier MED pour creer un concept maillage
+   (par un LIRE_MAILLAGE au format MED)
+
+   La consultation de la doc U3.01.01 (description du fichier de maillage du
+   Code Aster) et de la doc de MED (disponible sur le site) a permis
+   d'identifier les types de mailles dont la convention MED n'est pas respectee
+   par Aster. Il s'agit des types de mailles TETRA4, TETRA10, PYRAM5, PYRAM13,
+   PENTA6, PENTA15, HEXA8, HEXA20.
+
+   L'une des convention MED a respecter est la normale sortante:
+   Exemple: TETRA4
+   Soit N1 N2 N3 N4 la representation des noeuds ordonnes d'une maille Aster TETRA4.
+   La position du noeud N4 dans Aster est telle que la normale obtenue par le
+   produit vectoriel de N1N2 et N1N3 soit entrante, alors que pour MED la normale est
+   sortante.
+   Ainsi, pour la maille Aster de type TETRA4, sa representation dans MED est:
+   N1 N3 N2 N4.
+
+   Une autre convention sur l'ordre de la numerotation des noeuds milieux n'a pas ete
+   respectee pour
+   les PENTA15 et les HEXA20:
+   - dans Aster: l'ordre de numerotation est le suivant:
+   1. numerotation des noeuds sommets des faces bas et haut
+   2. numerotation des noeuds milieux de la face du bas.
+   3. numerotation des noeuds milieux des aretes verticales
+   4. numerotation des noeuds milieux de la face du haut.
+   - dans Med, l'ordre de numerotation est different: 1 - 2 - 4 - 3
+
+   Remarque: Pour verifier le contenu du fichier med (binaire), on utilise la commande
+   xmdump.
+   La version de xmdump utilisee doit etre la 2.2.3 et non celle prise par defaut
+   (2.2.2).
+   L'executable xmdump se trouve sur clayastr dans /home/med/med-2.2.3/bin.
+
+   Sources modifiees:
+   ircame.f irmhdf.f irmmma.f lrcame.f lrmhdf.f lrmmma.f lrmtyp.f op0150.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : STA7.1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : NEW8.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   etude fournie (HEXA8) + extension de l'etude a d'autres types de mailles
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009346 DU 2006-01-11 15:32:15
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   Bug MED :  " <F> <IMPR_RESU> <IRMMFA> MED: ERREUR EFFAMC NUMERO -1 "
+FONCTIONNALITE
+   L'anomalie venait du fait que deux groupes portaient le meme nom, a un suffixe en '_'
+   pres
+   : 'Face_mX' et 'Face_mX_'. Or le programme de creation des noms de familles, mdnofa, se
+   base sur les noms des groupes et complete avec des '_' a 32 caracteres. Ici, le
+   programme
+   cree donc deux fois la famille MED 'Face_mX__________________________'. Et comme deux
+   familles ne peuvent pas porter le meme nom, il y a plantage.
+   La correction consiste a reperer si des '_' sont presents en fin de nom de groupes.
+   Dans
+   ce cas, le mecanisme initial est ameliore en ajoutant un suffixe numerique et en
+   controlant l'unicite des noms de famille (programme mdnofa).
+
+   Par la meme occasion, j'apporte une evolution de securite. Si dans la description des
+   familles enregistrees dans le fichier MED, un nom de groupe depasse les 8 caracteres,
+   on
+   fait un arret fatal. En effet, Aster ne sait traiter que des noms de groupe a 8
+   caracteres
+   (programme lrmmf3).
+
+   Toutefois, comme la convention MED autorise des noms de groupe allant jusqu'a 80
+   caracteres, ce probleme risque de se reproduire avec l'usage de Salome. Il faudra
+   engager
+   une evolution pour resoudre cette difficulte.
+
+   En version 7, on ne restitue que l'arret fatal en cas de nom de groupe superieur a 80
+   caracteres.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : NEW7.1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : NEW8.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   cas-test MED
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mabbas       ABBAS M.               DATE 30/01/2006 - 11:43:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009052 DU 2005-09-27 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+TITRE
+   ssnv128e en mode debugjeveux
+FONCTIONNALITE
+   Fiche a restituer en v7.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   Lui-meme
+NB_JOURS_TRAV  : 7.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 31/01/2006 - 13:24:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009397 DU 2006-01-25 14:57:18
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TITRE
+   ssna110a plante sur 7.6 sur Calibre 4
+FONCTIONNALITE
+   Sous Calibre 4, le test ssna110a s'arrete brutalement avec le message :
+   lda must be >= MAX(N,1): lda=0 N=0Parameter 7 to routine cblas_dgemv was incorrect
+
+   Le message est emis par Numeric au moment ou on appelle :
+   Numeric.dot(V1, V2) alors que V1 et V2 sont de longueur nulle.
+
+   Je corrige en decomposant le second membre en deux parties :
+   -
+   xi=-LinearAlgebra.solve_linear_equations(take(take(Q,I),I,1),(take(d,I)+Numeric.dot(take(t
+   ake(Q,I),Act,1),take(Dim.adim(dval),Act))))
+   +          t_QI = take(Q, I)
+   +          t_tQI_Act = take(t_QI, Act, 1)
+   +          t_adim_Act = take(Dim.adim(dval), Act)
+   +          if size(t_tQI_Act) > 0 and size(t_adim_Act) > 0:
+   +             smemb = take(d, I) + Numeric.dot(t_tQI_Act, t_adim_Act)
+   +          else:
+   +             smemb = take(d, I)
+   +          xi=-LinearAlgebra.solve_linear_equations(take(t_QI, I, 1), smemb)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : A0.02.30
+VALIDATION
+   ssna110a sous clapt602
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009231 DU 2005-11-23 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+TITRE
+   DEFI_FONCTION
+FONCTIONNALITE
+   Lorsqu'on definit une fonction avec DEFI_FONCTION - VALE_PARA/VALE_FONC et qu'on detruit
+   ensuite une des listr8, on s'arrete assez salement lors, par exemple, d'un IMPR_FONCTION
+   dans la methode Valeurs() !
+
+   En effet, comme on est globalement en PAR_LOT='OUI', Valeurs() va chercher dans l'etape
+   DEFI_FONCTION comment a ete creee la fonction et essaie donc d'appliquer Valeurs()
+   sur la
+   listr8 detruite.
+
+   Je modifie les methodes Valeurs, Parametres pour que, en PAR_LOT='NON', on aille
+   chercher
+   les valeurs dans le concept (getvectjev), en PAR_LOT='OUI', on essaie d'aller chercher
+   dans l'etape quand on sait le faire, sinon on s'arrete plus clairement.
+
+   Dans l'exemple du DEFI_FONTION - VALE_PARA/VALE_FONC, Valeurs() dans IMPR_FONCTION ne pose
+   plus de probleme car il est localement (dans la macro) en PAR_LOT='NON' et peut donc
+   aller
+   chercher les valeurs dans le concept.
+   Si on ajoute dans le jeu de commandes :
+   l_v = FSE.Valeurs()
+   on s'arrete avec :
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! Erreur dans listr8.Valeurs en PAR_LOT='OUI' !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   Pour cela, j'ajoute une methode dans la classe ASSD (N_ASSD.py) qui renvoie True si on
+   est
+   en par_lot, False sinon.
+
+   Je modifie aussi toutes les methodes qui ont besoin d'etre en PAR_LOT='NON' pour
+   emettre
+   un message plus clair avant de planter quand on essaie le getvectjev...
+
+   modele_gene.LIST_SOUS_STRUCT
+   modele_gene.LIST_LIAIS_STRUCT
+   macr_elem_dyna.NBRE_MODES
+   macr_elem_dyna.EXTR_MATR_GENE
+   macr_elem_dyna.RECU_MATR_GENE
+   listr8.Valeurs
+   maillage.LIST_GROUP_NO
+   maillage.LIST_GROUP_MA
+   cham_elem.EXTR_COMP
+   cham_no.EXTR_COMP
+   resultat.LIST_CHAMPS
+   resultat.LIST_NOM_CMP
+   resultat.LIST_VARI_ACCES
+   resultat.LIST_PARA
+   fonction.Parametres
+   fonction.Trace
+   fonction.Valeurs
+   fonction_c.Valeurs
+   fonction_c.Trace
+   nappe.Valeurs
+   nappe.Parametres
+   nappe.Trace
+   matr_asse_gene.EXTR_MATR_GENE
+   matr_asse_gene.RECU_MATR_GENE
+   matr_asse_gene_c.EXTR_MATR_GENE
+   matr_asse_gene_c.RECU_MATR_GENE
+   table.__getitem__
+   table.EXTR_TABLE
+   vect_asse_gene_r.EXTR_VECT_GENE
+   vect_asse_gene_r.RECU_VECT_GENE
+   vect_asse_gene_c.EXTR_VECT_GENE
+   vect_asse_gene_c.RECU_VECT_GENE
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   liste complete
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009407 DU 2006-01-27 10:31:40
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   LIRE_RESU et unite logique
+FONCTIONNALITE
+   Lors d'une etude, on enchaine un lire_resu puis un pre_ideas sur la meme unite logique du
+   coup plantage.
+   En regardant de plus pres l'op0150, on voit bien un ulopen pour ouvrir l'unite logique
+   mais pas un ulopen pour la fermer.
+
+   J'etais tente d'ajouter un ulopen pour fermer l'unite... mais dans un cas-test
+   (sdll100a),
+   on enchaine 2 LIRE_RESU sur la meme unite et si on ferme le fichier, il faudrait refaire
+   le DEFI_FICHIER pour retrouver la correspondance unite/nom de fichier.
+
+   Le probleme n'est pas vraiment dans LIRE_RESU mais plutot dans PRE_IDEAS qui fait soit
+   l'open si le fichier n'est pas ouvert, rien sinon.
+   Et donc dans ce dernier cas, comme les routines en dessous utilisent encore
+   IUNIFI('IDEAS'), il faut redefinir le ddname 'IDEAS' avec ULDEFI.
+   ==> dans stbast.f
+
+   Il faudrait faire definitivement la peau a IUNIFI hors des unites "systeme" (message,
+   resultat...).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE :
+VALIDATION
+   enchainement d'un lire_resu + pre_ideas
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF yyyy106a                      d6bhhjp J.P.LEFEBVRE       906      8     23
+ CASTEST MODIF yyyy106b                      d6bhhjp J.P.LEFEBVRE       737      6     16
+ CASTEST MODIF zzzz121b                     gnicolas G.NICOLAS          302     17     13
+CATALOGU AJOUT options/amor_meca_abso        acbhhcd G.DEVESA            26     26      0
+CATALOGU MODIF typelem/gener_me3da2          acbhhcd G.DEVESA            53      2      2
+CATALOGU MODIF typelem/gener_medpa1          acbhhcd G.DEVESA            47      2      2
+CATALOPY MODIF commande/calc_matr_elem       acbhhcd G.DEVESA           192     14      2
+CATALOPY MODIF commande/crea_resu            d6bhhjp J.P.LEFEBVRE       132     11     17
+CATALOPY MODIF commande/debut                d6bhhjp J.P.LEFEBVRE        68      1      3
+CATALOPY MODIF commande/poursuite            d6bhhjp J.P.LEFEBVRE        66      2      2
+CATALOPY MODIF entete/accas                 mcourtoi M.COURTOIS         711     69     32
+ FORTRAN MODIF algeline/mlfmlt               d6bhhjp J.P.LEFEBVRE        67      3      3
+ FORTRAN MODIF algeline/mltdrb               d6bhhjp J.P.LEFEBVRE       214      1      3
+ FORTRAN MODIF algorith/mdtr74               acbhhcd G.DEVESA           705      2      1
+ FORTRAN MODIF calculel/meamme               acbhhcd G.DEVESA           206      8      3
+ FORTRAN MODIF calculel/mecalm               cibhhlv L.VIVAN           2286      3      2
+ FORTRAN MODIF calculel/op0009               acbhhcd G.DEVESA           218      2      2
+ FORTRAN MODIF calculel/thaclm               cibhhlv L.VIVAN            925      3      2
+ FORTRAN MODIF modelisa/lrmhdf              gnicolas G.NICOLAS          311      9      5
+ FORTRAN MODIF modelisa/lrmmfa              gnicolas G.NICOLAS          517     33      1
+ FORTRAN MODIF modelisa/lrmmma              gnicolas G.NICOLAS          314     25      6
+ FORTRAN MODIF modelisa/lrmtyp              gnicolas G.NICOLAS          352    218      8
+ FORTRAN MODIF prepost/ircame               gnicolas G.NICOLAS          422      8      4
+ FORTRAN MODIF prepost/irmhdf               gnicolas G.NICOLAS          293      9      5
+ FORTRAN MODIF prepost/irmmma               gnicolas G.NICOLAS          280     25      7
+ FORTRAN MODIF prepost/lrcame               gnicolas G.NICOLAS          626      8      4
+ FORTRAN MODIF prepost/op0106                 boyere E.BOYERE           817      3      2
+ FORTRAN MODIF prepost/stbast               mcourtoi M.COURTOIS          51      5      1
+ FORTRAN MODIF supervis/ibfhdf               d6bhhjp J.P.LEFEBVRE        42      2      2
+ FORTRAN MODIF utilitai/op0150              gnicolas G.NICOLAS          894      7      5
+ FORTRAN MODIF utilitai/op0184               d6bhhjp J.P.LEFEBVRE       421      2      1
+  PYTHON MODIF Macro/reca_algo              mcourtoi M.COURTOIS         267     10      3
+  PYTHON MODIF Noyau/N_ASSD                 mcourtoi M.COURTOIS         132     12      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1          26        26               +26
+ MODIF :   32       13574       530     183      +347
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   33       13600       556     183      +373 

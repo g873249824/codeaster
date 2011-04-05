@@ -1,0 +1,595 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 21/10/2009 - 09:11:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013933 DU 2009-09-24 09:03:01
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Utilisation de CRIT_FLAM
+FONCTIONNALITE
+   L'étude ci-jointe qui met en évidence ce bug est du type thermo-mécanique.
+   Si l'on retire la partie thermique, l'étude tourne sans problème.
+   
+   Après analyse et grâce à l'aide de Jacques, une utilisation incorrecte des 
+   variables de commande est suspectée.
+   En fait, pour recalculer la matrice de rigidité à la fin du pas (si nécessaire) on 
+   n'a plus besoin que des quantités finales : en T+, stockées dans le vecteur VALPLU.
+   C'est effectivement ce qu'on faisait jusqu'à présent.
+   Mais pour les variables de commande il faut aussi transmettre COMMOI à NMXMAT.
+   Aucun cas-test ne fait de thermique et du flambage, ce qui explique la non-
+   détection de ce bug jusqu'à présent.
+   Ce bug existe depuis le passage des données thermiques en variables de commande. 
+   Il n'entraîne pas de résultat faux car ça plante...
+   
+   Au niveau fortran, deux routines sont légèrement impactées : NMFLAM et NMFLMA 
+   (appel à NMXMAT). 
+   
+   Pour valider, j'ai passé tous les cas-tests (sur Bull et Calibre 5) qui font appel 
+   à CRIT_FLAMB ou MODE_VIBR :
+   - sdnv106a,
+   - ssll105d,
+   - ssll105e,
+   - ssnl126a,
+   - ssnl126b,
+   - miss06b.
+   Plus l'étude jointe à cette fiche.
+   
+   Report en version 9 : les routines NMFLAM et NMFLMA sont les mêmes qu'en NEW10 
+   donc pas de difficultés à prévoir pour le report.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdnv106a, ssll105d, ssll105e, ssnl126a, ssnl126b, miss06b et etude de la fiche
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 21/10/2009 - 09:11:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013771 DU 2009-08-26 07:35:14
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   recherche lineaire type mixte
+FONCTIONNALITE
+   Le calcul plante dans la recherche linéaire, routine zbroot, qui résout l'équation f(x)=0. 
+   Corrigé par la fiche 12172.
+   Les erreurs fatales ont été transformées en échec (propre) de l'algo de recherche
+   linéaire: on prend le dernier rho trouvé.
+   
+   Impact doc: préciser l'usage de RHO_EXCL dans la doc U de STAT_NON_LINE
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03
+VALIDATION
+   wtnp113a/ b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012172 DU 2008-06-06 16:37:14
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   stat_non_lineaire et recherche lineaire mixte
+FONCTIONNALITE
+   Reprenons les problèmes:
+   1/ L'algo ne respecte pas les bornes RHO_MIN et RHO_MAX fixées par l'utilisateur. Quand
+   RHO est en dehors de cette intervalle, l'algo. s'arrête SANS reprojeter sur ces bornes et
+   prend un RHO arbitraire: le premier trouvé par l'algo
+   2/ Cette stratégie moisie fonctionne super bien pour le cas-test wtnp113a/b
+   
+   Correction:
+   - reprojeter le RHO optimal sur ses bornes 
+   - contourner le problème pour wtnp113*: il suffit de forcer l'algo à ne faire qu'une
+   itération de recherche linéaire (ITER_LINE_MAXI=1) et à enlever les bornes (RHO_MIN=0,1 et
+   RHO_MAX=0,2) pour que ça fonctionne
+   - blinder un peu mieux les valeurs RHO_MIN/RHO_MAX à la lecture du catalogue (routine NMDOMT)
+   
+   Les gens de la THM sont invités à se souvenir que ce cas-test marche très bien avec UNE
+   itération de recherche linéaire, mais pas avec plusieurs, ce qui est surprenant, sauf si
+   l'énergie interne n'est pas monotone (et dans ce cas, c'est un gros coup de chance de
+   trouver un RHO optimal en une itération).
+   
+   Pas de résultats faux: au pire, ça converge pas.
+   Par contre, l'algo ne répond pas aux demandes de l'utilisateur (RHO_MIN/RHO_mAX non pris
+   en compte)
+   
+   A faire en 9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03
+VALIDATION
+   wtnp113
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012959 DU 2008-12-08 13:15:47
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Erreurs nmdep0/nmchso, diinst/nmobsv
+FONCTIONNALITE
+   Avec Valgrind, deux erreurs détectées:
+   
+   ==13678== Source and destination overlap in memcpy(0x52BFACA2, 0x52BFACA2, 19)
+   ==13678==    at 0x1B9046BD: memcpy (mac_replace_strmem.c:113)
+   ==13678==    by 0x914DB70: nmchso_ (nmchso.f:75)
+   ==13678==    by 0x8B5250B: nmdep0_ (nmdep0.f:52)
+   ==13678==    by 0x87382A6: nmrigi_ (nmrigi.f:118)
+   
+   ==13678== Use of uninitialised value of size 8
+   ==13678==    at 0x82AB669: diinst_ (diinst.f:77)
+   ==13678==    by 0x82BF4B2: nmobsv_ (nmobsv.f:67)
+   ==13678==    by 0x826EDFD: op0070_ (op0070.f:475)
+   ==13678==    by 0x81F04CF: ex0000_ (ex0000.f:258)
+   
+   
+   Une bonne âme (Jacques) a corrigé le problème dans NMCHSO
+   Je corrige DIINST
+   
+   A faire en 9 (en particulier, NMCHSO n'a pas été corrigé en 9)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013368 DU 2009-05-04 12:19:30
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   DNL avec DIS_CHOC : conseiller la reactualisation des matrices
+FONCTIONNALITE
+   Quand on utilise DNL avec des relations DIS_CHOC (contact discret pénalisé), il peut y
+   avoir des itérations de Newton (même si on est en élastique).
+   Il faudrait donc émettre une alarme conseillant d'utiliser 'REAC_ITER'=1, sinon le calcul
+   peut être faux et donner un bilan énergétique mauvais (si on n'utilise pas cette option,
+   la force de contact peut être différente de celle qu'on calcule à partir du déplacement,
+   de la vitesse et des coefficients de pénalisation).
+   
+   On développe un petit utilitaire pour interroger la carte COMPOR:
+   ......SUBROUTINE.NMCPQU(COMPOR,QUESTZ,NOMPAZ,EXIST..)
+   C.....
+   C.AJOUT.ALGORITH.
+   C.RESPONSABLE
+   C
+   ......IMPLICIT.NONE
+   ......CHARACTER*19..COMPOR
+   ......CHARACTER*(*).QUESTZ
+   ......CHARACTER*(*).NOMPAZ
+   ......LOGICAL.......EXIST
+   C......
+   C.----------------------------------------------------------------------
+   C
+   C.ROUTINE.MECA_NON_LINE.(UTILITAIRE)
+   C
+   C.INTERROGATION.DE.LA.CARTE.COMPOR
+   C......
+   C.----------------------------------------------------------------------
+   C
+   C.IN..COMPOR.:.CARTE.COMPORTEMENT
+   C.IN..QUESTI.:.TYPE.DE.QUESTION
+   C...............'COMP_EXIST':.EST-CE.QUE.CE.COMPORTEMENT.EXISTE.?
+   C.IN..NOMPAZ.:.NO.DU.PARAMETRE.INTERROGE.(PAR.EX..NOM.DU.COMPORTEMENT
+   C................RECHERCHE'
+   C.OUT.EXIST..:.REPONSE.A.LA.QUESTION
+   
+   Puis on impacte dans NMFONC/ISFONC pour détecter les éléments DIS_CHOC (vecteur
+   fonctionnalités activées FONACT)
+   Enfin, on vérifie lors de l'assemblage de la matrice (routine NMCHRM).
+   Si DIS_CHOC et si REAC_ITER pas correct: on alarme et on force le réassemblage
+   
+   Même messgae que pour le contact discret avec pénalisation:
+   
+   5 : _("""
+    Vous utilisez une méthode de contact (contact discret avec pénalisation ou élément DIS_CHOC)
+     qui apporte une contribution à la matrice tangente à
+    chaque itération. La réactualisation est donc forcée (REAC_ITER=1) et ce même si vous
+   utilisez la matrice
+    'ELASTIQUE'.
+   """),
+   
+   
+   
+   Risque de résultats faux: si DIS_CHOC et matrice non-réactualisée à chaque itération, le
+   bilan énergétique sera faux
+   
+   A faire en 9:
+   op0070 (changer ZFON à 26)
+   nmfonc/isfonc
+   nmcpqu (nouvelle routine)
+   nmchrm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03,D6.00.01,R5.03.17
+VALIDATION
+   test perso sur sdnd100c
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013468 DU 2009-06-03 12:01:26
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TMA : DeltaCad
+TITRE
+   Objet JEVEUX inexistant dans les bases ouvertes
+FONCTIONNALITE
+   Erreur en POURSUITE après STAT_NON_LINE:
+   Objet JEVEUX inexistant dans les bases ouvertes : >RESU1   .0000.EXCIT.LCHA< !
+   
+   L'origine du problème est du au fait que lors de l'étape précédente du calcul, Aster c'est
+   arrêté en erreur fatale <FACTOR_20>. La SD charge n'a pas été stockée dans la base globale.
+   
+   La SD LISTE_CHARGES est stockée comme paramètre dans l'EVOL_NOLI. La SD "originale" est
+   nommée par l'objet LISCHA (stocké sur la base volatile), la SD stockée dans l'EVOL_NOLI
+   est nommée par l'objet LISCH2 (forcément stockée sur la base globale).
+   On recopie LISCHA dans LISCH2 dans OP0070: CALL COPISD(' ','G',LISCHA,LISCH2
+   
+   Correction: plutôt que de recopier la liste des charges SD EVOL_NOLI aux instants
+   "judicieux" (voir lignes CALL COPISD(' ','G',LISCHA,LISCH2) dans OP0070), on recopie dès
+   le début LISCHA dans LISCH2 dans NMINIT.
+   
+   Évidemment, ça ne fonctionnera pas si, par hasard, on plante avant la ligne dans NMINIT.
+   Mais le risque est infinitésimal (de toute façon, on n'aura même pas commencé un calcul).
+   
+   A faire en v9
+   Impacts: op0070 et nminit
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013601 DU 2009-07-07 11:30:31
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Mot-cle EXCIT : double definition de charges
+FONCTIONNALITE
+   Si on définit 2 fois la même charge sous le mot-clé facteur EXCIT, on tombe sur une erreur
+   pas très sympathique.
+   Correction: on vérifie que les charges ne sont pas définies plusieurs fois en se basant
+   sur leur nom et on arrête l'utilisateur avec le messgae plus clair:
+   
+   1 : _("""
+   La charge <%(k1)s> a été utilisée plus d'une fois dans EXCIT: il faut la supprimer.
+   """),
+   
+   A faire en V9
+   Imapcts: nmdome et charges.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa0 la main
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013664 DU 2009-07-30 14:59:07
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   SUIVI_DDL - Ecrasement memoire
+FONCTIONNALITE
+   Bug dans le SUIVI_DDL.
+   On accède mal à des données stockées dans un vecteur JEVEUX -> débordement de tableau puis
+   écrasement mémoire.
+   Se déclenche dès que le nombre de SUIVI_DDL est supérieur à 3
+   Il faut modifier IMPSDA, pour l'accès à l'objet 
+   IMPFOR = SDIMPR(1:14)//'DEFI.FOR'
+   
+   ZI(JIMPFO+4*(ICOL-1))   = LONGR
+   ZI(JIMPFO+4*(ICOL-1)+1) = PRECR
+   ZI(JIMPFO+4*(ICOL-1)+2) = LONGI
+   ZI(JIMPFO+4*(ICOL-1)+3) = LONGK
+   
+   Au lieu de:
+   
+   ZI(JIMPFO+4*(ICOL-1)+ICOL-1)   = LONGR
+   ZI(JIMPFO+4*(ICOL-1)+ICOL-1+1) = PRECR
+   ZI(JIMPFO+4*(ICOL-1)+ICOL-1+2) = LONGI
+   ZI(JIMPFO+4*(ICOL-1)+ICOL-1+3) = LONGK
+   
+   Dans les quatre blocs IF.
+   A faire en 9 (recopier simplement la routine IMPSDA de la 10)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013628 DU 2009-07-20 09:40:46
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Surconsommation memoire dans STAT_NON_LINE
+FONCTIONNALITE
+   Suite de la fiche 13503
+   
+   ==== HPC ====
+   
+   STAT_NON_LINE utilise une matrice assemblée intermédiaire: &&OP0070.RIGID en plus de la
+   matrice assemblée MATASS pour des raisons d'uniformité
+   entre STAT_* et DYNA_*. En effet, en dynamique, la matrice assemblée est une combinaison
+   linéaire des matrices rigidité, amortissement et masse. Ce qui implique de construire et
+   de de conserver la MATR_ASSE de la rigidité. En statique, on ne fait pas de combinaison et
+   on fait donc un COPISD brutal de RIGID -> MATASS dans la routine nmmatr, ce qui duplique
+   la matrice alors qu'il suffirait simplement de changer le nom de MATASS. 
+   Cette copie qui entraine une surconsommation mémoire importante et inutile. 
+   La surconsommation est importante car elle concerne le plus gros objet (avant la
+   factorisation). D'un autre coté, elle n'est pas très grave car il s'agit d'un objet
+   déchargeable sur disque. Elle coute donc cher au moment du JJLDYN.
+   
+   On corrige donc NMMATR:
+   CALL COPISD('MATR_ASSE','V',RIGID,MATASS)
+   en
+   MATASS = RIGID     
+   
+   En faisant cette correction, on est obligé de modifier algocg qui utilise en dur le nom
+   "&&MATASS.RIGID" au lieu de la variable MATASS (qui vaut désormais "&&OP0070.RIGID" en
+   statique).
+   
+   A faire en v9
+   Impacts: nmmatr.f cfalgo.f et algocg.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 21/10/2009 - 09:11:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014050 DU 2009-10-15 16:23:58
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug dans le calcul du determinant dans MGAUSS
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En essayant de calculer de différentes manières le déterminant d'une matrice 3x3 pour la
+   fiche 14002, je me suis rendu compte que :
+   
+   avec matinv.f     : déterminant OK (vérifié à la main)
+   avec mgauss.f 'S' : NOOK (complètement faux)
+   avec mgauss.f 'V' : NOOK (signe faux)
+   avec mgauss.f 'W' : NOOK (signe faux)
+   
+   Analyse
+   =======
+   
+   MGAUSS permet d'appeler 3 méthodes 'S' (lapack DGESVX), 'V' (lapack DGESV) et 'W' (pivot
+   de gauss à la main en fortran).
+   Le calcul du déterminant est fait actuellement ainsi :
+   
+   * 'S' et 'V' : on récupère la factorisation A=LU et on calcule le déterminant de A comme
+   det(A) = det (U). Par ailleurs on tient compte de la permutation P qui a pu avoir lieu sur
+   les lignes pour corriger le signe de det(A)
+   
+   * 'W' : on récupère directement le déterminant qui est calculé comme le produit des pivots
+   (après élimination).
+   
+   Le problème c'est qu'il y a 3 erreurs dans ces calculs :
+   
+   * dans le cas 'S', la routine lapack DGESVX a pu, pour améliorer la solution, mettre à
+   l'échelle la matrice de départ (en multipliant à gauche ou à droite ou les deux par des
+   matrices diagonales). Ainsi comme on ne tient pas compte du déterminant de ces 2 matrices
+   diagonales, on calcule donc le déterminant de la matrice mise à l'échelle !
+   
+   * dans le cas 'S' et 'V', la correction du signe du déterminant en tenant compte de la
+   permutation P est fausse. Pour bien l'exploiter il faut compter le nombre de termes de
+   IPIV tels que IPIV(I)!=I : cela donne le nombre de permutations de lignes. Pour un nombre
+   pair, on ne change pas le signe, pour un nombre impair si.
+   
+   * dans le cas 'W', on ne tient pas compte du nombre de pivotages, le signe du déterminant
+   est donc faux (parfois). Il suffit d'inverser le signe du déterminant à chaque pivotage.
+   
+   Impacts : mgauss.f, mgausw.f
+   Remarque : il existe 3 routines qui appellent MGAUSS en demandant le calcul du
+   déterminant. Sur ces 3, une prend la valeur absolue du déterminant calculé par 'W', une
+   autre ne s'en sert pas. La 3ème (Hujeux) utilise la méthode 'S', la correction risque donc
+   d'impacter cette loi.
+   
+   À faire en 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso sur sdll403a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014024 DU 2009-10-12 12:54:35
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Affichage des messages d'alarme de la methode continue
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Les messages bien connus CONTACT3_{86,87,88} apparaissent souvent. On le sait déjà.
+   
+   Le problème c'est qu'ils apparaissent parfois alors qu'il n'y a pas lieu ! La faute en
+   revient à la routine MMCONV : on regarde si l'on a atteint le nombre d'itérations max (on
+   émet alors l'alarme et on force la convergence) **sans** regarder si il y avait eu
+   convergence !
+   
+   Désormais on active la convergence forcée seulement s'il n'y avait pas eu convergence.
+   Remarque : pour CONTACT3_88 (géométrie) on ne fait rien car cela obligerait à changer la
+   logique du mot-clé ITER_GEOM_MAXI ce qui revient à une évolution.
+   
+   Impact : mmconv.f
+   
+   À faire en 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 21/10/2009 - 09:11:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013947 DU 2009-09-28 13:21:38
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Arlequin : appariemment faux => RESU_FAUX
+FONCTIONNALITE
+   Problème:
+   ---------
+   La méthode Arlequin conduit parfois à détecter que certaines mailles "2" sont incluses
+   dans des mailles "1" alors que ce n'est pas vrai.
+                                                                                            
+                    
+   Solution:
+   ---------
+   Il s'agit d'une conséquence d'une faute de frappe dans la routine intmam.f :
+   469c469
+   <             CALL PLCENT(DIME,TRAVR,TRAVI(PFS+DIME*NFAC1),NSEG2,G)
+   ---
+   >             CALL PLCENT(DIME,TRAVR,TRAVI(PFS+DIME*NSEG1),NSEG2,G)
+                                                                                            
+                    
+   Validation:
+   ------------
+   L'étude jointe à la fiche est OK
+                                                                                            
+                    
+                                                                                            
+                    
+   Résultats faux :
+   ----------------
+   Cette anomalie peut provoquer des résultats faux si les conditions suivantes sont réunies :
+     * on est en 2D
+     * les 2 zones recollées ont des noeuds géométriquement confondus (ou très proches)
+     * la surface de la maille "2" est supérieure à celle de la maille "1"
+                                                                                            
+                    
+   Détails :
+   ---------
+   J'en profite pour corriger un petit bug concernant INFO=2.
+                                                                                            
+                    
+   Dans la routine intmam.f, on imprime le message:
+     <ARLEQUIN> ... Pas d'intersection mais inclusion de M15 (2) dans M6 (1)
+   avant de savoir si la maille M15 est réellement incluse dans M6
+                                                                                            
+                    
+   Je déplace l'impression dans le bloc où l'inclusion est confirmée.
+                                                                                            
+                    
+   NEW9 :
+   ------
+   La correction est simple à reporter en NEW9 
+   
+   NB_JOURS_TRAV : 2
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR fernandes    FERNANDES Roméo        DATE 21/10/2009 - 09:11:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014048 DU 2009-10-15 15:00:14
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   En NEW9.05.07, le cas-test wtna101a s'arrete par manque de temps CPU sur Bull.
+FONCTIONNALITE
+   On augmente le temps limite du .para à 360s.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test lui-meme
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF wtna101a                      macocco K.MACOCCO          369      2      1
+ CASTEST MODIF wtnp113a                      macocco K.MACOCCO          467      5      7
+ CASTEST MODIF wtnp113b                      macocco K.MACOCCO          483      3      7
+ FORTRAN AJOUT algorith/nmcpqu               macocco K.MACOCCO          118    118      0
+ FORTRAN AJOUT algorith/zbinte               macocco K.MACOCCO           53     53      0
+ FORTRAN MODIF algorith/algocg               macocco K.MACOCCO          634      9     18
+ FORTRAN MODIF algorith/cfalgo               macocco K.MACOCCO          178      2      2
+ FORTRAN MODIF algorith/exfonc               macocco K.MACOCCO          259      6      2
+ FORTRAN MODIF algorith/impsda               macocco K.MACOCCO          178     13     67
+ FORTRAN MODIF algorith/isfonc               macocco K.MACOCCO          137      4      1
+ FORTRAN MODIF algorith/mmconv               macocco K.MACOCCO          192      4     17
+ FORTRAN MODIF algorith/nmchrm               macocco K.MACOCCO          234      5      4
+ FORTRAN MODIF algorith/nmchso               macocco K.MACOCCO           86      7      3
+ FORTRAN MODIF algorith/nmdome               macocco K.MACOCCO          831     16      1
+ FORTRAN MODIF algorith/nmdomt               macocco K.MACOCCO          166     13      2
+ FORTRAN MODIF algorith/nmflam               macocco K.MACOCCO          221      2      2
+ FORTRAN MODIF algorith/nmflma               macocco K.MACOCCO          340     12      4
+ FORTRAN MODIF algorith/nmfonc               macocco K.MACOCCO          402     17      4
+ FORTRAN MODIF algorith/nmini0               macocco K.MACOCCO          147      4      2
+ FORTRAN MODIF algorith/nminit               macocco K.MACOCCO          259      3      4
+ FORTRAN MODIF algorith/nmmatr               macocco K.MACOCCO          207      4      2
+ FORTRAN MODIF algorith/nmrebo               macocco K.MACOCCO           91     40     18
+ FORTRAN MODIF algorith/nmrech               macocco K.MACOCCO          104     30     14
+ FORTRAN MODIF algorith/nmrelp               macocco K.MACOCCO          375     30     21
+ FORTRAN MODIF algorith/nmrepl               macocco K.MACOCCO          364      1      1
+ FORTRAN MODIF algorith/op0070               macocco K.MACOCCO          553      4     14
+ FORTRAN MODIF algorith/zbarch               macocco K.MACOCCO           63     14     14
+ FORTRAN MODIF algorith/zbborn               macocco K.MACOCCO           65     15     15
+ FORTRAN MODIF algorith/zbinit               macocco K.MACOCCO           66     13     19
+ FORTRAN MODIF algorith/zbiter               macocco K.MACOCCO           87     34     29
+ FORTRAN MODIF algorith/zbopti               macocco K.MACOCCO           57     18     20
+ FORTRAN MODIF algorith/zbproj               macocco K.MACOCCO           70     22     21
+ FORTRAN MODIF algorith/zbroot               macocco K.MACOCCO           90     32     34
+ FORTRAN MODIF calculel/mgauss               macocco K.MACOCCO          283     17     13
+ FORTRAN MODIF calculel/mgausw               macocco K.MACOCCO          168      3      1
+ FORTRAN MODIF modelisa/intmam               macocco K.MACOCCO          543     16     16
+  PYTHON MODIF Messages/charges              macocco K.MACOCCO          113      5      1
+  PYTHON MODIF Messages/mecanonline5         macocco K.MACOCCO          208     12      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         171       171              +171
+ MODIF :   36        9090       437     403       +34
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   38        9261       608     403      +205 

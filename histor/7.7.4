@@ -1,0 +1,622 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE A.              DATE 04/10/2006 - 15:31:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009994 DU 2006-09-05 12:49:39
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TITRE
+   cas test hsnv102c, portage sur machine BULL
+FONCTIONNALITE
+   Le cas test hsnv102c plante sur la machine BULL a cause d'un RCVALA mal ecrit dans
+   te0353.f :
+   
+   CALL RCVALA(MATER,' ','META_VISC',5,'TEMP',TPG,1,
+   +              NOMRES(17),VALRES(17),CODRET(17),' ')
+   
+   On n'envoie qu'un seul parametre, il faut NBPAR=1 et non 5.
+   
+   Correction a faire en versions 7 ET 8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hsnv102c
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE E.              DATE 04/10/2006 - 15:31:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009804 DU 2006-05-29 14:35:55
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   Mauvais copier-coller dans VPBOST
+FONCTIONNALITE
+   J'ai effectue la correction demandee par Olivier Boiteau.
+   
+   dans VPBOST :
+   
+   Au lieu de
+   IF(VPINF .GT. R8PREM()) THEN
+   TOLE=(ABS(VPMAX2-VPMAX)/VPMAX)
+   IF (TOLE .LT. PRECDC) THEN
+   CALL UTMESS ('A','VPBOST.02','IL Y A DES VP '//
+   +                                         'TRES PROCHES')
+   ....
+   
+   Il fallait lire
+   IF(VPMAX .GT. R8PREM()) THEN
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE J.P.          DATE 04/10/2006 - 15:31:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009996 DU 2006-09-06 05:24:31
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   Portage sur plate-forme Bull - compilateur Intel et declaration des fonctions C
+FONCTIONNALITE
+   L'instruction "void *malloc(size_t size);" est ajoutee dans les fichiers suivants :
+   astermodule.c
+   hdfcrf.c
+   hdfcrg.c
+   hdfnbo.c
+   hdfnom.c
+   hdfopd.c
+   hdfopf.c
+   hdfopg.c
+   hdfrat.c
+   hdftyp.c
+   hdfwat.c
+   hdfwsv.c
+   histor
+   iodr.c
+   memdis.c
+   
+   La modification est a reporter en version 7.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   compilation sur Bull et passage de la liste restreinte
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 04/10/2006 - 15:31:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009969 DU 2006-08-28 14:37:22
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   CALC_VECT_ELEM AVEC UNE CHARGE DE TYPE EVOL_CHAR (BUG)
+FONCTIONNALITE
+   CALC_VECT_ELEM : les charges  de type EVOL_CHAR sont ignorees
+   ---------------------------------------------------------------
+   
+   Ce type de charge n'etait pas pris en compte (sans message d'erreur). C'est
+   maintenant corrige, en s'appuyant sur la routine NMDEPR, appelee par STAT_NON_LINE.
+   
+   (M) me2mme.f            Prise en compte de ce nouveau type de charge
+   
+   
+   Resultats faux :
+   ----------------
+   Les chargements definis via le mot cle AFFE_CHAR_MECA/EVOL_CHAR etaient purement et
+   simplement ignores par les commandes CALC_VECT_ELEM et MACRO_ELAS_MULT.
+   
+   Ce sont des chargements mecaniques ("volumique" ou "de peau", en 3D ou 2D) donnes sous
+   forme d'un transitoire discretise (SD EVOL_CHAR).
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 6.1.10
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010045 DU 2006-09-15 08:56:24
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   anomalie dans CREA_CHAMP/EXTR/TYPE_MAXI=xxx
+FONCTIONNALITE
+   Il y avait un bug dans la routine chprec.f (CREA_CHAMP/EXTR) :
+   Une variable INTERP n'etait pas systematiquement initialisee (resultat de GETVTX),
+   mais
+   elle etait systematiquement utilisee (IF (INTERP.EQ.'LIN'))
+   
+   Le plus souvent, INTERP ne valait pas 'LIN' quand elle n'etait pas initialisee,
+   mais depuis quelques temps sur clpaster et bull, ... pas de chance !
+   
+   Resultats faux depuis toujours :
+   ---------------------------------
+   Oui pour CREA_CHAMP/EXTR/TYPE_MAXI='MAXI'/'MINI'/....   :
+   Au lieu de rendre le champ "extremal" demande, le programme pouvait (si pas de chance)
+   rendre un champ interpole a un instant indetermine.
+   
+   
+   Pour temperer les risques de resultats faux :
+   ---------------------------------------------
+   6 tests (xxxx20xx) se sont mis a etre tous NOOK brutalement en NEW8 il y a quelques
+   semaines.
+   Ce sont les seuls tests (je l'ai verifie) qui font :
+   x1= CREA_CHAMP(OPERATION='EXTR', INTERPOL='LIN'
+   puis
+   x2= CREA_CHAMP(OPERATION='EXTR', TYPE_MAXI='xxx'   => resultats faux
+   
+   Interpretation : la valeur de INTERP est devenue remanente (d'un appel de CREA_CHAMP au
+   suivant).
+   
+   On constate que :
+   Si la situation de remanence est presente dans un test, il est NOOK systematiquement
+   Sinon, le test est OK
+   
+   J'en conclus que les resultats faux ne peuvent probablement arriver que si :
+   - on a une sitution de remanence : 2 CREA_CHAMP qui se suivent avec INTERPOL='LIN' sur
+   le 1er
+   - on utilise la plateforme clpaster (ou bull) en NEW8 dans l'intervalle de versions
+   [8.3.9 et 8.3.12]
+   
+   Details :
+   ----------
+   routine chprec.f :
+   - initialisation des variables INTERP, TYCHLU,TYPMAX et NOMCH
+   - verification que l'instant est donne si INTERP='LIN'
+   - modification de PROLDR et PROLGA : 'CONSTANT' -> 'EXCLUS' si INTERPOL='LIN'
+   
+   Impact doc :
+   ------------
+   U4.72.04 :
+   * dire que INTERPOL='LIN' ne concerne que les evol_xxxx et qu'il faut donner un instant.
+   
+   
+   a corriger en version 7 quand meme car ca ne peut pas faire de mal
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests incrimines sur clpaster
+NB_JOURS_TRAV  : 0.6
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 04/10/2006 - 15:31:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009816 DU 2006-06-01 14:52:01
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TITRE
+   DETRUIRE OBJET ET CHAINE > 8 caracteres
+FONCTIONNALITE
+   La commande DETRUIRE permet de detruire un concept (CO=_F(NOM=...)) ou un objet
+   (OBJET=_F(CHAINE=...)).
+   
+   En general, le nom d'objet contient des blancs.
+   Or pour recuperer la longueur de la chaine, on utilise INDEX(K,' ') au lieu de
+   LXLGUT(K).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   asrest
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010025 DU 2006-09-12 15:52:50
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   "trapper" les erreurs numeriques sous Linux : arreter le code au plus vite.
+FONCTIONNALITE
+   Pour recuperer les erreurs numeriques, on utilise (dans inisig.c) feenableexcept()
+   avec :
+   .   FE_DIVBYZERO
+   .   FE_OVERFLOW
+   
+   On ajoute FE_INVALID pour trapper les NaN.
+   
+   De plus, on fait la meme chose pour LINUX64 que pour P_LINUX.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas-test jacot
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009901 DU 2006-07-05 09:57:53
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   impr_resu gmsh et hexa27
+FONCTIONNALITE
+   Lorsque l'utilisateur effectue un IMPR_RESU/GMSH et que son maillage contient des HEXA27,
+   on construit un nouveau maillage car GMSH ne connait pas ce type de maille.
+   On decoupe ainsi chaque HEXA27 en 48 TETRA4. Lors de ce decoupage, une erreur avait
+   ete
+   commise dans le fichier irgmtb.f.
+   Apres correction, on constate que le maillage et les resultats sont correctement rendus
+   dans GMSH.
+   
+   De plus, le maillage initial du cas-test ssnv167c comportait une anomalie dans les
+   connectivites des mailles HEXA27. En effet, l'ordre des noeuds de l'HEXA27 ne
+   correspondait pas a l'ordre defini dans la doc U3.01.00.
+   La description des noeuds centres des faces doit commencee par la face "avant" (alors
+   qu'on commencait par la face de droite).
+   
+   Les valeurs testees sont plus eloignees qu'avant de la solution analytique. On ajoute
+   donc
+   des TEST_RESU tres larges par rapport aux valeurs analytiques (celles du ssnv167a,
+   modelisation hexa8) et on modifie les valeurs des tests de non regression actuels.
+   
+   Correction de irgmtb a faire en v7 egalement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv167c
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mabbas       ABBAS M.               DATE 04/10/2006 - 15:31:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009979 DU 2006-08-31 07:40:27
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TMA : DeltaCad
+TITRE
+   PILOTAGE/RECH_LINEAIRE
+FONCTIONNALITE
+   Pour sortir proprement apres echec de la convergence pour le pilotage
+   on ajoute dans la
+   routine NMREPL apres l'appel a la routine NMPILO la ligne :
+   
+   IF(LICCVG(1).EQ.1) GOTO 9999
+   
+   Afin de sortie immediatement de la routine NMREPL.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude elle-meme
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009211 DU 2005-11-17 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   STAT_NON_LINE / PILOTAGE/ LONG_ARC
+FONCTIONNALITE
+   Le mot-clef n'etait pas utilise.
+   On modifie nmpilo pour le prendre en compte.
+   Au retour des routines faisant le pilotage, on recupere, les valeurs de pilotage et
+   leur
+   nombre (0, 1 OU 2).
+   C
+   C --- BORNES ETA_PILO_R_MIN ET ETA_PILO_R_MAX
+   C
+   CALL JEVEUO(PILOTE // '.PLIR','L',JINFO)
+   ETRMIN = ZR(JINFO+4)
+   ETRMAX = ZR(JINFO+3)
+   
+   IF (LICCVG.NE.1) THEN
+   IF (NBEFFE.EQ.2) THEN
+   IF ((ETA(1).LT.ETRMIN).OR.(ETA(1).GT.ETRMAX)) THEN
+   NBEFFE = NBEFFE-1
+   ETA(1) = ETA(2)
+   ENDIF
+   IF ((ETA(2).LT.ETRMIN).OR.(ETA(2).GT.ETRMAX)) THEN
+   NBEFFE = NBEFFE-1
+   ENDIF
+   ENDIF
+   IF (NBEFFE.EQ.1) THEN
+   IF ((ETA(1).LT.ETRMIN).OR.(ETA(1).GT.ETRMAX)) THEN
+   NBEFFE = NBEFFE-1
+   ENDIF
+   ENDIF
+   IF (NBEFFE.EQ.0) THEN
+   LICCVG = 1
+   ENDIF
+   ENDIF
+   
+   Si une ou deux de svaleurs de pilotage sont en dehors de l'intervalle specifie, on
+   retire.
+   On modifie  ssnl502a pour valider (on en profite pour modifier le para)
+   tps_job 1800 mem_job 500Mo ncpus 1 liste_test V
+   EN
+   tps_job 400 mem_job 128Mo ncpus 1 liste_test V
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnl502a
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE E.             DATE 04/10/2006 - 15:31:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009679 DU 2006-04-13 11:34:27
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TITRE
+   MACR_ASPIC_MAIL
+FONCTIONNALITE
+   Anomalie constatee dans MACR_ASPIC_MAIL : ecart important entre la profondeur de la
+   fissure dans le maillage (12,65 mm) et la profondeur demandee (14 mm)
+   Details sur le cas : fissure courte, debouchante en peau interne, inclinee dans un
+   piquage de type 1.
+   
+   Correction : on ajoute dans le calcul de la profondeur "corrigee" de la fissure (donnee
+   d'entree de la procedure gibi) un facteur correctif semi-empirique, a l'image de ce
+   qui avait ete fait pour les fissures debouchantes en peau externe (fiche 8669).
+   On reprend la correction precedente, liee a l'evolution azimutale de la longueur du
+   cordon
+   de soudure, mais ponderee (facteur 0.5) afin d'avoir les meilleurs resultats
+   possibles.
+   
+   Cette correction est validee sur la geometrie de la fiche et sur la geometrie du cas
+   test
+   aspic02. Sur l'ensemble des tests effectues, l'ecart sur la profondeur est diminue par
+   2
+   environ... mais il faut quand meme noter que dans certaines configurations l'ecart peut
+   demeurer important (maximum observe : 10%).
+   Sur la geometrie de cette fiche, la fissure obtenue est de 14,08 mm (14mm demande).
+   
+   Remarques :
+   - la nouvelle correction n'est applique que pour le type de fissure incriminee dans la
+   fiche;
+   - seule la profondeur dans le plan de la fissure a ete etudiee ici;
+   - si malgre cette correction, il apparait encore regulierement des cas qui posent
+   probleme, on pourra envisager d'ajouter a la fin de la procedure un test sur la
+   profondeur
+   de la fissure, et si ecart important relancer automatiquement la procedure gibi avec la
+   profondeur adequate...
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie, aspic02
+NB_JOURS_TRAV  : 2.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 04/10/2006 - 15:32:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010062 DU 2006-09-21 12:03:43
+TYPE express concernant Code_Aster (VERSION 7.7)
+TITRE
+   Probleme d'evaluation des formules en poursuite
+FONCTIONNALITE
+   Evaluer une fonction ou formule (ex. f(5.)) plante en POURSUITE depuis toujours
+   semble-t-il !
+   
+   En fait, en POURSUITE les assd perdent leur parent !
+   Or l'evaluation des formules necessite de recuperer le contexte du jdc pour fixer les
+   eventuelles constantes.
+   
+   En POURSUITE, on rattache maintenant les assd au jdc de la poursuite. L'evaluation des
+   formules utilise donc naturellement le contexte de la poursuite.
+   
+   On teste en ajoutant une POURSUITE au test des fonctions (zzzz100a) : on evalue une
+   fonction issue d'un DEFI_FONCTION, une fonction calculee par CALC_FONC_INTERP et une
+   formule, toutes 3 ayant ete produites dans le .comm initial.
+   Remarque : la POURSUITE est en PAR_LOT='NON' car :
+   . c'est obligatoire pour une fonction calculee par CALC_FONC_INTERP,
+   . on n'a plus les valeurs du mot-cle VALE du DEFI_FONCTION execute dans le premier jdc
+   (ca
+   fonctionnerait en PAR_LOT='OUI' si le DEFI_FONCTION etait fait dans la poursuite),
+   . ce n'est pas necessaire pour la formule.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U1.03.02
+VALIDATION
+   ajout d'une poursuite a zzzz100a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR jmbhh01      PROIX J.M.             DATE 04/10/2006 - 15:32:08
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009717 DU 2006-04-27 15:25:52
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TMA : CS
+TITRE
+   loi ELAS_ORTH et thermique avec MECA_STATIQUE
+FONCTIONNALITE
+   La prise en compte du repere d orthotropie est bien gere par MECA_STATIQUE. Les
+   deplacements sont donc corrects. Par contre pour les post traitements ( SIEF_ELGA_DEPL par
+   exemple), la prise en compte de la deformation d origine thermique est mal calcule. La
+   routine qui s en charge, EPSTMC, recupere les donnees materiaux theoriquement dans le
+   repere d orthotropie mais les considere dans le repere global.
+   On ajoute donc dans la routine EPSTMC un changement de repere pour bien avoir les
+   deformations thermiques dans le repere global.
+   Remarque : On modifie aussi nmorth ( equivalent pour STAT_NON_LINE ) qui avait prevu ce
+   changement de repere mais mal.
+   
+   Pour la validation, on ajoute au cas test sslv131a deux calcul, un via MECA_STATIQUE et un
+   via STAT_NON_LINE avec un chargement de temperature. La solution est analytique.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.04.131
+VALIDATION
+   sslv131a
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE J.P.          DATE 04/10/2006 - 15:32:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010003 DU 2006-09-07 13:16:29
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TITRE
+   test ascou01a en version NEW8.3.11 sur Bull
+FONCTIONNALITE
+   restitution de la correction du datg ascouf_fiss_v4.datg (on ote le TRAC). En version 7
+   uniquement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests concernes
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR jmbhh01      PROIX J.M.             DATE 04/10/2006 - 15:32:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010082 DU 2006-10-02 06:37:41
+TYPE express concernant Code_Aster (VERSION 8.3)
+TITRE
+   tests COQUE_3D non lineaires NOOK sur machine Bull
+FONCTIONNALITE
+   Les tests
+   hsns101c.comm
+   hsnv121d.comm
+   ssnp15d.comm
+   ssnp15e.comm
+   ssnv115d.comm
+   ssnv115e.comm
+   etaient NOOK sur Bull en nodebug. Ils etaient OK en debug.
+   Ceci etait du a l'instruction suivante, dans VDXNLR (COQUE_3D-HPP), qui etait mal
+   comprise
+   par l'optimiseur du compilateur ifort (isolee par Jean-Pierre) :
+   LGPG = MAX(ITAB(6),1)*ITAB(7)
+   
+   dans ssnp15d, ITAB(6)=12 (nombre de sous-points*nombre de variables internes, ITAB(7)=7
+   (nombre de points de Gauss surfaciques). En ndebug on trouvait bien 84, mai en nodebug, on
+   trouvait 42 !
+   
+   on remplace par :
+   >       IF (ITAB(6).LE.1) THEN
+   >          LGPG=ITAB(7)
+   >       ELSE
+   >          LGPG = ITAB(6)*ITAB(7)
+   >       ENDIF
+   tout ces tests passent. Par mesure de precaution, on fait la meme modif dans
+   VDPNLR.f (COQUE_3D-GREEN_GR) et TE0239 (COQUE_1D)
+   
+   2 jours passes  3 (JPL, JP, JMP) pour une erreur de multiplication entiere !
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SSNP15D
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+       C MODIF supervis/astermodule          cibhhpd L.SALMONA         3767      6      1
+       C MODIF utilitai/hdfcrf               cibhhpd L.SALMONA           56      2      1
+       C MODIF utilitai/hdfcrg               cibhhpd L.SALMONA           64      2      1
+       C MODIF utilitai/hdfnbo               cibhhpd L.SALMONA           70      3      1
+       C MODIF utilitai/hdfnom               cibhhpd L.SALMONA           81      3      1
+       C MODIF utilitai/hdfopd               cibhhpd L.SALMONA           65      2      1
+       C MODIF utilitai/hdfopf               cibhhpd L.SALMONA           53      2      1
+       C MODIF utilitai/hdfopg               cibhhpd L.SALMONA           60      2      1
+       C MODIF utilitai/hdfrat               cibhhpd L.SALMONA           68      2      1
+       C MODIF utilitai/hdftyp               cibhhpd L.SALMONA           99      3      1
+       C MODIF utilitai/hdfwat               cibhhpd L.SALMONA           70      2      1
+       C MODIF utilitai/hdfwsv               cibhhpd L.SALMONA          125      2      1
+       C MODIF utilitai/inisig               cibhhpd L.SALMONA          152      2      2
+       C MODIF utilitai/iodr                 cibhhpd L.SALMONA          249      2      2
+       C MODIF utilitai/memdis               cibhhpd L.SALMONA           65      2      1
+ CASTEST MODIF sslv131a                      cibhhpd L.SALMONA          304     82      1
+ CASTEST MODIF sslv200a                      cibhhpd L.SALMONA         1300     89     90
+ CASTEST MODIF sslv200b                      cibhhpd L.SALMONA         1266     88     88
+ CASTEST MODIF ssnl502a                      cibhhpd L.SALMONA          357      2      2
+ CASTEST MODIF ssnv167c                      cibhhpd L.SALMONA          286      1      1
+ CASTEST MODIF zzzz100a                      cibhhpd L.SALMONA         1790      1      1
+CATALOGU MODIF options/epme_elga_depl        cibhhpd L.SALMONA           55      4      1
+CATALOGU MODIF options/epme_elno_depl        cibhhpd L.SALMONA           55      4      1
+CATALOGU MODIF options/epmg_elga_depl        cibhhpd L.SALMONA           55      4      1
+CATALOGU MODIF options/epmg_elno_depl        cibhhpd L.SALMONA           55      4      1
+CATALOGU MODIF options/epsi_elga_depl        cibhhpd L.SALMONA           66      4      1
+CATALOGU MODIF options/epsi_elno_depl        cibhhpd L.SALMONA           55      4      1
+CATALOGU MODIF typelem/gener_me3d_3          cibhhpd L.SALMONA          544      7      3
+CATALOGU MODIF typelem/gener_meax_2          cibhhpd L.SALMONA          562      7      3
+CATALOGU MODIF typelem/gener_mecpl2          cibhhpd L.SALMONA          544      7      5
+CATALOGU MODIF typelem/gener_medpl2          cibhhpd L.SALMONA          564      7      1
+CATALOGU MODIF typelem/mecpqs4               cibhhpd L.SALMONA          496      7      5
+CATALOGU MODIF typelem/mecptr3               cibhhpd L.SALMONA          530      7      5
+CATALOGU MODIF typelem/medpqs4               cibhhpd L.SALMONA          506      7      1
+CATALOGU MODIF typelem/medpqs8               cibhhpd L.SALMONA          511      7      1
+    DATG MODIF ascouf_fiss_v4.datg         L.SALMONA 12838                1      2      0
+ FORTRAN MODIF algeline/vpbost               cibhhpd L.SALMONA          261      2      2
+ FORTRAN MODIF algorith/nmpilo               cibhhpd L.SALMONA          239     31      5
+ FORTRAN MODIF algorith/nmrepl               cibhhpd L.SALMONA          357      2      1
+ FORTRAN MODIF calculel/celfpg               cibhhpd L.SALMONA          105      1      1
+ FORTRAN MODIF calculel/me2mme               cibhhpd L.SALMONA          741     69     42
+ FORTRAN MODIF elements/epstmc               cibhhpd L.SALMONA          325     96     11
+ FORTRAN MODIF elements/epsvmc               cibhhpd L.SALMONA          179      3      3
+ FORTRAN MODIF elements/epthmc               cibhhpd L.SALMONA          135     29     15
+ FORTRAN MODIF elements/ethdst               cibhhpd L.SALMONA          136      3      3
+ FORTRAN MODIF elements/ortrep               cibhhpd L.SALMONA          161      5      2
+ FORTRAN MODIF elements/sigtmc               cibhhpd L.SALMONA          151     14      7
+ FORTRAN MODIF elements/te0025               cibhhpd L.SALMONA          206      3      1
+ FORTRAN MODIF elements/te0239               cibhhpd L.SALMONA          503      8      3
+ FORTRAN MODIF elements/te0353               cibhhpd L.SALMONA          399      3      3
+ FORTRAN MODIF elements/te0358               cibhhpd L.SALMONA          405      5      5
+ FORTRAN MODIF elements/vdpnlr               cibhhpd L.SALMONA         1327      7      2
+ FORTRAN MODIF elements/vdxnlr               cibhhpd L.SALMONA          493      7      2
+ FORTRAN MODIF modelisa/chprec               cibhhpd L.SALMONA          229      6      3
+ FORTRAN MODIF prepost/irgmtb                cibhhpd L.SALMONA          800      2      2
+ FORTRAN MODIF supervis/ops007               cibhhpd L.SALMONA          109      2      2
+  PYTHON MODIF Cata/ops                      cibhhpd L.SALMONA          442      5      1
+  PYTHON MODIF Macro/macr_aspic_mail_ops     cibhhpd L.SALMONA          941     12      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   58       23590       697     347      +350
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   58       23590       697     347      +350 

@@ -1,0 +1,353 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 18/11/2008 - 16:47:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012776 DU 2008-11-06 13:13:21
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Quelques variables non initialisxc3xa9es
+FONCTIONNALITE
+   Problème:
+   ---------
+   Thomas De Soza a remarqué (avec valgrind) que l'on utilisait parfois des variables
+   non-initialiées.
+                                                                                            
+                           
+                                                                                            
+                           
+   Corrections:
+   ------------
+                                                                                            
+                           
+   ** routine acearp.f : variable ISYM
+     Mohamed Torkhani corrige de son coté
+                                                                                            
+                           
+   ** routine te0050.f :
+     On indiquait NPARA=IDIMGE+1 par erreur.
+     On remplace NPARA par IDIMGE
+     => sans gravité pour les résultats
+                                                                                            
+                           
+   ** routine op0106.f :
+     On dédouble le IF pour respecter la norme Fortran.
+     Mais la programmation n'est pas dangereuse.
+                                                                                            
+                           
+      <               IF (OPTION.EQ.'FORC_NODA_NONL'.AND.NUMREF.NE.' ') THEN
+      <                 NUME = NUMREF(1:14)//'.NUME'
+      ---
+      >               IF (OPTION.EQ.'FORC_NODA_NONL') THEN
+      >                 IF (NUMREF.NE.' ')  NUME = NUMREF(1:14)//'.NUME'
+                                                                                            
+                           
+   ** routine fonfis.f :
+     On dédouble le IF pour respecter la norme Fortran.
+     Mais la programmation n'est pas dangereuse.
+      99c99,100
+      <             IF ((IM.GT.1).AND.(TYPM(1:4).NE.TYPMP(1:4))) THEN
+      ---
+      >             IF (IM.GT.1) THEN
+      >               IF (TYPM(1:4).NE.TYPMP(1:4)) THEN
+      102a104
+      >             ENDIF
+                                                                                            
+                           
+   ** routine elrace.f :
+     Dans la boucle 200, on recopiait systématiquement :
+             X(NDIM*I+1) = XIN(I+1)
+     Comme si tous les éléments de référence étaient au moins de dimension 1
+     Mais pour les 'PO1', NDIM=0
+                                                                                            
+                           
+     Correction proposée :
+      945,951c946,948
+      <         X(NDIM*I+1) = XIN(I+1)
+      <         IF (NDIM.EQ.2) THEN
+      <           X(NDIM*I+2) = YIN(I+1)
+      <         ELSE IF (NDIM.EQ.3) THEN
+      <           X(NDIM*I+2) = YIN(I+1)
+      <           X(NDIM*I+3) = ZIN(I+1)
+      <         END IF
+      ---
+      >         IF (NDIM.GE.1) X(NDIM*I+1) = XIN(I+1)
+      >         IF (NDIM.GE.2) X(NDIM*I+2) = YIN(I+1)
+      >         IF (NDIM.EQ.3) X(NDIM*I+3) = ZIN(I+1)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 18/11/2008 - 16:47:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012787 DU 2008-11-10 08:34:26
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   ZMAT002B casse en NEW9
+FONCTIONNALITE
+   Le test ZMAT002B est NOOK en new9 (depuis un certain temps). Or il était OK en version 8.
+   Le NOOK porte uniquement sur la variable interne V6.
+   
+   Ceci est dû à un changement dans l'ordre des variables internes sorties  par Zmat :
+   En V8 :
+   var_int Name:
+     eel11(sdv1) eel22(sdv2) eel33(sdv3) eel12(sdv4) 
+     eprime(sdv5) 
+     ev1cum(sdv6) ...
+   Et en V9 :
+   var_int Name:
+     eel11(sdv1) eel22(sdv2) eel33(sdv3) eel12(sdv4) 
+     ev1cum(sdv5) ...
+   
+   C'est donc Zmat qui a changé. Je teste maintenant V5 au lieu de V6 et tout va bien.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zmat002b
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 18/11/2008 - 16:47:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012356 DU 2008-07-30 15:36:28
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Post-traitement elements DKTG (CALC_ELEM)
+FONCTIONNALITE
+   Contexte :
+   ==========
+   Dans l'étude jointe, on fait un mélange de modélisation (DKT et DKTG) et on essaie de
+   faire un post-traitement avec CALC_ELEM sur un groupe de maille.
+   On plante avec le message :
+   
+      ! <F> <CALCULEL_58>                                          !
+      !  Il manque la composante : COQ_NCOU  sur la maille : M1399 !
+      !  Champ : &&CALCUL.CHML.1  
+   
+   On note que si on calcule le post-traitement sur tout la structure, on ne plante pas.
+   
+   Problème :
+   ==========
+   Dans le cas de figure où on veut restreindre à un groupe de maille, on passe par la
+   routine chligr.f qui copie le cham_elem d'un ligrel sur l'autre. Dans ce passage, on a
+   besoin d'initialiser la composante COQ_NCOU du champ post-traité. Or cette initialisation
+   se fait par le biais de l'option tout_ini_elem, qui n'existe pas dans le catalogue des
+   éléments DKTG.
+   
+   Solution :
+   ==========
+   Une solution simple mais naïve consiste à déclarer l'option dans le catalogue. Dans ce
+   cas, l'étude jointe passe. Mais après renseignement, il s'avère que les éléments DKTG sont
+   des éléments qui ne peuvent avoir qu'une seule couche. On se rend alors compte qu'il est
+   inutile de trimbaler cette caractéristique, champs in de beaucoup d'option surtout quand
+   on voit qu'on niveau du te on ne s'en sert pas. On "nettoie" le catalogue : on retire le
+   mode local associé et le champ in des options. Dans les te on retire ce champs.
+   
+   Impact :
+   ========
+   gener_medkg1.cata
+   te0033.f
+   te0404.f
+   te0409.f
+   te0412.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test associxc3xa9 + astout
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012697 DU 2008-10-23 12:41:38
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   CALC_ELEM option ERRE_ELEM_SIGM floating point exception
+FONCTIONNALITE
+   Contexte :
+   ==========
+   On obtient un erreur "floating point exception" avec l'option ERRE_ELEM_SIGM de CALC_ELEM
+   après STAT_NON_LINE sur une modélisation 3D quadratique (étude jointe).
+   
+   Problème :
+   ==========
+   L'erreur "floating point exception" provient d'une racine carrée d'un réel négatif dans le
+   te0375. De manière imprudente, on effectue sans test préalable cette racine carrée. Or il
+   se trouve qu'avec la famille de point de Gauss utilisé, il y a un poids négatif.
+   On remarque que dans l'étude, AFFE_MODELE nous alerte 26 fois pour des mailles distordues
+   (Cf. pièce jointe). Il se trouve que l'on plante sur une de ces 26 mailles.
+   
+   Solution :
+   ==========
+   On tests le réel avant d'en prendre la racine. S'il est négatif, on émet un message
+   indiquant qu'on ne calcule pas l'option pour cette maille (les composantes sont à zéro) et
+   qu'il faut vérifier le maillage.
+   
+   Impact :
+   ========
+   te0375.f
+   te0378.f
+   indicateur.py
+   
+   Remarque :
+   ==========
+   On note que la partie thermique durait près de 8000s dont 96% du temps dans
+   AFFE_CHAR_THER. La fiche 12743 a réglé le problème.
+   En remplaçant AFFE_CHAR_THER par AFFE_CHAR_CINE on passe de 8000s à ....3s.
+   Encore du HPC!
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude jointe + liste restreinte
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 18/11/2008 - 16:47:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012754 DU 2008-10-31 08:26:12
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Pb de relecture d'une base apres retassage
+FONCTIONNALITE
+   Le problème provient de l'appel à la fonction de retassage en fin d'exécution du jeu de
+   commandes contenant les appels à STAT_NON_LINE. La routine JEVEUX appelée commence par
+   écrire les tampons de lecture et d'écriture destinés à différer le transfert des petits
+   objets vers le disque, cette action était mal réalisée. La routine parcourt ensuite un à
+   un les enregistrements de 1 au nombre d'enregistrements utilisés et on utilise les
+   enregistrements libres pour réécrire. Or dans cette phase de réécriture on est amené à
+   utiliser les tampons d'E/S. Ce qui avait pour effet de ne pas traiter correctement les
+   derniers petits objets écrits. 
+   On corrige la routine JETASS et on restitue la routine JEPREG qui permet d'observer le
+   contenu et le chainage des petits objets au sein d'un enregistrement. Cette routine n'est
+   pas appelée pour le moment dans le code, elle sera intégrée dans la commande IMPR_JEVEUX
+   dans le cadre d'une évolution.
+   L'erreur ne pouvait pas produire de résultats faux, mais entrainait la perte d'une partie
+   des sructures de données stockées dans la base.
+   La difficulté de la correction provient essentiellement de la reproduction de l'erreur.
+   Chaque passage demandant environ 2 heures (jobs mpi de 7500 secondes), 19 lancements ont
+   été nécessaires pour comprendre l'erreur, et la reproduire en instrumentant le code.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   l'xc3xa9tude fournie
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012755 DU 2008-10-31 08:38:21
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Erreur de relecture de base apres retassage
+FONCTIONNALITE
+   Idem fiche 12754
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.001
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 18/11/2008 - 16:47:30
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012456 DU 2008-09-08 08:54:01
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   COMB_SISM_MODAL est sensible xc3xa0 l'ordre de rangement des mode_stat
+FONCTIONNALITE
+   En jouant avec les solveurs (utiliser LDLT au lieu de la multifrontale par défaut) Jacques
+   s'est aperçu qu'il pouvait faire varier les résultats de COMB_SISM_MODAL en multi-appuis.
+   On a donc immédiatemment suspecté l'opérateur.
+   Toutefois, après enquête, le parquet demande sa relaxe.
+   
+   En effet, COMB_SISM_MODAL, pour le multi-appui, prend en entrée le champ réactions nodales
+   des modes, préalablement déterminées par CALC_NO. Or ce sont ces réactions nodales qui
+   sont fausses lorsqu'on choisit certains types de renumérotation.
+   Dans CALC_NO on calcule de façon élémentaire les forces nodales, auxquelles on soustrait
+   l'inertie pour en déduire les réactions nodales.
+   Or pour faire le calcul élémentaire des forces nodales on crée une numérotation temporaire
+   pour lancer CALCUL, sans se préoccuper de sa cohérence avec la numérotation du champ de
+   déplacement. En statique cela n'a pas de conséquence. En revanche, en dynamique linéare,
+   l'opération entre les forces nodales et les termes d'inertie (directement déduits des
+   déplacements) est faite ligne à ligne et, par conséquent, elle nécessite une numérotation
+   identique pour les deux champs. Cette condition n'était pas contrôlée.
+   D'où dans certains cas des réactions nodales totalement aberrantes.
+   
+   Le solveur par défaut (la multifrontale) ne renumérote pas. Les champs sont donc cohérents
+   et les réactions nodales justes.  C'est le cas des autres solveurs à l'exception de la
+   méthode LDLT. Par défaut LDLT renumérote. Donc, tous les calculs de réactions nodales sur
+   des résultats de dynamique linéaire (MODE_ITER_SIMULT, DYNA_LINE_TRAN, MODE_STAT,
+   DYNA_TRAN_MODAL) réalisés en LDLT sont faux. L'exception à l'exception est d'avoir
+   expressement précisé RENUM='SANS' dans la numérotation. Dans ce cas la LDLT ne provoque
+   plus de renumérotation et les résultats sont justes.
+   
+   Pour corriger, j'oblige CALC_NO à s'appuyer pour les calculs de dynamique linéaire sur la
+   numérotation existante plutôt que de créer une nouvelle numérotation.
+   Et j'émets un avertissement sur le calcul AVEC LA METHODE LDLT des réactions nodales en
+   dynamique linéaire, ainsi que pour COMB_SISM_MODAL.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdll131a
+NB_JOURS_TRAV  : 6.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdll131a                      macocco K.MACOCCO         1481      2      1
+ CASTEST MODIF zmat002b                      macocco K.MACOCCO          216      4      3
+ FORTRAN MODIF calculel/vrcom2               macocco K.MACOCCO          223     32     11
+ FORTRAN MODIF elements/elraca               macocco K.MACOCCO          915      5      8
+ FORTRAN MODIF elements/fonfis               macocco K.MACOCCO          473      4      2
+ FORTRAN MODIF elements/te0050               macocco K.MACOCCO          163      2      2
+ FORTRAN MODIF elements/te0375               macocco K.MACOCCO          508     27      3
+ FORTRAN MODIF elements/te0378               macocco K.MACOCCO          440     28      1
+ FORTRAN MODIF jeveux/jetass                 macocco K.MACOCCO          263     15      1
+ FORTRAN MODIF modelisa/caprec               macocco K.MACOCCO          512      4      1
+ FORTRAN MODIF prepost/op0106                macocco K.MACOCCO          844     18      4
+  PYTHON MODIF Messages/elements4            macocco K.MACOCCO          347     10      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   12        6385       151      38      +113
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   12        6385       151      38      +113 

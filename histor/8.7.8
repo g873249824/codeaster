@@ -1,0 +1,317 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 01/12/2008 - 17:12:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012275 DU 2008-07-07 13:16:56
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   AFFE_CHAR_MECA + FORCE_NODALE + ANGL_NAUT
+FONCTIONNALITE
+   Les forces nodales peuvent être introduites dans un repère 
+   utilisateur, c'est ce à quoi sert ANGL_NAUT.
+   
+   Il y avait effectivement un bug dans ce cas précis :
+   si Fz était non nulle, ANGL_NAUT présent et que du fait du 
+   changement de repère Fz devienne non nulle.
+   Alors dans CAFONO on n'affectait pas le bon élément fini 
+   FORCNO : on affectait un FORCNO2DDL au lieu de FORCNO3DDL, 
+   et la composante Fz était ignorée.
+   C'est précisément le cas de la fiche ...
+   
+   A noter que ce bug est présent depuis 1993 !
+   
+   Pourtant, FORCE_NODALE ANGL_NAUT est testé (sslv200a et b) 
+   mais le test n'est pas discriminant. On le modifie donc.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SSLV200A  SSLV200B
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011952 DU 2008-04-09 14:46:41
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   SIGM_ELNO_DEPL et ELAS_COQUE
+FONCTIONNALITE
+   Texte de la fiche :
+   
+   Calcul ELAS_COQUE sur DKT. On fait un CALC_ELEM / 
+   SIGM_ELNO_DEPL et on a l'alarme très paradoxale
+   suivante :
+   
+   Le type de comportement ELAS_COQUE n'est pas prévu pour le 
+   calcul de  SIGM_ELNO_DEPL. Les seuls comportements autorisés 
+   sont :	 ELAS, ELAS_COQUE, ou ELAS_ORTH
+   
+   Il y a plusieurs problèmes :
+   - sous te0033/dxsigv, on entre systématiquement dans dxsigm 
+   et (le pb est là) dxsigt, quand bien meme on n'a pas de 
+   thermique (d'où l'émission de l'alarme).
+   - le message lui même qui n'a pas de sens.
+   
+   
+   Réponse :
+   
+   Il faut imprimer un message d'alarme seulement si on a un 
+   chargement thermique avec ELAS_COQUE , ce message disant :
+    " Le type de comportement ELAS_COQUE n'est pas prévu pour le 
+   calcul de  SIGM_ELNO_DEPL avec chargement thermique. Les 
+   seuls comportements autorisés      sont : ELAS, ou ELAS_ORTH "
+   
+   Modification :
+   
+   Les fichiers fortran suivants ont été modifiés :
+   · dxsigt.f
+   
+   Le message d?alarme a été modifié aussi :
+   · Elements.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sans
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 01/12/2008 - 17:12:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012899 DU 2008-11-27 14:07:28
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug dans la routine UALFVA : passage matrice ligne de ciel vers morse (sparse)
+FONCTIONNALITE
+   Dans la routine UALFVA, on fait une boucle sur les lignes de la matrice :
+            LDIAG=.TRUE.
+            LPLEIN=.TRUE.
+            DO 5,IEQ=1,NEQ
+               IF (ZI(JSCHC-1+IEQ).NE.1) LDIAG=.FALSE.
+               IF (ZI(JSCHC-1+IEQ).NE.IEQ) LPLEIN=.FALSE.
+               IF (LDIAG) THEN
+                  CALL CRSMOS(STOMOR,'DIAG',NEQ)
+               ELSE
+                  IF (LPLEIN) THEN
+                     CALL CRSMOS(STOMOR,'PLEIN',NEQ)
+                  ELSE
+                     CALL ASSERT(.FALSE.)
+                  ENDIF
+               ENDIF
+   
+    5       CONTINUE
+   Donc l'appel à CRSMOS a lieu à chaque ligne, ce qui ne sert à rien (cette 
+   programmation n'a pas bougé depuis l'introduction de la routine en version 
+   8.2.10) !
+   On va même planter car on va refaire des CALL WKVECT sur des objets déjà 
+   crées au premier tour de boucle (IEQ = 1). Les cas-tests passent car je 
+   pense qu'on se limite au cas NEQ = 1...
+   Il n'y a pas de résultat faux car on plante.
+   
+   En fait on doit appeler CRSMOS une seule fois, à la fin de l'analyse de la 
+   matrice d'origine quand on sait si elle est pleine ou diagonale.
+   On doit donc faire :
+            LDIAG=.TRUE.
+            LPLEIN=.TRUE.
+            DO 5,IEQ=1,NEQ
+               IF (ZI(JSCHC-1+IEQ).NE.1) LDIAG=.FALSE.
+               IF (ZI(JSCHC-1+IEQ).NE.IEQ) LPLEIN=.FALSE.
+    5       CONTINUE
+            IF (LDIAG) THEN
+               CALL CRSMOS(STOMOR,'DIAG',NEQ)
+            ELSE
+               IF (LPLEIN) THEN
+                  CALL CRSMOS(STOMOR,'PLEIN',NEQ)
+               ELSE
+                  CALL ASSERT(.FALSE.)
+               ENDIF
+            ENDIF
+   Il suffit de déplacer le CONTINUE... et de remercier Jacques pour son aide.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Etude perso inspirxc3xa9e de sdnv106a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 01/12/2008 - 17:12:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012867 DU 2008-11-20 10:52:53
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.3.22, le cas-test comp001f s?arrete en ARRET_<A> sur Rocks.
+FONCTIONNALITE
+   En fortran, on gère un tableau (&&SYS.KRESU) des concepts créés par les commandes dans
+   lequel on stocke l'état du concept/de la commande. Exemple : &&ENCOURS, &&DETRUIT ou
+   &&EXECUTE.
+   Les macros ne sont donc pas comptées dans ce tableau.
+   
+   Dans FIN, on veut marquer les concepts temporaires (commençant par '.') comme &&DETRUIT.
+   Or dans FIN, on utilise GETCMC qui va cherche l'attribut icmd de l'étape pour savoir
+   combien d'étapes on a exécutées.
+   Cet attribut est présent dans les étapes et les macro-étapes, il est donc incrémenté plus
+   souvent que l'indice du tableau &&SYS.KRESU.
+   Donc si on déborde du tableau et qu'on trouve le caractère '.' (d'où le caractère
+   aléatoire du bug !), on écrit &&DETRUIT n'importe où...
+   
+   Le tableau &&SYS.KRESU est dimensionné à 500, puis agrandi par pas de 500. Pour que le bug
+   puisse apparaitre, il faut que :
+   nb_macro > nb_commandes modulo 500
+   
+   Je n'ai pas réussi à reproduire le plantage dû à l'écrasement sur ma machine, mais
+   l'écrasement peut se détecter avec valgrind.
+   
+   Cette correction permet de passer le test ssnv166b (on constate qu'il ne plante plus avec
+   la surcharge).
+   Dans ce test, on a 574 étapes, 433 commandes donc 74 chances de cartonner une zone qui ne
+   nous appartient pas !
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   comp001f
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012810 DU 2008-11-13 15:06:06
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.3.21, le cas-test sslv130a s?arrete en ARRET_<A> sur Bull, Calibre 5 et Rocks.
+FONCTIONNALITE
+   Le test sslv130a plantait de manière un peu aléatoire et à des endroits différents selon
+   le mode de lancement (PAR_LOT, SDVERI...).
+   En général, l'erreur se produisait dans FIN en faisant échouer le garbage collector de python.
+   
+   L'erreur a pu être reproduite de manière plus fiable et surtout en mode debug en insérant
+   un gc.collect entre chaque commande. Il n'y a pas de raison particulière mais en mode
+   debug, valgrind a permis de détecter un 'Invalid write of size 4' dans cnsimp.
+   Ce qui confirme pourquoi le test fonctionnait dès qu'on mettait INFO=1 dans AFFE_CHAR_CINE !
+   
+   Dans cnsimp (même bug corrigé dans cesimp), on utilise un tableau temporaire de K16. Or
+   pour remplir ces chaines, on accède aux valeurs réelles via un tableau d'indirection.
+   Mais il ne faut pas utiliser cette indirection pour remplir le tableau de K16 sinon on
+   déborde !
+   
+   On corrige également des accès non initialisés :
+   - op0166 et op0177, l'appel à psnoco/psrese (sensibilité) utilise un entier censé être une
+   occurence de mot-clé facteur qui n'est pas initialisé (mais utilisé au moins pour en faire
+   un PyInt)
+   - lxscan : le booléen EXPNEG n'est pas toujours initialisé, on l'initialise à True :
+   toutes les lectures de .mail !!
+   
+   onerrf : En mode debug jeveux, on imprime un message dans DEBUT avant d'avoir initialiser
+   le comportement en cas d'erreur fatale. De ce fait, on était toujours en mode ABORT meme
+   si on avait ERREUR_F=EXCEPTION dans le jdc.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv130a
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012905 DU 2008-11-28 13:21:30
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Variables non initialis?
+FONCTIONNALITE
+   En examinant le test sdls112a :
+   
+   - harm75 qui lit NOM_CHAM et TOUT_CHAM, on utilise le code retour de GETVTX pour savoir
+   combien on a lu de valeurs dans NOM_CHAM. On ignore les champs autres que DEPL, VITE, ACCE.
+   
+   - inistd : lecture maillage ideas. NOMAIL(22 à 28) n'était pas initialisés. On les met à ' '.
+   - iradhs : on fait INDIC(ISU) avec ISU qui peut valoir 0. On ajoute un test supplémentaire
+   "si ISU=0" (on fait comme quand INDIC(ISU)=0).
+   
+   - lridea : iocc de GETVID n'était pas initialisé à 1.
+   - idem op0037
+   
+   - op0141 : exploiter le code retour de GETVID avant de tester la valeur (non) retournée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdls112a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 01/12/2008 - 17:12:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012913 DU 2008-12-01 08:04:02
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   problxc3xa8mes de codage en NEW9
+FONCTIONNALITE
+   Pour le cas de mdtr74, les concepts pulsatio et pulsat2, normalement communs à toutes les
+   schémas d'intégration numérique, sont détruits par la méthode ITMI et recréés dans la
+   routine mditmi.
+   La méthode ITMI a une programmation qui manque de cohérence par rapport à l'architecture
+   générale de DYNA_TRAN_MODAL. Toutefois, sa programmation est indépendante et ne semble pas
+   mener à des destructions dangereuses d'objet.
+   En revanche, on peut lui reprocher un manque certain de clarté.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sslv200a                      macocco K.MACOCCO         1296     93     93
+ CASTEST MODIF sslv200b                      macocco K.MACOCCO         1266     97     96
+ FORTRAN MODIF algeline/amogen               macocco K.MACOCCO          172      2      2
+ FORTRAN MODIF algeline/op0037               macocco K.MACOCCO          661      2      1
+ FORTRAN MODIF algorith/harm75               macocco K.MACOCCO          253     12      8
+ FORTRAN MODIF algorith/op0166               macocco K.MACOCCO          258      2      1
+ FORTRAN MODIF assembla/ualfva               macocco K.MACOCCO          176      2      2
+ FORTRAN MODIF calculel/cesimp               macocco K.MACOCCO          214     10      7
+ FORTRAN MODIF calculel/cnsimp               macocco K.MACOCCO          163      6      6
+ FORTRAN MODIF calculel/op0177               macocco K.MACOCCO          216      2      1
+ FORTRAN MODIF elements/dxsigt               macocco K.MACOCCO          155      2      2
+ FORTRAN MODIF modelisa/cafono               macocco K.MACOCCO          325      4      5
+ FORTRAN MODIF prepost/iradhs                macocco K.MACOCCO          200     12      6
+ FORTRAN MODIF prepost/lridea                macocco K.MACOCCO          565      3      1
+ FORTRAN MODIF stbtrias/inistb               macocco K.MACOCCO          348      9      1
+ FORTRAN MODIF supervis/lxscan               macocco K.MACOCCO          309      2      1
+ FORTRAN MODIF supervis/op9999               macocco K.MACOCCO          152      2      2
+  PYTHON MODIF Messages/elements2            macocco K.MACOCCO          422      7      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   18        7151       269     236       +33
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   18        7151       269     236       +33 

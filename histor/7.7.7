@@ -1,0 +1,490 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR cibhhlv      VIVAN L.               DATE 22/11/2006 - 17:49:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010265 DU 2006-11-16 14:08:24
+TYPE express concernant Code_Aster (VERSION 7.8)
+TITRE
+   NEW7.7.6, les tests ssls125a et ssna102a s'arretent en ERREUR
+FONCTIONNALITE
+   erreur report v8 en v7 dans le te0530.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage des cas tests
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010261 DU 2006-11-16 13:58:45
+TYPE express concernant Code_Aster (VERSION 7.8)
+TITRE
+   NEW7.7.6, les tests hsna120a (Bull), ssla200a et b (Alphaserver) NOOK
+FONCTIONNALITE
+   pour le hsna120a :
+   l'ajustement sur la tolerance a ete faite en v8 mais non reportee en v7
+   
+   pour les ssla200a et b
+   ajustement de tolerances pour que les cas tests soient OK sur Bull et Alphaserver
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage des cas tests
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 22/11/2006 - 17:49:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010263 DU 2006-11-16 14:04:46
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TITRE
+   NEW7.7.6, le test ssnv166b manque de memoire (Bull)
+FONCTIONNALITE
+   Le test ssnv166b s'arrete sur l'erreur :
+   <E> <JJALLS03>  MEMOIRE INSUFFISANTE POUR ALLOUER UN SEGMENT DE VALEURS  DE LONGUEUR :
+   44175780
+   
+   On ne fait pas de correction en version 7 (le test est OK en version 8).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ras
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR g8bhhxd      DESROCHES X.           DATE 22/11/2006 - 17:49:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010226 DU 2006-11-07 18:46:30
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TMA : CS
+TITRE
+   DISMOI 'ELAS_F_TEMP' sur un CHAM_MATER
+FONCTIONNALITE
+   Dans la routine dismcm, la recherche d'un materiau issu
+   de DEFI_COQU_MULT
+   est la suivante :
+   DO 31, IRC=1,NBRC
+   NOMRC=ZK16(IANORC-1+IRC)(1:10)
+   C
+   C            -- SI LE MATERIAU EST ISSU DE LA COMMANDE
+   DEFI_COQU_MULT :
+   IF ((IRC.EQ.3).AND.(NOMRC.EQ.' ')) GO TO 33
+   
+   La doc D4.06.18 cite :
+   "La commande DEFI_COQU_MULT y stocke le nom du
+   comportement ELAS_COQMU ou THER_COQMU,
+   une chaine blanche et le nom de chaque materiau pour
+   chaque couche."
+   
+   La chaine blanche ne se trouve pas forcement en
+   troisieme position.
+   Le test a ete modifie en
+   IF (NOMRC(5:10).EQ.'_COQMU') GO TO 33
+   Ceci concerne les
+   questions 'ELAS_F_TEMP', 'THER_F_INST', 'ELAS_F_HYDR'
+   et 'ELAS_F_SECH'
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   LISTE RESTREINTE
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009972 DU 2006-08-29 11:28:48
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   POST_RELEVE_T (repere cylindrique)
+FONCTIONNALITE
+   En repere cylindrique, des bords de mailles peuvent etre
+   sur l'axe de revolution.
+   Il faut fournir une liste de noeuds excluant les noeuds
+   se situant sur l'axe.
+   Ce qu'avait fait l'utilisateur
+   M_MECA=DEFI_GROUP(reuse =M_MECA, MAILLAGE=M_MECA,
+   CREA_GROUP_NO=(_F(NOM='LCONDOME',),
+   DIFFE=
+   ('LDOMEINT','AXE_SUP',),   ),);
+   
+   CDOME=POST_RELEVE_T(ACTION=_F(INTITULE='un_mat',
+   GROUP_NO='LCONDOME',
+   RESULTAT=R_MECACP,
+   NOM_CHAM='SIEF_ELNO_ELGA',
+   REPERE = 'CYLINDRIQUE',
+   ORIGINE = (0., 0., 0.,),
+   AXE_Z = (0., 1., 0.,),
+   OPERATION='EXTRACTION',),);
+   
+   Le code se plantait quand meme avec comme message
+   d'erreur :
+   <F> <POST_RELEVE_T> <RVCHE2> NOEUD CONFONDU AVEC
+   L'ORIGINE
+   NOEUD NUMERO :  919
+   De plus ce message est faux.
+   
+   Correction:
+   1- corriger le message en changeant "NOEUD CONFONDU AVEC
+   L'ORIGINE" par "NOEUD SUR L'AXE_Z"
+   De plus on imprimera le nom de la maille et le nom du
+   noeud a la place du numero.
+   2- Sur la maille courante, au lieu d'extraire les valeurs
+   en tous noeuds, on propose
+   d'extraire aux noeuds demandes. Ceci exclura les
+   noeuds sur l'axe.
+   
+   routines impactees :
+   rvpost.f, extche.f, rvche2.f
+   
+   validation :
+   passage de l'etude
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de l'etude +tests POST_RELEVE
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR audeber      AUDEBERT Sylvie        DATE 22/11/2006 - 17:49:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 006836 DU 2003-03-12 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 7.8)
+TMA : CS
+TITRE
+   acceleration multi_appuis dan comb_sism_modal
+FONCTIONNALITE
+   pour etre en conformite avec les doc U et R et rappeler a l'utilisateur le domaine de
+   validite de l'operateur COMB_SISM_MODAL, on modifie le message d'Alarme dans le cas du
+   multi-appui et pour le calcul du champ ACCE_ABSOLU.
+   Nouveau message d'Alarme :
+   
+   "Dans la cas ou les differents mouvements d'appui sont correles et dependants, les
+   resultats ACCE_ABSOLU sont faux."
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   neant
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR acbhhcd      DEVESA G.              DATE 22/11/2006 - 17:49:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010279 DU 2006-11-20 06:50:54
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Tests miss en version NEW7.7.6 sur Bull
+FONCTIONNALITE
+   Mis a part le test MISS02A qui plante avant l'appel a MISS et pour lequel il
+   faudraitajuster la tolerance sur les modes a 2.E-6 par exemple, les differences
+   qui
+   apparaissent en V7 sur les tests MISS01A MISS05A MISS06A sont dues
+   exclusivement a la version MISS par defaut : V1_2 sur clayastr et V1_3 sur
+   d'autres machines : Bull en particulier.
+   Or, sur les versions V8 de leurs fichiers de commandes, on avait tenu compte
+   des resultats differents selon les versions de MISS en ajustant les tolerances
+   et en proposant les 2 series de valeurs a tester avec respectivement une
+   reference de NON_REGRESSION et une reference AUTRE_ASTER.
+   En conclusion, il suffit alors pour les tests MISS01A MISS05A MISS06A de
+   prendre la version V8 du fichier de commandes et de dupliquer les tests finaux.
+   Par exemple pour le test MISS06A en V8, on retrouve a tester les 2 valeurs dont
+   la difference fait probleme:
+   TEST_RESU(RESU=(
+   _F(   RESULTAT = EVOL,
+   NOEUD = 'N1657', NOM_CHAM = 'DEPL', NOM_CMP = 'DZ',
+   CRITERE = ('RELATIF','RELATIF',),
+   PRECISION = (1.E-2,1.E-3,),
+   INST = 4.62,         VALE = 7.54281E-04,
+   REFERENCE = 'NON_REGRESSION', VERSION = '7.04.01'),
+   )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas tests MISS
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE A.              DATE 22/11/2006 - 17:49:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010268 DU 2006-11-16 16:39:10
+TYPE express concernant Code_Aster (VERSION 8.3)
+TITRE
+   Sortie sale de Stanley
+FONCTIONNALITE
+   Lorsqu'il manque un concept (cham_mater, modele, etc...) Stanley averti l'utilisateur en
+   mettant un message explicite... mais sort salement juste apres:
+   AttributeError: PRE_STANLEY instance has no attribute 'after_id'
+   
+   On corrige ce bug et on sort proprement de Stanley.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   stanley
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR acbhhcd      DEVESA G.              DATE 22/11/2006 - 17:49:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009962 DU 2006-08-24 12:39:38
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   POST_ELEM et sous-structuration dynamique
+FONCTIONNALITE
+   Je confirme le diagnostic d'Olivier et en shuntant cet appel a DISMOI dans
+   la routine PEECIN quand on est est en sous-structuration, on laisse
+   l'option de calcul de masse a la valeur par defaut MASS_MECA, ce qui est
+   incontournable. L'etude va alors jusqu'au bout.
+   Pour tester l'appel au calcul de l'energie cinetique en sous-structuration
+   par POST_ELEM, j'ai complete le test SDNL104B en calculant l'energie
+   cinetique de chacune des sous-structures et en testant leur derniere valeur
+   dans le temps a titre exclusivement de non regression et de test de
+   fonctionnalite. Ce test n'a ete choisi que pour sa brievete et tres
+   eventuellement pour sa nature physique : choc d'une poutre en flexion et
+   donc calcul de l'energie cinetique d'un mouvement de pendulaison qui
+   pouvait se rapprocher de tres loin du probleme industriel initial.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test sdnl104b
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flandi       FLANDI Laila           DATE 22/11/2006 - 17:49:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010251 DU 2006-11-13 12:31:08
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   endommagement de Lemaitre-Sermage : correction du calcul de la temperature sur l'element
+FONCTIONNALITE
+   on modifie la routine te0512.f :
+   
+   1/ on calcule maintenant la temperature moyenne de l'element (somme des temperatures aux
+   noeuds divisee par le nb de noeuds) pour determiner les parametres materiau.
+   On remplace :
+   
+   C ---    RECUPERATION DU CHAMP DE TEMPERATURE
+   C        ---------------------------------------
+   CALL TECACH('NNN','PTEMPER',1,ITEMP2,IRET)
+   IF (ITEMP2.EQ.0) THEN
+   NBPAR2  = 0
+   NOMPR2 = ' '
+   VALPR2 = ZERO
+   ELSE
+   NBPAR2  = 1
+   NOMPR2 = 'TEMP'
+   VALPR2 = ZR(ITEMP2)
+   ENDIF
+   
+   par:
+   
+   C ---    RECUPERATION DU CHAMP DE TEMPERATURE
+   C        ---------------------------------------
+   CALL TECACH('NNN','PTEMPER',1,ITEMP2,IRET)
+   IF (ITEMP2.EQ.0) THEN
+   NBPAR2  = 0
+   NOMPR2 = ' '
+   VALPR2 = ZERO
+   ELSE
+   NBPAR2  = 1
+   NOMPR2 = 'TEMP'
+   VALPR2 = ZERO
+   DO 21 I = 1, NNO
+   VALPR2 = VALPR2 + ZR(ITEMP2 - 1 + I)
+   21        CONTINUE
+   VALPR2 = VALPR2 / NNO
+   ENDIF
+   
+   Ceci corrige le resultat qui pouvait alors etre faux meme si negligeable dans le cas d'une
+   variation de temperature faible sur l'element, ou de parametres materiau peu affectes par
+   la temperature.
+   
+   2/ on sort l'appel a EFREF4 de la boucle IF pour recuperer correctement les
+   caracteristiques de l'element (ce qui n'etait pas fait dans le cas 2D axis par exemple, cf
+   condition ELREFA):
+   
+   C      ELREFA = (NDIM.EQ.3) .AND. (NOMTE(3:4).NE.'FO')
+   C      IF (ELREFA) THEN
+   CALL ELREF4(' ','RIGI',NDIM,NNO,NNOS,NPG,IPOIDS,IVF,IDFDE,JGANO)
+   C      ELSE
+   C        NNO = NBNOEU(' ')
+   C        NNOS = NBNOSO(NOMTE)
+   C      END IF
+   
+   3/ on remplace :
+   
+   DO 80 IGAU = 1, NPG
+   SENDO(IGAU) = (COE1*SIGEQ(IGAU)**DEUX
+   &                     +COE2*TRSIG(IGAU)**DEUX)**UNDEMI
+   CENDO(IGAU) = (COE1*SIGEQ(IGAU)**DEUX
+   &                     +COE2*TRSIG(IGAU)**DEUX)/XES
+   80     CONTINUE
+   
+   par :
+   DO 80 IGAU = 1, NPG
+   SENDO(IGAU) = (COE1*SIGEQ(IGAU)**DEUX
+   &                     +COE2*TRSIG(IGAU)*TRSIG(IGAU))**UNDEMI
+   CENDO(IGAU) = (COE1*SIGEQ(IGAU)**DEUX
+   &                     +COE2*TRSIG(IGAU)*TRSIG(IGAU))/XES
+   80     CONTINUE
+   
+   pour rendre le calcul possible meme si TRSIG a une valeur negative. En effet, dans notre
+   cas DEUX est un nombre reel, et le calcul de NOMBRE**DEUX fait alors intervenir le LOG de
+   NOMBRE.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude OLHF (projet Pagodes), test szlz110a (endo_elga et endo_elno_elga)
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 22/11/2006 - 17:49:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010222 DU 2006-11-06 14:00:59
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TMA : DeltaCad
+TITRE
+   ECLA_PG avec SIEF_ELGA_DEPL
+FONCTIONNALITE
+   L'erreur se produit dans la routine NOPAR2 lors de l'execution de la commande
+   CREA_MAILLAGE , l'arbre d'appel
+   
+   op0167 (CREA_MAILLAGE)
+   -> eclpgm
+   -> alchml
+   -> nopar2
+   
+   Le probleme se produit pour l'option SIEF_ELGA_DEPL, lorsque l'on cherche le nom du
+   parametre OUT associe. Dans le catalogue de cette option on a deux possibilites PCONTRR
+   et
+   PCONTRC, d'ou une ambiguite.
+   
+   
+   On modifie la routine eclpgm.f de la maniere suivante.  Hypothese retenue : lorsque l'on a
+   plusieurs parametres OUT on prend le premier.
+   
+   --> AVANT (ligne 136)
+   NOMPAR = ' '
+   
+   --> APRES
+   CALL JENONU(JEXNOM('&CATA.OP.NOMOPT',ZK16(ICHAM-1+ICH)),OPT)
+   CALL JEVEUO(JEXNUM('&CATA.OP.DESCOPT',OPT),'L',IADESC)
+   CALL JEVEUO(JEXNUM('&CATA.OP.OPTPARA',OPT),'L',IAOPPA)
+   NBIN = ZI(IADESC-1+2)
+   NOMPAR = ZK8(IAOPPA-1+NBIN+1)
+   
+   VALIDATION
+   ----------
+   - Exemple fourni avec la fiche REX, avec visualisation des resultats sous GMSH
+   - cas-tests (astest) utlisant CREA_MAILLAGE(ECLA_PG): forma03b, ssnv115a, tpll01b,
+   zzzz216a
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude jointe
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF hsna120a                        vivan L.VIVAN            763      2      2
+ CASTEST MODIF hsnv100a                        vivan L.VIVAN            357      2      2
+ CASTEST MODIF miss01a                         vivan L.VIVAN           2198     18     18
+ CASTEST MODIF miss02a                         vivan L.VIVAN           1275      3      2
+ CASTEST MODIF miss05a                         vivan L.VIVAN           2080     12     12
+ CASTEST MODIF miss06a                         vivan L.VIVAN            557      2      2
+ CASTEST MODIF sdnl104b                        vivan L.VIVAN            482     69      4
+ CASTEST MODIF ssla200a                        vivan L.VIVAN            769    120    667
+ CASTEST MODIF ssla200b                        vivan L.VIVAN            867    248    719
+ CASTEST MODIF sslp200a                        vivan L.VIVAN            995    460    719
+ CASTEST MODIF sslp200b                        vivan L.VIVAN           1021    480    715
+ CASTEST MODIF sslp201a                        vivan L.VIVAN            966    433    652
+ CASTEST MODIF sslp201b                        vivan L.VIVAN            987    453    654
+ CASTEST MODIF ssls125a                        vivan L.VIVAN            138      2      4
+ CASTEST MODIF sslv100h                        vivan L.VIVAN            139     10     11
+ CASTEST MODIF sslv200a                        vivan L.VIVAN           1055    446    691
+ CASTEST MODIF sslv200b                        vivan L.VIVAN           1024    443    685
+ CASTEST MODIF ssnp15b                         vivan L.VIVAN            574      1    172
+ CASTEST MODIF szlz110a                        vivan L.VIVAN            878      1      1
+ CASTEST SUPPR hplv101b.comm                   vivan L.VIVAN            405      0    405
+ CASTEST SUPPR sensm04a.comm                   vivan L.VIVAN            455      0    455
+ CASTEST SUPPR sensm05a.comm                   vivan L.VIVAN            481      0    481
+ CASTEST SUPPR sslp304a.comm                   vivan L.VIVAN            242      0    242
+ CASTEST SUPPR sslp304b.comm                   vivan L.VIVAN            213      0    213
+ CASTEST SUPPR ssls120a.comm                   vivan L.VIVAN            195      0    195
+ CASTEST SUPPR sslv109f.comm                   vivan L.VIVAN            159      0    159
+ CASTEST SUPPR sslv120a.comm                   vivan L.VIVAN            484      0    484
+ CASTEST SUPPR sslv121a.comm                   vivan L.VIVAN            139      0    139
+ CASTEST SUPPR sslv131a.comm                   vivan L.VIVAN            304      0    304
+ FORTRAN MODIF algorith/asacce                 vivan L.VIVAN            123      3      2
+ FORTRAN MODIF calculel/eclpgm                 vivan L.VIVAN            371      7      2
+ FORTRAN MODIF elements/dmatmc                 vivan L.VIVAN            102     10      1
+ FORTRAN MODIF elements/te0512                 vivan L.VIVAN            448     10     12
+ FORTRAN MODIF elements/te0530                 vivan L.VIVAN            565      4      4
+ FORTRAN MODIF postrele/prpmpb                 vivan L.VIVAN            179     11      2
+ FORTRAN MODIF postrele/prsnsp                 vivan L.VIVAN            189     11      2
+ FORTRAN MODIF postrele/rvche2                 vivan L.VIVAN            281     41     16
+ FORTRAN MODIF postrele/rvpost                 vivan L.VIVAN            288     11      2
+ FORTRAN MODIF prepost/extche                  vivan L.VIVAN            469      6      6
+ FORTRAN MODIF utilitai/dismcm                 vivan L.VIVAN            260      5      5
+ FORTRAN MODIF utilitai/peecin                 vivan L.VIVAN            368      3      1
+  PYTHON MODIF Stanley/stanley                 vivan L.VIVAN           2071      3      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   32       22839      3330    5789     -2459
+ SUPPR :   10        3077              3077     -3077
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   42       25916      3330    8866     -5536 

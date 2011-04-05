@@ -1,0 +1,88 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 10/07/2008 - 14:18:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012246 DU 2008-06-27 12:14:45
+TYPE anomalie concernant Code_Aster (VERSION 9.3)
+TITRE
+   En NEW9.3.2, le cas-test sdlv123b s?arrete en NOOK sur Calibre 5 (clau5aaa).
+FONCTIONNALITE
+   Anomalie
+   --------
+   Le cas test sdlv123b s'arrête en NOOK sur Calibre 5 : le G local (opérateur CALC_G, option
+   CALC_G, lissage Lagrange - Legendre) est faux sur le noeud testé.
+   La valeur locale de G est même non physique (valeurs en 10^20 en certains noeuds).
+   
+   Explication
+   -----------
+   Les valeurs élémentaires de G sont calculées pour les NNO noeuds du fond de fissure
+   (LISSAGE_THETA='LAGRANGE'), et on cherche les valeurs locales sur la base des (NDEG+1)
+   polynomes de Legendre (LISSAGE_THETA='LEGENDRE'). Pour passer des valeurs élémentaires aux
+   valeurs locales, il faut résoudre un problème de NNO équations à (NDEG+1) inconnues
+   (Attention ! erreur dans la doc R, il ne faut pas oublier le polynome de degré 0)
+   La résolution se fait par appel à mgauss (méthode V).
+   
+   Dans le cas test, NNO=5 et NDEG=5 (valeur par défaut) --> on cherche donc à résoudre un
+   problème de 5 équations à 6 inconnues !
+   Sur Bull (et sur Calibre5 en Debug), la routine mgauss réussit à résoudre le système et
+   donne une solution physiquement acceptable (mais pas de bonne qualité !).
+   Sur Calibre5 en Nodebug, la solution obtenue est non physique.
+   
+   On note par ailleurs :
+   - que le déterminant de la matrice à inverser est très faible ;
+   - qu'avec la méthode W de mgauss, on s'arrête (proprement) avec un message indiquant que
+   la matrice n'est pas inversible.
+   
+   En conclusion : on cherche à résoudre un problème qui n'est inversible.. et on avait de la
+   chance jusqu'à présent d'obtenir une solution qui n'était pas complètement abérrante !
+   
+   Correction
+   ----------
+   Jusqu'à présent on vérifiait que NDEG <= NNO (routine op0100 --> message Rupture0_84). Il
+   faut en fait vérifier que NDEG < NNO.
+   On change aussi le degré du polynome dans le fichier de commande, et la valeur du test de
+   non-régression. 
+   --> correction à reporter aussi en v8.
+   
+   Résultat faux ?
+   --------------
+   Il y a un risque de résultat faux pour les lissages de Lagrange - Legendre (cas qui n'est
+   pas le plus fréquent), si NDEG=NNO (et donc dans les cas où le nombre de noeuds en fond de
+   fissure est inférieur à 7).
+   Le risque est donc faible.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R7.02.01, U4.82.03,V2.04.123
+VALIDATION
+   sdlv123b
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdlv123b                      macocco K.MACOCCO          261     31      2
+ FORTRAN MODIF calculel/op0100               macocco K.MACOCCO          993      3      3
+ FORTRAN MODIF modelisa/surfco               macocco K.MACOCCO          411      3      3
+  PYTHON MODIF Messages/calculel4            macocco K.MACOCCO          423      4      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    4        2088        41      10       +31
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    4        2088        41      10       +31 

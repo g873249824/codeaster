@@ -1,0 +1,241 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 18/05/2010 - 21:34:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015020 DU 2010-05-03 13:26:50
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   correction d'anomalies dans ENDO_ORTH_BETON (suite)
+FONCTIONNALITE
+   L'objet de cette fiche est corriger diverses erreurs de programmation dans la loi
+   ENDO_ORTH_BETON. En quelques mots, ces erreurs sont :
+   - critere de CV pour l'endommagement en compression : test sur ABS(RESD).GT.TOLC  plutôt
+   que RESD.GT.TOLC puisque RESD peut etre negatif -> possibilite de converger avec un residu
+   trop grand 
+   - redecoupage systématique du pas de temps des qu'il est predit a une valeur plus grande que 1
+   - endommagement qui depasse 1 : valeur max de l'endommagement mis a 1-TOLB-R8PREM() plutot
+   que 1-TOLB
+   - division par 0 dans les routines lceob1, lceob2 et lceob3 : il peut arriver qu'une
+   solution intermediaire donnée à une itération de Newton conduise à obtenir un critère
+   d'endommagement négatif, c'est-à-dire qu'on est dans un cas élastique.  Lorsque ça se
+   produit, la dérivée du résidu est une matrice singulière puisque l'incrément du
+   multiplicateur de Lagrange ne peut pas être calculé. La solution proposée in fine est de
+   faire un test sur le critère d'endommagement, et de retourner IRET=1 s'il est nul pour
+   enclencher les redécoupages. Merci à Jean-Michel d'avoir perdu 2h à réfléchir avec moi
+   là-dessus ! 
+   - absence d'un test sur le signe de FD dans les routines MGEOB1.F, MEOBG2.F et MEOBG3.F
+   pour garder uniquement la partie positive
+   
+   Je profite aussi de cette restitution pour réorganiser un peu les sources. Notamment, les
+   opérations de calcul de FB et FD (forces thermodynamiques liées aux différents
+   endommagements) sont calculées 9 fois de manière strictement identiques dans des sources
+   différentes. Je propose de restituer deux nouvelles sources appelées CFDEOB.F et CFBEOB.F
+    (Calcul de FB/FD pour Endo_Orth_Beton) qui me permettent de rendre plus lisible les
+   sources existantes.
+   
+   Impact :
+   
+   a) Fortran (15)
+   LCEOBL.F
+   LCEOBG.F
+   LCEOBB.F
+   LCEOB1.F
+   LCEOB2.F
+   LCEOB3.F
+   MEOBG1.F
+   MEOBG2.F
+   MEOBG3.F
+   MEOBL1.F
+   MEOBL2.F
+   MEOBL3.F
+   Deux nouvelles sources : CFBEOB.F, CFDEOB.F
+   
+   
+   b) Cas-tests 
+   RAS
+   
+   c) Documentation
+   RAS
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Tout test utilisant ENDO_ORTH_BETON
+NB_JOURS_TRAV  : 9.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 18/05/2010 - 21:34:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015067 DU 2010-05-12 07:41:57
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   tests SSNV135 et SSNV158 : GROT_GDEP  non valable
+FONCTIONNALITE
+   Pour la STA10.2, je compte ajouter une <A>larme dans la cas où on utilise GROT_GDEP
+   (anciennement GREEN) pour un modèle incrémental (COMP_INCR) non élastique (comportement
+   différent de ELAS, et ELAS_HYPER), et que les  déformations deviennent supérieures à 5% au
+   cours du calcul.
+   
+   En effet plusieurs utilisateurs se sont trompés et ont utilisé GROT_GDEP pour traiter des
+   grandes déformations. Or, rappelons-le, pour des comportements non linéaires incrémentaux
+   (sous COMP_INCR), GROT_GDEP traite des grands déplacements et grandes rotations, mais en
+   petites déformations (la loi de comportement HPP relie les contraintes de Piola-Kirchoff-2
+   aux déformations de Green-Lagrange). Si les déformations deviennent grandes, cela donne
+   des résultat faux (cf.R5.03.22).
+   
+   C'est ce qui se passe avec les deux tests SSNV135A (loi CJS) et SSNV158A (loi LAIGLE) :
+   les déformations finales atteignent 20%. Or en version 9.0.3, dans ces deux tests, ont été
+   ajoutés des STAT_NON_LINE avec GREEN pour valider la matrice tangente non symétrique. Les
+   résultats obtenus sont très différents de la solution HPP et de PETIT_REAC (valable ici
+   puiqu'il n'y a pas de rotation) :
+   
+   Par exemple pour SSNV158A, au numéro d'ordre 49, en HPP : SIYY=-24
+   avec PETIT_REAC, SIYY= -26.81736 et avec GROT_GDEP, SIYY=-14.94 !
+   
+   Je propose donc :
+   - d'ajouter cette alarme
+   - de limiter l'évolution en temps pour ces deux tests de façon à ce que les déformations
+   restent inférieures à 5%.
+   
+   D'autre part, dans le cadre de la fiche d'évolution 15049, une anomalie potentielle a été
+   observée : si on cherche  à redécouper localement le pas de temps (ITER_INTE_PAS > 1 ou <
+   -1), cela ne fonctionne pas avec GRAD_EPSI et GRAD_VARI. J'ajoute donc une erreur <F> dans
+   ce cas. Cela ne modifie aucun test.
+   
+   Tout ceci est aussi à faire en v9 (seul impact dans le fortran : redece.f, nmgr2d.f, nmgr3d.f)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv135a, ssnv158a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 18/05/2010 - 21:34:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015041 DU 2010-05-06 14:09:52
+TYPE anomalie concernant Code_Aster (VERSION 10.2)
+TITRE
+   Plantage de la fonction ToAster(transfert=True) de la classe MAIL_PY
+FONCTIONNALITE
+   Utilisation de "class MAIL_PY" :
+   --------------------------------
+   
+   Correction de la fonction ToAster(unite)
+   * unite : argument facultatif
+   
+   Pour récupérer le maillage modifié dans l'espace Aster et le sauver au format MED
+   ..unit2=maillage_python.ToAster()        # ToAster fait l'association entre unit2 et le
+   fichier sur disque
+   ou
+   ..unit3=maillage_python.ToAster(unit2)   # dans ce cas unit3==unit2
+   ou
+   ..maillage_python.ToAster(unit2)
+   et 
+   ..Mail =LIRE_MAILLAGE(UNITE=unit2)
+   ..IMPR_RESU(FORMAT='MED',MAILLAGE=Mail)
+   
+   
+   Avant ToAster avait 2 arguments facultatifs ToAster(unite=[entier],transfert=[False|True])
+   avec par défaut unite=None,transfert=False. Dans le cas où transfert=True, il y avait un
+   toujours un plantage (pas de résultat faux).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test perso
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 19/05/2010 - 11:56:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014957 DU 2010-04-16 09:07:11
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : DeltaCad
+TITRE
+   Problxc3xa8me objet d'xc3xa9tude de POST_RELEVE_T > EXTREMA
+FONCTIONNALITE
+   POST_RELEVE_T EXTREMA : un utilisateur veut calculer un 
+   extremum sur un cham_elem limité à un GROUP_NO. Il trouve le 
+   même extremum que sur le champ tout entier.
+   
+   Il s'agit d'une erreur utilisateur, qui veut limiter le calcul 
+   d'extremum à un GROUP_NO, ce qui n'a pas de sens sur un 
+   cham_elem (ce champ peut etre défini aux points de Gauss). Il 
+   faut limiter le calcul sur des GROUP_MA .
+   
+   On arrete en ERREUR FATALE pour dire que le post-traitement 
+   demandé n'a pas de sens.
+   
+   A faire aussi en V9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   fichiers associxc3xa9s a la fiche
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssnv135a                      macocco K.MACOCCO         1561     19    206
+ CASTEST MODIF ssnv158a                      macocco K.MACOCCO          786     25    188
+ FORTRAN AJOUT algorith/ceobfb               macocco K.MACOCCO          110    110      0
+ FORTRAN AJOUT algorith/ceobfd               macocco K.MACOCCO           67     67      0
+ FORTRAN MODIF algorith/lceob1               macocco K.MACOCCO          235     17    154
+ FORTRAN MODIF algorith/lceob2               macocco K.MACOCCO          383     17    154
+ FORTRAN MODIF algorith/lceob3               macocco K.MACOCCO          351     18    142
+ FORTRAN MODIF algorith/lceobb               macocco K.MACOCCO          492     41     68
+ FORTRAN MODIF algorith/lceobg               macocco K.MACOCCO         1116     40     95
+ FORTRAN MODIF algorith/lceobl               macocco K.MACOCCO         1001     36     72
+ FORTRAN MODIF algorith/meobg1               macocco K.MACOCCO          213     14    104
+ FORTRAN MODIF algorith/meobg2               macocco K.MACOCCO          299     13     99
+ FORTRAN MODIF algorith/meobg3               macocco K.MACOCCO          269     13     80
+ FORTRAN MODIF algorith/meobl1               macocco K.MACOCCO          218     10     85
+ FORTRAN MODIF algorith/meobl2               macocco K.MACOCCO          299     12    100
+ FORTRAN MODIF algorith/meobl3               macocco K.MACOCCO          260     10    121
+ FORTRAN MODIF algorith/nmgr2d               macocco K.MACOCCO          376     11      2
+ FORTRAN MODIF algorith/nmgr3d               macocco K.MACOCCO          381     11      2
+ FORTRAN MODIF algorith/prexel               meunier S.MEUNIER          196      7      3
+ FORTRAN MODIF algorith/redece               macocco K.MACOCCO          270     10      5
+  PYTHON MODIF Macro/propa_fiss_ops          macocco K.MACOCCO          657      9      5
+  PYTHON MODIF Messages/compor1              macocco K.MACOCCO          386     16      1
+  PYTHON MODIF Messages/postrele             meunier S.MEUNIER          405      5      1
+  PYTHON MODIF Utilitai/partition            macocco K.MACOCCO         1321      7     12
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         177       177              +177
+ MODIF :   22       11475       361    1699     -1338
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   24       11652       538    1699     -1161 

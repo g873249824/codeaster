@@ -1,0 +1,235 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 26/11/2008 - 12:43:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011774 DU 2008-02-18 14:14:11
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   Loi de comportemeent LMARC et remarque sur META_LEMA_ANI
+FONCTIONNALITE
+   Comme l'a remarqué Valérie, le comportement LMARC avec coefficient d'orthotropie n'est
+   utilisable qu'en axisymétrie, si les coefficients étant donnés dans l'ordre
+   (R,Z,T),correspondant aux axes globaux X,Y,Z. En effet aucun changement de repère n'est
+   effectué dans la programmation. Dans le cas isotrope, il n'y a pas de limitation.
+   
+   Pour éviter des résultats potentiellement faux, dans le cas où l'utilisateur a fourni des
+   coefficients anisotropes et qu'il n'est pas en AXIS, je propose (en attendant que le
+   changement de repère soit programmé - responsabilité MMC ) que le code s'arrête avec le
+   message suivant :
+   
+   <F> <COMPOR1_62>                                        
+   L'orthotropie pour le comportement LMARC n'est disponible que pour la modélisation
+   AXIS.(cf. R5.03.10). Or la modelisation choisie est <3D> .                               
+   Les coefficients de la matrice d'anisotropie sont :                                      
+   M(1,1)  : <6.990000000000000E-01>                                                     
+   M(2,2)  : <5.624000000000000E-01>                                                     
+   M(3,3)  : <6.666666000000000E-01>                                                     
+   M(6,6)  : <6.600000000000000E-01>                                                     
+   L'orthotropie est à utiliser seulement en axi, si et seulement si les coefficients sont
+   donnés dans l'ordre (R,Z,T) et non (R,T,Z).
+   
+   - il faut alors changer les deux tests en mettant les coefficients isotropes. Les
+   TEST_RESU changent alors de quelques pourcents.
+   
+   On ajoutera aussi un warning dans les docs U4.43.01 et
+   U4.51.11
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.43.01, U4.51.11
+VALIDATION
+   ssnv117A et B
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 26/11/2008 - 12:43:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010984 DU 2007-06-15 15:56:30
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   sd_tran_gene : objet .ORDR incorrect dans le test sdld102b
+FONCTIONNALITE
+   Jacques a ajouté dans sd_tran_gene une vérification sur l'unicité des numéros d'ordre  et
+   des pas de temps.
+   Or ce test sur le cas sdld102b détecte que dans le cas du schéma en temps 'ADAPT' le pas
+   de temps final peut être stocké deux fois.
+   Cette redondance fautive est due à une détermination hasardeuse du nombre de pas de stockage.
+   
+   En effet jusqu'ici il était déterminé par la formule suivante 
+   NBSAUV = INT((TFIN-TINIT)/DTARCH) + 2
+   sans tenir compte que, suivant les machines, NBSAUV pouvait prendre en compte le nombre
+   exact d'intervale ou en prendre un en plus.
+   
+   Par exemple, sur ma machine, si l'utilisateur entre un TFIN=10.0, la valeur est lue comme
+   9.9999999999 et INT(TFIN) vaut 9.
+   La formule est donc juste et donne le bon nombre de pas de stockage.
+   
+   En revanche sur la machine BULL, toujours pour TFIN=10.0, la valeur lue est 10.0 et
+   INT(TFIN)=10.
+   La formule donne alors un pas en trop et le mécanisme complexe de calcul des pas de temps
+   dans ADAPT, qui doit jongler entre la liste de pas de temps spécifié par l'utilisateur,
+   celle qu'il crée pour adapter le schéma en temps et la liste des pas de stockage, double
+   le pas final.
+   
+   Pour corriger le problème, j'ajoute le test suivant :
+   NBSAUV = INT((TFIN-TINIT)/DTARCH) + 1
+   IF ((TFIN - (TINIT+(NBSAUV-1)*DTARCH)).GE.R8PREM()) THEN
+                NBSAUV=NBSAUV+1
+   END IF
+   
+   Enfin, j'enlève les commentaires dans sd_tran_gene.py qui désactivaient la vérification.
+   Il n'y a pas de risques de résultats faux. Mais, encore une fois, je déconseille toutefois
+   l'usage de la méthode 'ADAPT' en dehors du cadre des applications spécifiques pour
+   lesquelles elle a été mise au point. Son heuristique complexe ne s'adapte pas à tous les
+   types d'étude.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout sur DYNA_TRAN_MODAL
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 26/11/2008 - 12:43:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012845 DU 2008-11-19 10:27:15
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Variables non initialisxc3xa9es, lectures invalides et troncatures
+FONCTIONNALITE
+   Fiche express
+   =============
+   
+   Dans cette fiche on corrige un certain nombre de petits bugs parmi lesquels des variables
+   non initialisées identifiées grâce à Valgrind et Ftnchek mais aussi une troncature abusive.
+   
+   Corrections
+   ===========
+   
+   cla110.f : ZERO n'est pas défini, on remplace par 0.D0
+   ==> DEFI_SQUELETTE. Sans conséquences.
+   
+   connor.f : RHOEQ n'est pas initialisé et on cumule dedans
+   ==> CALC_FLUI_STRU. Résultats faux depuis 9.2.21. Pourtant couvert par les tests.
+   
+   d1madp.f : NU31 et NU32 ne sont pas d'un type défini et on est en IMPLICIT REAL*8 (pas de
+   chance !)
+   ==> Options ENEL_ELGA, ENEL_ELNO_ELGA en ELAS_ORTH et ELAS/ISTR
+       Résultats faux depuis 8.3.23. Pourtant couvert par les tests.
+   
+   refe81.f : couper un IF en deux pour éviter un warning Valgrind
+   ==> Sans conséquences.
+   
+   te0321.f : on fait des vérifications sur des champs locaux avant le JEVECH
+   ==> Sans conséquences, ce ne sont que des vérifications. Au pire on plantait alors qu'il
+   n'y avait pas lieu.
+   
+   te0432.f : RHO n'est pas initialisé et on l'utilise
+   ==> Grilles membranes. Options MASS_MECA*, M_GAMMA, ECIN_ELEM_DEPL.
+       Résultats faux depuis 9.1.4. Pourtant couvert par les tests.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.23
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011334 DU 2007-10-08 14:10:14
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Ecrasement aval dans DEFI_PART_FETI
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Une étude (6 millions de DDLs) se plante dans DEFI_PART_FETI avec l'erreur JEVEUX
+   
+      !----------------------------------------------------!
+      ! <F> <JEVEUX_01>                                    !
+      !                                                    !
+      !                                                    !
+      !   REPERTOIRE DE     48 NOMS NE CONTIENT PAS    121 !
+      !                                                    !
+      !                                                    !
+      !                                                    !
+      ! Cette erreur est fatale. Le code s'arrete.         !
+      !----------------------------------------------------!
+   
+   
+   Analyse
+   =======
+   
+   On a constitué une base juste avant de faire le DEFI_PART_FETI puis on a lancé l'étude
+   sous le debugger idb sur Calibre 5 (le seul qui semble marcher correctement). On constate
+   alors que l'erreur se produit car on cherche à interroger la collection &CATA.TM.NOMTM
+   avec un numéro codée de maille supérieure aux 48 types de mailles disponibles dans Code_Aster.
+   Ce numéro a été obtenu via la sd_maillage en lisant l'objet .LIEL de la sd_ligrel du
+   modèle. Il se trouve que ce dernier contient des numéros de mailles négatifs (qui sont
+   alors des mailles tardives).
+   A ce stade les seules mailles tardives qu'un modèle peut contenir sont des noeuds
+   (AFFE_MODELE/AFFE/GROUP_NO), ce qui est le cas de l'étude.
+   
+   DEFI_PART_FETI ne traite pas ce cas (il faudrait lire l'objet .NEMA de la sd_ligrel pour cela.
+   
+   On blinde donc DEFI_PART_FETI pour interdire les mailles tardives POI1. On conseille
+   d'utiliser CREA_MAILLAGE/CREA_POI1 à la place.
+   
+   Conclusion
+   ==========
+   
+   On modifie fetskp.f pour blinder. Modif à faire en 8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.23.05
+VALIDATION
+   xc3xa9tude
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssnv117a                      macocco K.MACOCCO          391    326    170
+ CASTEST MODIF ssnv117b                      macocco K.MACOCCO          445    377    329
+ FORTRAN MODIF algorith/cla110               macocco K.MACOCCO          516      3      3
+ FORTRAN MODIF algorith/lmaani               macocco K.MACOCCO           66     17      5
+ FORTRAN MODIF algorith/lmamat               macocco K.MACOCCO          187      9      9
+ FORTRAN MODIF algorith/mdtr74               macocco K.MACOCCO          736      5      2
+ FORTRAN MODIF algorith/refe81               macocco K.MACOCCO          284      4      2
+ FORTRAN MODIF algorith/zedgar               macocco K.MACOCCO          207      1      1
+ FORTRAN MODIF elements/d1madp               macocco K.MACOCCO          233      2      2
+ FORTRAN MODIF modelisa/cacoeq               macocco K.MACOCCO          231      2      2
+ FORTRAN MODIF modelisa/cfsuex               macocco K.MACOCCO          107      3      8
+ FORTRAN MODIF utilitai/fetskp               macocco K.MACOCCO          505      7      2
+  PYTHON MODIF Messages/algorith             macocco K.MACOCCO          434     12      1
+  PYTHON MODIF Messages/utilitai5            macocco K.MACOCCO          298      8      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   14        4640       776     537      +239
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   14        4640       776     537      +239 

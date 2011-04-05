@@ -1,0 +1,280 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 28/05/2008 - 10:51:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012125 DU 2008-05-26 16:50:04
+TYPE anomalie concernant Code_Aster (VERSION 8.6)
+TITRE
+   MODE_ITER_SIMULT + SORENSEN + APPROCHE='COMPLEXE' potentiellement bugg?
+FONCTIONNALITE
+   Problème
+   --------
+   Lorsqu'on utilise l'opérateur MODE_ITER_SIMULT avec la 
+   méthode de SORENSEN et l'approche 'COMPLEXE', il me se semble 
+   que le tri des valeurs propres opérés dans wp4vec.f est buggé.
+   Le bug peut être exhumé via le cas-test sensd09b.
+   
+   Détails informatiques
+   ---------------------
+   Comparaison avec wp3vec.f.
+   Bug potentiel depuis la 7.2.4 du 19/11/03.
+   
+   Contexte
+   ---------
+   Bug trouvé ds le cadre de l'EL11581 (méthode QZ pour CADYRO).
+   
+   Détails fonctionnels
+   ---------------------
+   Ce tri peut produire des résultats potentiellement faux car 
+   il est censé trier les valeurs propres réelles, des conjugées 
+   mais dès qu'elles ne sont pas considérées comme réelles 
+   (partie imaginaire > à 10-7 en dur !), il prend les valeurs 
+   propres par paquet de 2 et leur assigne à chacun le rôle de
+   conjuguées l'une de l'autre.
+   Par chance, souvent le solveur modal les range ds cette ordre 
+   et on ne s'aperçoit donc de rien. Ou alors on ne souhaite 
+   calculer qu'un nombre de valeurs propres compatible avec ce 
+   pb de tri. C'est le cas du test sensd09b: Sorensen + complexe 
+   a fourni 6 valeurs propres
+            - valeur propre 1 et son conjugué
+            - idem vp 2
+            - vp 3 seule
+            - vp4 seule
+   Les 4 premières formes 2 couples conjugués deux à deux, donc 
+   pas de pb. Mais par contre il a raté le conjugué de la 3ième 
+   et fourni a la place la 4ième. Heureusement, on n'en voulait 
+   que 3 donc RAS, mais si on avait voulu 4 valeurs ou plus, il 
+   y'avait pb !
+   Avec Sorensen + approche réelle on capte bien les 2 conjugués 
+   du mode 3.
+   
+   Solution
+   ---------
+   Pb résolu en NEW9 lors de la restit. complémentaire pour QZ
+   (AL12075) et en NEW8 (on corrige wp4vec.f). On en profite 
+   pour modifier le cas-test sensd09b, on remplace 
+   l'approche 'COMPLEXE' dont la correction de ce bug montre la 
+   faiblesse (elle rate le conjugué du 3ième mode) par 
+   l'approche 'REEL'.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   informatique et fonctionnelle
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 28/05/2008 - 14:00:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012131 DU 2008-05-28 06:39:21
+TYPE anomalie concernant Code_Aster (VERSION 9.2)
+TITRE
+   Test miss03a sous Rocks (clpaster)
+FONCTIONNALITE
+   Ce cas-test va deux fois plus vite sur Bull que sur Calibre4.1 et Rocks...
+   Je propose de passer le temps CPU dans le .para à 1400 secondes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   miss03a
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012132 DU 2008-05-28 07:18:59
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   Bascule de tous les cas-tests MISS en V1_4
+FONCTIONNALITE
+   On modifie macro_miss_3D.capy pour mettre comme valeur par défaut à VERSION la 
+   valeur V1_4.
+   Je modifie la version dans les cas-tests :
+   miss02a, miss06b, miss07a, miss07b, miss08a, miss09a et zzzz108a
+   
+   Je modifie les allocations mémoires en les augmentant de 400 Mo pour les cas-
+   tests :
+   miss02a, miss06b, miss07a, miss07b, miss08a et zzzz108a.
+   Le cas-test miss09a passe de 1800 Mo à 1900 Mo.
+   
+   On porte aussi le temps CPU de miss07b de 1800 à 2000 car sur clpaster on est limite : 1802 
+   secondes...
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.03.11
+VALIDATION
+   miss02a, miss06b, miss07a, miss07b, miss08a, zzzz108a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 28/05/2008 - 18:57:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012045 DU 2008-04-29 08:39:29
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   calcul de l'xc3xa9nergie totale dans POST_ELEM
+FONCTIONNALITE
+   L'énergie totale obtenue via le mot-clé ENER_TOTALE dans 
+   la commande POST_ELEM n'est pas
+   correctement calculée dans le cas où celle-ci est 
+   demandée sur une maille ou plusieurs
+   mailles en renseignant le mot-clé MAILLE. Cela a été mis 
+   en évidence en modifiant le
+   cas-test ssnp15b qui ne contient qu'une seule maille. 
+   Les modifications ont été testées en comparant la somme 
+   des énergies totales des mailles
+   d'un maillage et l'énergie totale de ce maillage.
+   
+   Fortran modifié:
+   peingl.f
+   
+   Cas-test modifié:
+   ssnp15b
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.6.10
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnp15b
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 28/05/2008 - 18:57:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012030 DU 2008-04-24 14:47:55
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   Pr?ntrainte avec DYNA_NON_LINE
+FONCTIONNALITE
+   Problème : 
+   
+   Interdiction  de faire des calculs précontraint de béton (DEFI_CABLE_BP+RELA_CINE_BP dans
+   AFFE_CHAR_MECA) avec DYNA_NON_LINE en POURSUITE
+   
+   Résolution :
+   
+   L?impression d'une ERREUR_FATALE qui interdit : 
+   «  Incompatibilité entre un calcul précontraint de béton et l'utilisation de la commande
+   DYNA_NON_LINE en POURSUITE ou en reuse »
+   
+   Les fichiers fortran suivants ont été modifiés : 
+   
+   ·	nddoet.f
+   ·	nminit.f
+   
+   Les fichiers python suivants ont été modifiés :
+   ·	algorith11.py
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 28/05/2008 - 18:57:53
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011494 DU 2007-11-22 16:08:11
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   MN10 - Contact mxc3xa9thode continue et STAT_NON_LINE rxc3xa9entrant
+FONCTIONNALITE
+   Objet
+   =====
+   
+   L'utilisation de la méthode CONTINUE en reprise de calcul pose problème. Dans certains
+   cas, on ne converge plus si on coupe un STAT_NON_LINE en deux, alors que tout se passe
+   bien en un seul.
+   
+   Analyse
+   =======
+   
+   La reprise de calcul n'a jamais marché. En fait on initialise systématiquement (que l'on
+   soit en reprise ou pas) l'état de contact à zéro (sauf si on utilise CONTACT_INIT).
+   Bien que les inconnues de contact (lagranges de contact et semi-multiplicateurs de
+   frottements) sont conservées d'un calcul à un autre, des informations de la SD contact
+   sont perdues (ou plutôt pas utilisées car elles ont pu être modifiées).
+   
+   Correction
+   ==========
+   
+   On émet une alarme si on utilise la méthode CONTINUE en reprise de calcul (reuse) ou avec
+   ETAT_INIT/EVOL_NOLI.
+   Il faudra réfléchir à un moyen de conserver les informations présentes dans la
+   sd_char_contact autrement.
+   
+   Impact : sdnv105c émet des alarmes en plus (seul test à faire de la reprise avec la
+   méthode CONTINUE).
+   
+   A faire en v8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03,U4.01.05
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF miss02a                       greffet N.GREFFET          527      2      2
+ CASTEST MODIF miss03a                       greffet N.GREFFET          995      2      1
+ CASTEST MODIF miss07a                       greffet N.GREFFET          358      2      2
+ CASTEST MODIF miss07b                       greffet N.GREFFET          426      2      2
+ CASTEST MODIF miss08a                       greffet N.GREFFET          372      2      2
+ CASTEST MODIF ssnp15b                       macocco K.MACOCCO          657      2      2
+ CASTEST MODIF zzzz108a                      greffet N.GREFFET          991      2      1
+ CASTEST MODIF zzzz200b                      greffet N.GREFFET         1118      3      2
+CATALOPY MODIF commande/macro_miss_3d        greffet N.GREFFET           66      2      2
+ FORTRAN MODIF algeline/wp4vec               boiteau O.BOITEAU          264      7      4
+ FORTRAN MODIF algorith/nddoet               macocco K.MACOCCO          500     21      4
+ FORTRAN MODIF algorith/nmdoet               macocco K.MACOCCO          424     16      3
+ FORTRAN MODIF algorith/nminit               macocco K.MACOCCO          434      8      8
+ FORTRAN MODIF utilitai/peingl               macocco K.MACOCCO          709      7      1
+  PYTHON MODIF Messages/algorith11           macocco K.MACOCCO          365      6      1
+  PYTHON MODIF Messages/mecanonline          macocco K.MACOCCO          378     16      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   16        8584       100      38       +62
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   16        8584       100      38       +62 

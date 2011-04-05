@@ -1,0 +1,308 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 08/01/2008 - 16:27:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011538 DU 2007-12-06 15:16:37
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Stanley cassxc3xa9 en STA8
+FONCTIONNALITE
+   erreur dans stanley.py ligne 625 :
+   
+   'initialdir=='         AU LIEU DE       'initialdir='
+   
+   
+   NB : la correction est aussi disponible dans la STA8.6.0.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   lancement de stanley
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011579 DU 2007-12-19 16:21:51
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Probleme de performance CALC_TABLE sur une grosse table
+FONCTIONNALITE
+   Le problème concerne le post-traitement d'une table obtenue avec OBSERVATION dans
+   DYNA_NON_LINE. Il y a 4000 pas de temps, plusieurs noeuds et composantes de champs: soit
+   au total une table de 350.000 lignes.
+   
+   J'ai reproduit le problème en repartant de la table imprimée au format ASTER. LIRE_TABLE
+   prend environ 80 s (contre 11 s pour une table de 50.000 lignes).
+   
+   L'opération coûteuse est l'intersection de deux tables activée par le mot-clé FILTRE. Il
+   faut pour chaque ligne de la table 2 regarder si une ligne identique existe dans la table
+   1, et si oui, on ajoute cette ligne dans la table intersection.
+   Pour le test "est-ce qu'une ligne est dans la table ?", on fait "if ligne in tab2.rows" en
+   o(n).
+   Donc l'intersection était en o(n^2).
+   
+   Je modifie l'algo pour qu'il reste en o(n) :
+   - fonction qui retourne un tuple ordonné des valeurs d'une ligne (_tuplevalues)
+   - construction d'un dictionnaire : dico = { _tuplevalues(ligne) : 1}
+   - le test "est-ce qu'une ligne est dans la table ?" devient dico.get(_tuplevalues(ligne))
+   == 1 qui est immédiat.
+   
+   
+   Sur la table de 50.000, CALC_TABLE( 3 FILTREs ) passe de 43 s à 1.15 s.
+   Sur la table de 350.000, çà passe de 2900 s à 9.6 s.
+   
+   NB : il faut environ 100 Mo hors jeveux pour CALC_TABLE avec la plus grosse table.
+   
+   Au passage, une anomalie a été corrigée dans la méthode SansColonneVide (qui comme son nom
+   l'indique permet de supprimer les colonnes vides d'une table).
+   
+   
+   Modif reportée en version 8 (Table.py).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests CALC_TABLE
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 02/01/2008 - 11:14:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011413 DU 2007-10-30 14:28:52
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+   STAT_NON_LINE + CONTACT (resultats faux)
+FONCTIONNALITE
+   Description de l'anomalie
+   =========================
+   
+   Jean-Luc fait une étude avec du contact. Pour les besoins des calculs, il coupe un
+   STAT_NON_LINE en deux parties et fait donc une reprise (reuse). Il s'est alors aperçu que
+   les résultats obtenus étaient faux, on observe en particulier des sauts de déplacements au
+   !!2ème!! pas de temps du STAT_NON_LINE en reprise.
+   Si le calcul est fait dans un seul STAT_NON_LINE, les déplacements sont justes.
+   
+   Analyse
+   =======
+   
+   Jean-Luc utilise pour le contact la méthode 'GCP' et travaille en géométrie initiale
+   (REAC_GEOM='SANS'). Après divers essais, on s'est aperçu que :
+   
+   - la méthode de contact utilisée n'est pas en cause, le problème se produit en méthode
+   'CONTRAINTE'
+   - l'apparition du saut de déplacement est lié à la réactualisation puisqu'en géométrie
+   réactualisée (REAC_GEOM='AUTOMATIQUE'), tout va bien
+   
+   Plus fort, si on fait le premier STAT_NON_LINE avec REAC_GEOM='SANS' dans le contact et le
+   second avec REAC_GEOM='CONTROLE' et NB_REAC_GEOM=1 (juste pour faire une réactualisation à
+   la première itération), alors tout se passe bien.
+   
+   Ce dernier résultat a permis de trouver précisément le bug. En 6.2.21 (Fiche 5782), un
+   mécanisme de sauvegarde du "jeu initial" a été introduit pour permettre de faire de la
+   subdivision automatique de pas de temps même quand REAC_GEOM='SANS' dans le contact (dans
+   un tel cas, comme il n'y a pas de réactualisation géométrique, le jeu n'est pas recalculé
+   or on en a besoin à un instant antérieur au pas de temps courant).
+   Pour cela, une routine du nom de SOVJEU, stocke le jeu après une réactualisation
+   géométrique dans le vecteur JEUINI de la SD de résolution du contact et une autre du nom
+   de REAJEU utilise cette sauvegarde pour recalculer le jeu au début de chaque pas de temps
+   quand REAC_GEOM='SANS'.
+   Jusque ici tout va bien, mais le problème, c'est que d'une part, même quand
+   REAC_GEOM='SANS', il peut y avoir des réactualisations géométriques au cours des pas de
+   temps (il suffit de faire une reprise d'un STAT_NON_LINE comme Jean-Luc) et que d'autre
+   part il peut aussi y avoir un état initial dans le STAT_NON_LINE.
+   
+   Correction
+   ==========
+   
+   La correction a consisté à sauvegarder le jeu comme auparavant dans la SD de résolution du
+   contact, mais ceci est fait désormais dans CFRESU (à la fin d'un pas de temps quand on
+   crée le cham_no_s pour plus tard écrire le VALE_CONT).
+   Cette sauvegarde est utilisée en début de pas de temps quand REAC_GEOM='SANS' pour
+   recalculer le jeu dans REAJEU. La différence c'est que l'on n'utilise plus le déplacement
+   cumulé depuis l'instant initial (DEPPLU) mais l'incrément de déplacement depuis
+   l'équilibre précédent (DEPDEL) pour remettre à jour le jeu.
+   
+   Fortran modifiés : cfgeom, cfresu, reajeu
+   Fortran supprimés : sovjeu
+   
+   On en profite pour nettoyer le capy de AFFE_CHAR_MECA(_F)/CONTACT/METHODE='GCP' qui
+   contient des mots clés non récupérés dans le fortran et supprimés pour les autres méthodes
+   en 8.2.6
+   
+   Résultats faux
+   ==============
+   
+   a) REAC_GEOM='SANS' dans le contact puis
+   
+   b1)  reprise d'un STNL (reuse)
+   - ou -
+   b2) ETAT_INIT=_F(DEPL=dep_ini)
+   
+   
+   Néanmoins, il faut nuancer cela. En effet si le champ de déplacement fourni en état
+   initial (que ce soit par une reprise ou directement) est quasi nul autour des surfaces de
+   contact alors les résultats seront peu différents.
+   De même si les surfaces sont en contact initialement et le restent (car le jeu est dans ce
+   cas presque nul).
+   
+   Validation
+   ==========
+   
+   Sur l'étude de Jean-Luc et un cas-test perso.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 6.2.21
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 6.2.21
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe, cas-test perso
+NB_JOURS_TRAV  : 10.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 02/01/2008 - 11:14:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011526 DU 2007-11-29 15:45:16
+TYPE anomalie concernant Code_Aster (VERSION 9.2)
+TITRE
+   CALC_G / option CALC_K_G : calcul de BETA
+FONCTIONNALITE
+   Dans CALC_G / option CALC_K_G, l'angle de propagation BETA est automatiquement calculé et
+   imprimé dans le tableau résultat, en fonction de K1 et K2.
+   Dans le cas d'un lissage de Legendre, il y avait une erreur dans la formule de calcul
+   (routine gkmet1), que l'on corrige.
+   Les résultats étaient faux, mais cette valeur de BETA n'est pour le moment pas très
+   utilisée (elle le sera quand on fera de la propagation automatique de fissure avec X-FEM).
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv134h
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 02/01/2008 - 11:14:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011507 DU 2007-11-27 13:42:31
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   AFFE_CHAR_MECA+ROTATION+AXIS_FOURIER
+FONCTIONNALITE
+   Il y a effectivement une erreur dans le fortran concernant 
+   l'ordre des composantes en Fourier pour le chargement 
+   rotation.
+   L'ordre normal Aster est (r, z, theta) et ici le chargement 
+   est interprété dans l'ordre (r, theta, z).
+   On corrige dans le te0197.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   fichiers associxc3xa9s xc3xa0 la fiche
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 02/01/2008 - 11:14:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011546 DU 2007-12-10 15:58:54
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   PROJ_CHAMP
+FONCTIONNALITE
+   Problème:
+   ---------
+   Dans certains cas (sans doute assez rares), la commande PROJ_CHAMP, quand on est en 3D,
+   s'arrête en erreur fatale :
+   CALL ASSERT(.FALSE.) <- PJ3DGB (ligne 88)
+                                                                                           
+   Solution :
+   ----------
+   Il s'agit d'une erreur de copier-coller (à partir de la routine équivalente 2D pj2dgb.f) :
+     DO 40,K = 0,MAX(NX,NY,NZ) - 1
+   J'avais oublié le NZ dans le MAX().
+                                                                                           
+   Détails:
+   ------------
+   La boucle 40, permet de "tourner" autour de la "petite boite" qui contient le point à
+   projeter.
+   
+   La plus part du temps, on trouve un élément dans la petite boite et l'on sort sans avoir
+   besoin de "tourner".
+   C'est pourquoi le bug n'avait pas encore été signalé.
+   Il se trouve que dans le cas de Jean-Luc, les nombres NX,NY et NZ sont petits et l'oubli
+   de NZ dans la formule ne permettait pas de trouver une boite non-vide près du point à
+   projeter.
+   
+   Validation :
+   ------------
+   Jean-Luc a vérifié que sur son étude, la correction du bug était efficace.
+                                                                                            
+                                                                                          
+   Correction à reporter en version 8 :
+   ------------------------------------
+   routine pj3dgb.f :
+                                                                                            
+                           
+   71c71
+   <       DO 40,K = 0,MAX(NX,NY) - 1
+   ---
+   >       DO 40,K = 0,MAX(NX,NY,NZ) - 1
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Passage xc3xa9tude
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+CATALOPY MODIF commande/affe_char_meca_f     macocco K.MACOCCO          671      2     15
+CATALOPY MODIF commande/affe_char_meca       macocco K.MACOCCO         1008      2     15
+ FORTRAN MODIF algeline/reajeu               macocco K.MACOCCO           94      5      8
+ FORTRAN MODIF algorith/cfgeom               macocco K.MACOCCO          179      4      8
+ FORTRAN MODIF algorith/cfresu               macocco K.MACOCCO          450     10      3
+ FORTRAN MODIF calculel/pj3dgb               macocco K.MACOCCO          122      2      2
+ FORTRAN MODIF elements/gkmet1               macocco K.MACOCCO          118      4      4
+ FORTRAN MODIF elements/te0197               macocco K.MACOCCO           79      2      2
+  PYTHON MODIF Stanley/stanley              courtois M.COURTOIS        3175      2      2
+  PYTHON MODIF Utilitai/Table               courtois M.COURTOIS         974     25     17
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   10        6870        58      76       -18
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   10        6870        58      76       -18 

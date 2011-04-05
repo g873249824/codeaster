@@ -1,0 +1,201 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 06/02/2008 - 15:03:09
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011583 DU 2007-12-21 08:50:56
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   MACRO_MATR_ASSE et solveur MUMPS
+FONCTIONNALITE
+   Problème avec MACRO_MATR_ASSE et MUMPS
+   ======================================
+   
+   La macro MACRO_MATR_ASSE n'était plus compatible avec MUMPS car elle n'avait pas suivi les
+   évolutions de celui-ci (le seul renuméroteur autorisé était encore "SANS").
+   Par ailleurs l'adéquation du renuméroteur avec la méthode était validée en Python alors
+   que l'on peut le faire beaucoup plus simplement avec des règles dans le catalogue de
+   commandes.
+   
+   Restitution
+   ===========
+   
+   On permet à nouveau l'utilisation de MUMPS en recopiant sous le mot clé SOLVEUR le même
+   bloc que le catalogue de la commande NUME_DDL. Cela évite ainsi les tests à la main en
+   python sur les rénuméroteurs, on supprime donc les UTMESS et les messages associés.
+   
+   Sources impactées :
+   CAPY : macro_matr_asse.capy
+   PY : macro_matr_asse_ops.py, matrice0.py
+   
+   Validation
+   ==========
+   
+   - MUMPS03A : dans ce test de validation de MUMPS avec commandes éclatées, on rajoute un
+   test avec MUMPS, charges dualisées et MACRO_MATR_ASSE à la place du bloc
+   CALC_MATR_ELEM/NUME_DDL/ASSE_MATRICE.
+   - Tous les tests utilisant MACRO_MATR_ASSE (91)
+   
+   Impact documentaire
+   ===================
+   
+   Aucun impact sur la documentation d'utilisation de MACRO_MATR_ASSE (pas de changement pour
+   l'utilisateur, on renvoyait à la doc du mot clé SOLVEUR) mais par contre, les exemples de
+   la doc ne sont pas à jour (ancienne syntaxe antérieure à Python dans Aster)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.61.21
+VALIDATION
+   mumps03a + tests utilisant macro_matr_asse
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 06/02/2008 - 15:03:09
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011666 DU 2008-01-23 13:25:51
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   IMPR_CO : Plantage avec plusieurs concepts
+FONCTIONNALITE
+   La variable IER était abusivement employée dans op0017.f et
+   renvoyée non nulle à expass.f
+   
+   Correction à reporter en l'état en version 8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR godard       GODARD Vincent         DATE 06/02/2008 - 15:03:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011691 DU 2008-01-29 10:24:38
+TYPE express concernant Code_Aster (VERSION 9.3)
+TITRE
+   bug ENDO_FRAGILE+ matrice sxc3xa9cante
+FONCTIONNALITE
+   La loi ENDO_FRAGILE avec matrice sécante ne fonctionne pas car on oublie de prendre en
+   compte l'option FULL_MECA_ELAS !!! Ca ne se voyait pas car jamais testé.
+   
+   fortan corrigé: lcfrlo
+   
+   cas-test: comp005d
+   
+   Modif NEW9  à faire aussi en STA8 (la copie du nouveau lcfrlo.f suffit car l'ancien est
+   antérieur à STA8)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   comp005d
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 06/02/2008 - 15:03:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011672 DU 2008-01-25 14:30:24
+TYPE anomalie concernant Code_Aster (VERSION 9.2)
+TITRE
+   STAT_NON_LINE VMIS_CIN2_CHAB trxc3xa8s petits pas de temps
+FONCTIONNALITE
+   L'étude jointe met en ouvre un comportemnt VMIS_CIN1_CHAB sur un point 
+   matériel. Or à certains instants il faut beaucoup d'itérations internes (plus de 100)
+   pour que le comportement converge localement.
+   
+   En fait cela était dû à une évolution incomplète de ma part :
+   
+   - en version 7, il n'y avait que les comportements VISC_CIN1_CHAB et VISC_CIN2_CHAB
+   Or ces comportements s'appuyaient sur les matériaux ELAS, CIN1_CHAB (ou CIN2_CHAB) 
+   d'une part, et  d'autre part sur les coefficients de viscosité donnés sous LEMAITRE.
+   Si LEMAITRE était présent, alors on activait la viscosité. 
+   Sinon on restait élastoplastique. Ceci ne me convenait pas :
+   (différent des autres comportements, et incompatible avec le catalogue matériau)
+   
+   - en version 8, j'ai donc ajouté les comportements VMIS_CIN1_CHAB, et VMIS_CIN2_CHAB,
+   purement élastoplastiques.
+   L'utilisateur choisit le comportement au niveau de STAT_NON_LINE, et non pas par la
+   présence d'un mot-clé de DEFI_MATERIAU. Malheureusement, si le mot-clé LEMAITRE 
+   est présent, on activait tout de même la viscosité, même si le comportement est VMIS_.
+   
+   Du coup on se retrouvait en viscoplasticité, ce qui peut mener dans certains cas à de 
+   nombreuses itérations internes, car (cf fichiers joints) la pente à l'origine de la 
+   fonction dont on cherche le zéro est infinie.
+   
+   Corrections apportées :
+   1. Un mot-clé VISC permet de distinguer clairement dans les routines de ce comportement
+      le cas plastique et le cas visqueux.
+   2. on initialise à 0 les coefficients non lus (donc inutiles).
+   3. ajout dans V2 du nombre d'itérations internes (cela entraine une modif dans te0331)
+   4. ajout, avant la résolution par sécante, d'un encadrement (bracketting) 
+      avec un facteur 10 pour se rapprocher rapidement de la solution. 
+      Sur le cas visqueux, on passe de 101 itérations à 5, sans changer la solution
+   5. normalisation de l'équation à résoudre
+   6. nettoyage de commentaires inutiles
+   7. ajout dans PSVARI de VMIS_CINx_CHAB (oublié) 
+   
+   Du coup l'étude jointe passe mieux (4 à 5 itérations internes en moyenne).
+   Je modifie aussi les tests :
+   cente01a hsnv124e.comm  ssnv101c.comm  ssnv101d.comm
+   qui utilisaient VISC_CINx_CHAB au lieu de VMIS_CINx_CHAB
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.4
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude jointe + tous les tests CINx_CHAB
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF cente01a                      macocco K.MACOCCO          998      3      3
+ CASTEST MODIF hsnv124e                      macocco K.MACOCCO          394      2      2
+ CASTEST MODIF mumps03a                      macocco K.MACOCCO          113     23      1
+ CASTEST MODIF ssns101a                      macocco K.MACOCCO          381      1      1
+ CASTEST MODIF ssnv101c                      macocco K.MACOCCO          433     21     20
+ CASTEST MODIF ssnv101d                      macocco K.MACOCCO          464      7      7
+ CASTEST MODIF szlz110a                      macocco K.MACOCCO          878      3      3
+CATALOPY MODIF commande/macro_matr_asse      macocco K.MACOCCO          108     14      4
+ FORTRAN MODIF algorith/lcfrlo               macocco K.MACOCCO          245     10     20
+ FORTRAN MODIF algorith/nmchab               macocco K.MACOCCO          693     20     16
+ FORTRAN MODIF algorith/nmchcr               macocco K.MACOCCO          136      9     23
+ FORTRAN MODIF algorith/nmchdp               macocco K.MACOCCO          241     53     21
+ FORTRAN MODIF elements/psvari               macocco K.MACOCCO           79      3      1
+ FORTRAN MODIF elements/te0331               macocco K.MACOCCO          406      5      5
+ FORTRAN MODIF utilitai/op0017               macocco K.MACOCCO          128      8      6
+  PYTHON MODIF Macro/macro_matr_asse_ops     macocco K.MACOCCO          129      5     34
+  PYTHON MODIF Messages/algorith11           macocco K.MACOCCO          360      6      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   17        6186       193     168       +25
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   17        6186       193     168       +25 

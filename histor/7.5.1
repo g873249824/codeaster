@@ -1,0 +1,229 @@
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhlv L.VIVAN   DATE  le 01/07/2005 a 20:13:23
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-200
+   NB_JOURS_TRAV  : 0,5
+   POUR_LE_COMPTE_DE   : P.BADEL
+   INTERET_UTILISATEUR : NON
+   TITRE : STAT_NON_LINE archivage redondant
+   FONCTIONNALITE
+     Si on archive avec un pas d'archivage et que le job s'arrete en ARRET_CPU,
+     STAT_NON_LINE archive 2 fois le dernier pas de temps calculé.
+     Si on archive tous les pas, pas de problème.
+   DETAIL
+     L'archivage est géré par la SD_PARA_TEMPS, mais l'archivage peut-etre
+     "forcé" si il y a un manque de temps CPU.
+     Dans le cas forcé, on a pas signalé à la SD_PARA_TEMPS qu'il y a eu
+     un archivage.
+     Lors de la gestion des erreurs, on archive le dernier instant de calcul
+     qui a convergé en interrogeant le SD_PARA_TEMPS.
+     Dans certain cas de figure, on peut archiver 2 fois le meme calcul.
+     remede:
+     dans la routine nmarch.f, on écrit dans la SD_PARA_TEMPS quand il y eu
+     un archivage
+        ZL(JARCH+NUMINS) = .TRUE.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-209
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : M.COURTOIS
+   INTERET_UTILISATEUR : OUI
+   TITRE :  DEFI_FONCTION accepte VALE_PARA et VALE_FONC de cardinaux différents
+   FONCTIONNALITE
+     a ce jour, la longueur de VALE_PARA pouvait etre plus petite que la
+     longueur de VALE_FONC. On prenait les n premieres valeurs de VALE_FONC,
+     tout ceci sans avertir l'utilisateur.
+     Maintenant les longueurs de VALE_PARA et VALE_FONC doivent etre de
+     memes longueurs sinon le code s'arrete en Fatal.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.31.02  commande DEFI_FONCTION
+       EXPL_ : VALE_PARA et VALE_FONC cardinaux identiques
+   VALIDATION
+
+
+-----------------------------------------------------------------------
+--- AUTEUR durand C.DURAND   DATE  le 05/07/2005 a 15:08:25
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE superviseur
+   DETAILS
+     Erreur d'initialisation dans les corps de macros : ne déclenchait pas
+     les impressions dans fichiers mess et code
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION :
+      tous tests concernés.
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-217
+   NB_JOURS_TRAV  : 0.
+   INTERET_UTILISATEUR : NON
+   TITRE  : résorption complète de IMPR_CHARGE
+   FONCTIONNALITE : IMPR_CHARGE
+   DETAILS
+     lors de la résorption de IMPR_CHARGE en 6.4, on a tout fait (doc, test ...)
+     sauf la commande elle meme dans le source !
+     Voila chose faite : op0158.f irchsu.f et impr_charge.capy
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+--- AUTEUR nicolas O.NICOLAS   DATE  le 04/07/2005 a 19:11:31
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-243
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : DEFI_MATERIAU
+   FONCTIONNALITE : CALC_MATR_ELEM
+   DETAILS
+     Une fiche qui vient du net.
+     Lorsque AMOR_ALPHA est renseigne dans DEFI_MATERIAU mais pas AMOR_BETA,
+     il semble que la matrice d'amortissement est assemblee nulle partout.
+     Donc pb soit dans DEFI_MATERIAU, AFFE_MATERIAU, CALC_MATR_ELEM ou
+     ASSE_MATRICE.
+     En fait, le test dans le te0050 est foireux :
+
+        NOMRES(1)='AMOR_ALPHA'
+        NOMRES(2)='AMOR_BETA'
+        VALRES(1) = 0.D0
+        VALRES(2) = 0.D0
+        CALL RCVALA(MATER,' ','ELAS',NPARA,NOMPAR,VALPAR,
+     +                2,NOMRES,VALRES,CODRET, BL2 )
+        IF ( CODRET(1) .NE. 'OK' .OR. CODRET(2) .NE. 'OK') THEN
+          CALL RCVALA(MATER,' ','CABLE',NPARA,NOMPAR,VALPAR,
+     +                2,NOMRES,VALRES,CODRET, BL2 )
+          IF ( CODRET(1) .NE. 'OK' .OR. CODRET(2) .NE. 'OK') THEN
+            VALRES(1) = 0.D0
+            VALRES(2) = 0.D0
+          ENDIF
+        ENDIF
+
+    Je modifie en :
+
+        NOMRES(1)='AMOR_ALPHA'
+        NOMRES(2)='AMOR_BETA'
+        VALRES(1) = 0.D0
+        VALRES(2) = 0.D0
+        CALL RCVALA(MATER,' ','ELAS',NPARA,NOMPAR,VALPAR,
+     +                2,NOMRES,VALRES,CODRET, BL2 )
+C TEST DE PRESENCE MATERIAU CABLE A REVOIR
+        IF ( CODRET(1) .NE. 'OK' .AND. CODRET(2) .NE. 'OK') THEN
+          CALL RCVALA(MATER,' ','CABLE',NPARA,NOMPAR,VALPAR,
+     +                2,NOMRES,VALRES,CODRET, BL2 )
+        ENDIF
+C FIN TEST CABLE
+        IF ( CODRET(1) .NE. 'OK' .AND. CODRET(2) .NE. 'OK') THEN
+            VALRES(1) = 0.D0
+            VALRES(2) = 0.D0
+        ELSEIF  (CODRET(1) .NE. 'OK' .AND. CODRET(2) .EQ. 'OK') THEN
+            VALRES(1) = 0.D0
+        ELSEIF  (CODRET(1) .EQ. 'OK' .AND. CODRET(2) .NE. 'OK') THEN
+            VALRES(2) = 0.D0
+        ENDIF
+
+      Le fait que le materiau CABLE ne commence pas par ELAS est un probleme
+      a surveiller.
+      J'en profite pour modifier les routines dismoi pour tester aussi la
+      presence de AMOR_BETA et la procedure de dyna_non_line, ndlect, pour
+      prendre en compte l'amortissement si seul AMOR_BETA a ete renseigner
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI   DEPUIS : 6.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI   DEPUIS : 6.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     IMPRESSION DU CONCEPT
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-214
+   NB_JOURS_TRAV  : 0.1
+   INTERET_UTILISATEUR : NON
+   TITRE : DYNA_LINE_HARM
+   FONCTIONNALITE : DYNA_LINE_HARM
+   DETAILS
+     Le catalogue de DYNA_LINE_HARM est incorrect : on teste le type de
+     la matrice de masse (assemblee ou generalisee) complexe ou reelle
+     pour determiner le type du concept resultat.
+     La matrice de masse est FORCEMENT toutjours reelle actuellement dans
+     Aster, c'est la matrice de rigidite qui peut etre reelle ou complexe.
+     De plus, on a juste besoin de distinguer si on est sur un concept
+     generalise ou assemblee, le type de la matrice on s'en moque car le
+     concept resultat DYNA_HARMO est TOUJOURS complexe.
+     On remplace donc les tests sur la matrice de masse par ceux sur matrice
+     de rigidite
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Cas test de la base
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+CATALOGU SUPPR commande/impr_charge           durand C.DURAND            26      0     26
+CATALOPY MODIF commande/dyna_line_harm       nicolas O.NICOLAS           75     14      7
+ FORTRAN MODIF algorith/ndlect               nicolas O.NICOLAS          187      3      1
+ FORTRAN MODIF algorith/nmarch               cibhhlv L.VIVAN            307      6      2
+ FORTRAN MODIF elements/te0050               nicolas O.NICOLAS          155     10      5
+ FORTRAN MODIF utilitai/dismcm               nicolas O.NICOLAS          260      3      2
+ FORTRAN MODIF utilitai/op0003               cibhhlv L.VIVAN            260      7      1
+ FORTRAN SUPPR utilitai/irchsu                durand C.DURAND           386      0    386
+ FORTRAN SUPPR utilitai/op0158                durand C.DURAND            78      0     78
+  PYTHON MODIF Macro/calc_precont_ops         durand C.DURAND           468      2      2
+  PYTHON MODIF Macro/defi_part_feti_ops       durand C.DURAND           182      2      2
+  PYTHON MODIF Macro/macr_cara_poutre_ops     durand C.DURAND           815      1      2
+  PYTHON MODIF Macro/macr_lign_coupe_ops      durand C.DURAND           174      1      2
+  PYTHON MODIF Macro/macr_recal_ops           durand C.DURAND           161      1      2
+  PYTHON MODIF Macro/macro_elas_mult_ops      durand C.DURAND           274      1      2
+  PYTHON MODIF Macro/macro_matr_asse_ops      durand C.DURAND           153      1      2
+  PYTHON MODIF Macro/macro_miss_3d_ops        durand C.DURAND            75      1      2
+  PYTHON MODIF Macro/macro_mode_meca_ops      durand C.DURAND           138      1      2
+  PYTHON MODIF Macro/macro_proj_base_ops      durand C.DURAND            62      1      2
+  PYTHON MODIF Macro/stanley_ops              durand C.DURAND            66      2      2
+  PYTHON MODIF Macro/test_fichier_ops         durand C.DURAND           194      1      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   18        4006        58      42       +16
+ SUPPR :    3         490               490      -490
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   21        4496        58     532      -474 

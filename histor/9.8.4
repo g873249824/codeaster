@@ -1,0 +1,445 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 03/10/2011 - 12:11:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016481 DU 2011-02-25 08:39:01
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW10.3.15, le cas-test fdlv110a s'arrete anormalement sur Aster4.
+FONCTIONNALITE
+   Contexte
+   --------
+   
+   Plantages aléatoires de fdlv110a et d'autres cas-tests type fdlv102a et 
+   fdlv104a (cf. fiche 16415). Ces cas-test plantent dans CALC-MATR_AJOU.
+   Sur fdlv110a on sait que le problème se produit dans l'arbre :
+   TRPROT < VTCMBL < JEEXIN... Comme on le voit dans le traceback.
+   Pas de résultat faux : ça marche ou ça plante.
+   
+   
+   Analyse
+   -------
+   
+   Si on veut reproduire l'erreur c'est assez dur, car ce cas-test plante 
+   environ une fois sur 20 sur aster4 (que ce soit en batch ouy interactif). Le 
+   mode debug ne change pas grand chose.
+   Debug jeveux ne montre rien.
+   J'ai ensuite tenté de vérifier les valeurs des variables transmises entres 
+   les routines suspects et j'ai vu que certaines fois, la variable du nom de 
+   champ en entrée de VTCMBL comportait des caractères bizarres après les 8 
+   premiers caractères.
+   J'ai ensuite tenté un valgrind qui a produit les messages suivants :
+   ==31983== Use of uninitialised value of size 8
+   ==31983==    at 0x7D51B6: jjcren_ (jjcren.f:79)
+   ==31983==    by 0x7DC326: jjvern_ (jjvern.f:60)
+   ==31983==    by 0x7CAFE0: jeexin_ (jeexin.f:59)
+   ==31983==    by 0x50FDD7: vtcmbl_ (vtcmbl.f:141)
+   ==31983==    by 0x50C46F: trprot_ (trprot.f:489)
+   ==31983==    by 0x14FC320: calmdg_ (calmdg.f:227)
+   ==31983==    by 0xFEC6DD: op0152_ (op0152.f:285)
+   ...
+   
+   Ces deux indicateurs m'ont fait penser à une chaîne de caractères de 
+   longueur incorrecte. Effectivement, VTCMBL attend un nom de champ de type 
+   K19 :
+   C IN  : NOMCH  : K19 : NOMS DES CHAM_GDS
+   Alors que TRPROT lui fournit une variable K8 :
+   CALL VTCMBL(2,TYPCST,CONST,TYPECH,NOMCH,'R',CHCOMB) avec NOMCH de type K8
+   J'ai donc corrigé cela en passant en K19 dans TRPROT :
+   CHARACTER*19  NOMCH(2)
+   Suite à cette modification, le valgrind sur fdlv110a ne montre plus aucun 
+   erreur dans CALC_MATR_AJOU.
+   
+   Pour valider j'ai lancé tous les cas-tests qui utilisent TRPROT (par le 
+   biais des deux seules routines CALC_MATR_AJOU ou CALc_FORC_AJOU) :
+   fdlv100a
+   fdlv101a
+   fdlv102a
+   fdlv102b
+   fdlv102c
+   fdlv103a
+   fdlv104a
+   fdlv105a
+   fdlv106a
+   fdlv107a
+   fdlv108a
+   fdlv109a
+   fdlv110a
+   fdlv112a
+   sdls105a
+   sdls105b
+   sdls107a
+   
+   Et j'ai relancé fdlv110a quelques dizaines de fois sans plantage.
+   Cette fiche permet donc de clore la fiche 16415.
+   
+   Cette correction de TRPROT est à reporter en version 9 et c'est exactement 
+   la même modification : passage de CHARACTER*8 à  CHARACTER*19 pour NOMCH(2).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fdlv110a
+DEJA RESTITUE DANS : 10.3.17
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR meunier      MEUNIER Sébastien     DATE 03/10/2011 - 12:11:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016425 DU 2011-02-15 16:26:48
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Plantage (segmentation fault) dans CREA_CHAMP
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   On a un plantage en "segmentation fault" dans le CREA_CHAMP/ASSE suivant :
+   
+   SG_IN = CREA_CHAMP(
+   	INFO = 2,
+   	TYPE_CHAM = 'ELGA_SIEF_R',
+          		OPERATION = 'ASSE',
+          		MODELE    = MODELC,
+          		ASSE      =( _F(
+               GROUP_MA = ('ROCHE_2','HAUT','DERRIERE','GAUCHE','DROITE',), 
+   		      #TOUT='OUI',
+               CHAM_GD  = SG_NE,),),);
+   
+   Solution :
+   ==========
+   Le champ à assembler SG_NE s'appuie sur un maillage différent (HOM_4) du modèle
+   courant (MODELC), qui s'appuie sur le maillage HOM_5. On avertit l'utilisateur de son erreur
+   
+      !----------------------------------------------------------------------------------------!
+      ! <EXCEPTION> <CALCULEL4_59>                                                             !
+      !                                                                                        !
+      ! Erreur utilisateur :                                                                   !
+      !  Les maillages associés aux concepts SG_NE et MODELC sont différents : HOM_4 et HOM_5. !
+      !----------------------------------------------------------------------------------------!
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Etude jointe + liste restreinte
+DEJA RESTITUE DANS : 10.3.17
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 03/10/2011 - 12:11:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016480 DU 2011-02-24 15:52:27
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Plantage MACR_ECLA_PG sur plusieurs champs
+FONCTIONNALITE
+   Problème :
+   -----------
+   Dans le fichier joint, on utilise un seul MACR_ECLA_PG sur trois champs : EPSP_ELGA,
+   VARI_ELGA et EPMG_ELGA.
+                                                                                            
+                           
+   On plante salement avec l'erreur :
+                                                                                            
+                           
+      !-------------------------------------------------------------------!
+      ! <F> <JEVEUX_10>                                                   !
+      !                                                                   !
+      ! Erreur de programmation :                                         !
+      !                                                                   !
+      !  Le nom demandé existe déjà dans la base &&ECLPGM.CHAM_ELEM .CELD !
+      !-------------------------------------------------------------------!
+                                                                                            
+                           
+   Correction :
+   ------------
+   Il s'agit d'un bug de la routine eclpgm.f :
+   On crée un cham_elem dans la boucle 30 mais on le détruit en dehors de la boucle.
+   Ce problème est donc rencontré à chaque fois que l'on traite plusieurs champs dans
+   MACR_ECLA_PG.
+                                                                                            
+                           
+   La correction consiste à déplacer la destruction dans la boucle.
+                                                                                            
+                           
+   Validation :
+   ------------
+   L'étude jointe va au bout
+                                                                                            
+                           
+   NEW9 :  On peut reporter facilement cette correction en NEW9
+   ------
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  16480
+     eclpgm.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude fournie
+DEJA RESTITUE DANS : 10.3.17
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 03/10/2011 - 12:11:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013196 DU 2009-03-10 14:40:22
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    BETON_UMLV en contraintes planes
+FONCTIONNALITE
+   Fiche a relier a la nouvelle fiche 16504 qui montre que la modelisation C_PLAN en mode
+   analytique est erronée.
+   Elle est donc retirer de la liste des modelisations autorisées pour le modèle UMLV.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.0.4
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.04.169
+VALIDATION
+    SSNV169
+DEJA RESTITUE DANS : 10.3.17
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012519 DU 2008-09-23 16:48:04
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    R7.01.06 - BETON_UMLV_FP : doc R diffxc3xa9rente du fortran
+FONCTIONNALITE
+   I)Révision Doc R: Anomalies relevées
+   -----------------------------------
+   -)eq.4.1-5: des exposants "d" apparaissent alors qu'il s'agit de la partie sphérique du
+   modèle. Il suffit de remplacer les exposants "d" par "s" et les équations du système
+   redeviennent correctes
+   
+   -)eq.4.1-7: Il faut supprimer l'opérateur de Mac Cauley "<f(x)>+" et ajouter un signe "+"
+   entre le terme "(k_i^s)*(%epsilon_i^s)" et "(%sigma_n)*(h_n)
+   
+   -) eq.4.1-9: le terme a_ir^s est à modifier et est égal à 2*(k_r^s)/(%êta_i^s)   
+   
+   -) eq.4.1-12: il faut modifier le signe "-" en "+" entre t_n et 1/%lambda_k
+   
+   -) eq.4.1-14: La détermination des constantes %mu_i s'établit à l'instant t_n et non
+   t_{n+1}. Remplacer t_{n+1} par t_n pour l'indice d'évaluation des déformations sphériques
+   réversibles et irréversibles.
+   
+   -)eq.4.1-17: Remplacer le signe "-" en "+" entre les deux termes mis en jeu dans l'expression.
+   
+   II) Résultats différents entre solution analytique et code_Aster:
+   ----------------------------------------------------------------
+   L'essai consistant à imposer une pression sur la paroi interne d'un tube conduit aux états
+   de contraintes suivants:
+   -) compression dans la direction de chargement %sigma_rr <0
+   -) traction dans la direction orthogonale (hors-plan en axisymétrique) %sigma_%theta%theta > 0
+   -) Contrainte nulle dans la direction axiale
+   
+   La trace des contraintes conduit à une pression hydrostatique positive.
+   Les équations du modèle analytique doivent donc être adaptées en conséquence.
+   Les résultats sont alors en très bon accord entre la solution analytique et Code_Aster.
+   
+   Néanmoins il existe une différence sur l'évolution de la déformation sphérique
+   irréversible lors de cet essai, remarquée initialement par JLF (H-T64-2008-04592). 
+   
+   III) Traitement proposé pour lever l'anomalie des sources
+   ---------------------------------------------------------
+   III.1) Probleme relevé
+   ----------------------
+   Sous un chargement de traction, le modèle UMLV prédit anormalement une évolution négative
+   (compression) de la déformation sphérique irréversible. Cette évolution se stabilise
+   rapidement et se limite à des valeurs de déformation de 10^-6 (pour l'exemple considéré
+   (Béton de Civaux sous charge de 1MPa)).
+   
+   III.2) Mise en défaut des sources actuelles
+   -------------------------------------------
+   Le seuil de déclenchement des déformations sphériques irréversibles est piloté
+   actuellement dans les sources uniquement par un test sur le signe de cette évolution
+   discrétisée. La précision du schéma numérique est mise en défaut et converge vers une
+   valeur non nulle des déformations sphériques irréversibles - solution contraire à la théorie.
+   
+   III.3) Solution proposée
+   ------------------------
+   Au delà du signe de l'évolution de la déformation sphérique irréversible, c'est la prise
+   en compte d'un fluage irréversible en état de contraintes de traction qui pose question.
+   En effet, le modèle original de Benboudjema apparaît adapté uniquement pour les
+   chargements conduisant à un état de compression. 
+   Je suis donc partisan de restreindre l'évolution des déformations sphériques irréversibles
+   aux états de contraintes en compression seulement. 
+   On se prémunit ainsi de toute dérive de cette quantité dans le cas d'un chargement alterné
+   par exemple.
+   
+   III.4) Impact source
+   --------------------
+   Impact source limité à lcumsf.f - ligne 230 
+             IF ((SIGFSP/VISP.GT.-R8PREM()).AND.
+        &        (SIGISP/VISP.GT.-R8PREM())) THEN
+               ISPH = 2
+               GOTO 60
+             ENDIF
+   avec normalisation des contraintes par la viscosité sphérique irréversible.
+   
+   N.B.:Les développements futurs portés par CIWAP conduisent à revoir complètement cette
+   partie du modèle, ce qui permettra à terme de revoir le schéma d'intégration.
+   
+   En PJ, je rajoute la comparaison des solutions Aster et analytiques pour l'étude de JLF,
+   le cas-test ssnv163 sous modélisations AXIS et 3D, et un essai de traction pure . Les
+   solutions de Aster sont très proches des solutions analytiques (Solutions Aster obtenues
+   avec les développements précisés ci-dessus).
+   
+   III.5) Validation
+   -----------------
+   -)Restitution cas-test SSNA121A: Tube en béton soumis à une pression interne avec le
+   modèle UMLV (issu de l'étude de JLF avec propriétés béton modifié pour publication externe)
+   
+   -)Impact sur les tests SSNV169D,E,F,G,H,I - Essais de traction en fluage avec prise en
+   compte d'un couplage avec le modele de Mazars. Les resultats de non-regression sont tous
+   modifies dans le cadre de ce couplage pour les etats de traction.
+   Il n'existe pas de solutions de reference pour ces tests.
+   Les temps physiques obtenus lors de ces essais de fluage avant rupture sont modifies comme
+   suit :
+   Modelisation D,G: 5960000 sec. -> 5593000 sec. (3D)
+   Modelisation E,H: 7200000 sec. -> 6957000 sec. (D_PLAN)
+   Modelisation F,I: 2500000 sec. -> 5250000 sec. (C_PLAN)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.0.4
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R7.01.06, V6.04.169, V6.01.121
+VALIDATION
+    SSNA121, SSNV169
+DEJA RESTITUE DANS : 10.3.17
+NB_JOURS_TRAV  : 10.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 03/10/2011 - 12:11:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016538 DU 2011-03-04 07:59:00
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.7.8, les cas-tests plexu01a et plexu02a s'arretent anormalement sur Aster4.
+FONCTIONNALITE
+   On reporte la modif de la fiche 16329.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    plexu01a et plexu02a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 03/10/2011 - 12:11:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016537 DU 2011-03-04 07:53:26
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.7.8, le cas-test ssnv139b s'arrete en erreur fatale sur Rocks
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En NEW9.7.8, le cas-test ssnv139b s'arrete en erreur fatale sur Rocks.
+   Le titre du cas-test est : PLAQUE BIAISE SOUS CHARGEMENT CONCENTRE.
+   
+   Correction
+   ==========
+   
+   Il s'agit d'une modélisation COQUE_3D. Ce cas-test était cassé en 10.3.3 et a été réparé
+   par issue16114. Le message d'erreur est similaire. 
+   On applique la même correction : 
+   - utilisation de STOP_SINGULIER='DECOUPE'
+   - diminution du pas de temps mini autorisé
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv139b
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 03/10/2011 - 12:11:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016556 DU 2011-03-07 13:40:35
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.7.8, le cas-test perf008d s'arrete par manque de mémoire.
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   En NEW9.7.8, le cas-test perf008d s'arrete par manque de mémoire.
+   """
+   
+   
+   Solution :
+   ----------
+   Je modifie le .para en le faisant passer de 3600 à 4000 Mo.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perf008d
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF perf008d                      macocco K.MACOCCO          133      2      2
+ CASTEST MODIF ssnv139b                      macocco K.MACOCCO          267      5      5
+ CASTEST MODIF ssnv169d                      macocco K.MACOCCO          220     12     14
+ CASTEST MODIF ssnv169e                      macocco K.MACOCCO          243     13     17
+ CASTEST MODIF ssnv169f                      macocco K.MACOCCO          239     14     12
+ CASTEST MODIF ssnv169g                      macocco K.MACOCCO          227     12     12
+ CASTEST MODIF ssnv169h                      macocco K.MACOCCO          247     11     15
+ CASTEST MODIF ssnv169i                      macocco K.MACOCCO          238     13     12
+ FORTRAN MODIF algorith/lcumsf               macocco K.MACOCCO          292     11      3
+ FORTRAN MODIF algorith/trprot               macocco K.MACOCCO          561      4      4
+ FORTRAN MODIF calculel/eclpgm               macocco K.MACOCCO          387      3      3
+ FORTRAN MODIF utilitai/op0195               macocco K.MACOCCO          293     12      3
+  PYTHON MODIF Comportement/beton_umlv_fp    macocco K.MACOCCO           39      3      3
+  PYTHON MODIF Macro/calc_europlexus_ops     macocco K.MACOCCO         2553      6      2
+  PYTHON MODIF Messages/calculel4            macocco K.MACOCCO          364      3      3
+  PYTHON MODIF Messages/plexus               macocco K.MACOCCO           66      7      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   16        6369       131     112       +19
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   16        6369       131     112       +19 

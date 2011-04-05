@@ -1,0 +1,664 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 19/02/2008 - 15:36:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011618 DU 2008-01-09 08:25:57
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   Pb de mxc3xa9moire : calcul STAT_NON_LINE
+FONCTIONNALITE
+   Le passage de l'étude en mode debug jeveux révèle deux anomalies :
+   
+   1-dans la routine RCSTOC appelée par OP0005 (commande DEFI_MATERIAU), un objet de travail
+   destiné à receuillir les valeurs associées aux paramètres VERI_P est sous-dimensionné, on
+   lui donne une taille de 10 et on fait un ASSERT.
+   
+   2-un défaut de conception dans Jeveux : la distinction entre "petits" objets et "gros" est
+   effectuée en comparant leur longueur à la taille de l'enregistrement (LBLOC) du fichier
+   d'accès direct associé à la base Jeveux (Globale ou Volatile), mais cette comparaison est
+   réalisée à 6 entiers près. Pas de chance, dans cette étude, on manipule un objet
+   temporaire de taille LONG=LBLOC-2. Il est considéré comme un "gros" objet mais sa taille
+   est inférieure à longueur de l'enregistrement (de deux entiers), lors de la première
+   relecture depuis le disque (provoquée par le debug jeveux) il est écrasé. 
+   La correction consiste à sur-dimensionner le segment de valeurs associé aux objets de
+   taille comprise entre LBLOC-6 et LBLOC  pour l'affecter à LBLOC tout en conservant
+   l'attribut de longueur fixé par l'utilisateur.
+   Les routines JXVERI et JEIMPM sont modifiées pour ajouter des vérifications de cohérence
+   afin d'aider aux futurs debugages.
+   
+   Suite à ces deux corrections, l'étude a été relancée, on a pu calculer 10 pas de temps
+   sans erreur, le job s'est ensuite arreté par manque de temps CPU (cf fichier joint).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   l'xc3xa9tude fournie
+NB_JOURS_TRAV  : 8.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 04/03/2008 - 15:00:11
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011670 DU 2008-01-25 09:28:10
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Pb de performance avec CALC_TABLE
+FONCTIONNALITE
+   L'utilisateur souhaite utiliser les fonctionnalités de CALC_TABLE avec l'option filtre,
+   sur de grandes tables.
+   
+   Caractéristiques de la table :
+   |    6 colonnes (1 K8 + 5 Réels)
+   |   15 instants différents
+   | 7500 noeuds par instant
+   | environ 135.000 lignes
+   
+   L'enchainement dans un CALC_TABLE de FILTRE, EXTR, RENOMME passe de 5.4s à 4s en
+   corrigeant un petit bug : quand on appliquait les filtres successifs, on faisait :
+   for filtre_i in liste_filtres:
+   .    tab = intersection(tab, tab filtrée par le filtre_i)
+   
+   La différence n'est pas si spectaculaire !
+   
+   
+   Au passage, on a découvert un gros bug sur les filtres EQ et NE en CRITERE='RELATIF' avec
+   une PRECISION non nulle et une valeur négative.
+   Dans ce cas, la table obtenue était vide !
+   
+   
+   Report des 2 corrections en v8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   fichiers joints
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 04/03/2008 - 15:00:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011723 DU 2008-02-08 10:36:47
+TYPE anomalie concernant Code_Aster (VERSION 8.6)
+TITRE
+   En NEW9.2.8, les cas-tests hsns101x, hsnv124x et hsnv125c s'arretent en erreur_<F> sur Bull, Calibre et Rocks.
+FONCTIONNALITE
+   Suite à la fiche 11672, restituée en NEW9.2.8, on fait une vérification supplémentaire :
+   
+   - si le comportement choisi dans COMP_INCR est VISC_CIN1_CHAB ou VISC_CIN2_CHAB, il faut
+   alors que le mot-clé LEMAITRE soit renseigné dans DEFI_MATERIAU.
+   
+   - si on ne veut qu'un comportement élastoplastique, alors il faut renseigner
+   VMIS_CIN1_CHAB ou VMIS_CIN2_CHAB dans COMP_INCR
+   
+   J'avais oublié de faire les modifs de syntaxe correspondantes dans les tests hsns101x,
+   hsnv124x et hsnv125c.
+   
+   C'est réparé (il faut le faire aussi en NEW8).
+   
+   Au passage, restitution du test ZMAT005B (erreur de syntaxe) pour JPL
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hsnv125c
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 04/03/2008 - 15:00:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011752 DU 2008-02-13 14:15:11
+TYPE anomalie concernant Code_Aster (VERSION 9.2)
+TITRE
+   Correction de bugs
+FONCTIONNALITE
+   En regardant un TP fait à l'X avec Code_Aster sur lequel apparait un bug vicieux (qui
+   disparait à la moindre surcharge), je suis tombé sur bug dans connec.f.
+   
+   La routine CONNEC est utilisée dans les TE des éléments thermiques.
+   Elle sert à décrire les sous-éléments linéaires pour les éléments quadratiques lumpés (ex.
+   4 TR3 dans un TR6).
+   Le tableau décrivant les sous-éléments n'était pas complètement initialisé.
+   Sur les 32 TE appelant CONNEC, 23 ne prennent pas soin de redéfinir NNO le nombre de
+   noeuds quand on utilise les sous-éléments. Par exemple dans TE0070, pour un TH..SL3, on
+   boucle sur les 2 sous-éléments et on prend les coordonnées de 3 noeuds (ce sont des SEG2).
+   ==> ZR(IGEOM + variable non initialisée) : plantage possible ou valeur fantaisiste (dans
+   COORSE).
+   
+   Les valeurs calculées ensuite à partir de COORSE sont possiblement fausses (car on
+   continue à boucler sur un NNO trop grand).
+   
+   Le risque de résultats faux concernent les chargements/conditions aux limites thermiques
+   (et la sensibilité par rapport à ceux-ci le cas échéant) sur des éléments quadratiques sur
+   les modélisations AXIS_DIAG et PLAN_DIAG.
+   
+   NB : Ok en 3D_DIAG.
+   
+   
+   Détails :
+   
+   TE faux
+   
+   te0068 ; CHAR_THER_FLUX_F ; THPLSL3
+   te0070 ; RIGI_THER_COEH_R ; THAXSL3 THPLSL3
+   te0072 ; CHAR_THER_TEXT_R ; THAXSL3 THPLSL3
+   te0074 ; CHAR_THER_FLUN_R ; THAXSL3 THPLSL3
+   te0075 ; CHAR_THER_FLUN_F ; THAXSL3 THPLSL3
+   te0079 ; CHAR_THER_SOUR_R ; THAXQL9 THAXTL6 THPLQL9 THPLTL6
+   te0080 ; CHAR_THER_SOUR_F ; THAXQL9 THAXTL6 THPLQL9 THPLTL6
+   te0136 ; RESI_THER_COEF_R/RESI_THER_RAYO_R ; THAXSL3 THPLSL3
+   te0137 ; RESI_THER_COEF_F/RESI_THER_RAYO_F ; THAXSL3 THPLSL3
+   te0138 ; RESI_THER_FLUXNL ; THAXSL3
+   te0219 ; CHAR_THER_GRAI_F/CHAR_THER_GRAI_R ; THAXQL9 THAXTL6 THPLQL9 THPLTL6
+   te0249 ; MTAN_THER_COEF_R/MTAN_THER_RAYO_R ; THAXSL3 THPLSL3
+   te0250 ; MTAN_THER_COEF_F/MTAN_THER_RAYO_F ; THAXSL3 THPLSL3
+   te0251 ; MTAN_THER_FLUXNL ; THAXSL3 THPLSL3
+   te0274 ; CHAR_SENS_FLUNL/CHAR_THER_FLUNL ; THAXSL3 THPLSL3
+   te0503 ; RIGI_THER_COET_R ; THAXSL3 THPLSL3
+   te0507 ; RIGI_THER_COET_F ; THAXSL3 THPLSL3
+   te0590 ; CHAR_DLAG_SOUR_F ; THAXQL9 THAXTL6 THPLQL9 THPLTL6
+   te0592 ; CHAR_DLAG_TEXT_R ; THAXSL3 THPLSL3
+   te0593 ; CHAR_DLAG_TEXT_F ; THAXSL3 THPLSL3
+   te0594 ; CHAR_DLAG_FLUN_R ; THAXSL3 THPLSL3
+   te0595 ; CHAR_DLAG_FLUN_F ; THAXSL3 THPLSL3
+   te0599 ; CHAR_DLAG_SOUR_R ; THAXQL9 THAXTL6 THPLQL9 THPLTL6
+   
+   
+   TE ok : 
+    te0071, te0073, te0076, te0077, te0078, te0242, te0243, te0244, te0598
+   
+   
+   Pour le plantage observé par Eric : on suspecte un problème au moment à une chaine passe
+   de NMVCLE à MECACT. Effectivement, on passe un K8BID non initialisé.
+   Je corrige préventivement en initialisant K8BID à ' '. Eric testera sur les machines
+   concernées.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test fourni
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 04/03/2008 - 15:00:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011750 DU 2008-02-13 14:05:26
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   DYNA_NON_LINE : HHT avec 'MODI_EQUI='OUI' : problxc3xa8me avec l'amortissement de Rayleigh
+FONCTIONNALITE
+   Pour le schéma HHT complet avec un amortissement de Rayleigh, il faut modifier 
+   la manière de venir sommer dans l'équation d'équilibre les termes 
+   d'amortissement visqueux : on remplace -C.v par -(1-ALPHA).C.v, avec ALPHA qui 
+   est le coefficient du schéma HHT.
+   En NEW9, cette modification se fait dans la routine NMASSV.
+   On remplace :
+                CALL DAXPY(NEQ,-1.D0,ZR(JHYST), 1, ZR(JCNFE), 1)
+   par :
+                CALL DAXPY(NEQ,COEFM2,ZR(JHYST), 1, ZR(JCNFE), 1)
+   Le coefficient COEFM2 (utilisé par ailleurs) vaut : -1. sauf pour HHT complet 
+   (MODI_EQUI='OUI') : il vaut alors -(1.-ALPHA).
+   
+   
+   La validation se fait dans deux cas-tests :
+   
+   sdls105a (cas linéaire) : on rajoute deux autres résolutions : la première très 
+   faiblement amortie avec HHT complet pour retrouver le résultat analytique obtenu 
+   sans amortissement.
+   La seconde très fortement amortie et on fait de la non regression.
+   Dans les deux cas, on force :
+   CONVERGENCE=_F(ITER_GLOB_MAXI=0,), puisque sans la correction de NMASSV la 
+   résolution demandait plusieurs itérations, alors qu'on est en linéaire...
+   Au niveau de l'influence sur les résultats, si l'on compare le cas fortement 
+   amorti avec et sans correction, sur la valeur test, on a un écart de l'ordre de 
+   1 % : pas énorme... Si l'amortissement diminue, l'écart tend vers 0 bien sûr.
+   
+   sdnl111c (cas non linéaire) : on rajoute juste un très faible amortissement de 
+   Rayleigh. Les valeurs de référence bougent très peu : on reste dans les 
+   tolérances.
+   
+   
+   Si l'on veut faire la correction en version 8, il faut remplacer dans NMCHAR la 
+   ligne 366 (juste après : CALL MRMULT ('ZERO',JAMOR,ZR(JVITP),'R',ZR(JTRA),1)) :
+              CALL DAXPY(NEQ, -1.D0, ZR(JTRA), 1, ZR(JCNFS), 1)
+   par :
+              CALL DAXPY(NEQ, COEFM2, ZR(JTRA), 1, ZR(JCNFS), 1)
+   C'est tout.
+   
+   Remarque : le cas-test sdnv105b est très légèrement impacté par cette 
+   modification : une tolérance sur un calcul d'énergie doit être légèrement 
+   augmentée : la tolérance était à 15 % et l'erreur est de 15,5 %. Je pousse donc 
+   cette tolérance à 18 %. Pour information, d'autres tolérances sont déjà à 30 % 
+   et plus... Mais ce n'est pas choquant car on compare le calcul Aster à des 
+   références qui sont des bornes analytiques.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.6
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.2.6
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V2.03.115, V5.02.111
+VALIDATION
+   sdls115a, sdnl111c
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR cano         CANO Valérie           DATE 04/03/2008 - 15:00:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011739 DU 2008-02-11 14:10:52
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   CALC_META/RELATION='ZIRC'
+FONCTIONNALITE
+   Les routines concernées sont TEMPEQ.F, ZEVOLU.F et ZEDGAR.F
+   On corrige les bugs ou les maladresses de programmation
+   
+   1. SUBROUTINE TEMPEQ
+      - Modification de la structure générale pour être plus lisible :
+        décalage de deux, commentaires
+      - Suppression du test : ELSEIF (ABS(Z) .LT. EPS2) avec EPS=-10-3
+      - On remplace TEQ = LOG(1/MAX(EPS,(1-Z))) par TEQ = LOG(1/(1-Z)) 
+        car on est justememnt dans le cas où 1-Z>EPS donc le MAX est inutile
+      - On remplace le test IF (Z .LT. EPS2=-10-3) par IF (Z .LT. 0.) THEN
+         
+   2. SUBROUTINE ZEVOLU
+      - Modification de la structure générale pour être plus lisible :
+        décalage de deux, commentaires, changement de noms     
+      - On supprime la condition Si VRAI et Si T>TDR alors DZ=0. 
+        car cela ne peut pas arriver
+      - On supprime la condition Si FAUX et Si T<TDC alors DZ=0. 
+        car cela ne peut pas arriver
+      - On met en commentaire la condition (cas ou FAUX donc cinétique au
+        chauffage) Si T<TEQ alors DZ=-DZ ?
+   
+   3. SUBROUTINE ZEDGAR.F
+      - Modification de la structure générale pour être plus lisible : 
+        décalage de deux, commentaires, changement de noms 
+      - Erreur sur les appels des données matériaux
+      - Modification sur la manière de définir le sens de l'évolution
+        (pas d'erreur mais plus clair à mon sens)
+      - Algo : si on doit redécouper, on remplace DELTAT par DELTA pour
+         conserver la valeur initiale à DELTAT
+      - Erreur dans la formule de Runge-Kutta pour le dernier terme 
+        ZBETA = ZO+DZ3/2 remplacé par ZBETA = ZO+DZ3
+   
+   
+   4. Pour répondre à Mathieu, il y a un risque de résultat faux à cause de 
+   l'erreur dans la formule de Runge- Kutta.
+   Il existe deux cas test qui font intervenir META_ZIRC:
+   HSN123A mais la température est uniforme donc pas de transformation et 
+   MTLP101A où il y a des transformations mais on teste des valeurs à des 
+   instants où on est sur d'avoir 100% ou 0% de phase froide donc l'erreur 
+   ne peut pas se voir.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   pas de validation
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 04/03/2008 - 15:00:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011260 DU 2007-09-19 12:47:48
+TYPE anomalie concernant Code_Aster (VERSION 9.3)
+TITRE
+   Mxc3xa9thode VERIF de CONTACT
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   La méthode 'VERIF' du contact donne des résultats erronés
+   
+   Analyse
+   =======
+   
+   Plusieurs problèmes demeuraient :
+   
+   - l'appariement (qui est bien la seule chose que l'on fait dans ce cas) n'était pas lu
+   pour cette méthode, et on faisait toujours de l'appariement nodal qui ne fonctionne que
+   quand les surfaces en contact sont compatibles
+   - une fois ceci corrigé, on voit que le jeu calculé est faux (avant même qu'il y ait
+   contact). En effet, lors de la réactualisation (forcée avec cette méthode), on n'ajoutait
+   au champ de géométrie du maillage que le déplacement jusqu'à l'itération de Newton
+   précédente, ce qui pose problème ici dans la mesure où on ne fait pas le calcul de contact
+   derrière.
+   - le champ CONT (qui vaut pour les méthodes de contact 0 quand il n'y a pas contact et 1
+   autrement) dans la SD résultat VALE_CONT est toujours nul car on ne le calcule pas à
+   partir du jeu.
+   - l'affichage souffrait d'une coquille (mauvais copier-coller)
+   
+   Actions prises
+   ==============
+   
+   Correction des bugs + on remplit désormais le champ CONT de VALE_CONT en lisant le jeu.
+   !Attention! Il est bien évident que les deux champs CONT et JEU permettent seulement de
+   juger de l'interpénétration possible des surfaces, si celle-ci n'est pas acceptable pour
+   le problème étudié, seule une vraie méthode de contact permet de trancher.
+   L'affichage des interpénétrations est réalisé quand le jeu est inférieur au jeu de
+   référence fourni par TOLE_INTERP et tous les jeux sont affichés si INFO=2.
+   
+   Validation
+   ==========
+   
+   Sur deux cas-test modifiés fournis par E. Galenne (variantes de sslv134b et ascou01a),
+   ainsi que sur ssnv504a (que l'on modifie car on ne testait jamais VALE_CONT) et sur
+   zzzz231a (on ajoute METHODE  = 'VERIF' et on teste le jeu).
+   
+   Sources impactées
+   =================
+   
+   Fortran modifiés : cazocd.f, cfgeom.f, cfsans.f, geomco.f, nmcofr.f
+           ajoutés  : vtgaxp.f (ajoute à un champ de géométrie existant un déplacement)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv504a, zzzz231 et variantes de sslv134b et ascou01a
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011695 DU 2008-01-30 17:37:03
+TYPE anomalie concernant Code_Aster (VERSION 9.3)
+TITRE
+   Mxc3xa9thode continue et grosses surfaces en contact : plantage dans AFFE_CHAR_MECA
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Il est impossible de déclarer une charge de contact avec la méthode CONTINUE via
+   AFFE_CHAR_MECA si le nombre de mailles en contact devient trop grand. On a alors un
+   plantage en memory fault ou un écrasement aval dans un JEDEMA.
+   
+   Analyse
+   =======
+   
+   Etant donné que le plantage se produisait dans un JEDEMA, j'ai utilisé Valgrind pour
+   dénicher le problème. J'ai du alors passer en JEVEUX dynamique, car sinon Valgrind était
+   incapable de détecter un dépassement de tableau (car un seul malloc est fait en début
+   d'exécution).
+   En passant en mémoire dynamique, Valgrind détecte alors facilement le dépassement et nous
+   en avertit par : 
+   
+   ==11092== Invalid write of size 4
+   ==11092==    at 0x94894EE: ajellt_ (ajellt.f:327)
+   ==11092==    by 0x9426F37: cazocc_ (cazocc.f:552)
+   ==11092==    by 0x93863C2: cazoco_ (cazoco.f:170)
+   ...
+   ==11092==  Address 0x5D3A8E4 is 0 bytes after a block of size 40,036 alloc'd
+   ==11092==    at 0x4022765: malloc (vg_replace_malloc.c:149)
+   ==11092==    by 0x816B470: hpalloc_ (hpalloc.c:30)
+   ==11092==    by 0x80FAA8B: jjalls_ (jjalls.f:113)
+   ==11092==    by 0x8126D61: jxveuo_ (jxveuo.f:231)
+   ==11092==    by 0x80FDE70: jjalty_ (jjalty.f:59)
+   ==11092==    by 0x8104CE1: jeveuo_ (jeveuo.f:142)
+   ==11092==    by 0x94876F6: ajellt_ (ajellt.f:114)
+   ==11092==    by 0x9426F37: cazocc_ (cazocc.f:552)
+   ==11092==    by 0x93863C2: cazoco_ (cazoco.f:170)
+   ...
+   
+   On récupère alors deux informations intéressantes : d'une part la ligne où le dépassement
+   se produit et d'autre part l'endroit où le malloc associé a été réalisé.
+   
+   La routine AJELLT et sa soeur CRELGT permettent de créer une structure de données
+   temporaire "&&CALICO.LIGRET" qui contient plusieurs élements dont .LIMA et .LITY qui
+   permettent de stocker les mailles en contact après les avoir lu dans le mot clé facteur
+   CONTACT=_F().
+   Comme on crée cet SD au fin fond des routines du contact, on n'a pas la connaissance a
+   priori du nombre de mailles du contact. On redimensionne donc au fur et à mesure l'objet.
+   Problème : c'était mal fait pour .LIMA et en plus on oubliait de redimensionner .LITY
+   
+   
+   Solution
+   ========
+   
+   On modifie AJELLT et CRELGT pour avoir un redimensionnement correct. Il reste que le
+   simple fait de devoir redimensionner n'est pas satisfaisant à mon goût (faire un JUVECA ne
+   devient-il pas coûteux si la liste de mailles s'allonge ?), par ailleurs ce que l'on
+   cherche à faire ici est en fait de créer des éléments tardifs pour le contact continu.
+   Or on fait cela à un endroit où on n'est censé lire que des caractéristiques du contact et
+   on casse la logique de CALICO, la routine maîtresse de lecture du contact.
+   Conséquence : on va plus loin dans le programme refaire des opérations identiques (lecture
+   des mots-clés GROUP_MA_XXXX, MAILLE_XXXX).
+   
+   Comme tout ceci est en rapport avec une autre fiche qui m'est attribuée, je la mets à jour
+   avec ces observations (Fiche 11190).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 04/03/2008 - 15:00:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011800 DU 2008-02-22 15:43:03
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Pb de passage de chaine python/C/fortran sur x86_64
+FONCTIONNALITE
+   Beaucoup de tests plantent grace à un ASSERT dans GETCON sur des machines x86_64 (cas de
+   claut606 et sans doute aussi renut2ae).
+   
+   En fait, il y a un problème lors du passage d'une chaine de caractères du python au C puis
+   au fortran.
+   
+   En python, on fait :
+   nocmp = aster.getcolljev('&CATA.GD.NOMCMP')
+   
+   En C :
+   char *nomsd;
+   PyArg_ParseTuple(args, "ss",&nomsd, ...)
+   
+   CALL_GETCON(nomsd, ...)
+   
+   En fortran:
+   CHARACTER*(*) NOMSD
+   CHARACTER*32 NOML32
+   NOML32 = ' 32 espaces '
+   NOML32=NOMRES
+   
+   Dans le debugger, dans le C, nomsd est correct. Dans le fortran, on n'arrive pas à
+   afficher nomres (hmmm...), la copie dans NOML32 ne met pas des blancs à la fin (alors
+   qu'il semble que le \0 soit présent bon endroit).
+   
+   La solution (de contournement car je n'ai pas l'impression qu'il y a un bug clair)
+   consiste à faire dans le C :
+   
+   
+   char *nomsd, nomsd32[33];
+   PyArg_ParseTuple(args, "ss",&nomsd, ...)
+   nomsd32[32] = '\0';
+   CSTRING_FCPY(nomsd32, 32, nomsd);    # utilitaire pour compléter par des blancs : copie
+   chaine C vers chaine fortran
+   
+   CALL_GETCON(nomsd32, ...)
+   
+   Là, tout passe bien.
+   Je répercute aussi cette modif dans putvectjev et putcolljev.
+   
+   
+   
+   Pour le report en version 8 : penser qu'il faut le faire à 4 endroits : getvectjev,
+   getcolljev, putvectjev, putcolljev.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssls100a sur claut606
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 21/02/2008 - 15:20:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011551 DU 2007-12-12 12:46:54
+TYPE evolution concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   POST_RCCM et transitoires de passage (suite)
+FONCTIONNALITE
+   Objectif:
+   ---------
+   Une anomalie sur le traitement des situations de passage dans POST_RCCM a été détectée par
+   UTO et partiellement corrigée dans la fiche 11266 en décembre 2007. Cette fiche vise a
+   étendre la correction aux résultats de type TUYAUTERIE et au traitement de trois groupes
+   de situation (contre 2 pour le moment).
+   
+   Développements:
+   ---------------
+   Le mot clé NUME_PASSAGE a été supprimé du catalogue de commande au profit du mot clé
+   NUME_GROUPE.
+   Le mot clé NUME_GROUPE accepte 1 ou 2 valeurs entières:
+    - NUME_GROUPE = i : la situation appartient au seul groupe i,
+    - NUME_GROUPE = (i,j) : la situation est une situation de passage entre i et j, 
+                            cette situation appartient aux deux groupes i et j.
+     
+   Pour les types TUYAUTERIE et UNITAIRE, le code offre la possibilité d'avoir des situations
+   de passage entre 3 groupes. Jusqu'à ce jour, on n'avait pas la possibilité d'avoir des
+   situations de passage pour le type TUYAUTERIE et on était limité à 2 groupes pour le type
+   UNITAIRE.
+   
+   Pour le calcul du facteur d'usage et la gestion des situations de passage, les routines
+   sont identiques pour les types UNITAIRE et TUYAUTERIE.
+   
+   Validation: 
+   -----------
+     ces test rccm10a (2 groupes) et b (3 groupes) pour le type UNITAIRE,
+     ces test rccm02c (2 groupes) pour le type TUYAUTERIE.
+   Pour le type UNITAIRE, la validation a été vérifiée avec Excel et examen "à la loupe" de
+   l'écho de l'exécution de la commande POST_RCCM dans le fichier .mess (INFO=2)
+   Pour le type TUYAUTERIE, le cas test est un cas test de non regression. Les routines et
+   traitement étant identiques au type UNITAIRE, la vérification s'est basée que sur le
+   fichier .mess
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.83.11,V3.04.149,V3.01.113
+VALIDATION
+   rccm10 et rccm02c
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT rccm02c                         vivan L.VIVAN            339    339      0
+ CASTEST AJOUT rccm10a                         vivan L.VIVAN            364    364      0
+ CASTEST AJOUT rccm10b                         vivan L.VIVAN            267    267      0
+ CASTEST MODIF hsns101a                      macocco K.MACOCCO          539      3      3
+ CASTEST MODIF hsns101b                      macocco K.MACOCCO          411      3      3
+ CASTEST MODIF hsns101c                      macocco K.MACOCCO          460      3      3
+ CASTEST MODIF hsns101d                      macocco K.MACOCCO          441      3      3
+ CASTEST MODIF hsnv124a                      macocco K.MACOCCO          493      2      2
+ CASTEST MODIF hsnv124b                      macocco K.MACOCCO          402      2      2
+ CASTEST MODIF hsnv124c                      macocco K.MACOCCO          352      3      3
+ CASTEST MODIF hsnv124d                      macocco K.MACOCCO          351      3      3
+ CASTEST MODIF hsnv124f                      macocco K.MACOCCO          469      2      2
+ CASTEST MODIF hsnv125c                      macocco K.MACOCCO          555      3      3
+ CASTEST MODIF hsnv125e                      macocco K.MACOCCO          454      3      3
+ CASTEST MODIF sdls115a                      macocco K.MACOCCO          306     99      3
+ CASTEST MODIF sdnl111c                      macocco K.MACOCCO          256      4      2
+ CASTEST MODIF sdnv105b                      macocco K.MACOCCO         1246      2      2
+CATALOPY MODIF commande/post_rccm              vivan L.VIVAN            252      5      5
+       C MODIF supervis/astermodule          macocco K.MACOCCO         3461     22     12
+ FORTRAN AJOUT algeline/vtgaxp               macocco K.MACOCCO          152    152      0
+ FORTRAN MODIF algorith/cfgeom               macocco K.MACOCCO          183      6      2
+ FORTRAN MODIF algorith/cfsans               macocco K.MACOCCO          176      4      3
+ FORTRAN MODIF algorith/nmchar               macocco K.MACOCCO          522      2      2
+ FORTRAN MODIF algorith/nmcofr               macocco K.MACOCCO          202      2      2
+ FORTRAN MODIF algorith/nmvcle               macocco K.MACOCCO          109      2      1
+ FORTRAN MODIF algorith/tempeq               macocco K.MACOCCO           48     17     14
+ FORTRAN MODIF algorith/zedgar               macocco K.MACOCCO          207    115    135
+ FORTRAN MODIF algorith/zevolu               macocco K.MACOCCO           71     37     26
+ FORTRAN MODIF calculel/connec               macocco K.MACOCCO          116      8      5
+ FORTRAN MODIF jeveux/jedupo                lefebvre J-P.LEFEBVRE       290      4      4
+ FORTRAN MODIF jeveux/jeecra                lefebvre J-P.LEFEBVRE       281      2      2
+ FORTRAN MODIF jeveux/jeimpm                lefebvre J-P.LEFEBVRE       137      2      1
+ FORTRAN MODIF jeveux/jeinif                lefebvre J-P.LEFEBVRE       615     42     42
+ FORTRAN MODIF jeveux/jelihd                lefebvre J-P.LEFEBVRE       582     25     24
+ FORTRAN MODIF jeveux/jemarq                lefebvre J-P.LEFEBVRE        86      4      4
+ FORTRAN MODIF jeveux/jerecu                lefebvre J-P.LEFEBVRE       170      2      2
+ FORTRAN MODIF jeveux/jetass                lefebvre J-P.LEFEBVRE       249      2      2
+ FORTRAN MODIF jeveux/jjallc                lefebvre J-P.LEFEBVRE       172      8      8
+ FORTRAN MODIF jeveux/jjalls                lefebvre J-P.LEFEBVRE       448     23      2
+ FORTRAN MODIF jeveux/jjallt                lefebvre J-P.LEFEBVRE        79     13     12
+ FORTRAN MODIF jeveux/jjarep                lefebvre J-P.LEFEBVRE       260     16     15
+ FORTRAN MODIF jeveux/jjcrec                lefebvre J-P.LEFEBVRE       138      2      2
+ FORTRAN MODIF jeveux/jjecrs                lefebvre J-P.LEFEBVRE       119      2      2
+ FORTRAN MODIF jeveux/jjhrsv                lefebvre J-P.LEFEBVRE        85      2      2
+ FORTRAN MODIF jeveux/jjlchd                lefebvre J-P.LEFEBVRE       228      4      3
+ FORTRAN MODIF jeveux/jjlide                lefebvre J-P.LEFEBVRE       570      3      3
+ FORTRAN MODIF jeveux/jjlihd                lefebvre J-P.LEFEBVRE       149     17     12
+ FORTRAN MODIF jeveux/jxcopy                lefebvre J-P.LEFEBVRE       130      2      2
+ FORTRAN MODIF jeveux/jxecrb                lefebvre J-P.LEFEBVRE       129      4      1
+ FORTRAN MODIF jeveux/jxlirb                lefebvre J-P.LEFEBVRE       113      4      1
+ FORTRAN MODIF jeveux/jxveri                lefebvre J-P.LEFEBVRE       108      1      1
+ FORTRAN MODIF jeveux/jxveuo                lefebvre J-P.LEFEBVRE       254      5      5
+ FORTRAN MODIF modelisa/ajellt               macocco K.MACOCCO          353      7      5
+ FORTRAN MODIF modelisa/crelgt               macocco K.MACOCCO          152      3      6
+ FORTRAN MODIF modelisa/rcstoc              lefebvre J-P.LEFEBVRE       636      4      5
+ FORTRAN MODIF postrele/rc32f6                 vivan L.VIVAN            122     49     14
+ FORTRAN MODIF postrele/rc32fp                 vivan L.VIVAN            216      3      3
+ FORTRAN MODIF postrele/rc32si                 vivan L.VIVAN            408     47     41
+ FORTRAN MODIF postrele/rc3601                 vivan L.VIVAN            410     15     10
+ FORTRAN MODIF postrele/rc36ac                 vivan L.VIVAN            465     67     56
+ FORTRAN MODIF postrele/rc36si                 vivan L.VIVAN            425    197     41
+ FORTRAN SUPPR postrele/rc3603                 vivan L.VIVAN            319      0    319
+  PYTHON MODIF Macro/calc_table_ops          macocco K.MACOCCO          167      3      3
+  PYTHON MODIF Messages/postrccm               vivan L.VIVAN             69     32      2
+  PYTHON MODIF Utilitai/Table                macocco K.MACOCCO          976      4      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    4        1122      1122             +1122
+ MODIF :   60       21873       975     584      +391
+ SUPPR :    1         319               319      -319
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   65       23314      2097     903     +1194 

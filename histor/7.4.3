@@ -1,0 +1,668 @@
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhlv L.VIVAN   DATE  le 01/04/2005 a 14:03:21
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-078
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : J.PELLET
+   INTERET_UTILISATEUR : OUI
+   TITRE : DEFI_GROUP + NOEUD_ORDO
+   FONCTIONNALITE
+     vérification du GROUP_MA fourni par l'utilisateur:
+     - la ligne possède au plus 2 extrémités,
+     - un noeud est l'extrémité au plus de 2 segments;
+     sinon le code émet un message fatal:
+ <F> <DEFI_GROUP> <FONFIS> CREA_GROUP_NO  OCCURRENCE  1
+     LES MAILLES SPECIFIEES NE PERMETTENT PAS DE DEFINIR UNE LIGNE
+     CONTINUE >ARRET EN ERREUR<
+
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.22.01 commande DEFI_GROUP / OPTION='NOEUD_ORDO'
+       EXPL_ : la ligne doit etre une ligne ouverte et contigue
+   VALIDATION
+     passage des 85 cas tests validant DEFI_GROUP/NOEUD_ORDO et
+     DEFI_FOND_FISS
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-097
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : E.GALENNE
+   INTERET_UTILISATEUR : OUI
+   TITRE : POST_RCCM calcul du PMPB en TRANSITOIRE
+   FONCTIONNALITE
+     Les critères de niveau 0 visent à prémunir le matériel contre les
+     dommages de déformation excessive, d'instabilité plastique et
+     d'instabilité élastique et élastoplastique.
+     Le calcul de PM, PB et PMPB doit se faire à partir des contraintes
+     primaires. Les contraintes d'origine thermiques ne sont pas
+     considérées comme des contraintes primaires (RCCM B3231.2).
+
+                      mécanique
+       PM = Max( SIGM_MOY(i)    )
+             t           Eq.Tresca
+
+                      mécanique
+       PB = Max( SIGM_FLE(i)    )
+             t           Eq.Tresca
+
+                        mécanique
+       PMPB = Max( SIGM_LIN(i)    )
+               t           Eq.Tresca
+
+   RESU_FAUX_VERSION_EXPLOITATION    : OUI   DEPUIS : 7.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_R : R7.04.03  POST_RCCM
+       EXPL_ :  calcul du PMPB
+   VALIDATION
+     1 cas test modifié: rccm04a (PM et PMPB, valeurs de non regression)
+     validation dans rccm06a
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-014
+   NB_JOURS_TRAV  : 2
+   POUR_LE_COMPTE_DE   : E.GALENNE
+   INTERET_UTILISATEUR : OUI
+   TITRE : POST_RCCM calcul du SN* en méthode UNITAIRE
+   FONCTIONNALITE
+     Apres concertation avec JMP et EG :
+     - calcul du PMPB
+
+                      mécanique          mécanique
+       PM = Max( SIGM_MOY(i)   ,    SIGM_MOY(j)   )
+                         Eq.Tresca          Eq.Tresca
+
+                      mécanique          mécanique
+       PB = Max( SIGM_FLE(i)   ,    SIGM_FLE(j)   )
+                         Eq.Tresca          Eq.Tresca
+
+                        mécanique          mécanique
+       PMPB = Max( SIGM_LIN(i)   ,    SIGM_LIN(j)   )
+                           Eq.Tresca          Eq.Tresca
+
+     - calcul du SN*
+     le calcul du SN* est réalisé si le mot clé NUME_RESU_THER est
+     présent sous le mot clé facteur SITUATION.
+     Les contraintes d'origine thermique sont données derriere le mot clé
+     TABL_RESU_THER sous le mot clé facteur RESU_THER.
+     Exemple issu du rccm01a.com2
+           SITUATION=_F( NB_OCCUR=1,
+                         NUME_SITU=1,
+                         NUME_GROUPE=1,
+                         NUME_RESU_THER = 1,
+                         ...                 ),
+           RESU_THER=_F( NUME_RESU_THER=1,
+                         TABL_RESU_THER=TBTHER, ),
+
+     à l'origine:
+                             totale         thermique
+      SN* = Max( Max( ( SIGM_LIN(t1) + SIGM_FLE(t1) )
+             t1   t2
+                             totale         thermique
+                    - ( SIGM_LIN(t2) + SIGM_FLE(t2) )    )       )
+                                                         Eq.Tresca
+     à l'extrémité:
+                             totale         thermique
+      SN* = Max( Max( ( SIGM_LIN(t1) - SIGM_FLE(t1) )
+             t1   t2
+                             totale         thermique
+                    - ( SIGM_LIN(t2) - SIGM_FLE(t2) )    )       )
+                                                         Eq.Tresca
+     - calcul du SN et SP
+      Situation P avec ses 2 Etats i et j et son thermique associé Tp
+      Situation Q avec ses 2 Etats k et l et son thermique associé Tq
+      Le calcul des SN et SP pour la situation P se fait de la facon
+      suivante :
+                       mécanique          thermique
+      SN = Max( ( SIGM_LIN(ij)   +   SIGM_LIN(t1) )  )
+             t1                                   Eq.Tresca
+
+                     mécanique      thermique
+      SP = Max( ( SIGM(ij)   +   SIGM(t1) )  )
+             t1                           Eq.Tresca
+
+      Le calcul des SN et SP pour une combinaison de situation se fait
+      de la facon suivante :
+      on a 4 combinaisons (Pi,Qk), (Pi,Ql), (Pj,Qk), (Pj,Ql)
+      pour chaque combinaison (Pm,Qn)
+                              mécanique        thermique
+      SN = Max( Max( ( +-SIGM_LIN(mn)   +  SIGM_LIN(P) )  )     ,
+                  tp                                   Eq.Tresca
+
+                              mécanique         thermique
+                Max( ( +-SIGM_LIN(mn)   +  SIGM_LIN(Q) )  )      )
+                  tq                                   Eq.Tresca
+
+                            mécanique       thermique
+      SP = Max( Max( ( +-SIGM(mn)     +  SIGM(P) )  )     ,
+                  tp                             Eq.Tresca
+
+                            mécanique        thermique
+                Max( ( +-SIGM(mn)     +   SIGM(Q) )  )      )
+                  tq                              Eq.Tresca
+
+
+   RESU_FAUX_VERSION_EXPLOITATION    : OUI   DEPUIS : 7.3.6
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_R : R7.04.03  POST_RCCM
+       EXPL_ :  calcul du PMPB, SN*
+     DOC_V : V1.01.107 RCCM01
+       EXPL_ : ajout de la méthode unitaire
+   VALIDATION
+     rccm01a.com2
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-099
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : X.DESROCHES
+   INTERET_UTILISATEUR : NON
+   TITRE : LIAISON_SOLIDE pour les COQUE_3D
+   FONCTIONNALITE
+     Lors de l'affectation d'une charge de type LIAISON_SOLIDE pour une
+     modélisation COQUE_3D, le code émet un message fatal :
+       <F> <AFFE_CHAR_MECA> <ORDLRL> LE DDL DX  EST INTERDIT POUR
+           LE NOEUD< NS26  >
+     En effet, pour les éléments COQUE_3D :
+     les DDL sont  DX DY DZ DRX DRY DRZ  en chaque noeud et
+                            DRX DRY DRZ  au noeud central
+     il n'y a pas de DDL de translation pour le noeud milieu.
+   DETAIL
+     routine drz13d :
+     lors de l'ecriture des relations linéaires entre les degrés de
+     liberté des noeuds, on vérifie que ces degrés de liberté existent.
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage de l'etude associé.
+     passage des 29 tests validant LIAISON_SOLIDE.
+
+
+-----------------------------------------------------------------------
+--- AUTEUR d6bhhjp J.P.LEFEBVRE   DATE  le 31/03/2005 a 14:21:06
+
+--------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  Correction erreurs de compilations detectées avec g95
+   FONCTIONNALITE
+   DETAILS
+   La compilation de l'ensemble des sources avec le compilateur du domaine
+   public g95 sous plate-forme linux a permis de détecter 4 routines qui
+   renvoient une erreur liées à la déclaration des INTEGER.
+   CALCFT : les indices I et J étaient déclarés REAL*8.
+   ASSMAT : la fonction en ligne POSDD2 n'était pas déclarée.
+   JXLOCS : la fonction MOD refuse de mélanger les types INTEGER*8 et INTEGER,
+            on passe par une variable intermédiaire.
+   GETCON : la fonction LOC n'était pas déclarée.	
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   VALIDATION :
+   IMPACT_DOCUMENTAIRE : NON
+
+--------------------------------------------------------------------------------
+CORRECTION AL 2005-089
+   NB_JOURS_TRAV  : 1.0
+   INTERET_UTILISATEUR : OUI
+   TITRE : FIN et EXTR_RESU
+   FONCTIONNALITE : Retassage dans FIN
+   DETAILS :
+   Il s'agit d'une anomalie dans la routine utilisée pour effectuer le
+   retassage JETASS. La lecture et l'ecriture de certains enregistrements
+   étaient réalisée avec pour longueur d'enregistrement une taille en
+   kilo-mots. Ce qui conduisait à tronquer les enregistrements concernés.
+   Cela produit systématiquement une erreur, le chainage sur l'enregistrement
+   complet ne pouvant plus être parcouru.
+   On corrige en utilisant la variable LGBL qui contient la taille en octets.
+   C'est malheureusement un oubli lors de la réalisation de l'EL 2004-122.
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE:  NON
+   VALIDATION : 	
+   Sur l'étude associée à la fiche de Patrick.
+
+
+-----------------------------------------------------------------------
+--- AUTEUR durand C.DURAND   DATE  le 04/04/2005 a 14:44:51
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-081
+   NB_JOURS_TRAV  : 1
+   INTERET_UTILISATEUR : NON
+   TITRE : IMPR_FONCTION au format tableau et plusieurs fcts données
+   FONCTIONNALITE : IMPR_FONCTION
+   DETAILS :
+   Plusieurs bugs dans impr_fonction_ops.py. En particulier, on passe par
+   l'intermédiaire d'une table (au sens python : classe Table) pour ranger
+   les différentes colonnes du tableau à imprimer, composées des valeurs
+   des fonctions. Or la table suppose implicitement que les labels des
+   colonnes soient tous différents. Or, jusqu'à présent, les noms de labels
+   de la table sont les paramètres des fonctions, sans garde-fou sur les
+   conflits.
+   La solution retenue consiste à suffixer par le numéro de courbe, donné
+   dans tous les cas par le commentaire précédent la table elle-meme :
+#
+#
+# Courbe 0 FCT2
+# Courbe 1 CTRACB
+# Courbe 2 CTRACB
+# Courbe 3 A5
+ EPSI             TOUTRESU_0   TOUTRESU_1   TOUTRESU_2   SIGM_3
+      1.00000E-03  2.00000E+02  1.20000E+03  2.20000E+03  3.00000E+02
+      3.00000E-03  3.00000E+02  1.30000E+03  2.30000E+03  5.00000E+02
+      4.00000E-03  4.00000E+02  1.40000E+03  2.40000E+03  5.33333E+02
+
+   J'en profite pour le faire fonctionner avec les nappes (ca ne marchait
+   pas non plus)
+
+   RESU_FAUX_VERSION_EXPLOITATION    : OUI   DEPUIS : 7.3.13
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.33.01 impr_fonction
+       EXPL_ : préciser la règle de suffixage des labels
+   VALIDATION : zzzz140a
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-080
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : IMPR_FONCTION et concepts para_sensi et constante
+   FONCTIONNALITE : IMPR_FONCTION
+   DETAILS :
+   IMPR_FONCTION ne marchait pas avec les concepts para_sensi et constante,
+   qui pourtant héritent tous les deux de fonction_sdaster.
+
+   Voila qui est fait, j'ai du pour ça supprimer la surcharge de la méthode
+   Parametres() pour para_sensi
+
+   Dans op0134.f (CALC_FONC_INTERP, appelée indirectement par IMPR_FONCTION)
+   : gestion du cas para_sensi
+
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE:  NON
+   VALIDATION : 	
+   Sur l'étude ayant révélée le bug.
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-077
+   NB_JOURS_TRAV  : 0.
+   INTERET_UTILISATEUR : NON
+   TITRE : IMPR_FONCTION
+   FONCTIONNALITE : IMPR_FONCTION
+   DETAILS :
+   fiche en lien avec AL2005-080 et AL2005-081
+   Correction du cas particulier fonc_x fonc_y.
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE:  NON
+   VALIDATION : 	
+   Sur l'étude ayant révélée le bug et zzzz140a
+
+-----------------------------------------------------------------------
+CORRECTION AL 2004-369
+   NB_JOURS_TRAV  : 0.
+   INTERET_UTILISATEUR : NON
+   TITRE : DYNA_TRAN_MODAL option CHOC
+   FONCTIONNALITE : IMPR_FONCTION
+   DETAILS :
+   fiche idem AL2005-077
+   Il s'agissait en fait d'un pb d'impression de fonction au format
+   tableau. Corrigée indirectement par AL2005-081
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE:  NON
+   VALIDATION : 	
+   Sur l'étude ayant révélée le bug et zzzz140a
+
+-----------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  eficas et évaluation de fonction de parametres
+   FONCTIONNALITE eficas et include_materiau (indirectement)
+   DETAILS
+   pb avec EFICAS uniquement pour évaluer une fonction de paramètre
+   derrière un MCSIMP.
+   On s'en est apercu à cause de CABRI02A impossible à éditer avec EFICAS
+   Il contient en effet un INCLUDE_MATERIAU avec évaluation de propriétés
+   en une température donnée (mot clé EXTRACTION).
+   La manip de substitution par INCLUDE_MATERIAU produit les commandes
+   suivantes :
+
+   A1 = DEFI_FONCTION( ... )
+   TEMP_MOY=40.
+   MATER = DEFI_MATERIAU(  THER=_F(   RHO_CP  = A1(TEMP_MOY), ... )
+
+   A1(TEMP_MOY) est toujours correctement évalué par le superviseur en
+   mode d'execution ASTER car c'est la valeur de TEMP_MOY (et non le
+   concept "parametre") qui arrive dans la méthode __call__ du concept
+   fonction_sdaster. Pour gérer ce cas, on teste donc désormais, et on
+   substitue par sa valeur, si l'argument est une instance de classe.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   VALIDATION : édition de cabri02a avec EFICAS
+   IMPACT_DOCUMENTAIRE : NON
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-083
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : macro CALC_PRECONT et POURSUITE
+   FONCTIONNALITE : CALC_PRECONT
+   DETAILS :
+   dans la macro-commande CALC_PRECONT, seul le concept evol_noli est
+   déclaré sortant. Les charges utilisées pour cet evol_noli sont aussi
+   produites à l'intérieur de la macro. Le hic, c'est que le nom de concept
+   temporaire est préfixé d'un double underscore : encore rémanant dans le
+   reste de l'exécution courante, il sera détruit dans la base sauvegardée.
+
+   Ca pose donc problème quand, en poursuite, on souhaite faire un calc_elem
+   sur le concept evol_noli car il cherche alors en vain les concepts
+   'charge' cachés.
+
+   Pour qu'ils soient conservés, il faut les préfixer avec un simple underscore
+   et non un double ... astuce !
+
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE:  NON
+   VALIDATION :
+   validation perso sur cas test avec CALC_PRECONT dans premier calcul
+   et CALC_ELEM sur le résultat dans le second
+
+-----------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  attribut de mot clé "position" dans catalogues
+   FONCTIONNALITE superviseur
+   DETAILS
+   Restitution pour le compte de Christian Caremoli.
+   Modification de N_MCCOMPO.py.
+   Le fonctionnement de l'attribut "position='global'" était incorrect.
+   Cet attribut sert à donner visibilité dans tout le catalogue de la
+   commande courante au mot clé auquel il est appliqué.
+   Exemple :
+   MA_COMMANDE=OPER(...
+         NOM       =SIMP(statut='f',typ='TXM' ,into=('ACCE','DEPL'),position='global'),
+         RESULTAT  =FACT(statut='o',
+                   b_acce  =BLOC( condition = "NOM=='ACCE'",
+                                VAL   =SIMP(statut='o',typ='R'), ),)
+
+   Dans cet exemple, le mot clé NOM aurait été jusqu'à présent visible
+   au niveau d'une condition de bloc de même niveau que le mcsimp
+   lui même, mais pas deux niveaux plus bas (ici un bloc SOUS un MCFACT)
+
+   Dans le cas présenté ici, l'information est descendante : le mcsimp
+   est au niveau le plus haut dans la commande. Les blocs sont à des
+   niveaux inférieurs. Je n'ai pas testé la situation inverse (globalisation
+   d'un mot clé simple "profond") ... et pour le moment, on la déconseille
+   donc.
+
+   Impact commandes : impr_resu, impr_fonction
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   VALIDATION : cas tests utilisant impr_resu, en particulier
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_D : D5.01.01 introduire une nouvelle commande
+       EXPL_ : expliquer l'usage de l'attribut position
+
+-----------------------------------------------------------------------
+REALISATION EL 2005-062
+   NB_JOURS_TRAV  : 1
+   INTERET_UTILISATEUR : NON
+   TITRE : catalogue IMPR_RESU
+   FONCTIONNALITE impr_resu
+   DETAILS
+      après correction (cf hors arex meme histor) de la prise en compte
+      de l'attribut position dans le catalogue, on peut donc rétablir les
+      blocs commentarisés de IMPR_RESU donc la condition exploite le
+      MCSIMP FORMAT de haut niveau.
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON , enfin je ne crois pas
+   VALIDATION cas tests  IMPR_RESU
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-100
+   NB_JOURS_TRAV  : 0.
+   INTERET_UTILISATEUR : NON
+   TITRE : ménage méthode IMPR_FONCTION
+   FONCTIONNALITE
+     suppression concept temporaire dans impr_fonction_ops.py
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     ajout impression de nappe dans zzzz140a
+
+
+-----------------------------------------------------------------------
+--- AUTEUR jmbhh01 J.M.PROIX   DATE  le 08/03/2005 a 07:30:38
+
+--------------------------------------------------------------------------
+REALISATION EL 2005-057
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE : Olivier Diard
+   INTERET_UTILISATEUR : NON
+   TITRE : restitution du test SSNV183A
+   FONCTIONNALITE : Pour compléter la validation de VENDOCHAB, et illustrer
+     la nouvelle version de la doc de référence modifiée par Olivier Diard,
+     voici un nouveau test mettant en évidence le fluage primaire, secondaire
+     puis tertiaire.
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE:  OUI
+     DOC_V : V6.04.183
+   VALIDATION : 	
+     SSNV183A
+
+
+-----------------------------------------------------------------------
+--- AUTEUR lamarche S.LAMARCHE   DATE  le 08/03/2005 a 09:33:04
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-082
+   NB_JOURS_TRAV  : 1.
+   INTERET_UTILISATEUR : NON
+   TITRE : CONTACT METHODE CONTINUE : VALEUR INITIALE DE FROTTEMENT
+   FONCTIONNALITE
+     Permettre une valeur réelle pour la valeur initiale de frottement
+     SEUIL_INIT de la méthode CONTINUE de contact.
+   DETAILS
+     1)
+   SEUIL_INIT (qui permet de choisir le seuil de frottement initial) peut prendre
+   une valeur réelle (et non plus entière).
+
+     2) Modifications de la structure de données contact
+    Dans la structure de données de la méthode continue, la valeur de SEUIL_INIT
+    a été stockée dans le tableau CARACF (de type REAL) (et non dans ECPDON
+    (de type INTEGER)). Cette valeur est stockée à la place mémoire de
+    COEF_MATR_FROT (non utilisé dans la méthode continue). Ceci évite l'extension
+    du tableau CARACF.
+
+    3) Routines modifiées
+    La routine cazocc.f permet la lecture des principales caractéristiques du contact
+    et le remplissage de la SD 'DEFICO'  pour la méthode continue).
+    Une variable intermédiaire REACSI de type REAL*8 permet donc de récupérer
+    (par un GETVR8 et non un GETVIS) la valeur du seuil initial de frottement.
+    ZI(JCMCF+ 6*(IZONE-1)+ 6) = REACSI
+
+    Dans la première itération de Newton de la boucle sur le seuil de frottement, il faut
+    initialiser LAMBDA (stockée dans le tableau TABFIN) par la valeur stockée dans
+    ZI(JCMCF+ 6*(IZONE-1)+ 6) .
+
+
+    impact: MAPPAR.f et CAZOCC.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.44.01
+       EXPL_ : donner le type de seuil_init
+     DOC_V : V6.04.128, V6.03.502
+       EXPL_ :
+     DOC_D : D6.04.14
+       EXPL_ : modification de la structure de données
+   VALIDATION
+     SSNV128M, SSNP502C
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mcourtoi M.COURTOIS   DATE  le 04/04/2005 a 15:57:14
+
+--------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE
+      En cas d'erreur <S> ou d'arrêt par 'kill -USR1 ...', les bases sont
+      correctement fermées.
+      Problème si on a mis FIN(FORMAT_HDF='OUI'), car le script cherche à
+      recopier bhdf.1. Si on a commencé par POURSUITE(FORMAT_HDF='OUI'), on
+      récupère en résultat la base initiale, si on a commencé par POURSUITE(),
+      on doit s'arrêter en erreur.
+      Modifs :
+        - ibbase.f supprime le fichier bhdf.i après l'avoir lu,
+        - le script recopie glob.* si jamais il ne trouve pas de bhdf.*.
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U1.04.00
+       EXPL_ : ajouter cette précision sous forme d'une remarque
+   VALIDATION
+      test en poursuite HDF + fin HDF arrêté prématurément par kill -USR1
+
+
+-----------------------------------------------------------------------
+--- AUTEUR vabhhts J.PELLET   DATE  le 04/04/2005 a 13:49:40
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-095
+   NB_JOURS_TRAV : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE  "CREA_RESU/AFFE : résultats faux si les cham_nos n'ont pas le même profil"
+   FONCTIONNALITE
+     La réalisation de l'EL 2003-216 qui demandait l'économie des profils des
+     cham_no affectés dans CREA_RESU/AFFE n'était pas correcte.
+     La structure de données produite n'était pas correcte si on faisait :
+       RES1 = CREA_RESU ( OPERATION  = 'AFFE' , TYPE_RESU = 'EVOL_THER' ,
+                          NOM_CHAM  = 'TEMP' ,
+                          AFFE = (_F ( INST = 1.0 , CHAM_GD = CH1 , ),
+                                  _F ( INST = 2.0 , CHAM_GD = CH2 , ),) , )
+     et que CH1 et CH2 n'avaient pas le même profil (i. e. n'avaient pas les
+     mêmes CMPS sur les memes noeuds)
+     Le champ de RES1 correspondant à INST=2 était complètement faux (même là
+     où CH2 était défini)
+   DETAILS
+     Dans la routine CRTYPE, on comparait par erreur 2 PROF_CHNO qui
+     étaient toujours identiques !
+   RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.3.8
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT ssnv183a                      jmbhh01 J.M.PROIX          406    406      0
+ CASTEST MODIF rccm01a                       cibhhlv L.VIVAN            199      1      1
+ CASTEST MODIF rccm04a                       cibhhlv L.VIVAN            360      5      5
+ CASTEST MODIF rccm06a                       cibhhlv L.VIVAN           1377     53     14
+ CASTEST MODIF ssnp502c                     lamarche S.LAMARCHE         251      2      1
+ CASTEST MODIF ssnv128m                     lamarche S.LAMARCHE         278      2      2
+ CASTEST MODIF zzzz140a                       durand C.DURAND           181     51      1
+CATALOPY MODIF commande/affe_char_meca      lamarche S.LAMARCHE         788      2      2
+CATALOPY MODIF commande/calc_fonc_interp      durand C.DURAND            50      2      1
+CATALOPY MODIF commande/impr_resu             durand C.DURAND           146     23     23
+CATALOPY MODIF commande/post_rccm            cibhhlv L.VIVAN            211      1      3
+CATALOPY MODIF entete/accas                   durand C.DURAND           655      7      3
+ FORTRAN AJOUT postrele/rc32s1               cibhhlv L.VIVAN            132    132      0
+ FORTRAN MODIF algorith/calcft               d6bhhjp J.P.LEFEBVRE       154      3      2
+ FORTRAN MODIF algorith/crtype               vabhhts J.PELLET           380      2      5
+ FORTRAN MODIF algorith/mappar              lamarche S.LAMARCHE         184      2      2
+ FORTRAN MODIF assembla/assmat               d6bhhjp J.P.LEFEBVRE       691      2      2
+ FORTRAN MODIF elements/fonfis               cibhhlv L.VIVAN            489     29      4
+ FORTRAN MODIF jeveux/jetass                 d6bhhjp J.P.LEFEBVRE       247      3      3
+ FORTRAN MODIF jeveux/jxlocs                 d6bhhjp J.P.LEFEBVRE        81      4      3
+ FORTRAN MODIF modelisa/cazoco              lamarche S.LAMARCHE         568      5      5
+ FORTRAN MODIF modelisa/drz13d               cibhhlv L.VIVAN            364     16      8
+ FORTRAN MODIF postrele/op0165               cibhhlv L.VIVAN            142      2      2
+ FORTRAN MODIF postrele/prccm0               cibhhlv L.VIVAN             57      6      6
+ FORTRAN MODIF postrele/prccm7               cibhhlv L.VIVAN            322     26      3
+ FORTRAN MODIF postrele/rc3201               cibhhlv L.VIVAN            568     81    133
+ FORTRAN MODIF postrele/rc3203               cibhhlv L.VIVAN            313     17     17
+ FORTRAN MODIF postrele/rc32ac               cibhhlv L.VIVAN            425     42     28
+ FORTRAN MODIF postrele/rc32mu               cibhhlv L.VIVAN            149      3      7
+ FORTRAN MODIF postrele/rc32pm               cibhhlv L.VIVAN            166     31     55
+ FORTRAN MODIF postrele/rc32sn               cibhhlv L.VIVAN            219     55     13
+ FORTRAN MODIF postrele/rc32sp               cibhhlv L.VIVAN            275     43     16
+ FORTRAN MODIF postrele/rc32th               cibhhlv L.VIVAN            180     12     39
+ FORTRAN MODIF supervis/getcon               d6bhhjp J.P.LEFEBVRE       199      2      2
+ FORTRAN MODIF supervis/ibbase              mcourtoi M.COURTOIS         219      4      1
+ FORTRAN MODIF utilitai/op0134                durand C.DURAND           153      7      1
+  PYTHON MODIF Cata/ops                       durand C.DURAND           434      1      3
+  PYTHON MODIF Macro/calc_precont_ops         durand C.DURAND           468     14     14
+  PYTHON MODIF Macro/impr_fonction_ops        durand C.DURAND           402     17      8
+  PYTHON MODIF Noyau/N_MCCOMPO                durand C.DURAND           396     17      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         538       538              +538
+ MODIF :   38       12741       595     439      +156
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   40       13279      1133     439      +694 

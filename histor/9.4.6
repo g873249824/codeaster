@@ -1,0 +1,648 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 03/03/2009 - 16:19:01
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012962 DU 2008-12-08 16:50:22
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   projection modale d'une matrice non sym?ique
+FONCTIONNALITE
+   Grâce à l'aide de Jacques et Georges, j'ai adapté la routine projmr pour pouvoir projeter
+   une matrice non symétrique sur une base modale. 
+   Auparavant ce type d'opération menait à des résultats faux (La matrice projetée était
+   abusivement symétrisée.).
+   Toutefois, avant l'introduction de la gyroscopie en 9.1.16, on n'utilisait pas de concept
+   ASTER de type matrice non symétrique. 
+   Le risque d'erreur est donc nul chez un utilisateur non averti.
+   
+   N.B. : pour des raisons techniques, le développement a été restreint aux matrices dont la
+   projection tient en un seul bloc. Un ASSERT arrête l'utilisateur si ce n'est pas le cas.
+   
+   La validation est faite sur un complément du test SDLL140a : analyse modale d'un arbre
+   muni de trois disques.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V2.02.140
+VALIDATION
+   SDLL140a
+NB_JOURS_TRAV  : 15.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011830 DU 2008-03-11 16:20:18
+TYPE anomalie concernant Code_Aster (VERSION 9.2)
+TMA : CS
+TITRE
+   Temps de calcul anormalement longs pour les calculs de sensibilitxc3xa9 avec DYNA_LINA_TRAN
+FONCTIONNALITE
+   Franck Delcoigne, dans le cadre de l'évaluation des calculs de SENSIBILITE dans Code_Aster
+   appliqués à la dynamique, a mis en évidence un surcoût notable du calcul "sensible" par
+   rapport au calcul "direct".
+   En effet l'analyse faite par CS montre que le DYNA_LINE_TRAN "sensible" prend deux fois
+   plus de temps que le DYNA_LINE_TRAN "direct" (sans sensibilité). Or, selon la philosophie
+   de la sensibilité, le surcoût dû au calcul de la sensibilité doit être marginal puisqu'il
+   s'appuie sur la résolution du calcul direct et ne fait que calculer un second membre
+   supplémentaire. On constate que c'est le cas puisque le temps passé dans RESOUD par le
+   calcul avec sensiblité  est de 177s, à comparer aux 163s du calcul sans sensibilité. Le
+   temps supplémentaire passé dans les solveurs linéaires par la sensibilité n'est donc que
+   de 14s. L'idée sur laquelle la SENSIBILITE repose n'est pas mise en défaut. Alors, comment
+   explique-t-on son manque de performance ?
+   
+   L'analyse de CS montre que c'est le calcul du second membre qui provoque le temps CPU
+   supplémentaire. En effet DYNA_LINE_TRAN possède une particularité propre aux opérateurs de
+   dynamique linéaire, celle de travailler sur des concepts assemblés (matrices et vecteurs)
+   et, ainsi, de ne pas recourir aux calculs élémentaires (routines CALCUL). L'évaluation du
+   second membre ne prend ainsi que 7s dans le calcul "direct". En revanche, dans le calcul
+   avec sensibilité, l'appel à VECHDE (qui recourt essentiellement à CALCUL) prend 183s et
+   l'assemblage du second membre (ASASVE) 39s.
+   
+   En conclusion, le surcoût de la sensibilité dans DYNA_LINE_TRAN est dû au calcul
+   élémentaire du second membre (et, dans une proportion moindre, à son assemblage). Il
+   efface complétement le gain sur la résolution. Dans l'état actuel, il est aussi efficace
+   de faire une seconde résolution et de déterminer la sensibilité par différences finies.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sans objet
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 03/03/2009 - 08:51:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012761 DU 2008-11-03 08:05:16
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   DYNA_NON_LINE : forces de contact p?lis?
+FONCTIONNALITE
+   Anomalie de post-traitement
+   ===========================
+   
+   Sur un problème de dynamique traité par DYNA_NON_LINE où l'on modélise du contact
+   unilatéral, du frottement et de l'amortissement, on constate que la seule donnée du champ
+   SIEF_ELGA, des déplacements et des vitesses ne permet pas de vérifier directement
+   l'équilibre énergétique de la structure.
+   
+   Analyse
+   =======
+   
+   Pour modéliser l'amortissement, on tire parti du fait que la loi de comportement 1D
+   'DIS_CHOC' qui traite le contact/frottement sur un discret, permet d'affecter des
+   caractéristiques d'amortissement à ce dernier.
+   
+   En pratique dans Code_Aster et pour rester homogène avec le traitement de l'amortissement
+   autre que dans ce cas, on assemble la matrice d'amortissement séparément de la matrice de
+   raideur. Ainsi le traitement de la loi de comportement 'DIS_CHOC' ne donne que les forces
+   de contact/frottement et la contribution à la matrice de raideur s'il y a lieu.
+   Les forces dues à l'amortissement, sont considérées comme un chargement extérieur, elles
+   sont bien prises en compte dans la vérification de l'équilibre en effectuant le produit de
+   la matrice d'amortissement assemblée par le vecteur vitesse.
+   
+   Ainsi tandis que les forces de contact/frottement sont sauvées dans le champ SIEF_ELGA (au
+   moment de l'intégration de la loi 'DIS_CHOC'), celles dues à l'amortissement ne le sont
+   pas (elles sont calculées sans être sauvegardées car elles ne servent qu'à vérifier
+   l'équilibre).
+   
+   Rq : avant la fiche REX 6822 (en version 7.0.14) on stockait effectivement la somme des
+   efforts internes et d'amortissement dans SIEF_ELGA.
+   
+   Conclusion
+   ==========
+   
+   Il n'y a donc aucun "bug" dans le calcul, ni dans le post-traitement. Ce qui est observé
+   ici n'est pas spécifique au contact pénalisé modélisé par DIS_CHOC mais est vrai dès que
+   l'on introduit de l'amortissement : le champ de contraintes SIEF_ELGA (et donc les forces
+   nodales FORC_NODA) ne contiennent que les efforts dus au travail de déformation, les
+   forces d'amortissement ou d'inerties ne sont pas incluses dedans.
+   
+   Pour les forces d'inerties, on dispose de l'option M_GAMMA pour remonter à leur valeur,
+   mais malheureusement on ne dispose pas d'une option "C_VITESSE" pour calculer les forces
+   d'amortissement.
+   
+   Étant donné le caractère générique de cette fiche, on note en impact documentaire la doc
+   U4 de DYNA_NON_LINE ainsi que CALC_NO (pour FORC_NODA). Il faut y préciser qu'en dynamique
+   les forces nodales (FORC_NODA) ne contiennent que les forces internes dues au travail de
+   déformation. Pour remonter aux forces d'inerties, on doit utiliser l'option M_GAMMA. On ne
+   peut pas actuellement remonter aux forces d'amortissement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : U4.53.01,U4.81.02
+VALIDATION
+   n?t
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013022 DU 2009-01-06 10:55:13
+TYPE aide utilisation concernant Code_Aster (VERSION 7.0)
+TITRE
+   maillage et calcul de contact
+FONCTIONNALITE
+   Fiche close suite au mail du 17/02/2009 (copie ci-dessous)
+   
+   
+   Thomas DE-SOZA
+   17/02/2009 14:13
+   	 
+   	 Pour : Laurent SCLIFFET/A/EDF/FR@EDF, Gilles ROUSSEAU/A/EDF/FR@EDF
+   	 cc : Christophe-Mmn DURAND/A/EDF/FR@EDF, Vincent GODARD/A/EDF/FR@EDF, Mickael
+   ABBAS/A/EDF/FR@EDF, Jean-Michel PROIX/A/EDF/FR@EDF
+   	 Objet : Traitement de l'étude Paluel (boulon)
+   
+   Bonjour,
+   
+   Ce mail fait suite à la réunion téléphonique du 21/01. Avant cette réunion le bilan du
+   travail déjà effectué était le suivant :
+   
+   * un calcul avec maillage réglé linéaire uniforme et relativement grossier passait mais
+   donnait des contraintes localisées et anormalement élevées (non physiques). Cela était du
+   à la description d'un contact ponctuel (le massif n'arrive pas à épouser le boulon).
+   * le même maillage raffiné ne permettait pas de converger.
+   
+   Lors de la réunion téléphonique plusieurs axes de progression ont été envisagés pour mener
+   l'étude à bien :
+   
+   * passer à un maillage fin en tétraèdres avec éléments quadratiques pour mieux décrire la
+   courbure du massif sous l'effet de l'indentation du boulon et améliorer ainsi la
+   description du contact
+   * utiliser des formulations sachant traiter l'incompressibilité plastique pour les fortes
+   déformations (les niveaux atteints même dans la réalité laissent à penser qu'un tel
+   phénomène peut se produire et donc empêcher la convergence avec des éléments classiques).
+   
+   Voilà un nouveau bilan après diverses tentatives :
+   
+   1) L'utilisation d'un maillage fin en tétra quadratiques ne permet pas de mener le calcul
+   à bien. Pire dès les premiers incréments de chargement, la convergence peine à être atteinte.
+   2) Sur un maillage 2D avec raffinement important autour du congé du boulon, on note les
+   mêmes difficultés. Des spécialistes des grandes déformations plastiques m'ont aidé à
+   post-traiter les résultats et m'ont confirmé que des phénomènes d'incompréssibilité
+   plastiques étaient visibles. Des tests ont été menés avec la formulation 2D_PLAN_INCO_GD
+   qui traite de l'incompréssibilité plastique en grandes déformations, la convergence semble
+   en être amélioré mais le coût CPU est rédhibitoire. Le même test en 3D n'est donc pas
+   possible.
+   3) La méthode consistant à sous intégrer ne donne pas de meilleurs résultats.
+   
+   En conclusion :
+   
+   Les difficultés à obtenir des résultats physiques sont dues à l'utilisation d'un maillage
+   trop grossier. Le type de calcul que l'on cherche à mener porte une contrainte forte sur
+   le maillage et sur le raffinement autour de la zone de contact.
+   Toute tentative de raffinement de maillage entraîne l'apparition de phénomènes de blocage
+   dus à l'incompressibilité plastique, phénomène que l'on ne sait pas traiter
+   industriellement dans Code_Aster à l'heure actuelle.
+   
+   Pour finir, on peut dire que Code_Aster n'est pas adapté pour calculer l'étude Paluel dans
+   l'état actuel de ses fonctionnalités.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013025 DU 2009-01-06 19:18:01
+TYPE aide utilisation concernant Code_Aster (VERSION 7.0)
+TITRE
+   Contact cylindre-cylindre, mxc3xa9thode continue et xc3xa9lxc3xa9ments quadratiques
+FONCTIONNALITE
+   AOM
+   ===
+   
+   Dans cette fiche, on n'arrive pas à faire tourner une étude de robinet avec la méthode
+   'CONTINUE', car on rencontre un pivot presque nul.
+   Les surfaces de contact sont des QUAD8.
+   
+   Analyse
+   =======
+   
+   L'analyse a montré que le coefficient COEF_REGU_CONT permettait de jouer sur le nombre de
+   décimales perdues dans la factorisation et ainsi de faire passer le calcul. Cette solution
+   est cependant peu satisfaisante.
+   Comme les QUAD8 sont déconseillés en contact, on a dans la fiche 11803 étendu la
+   complétude de la méthode 'CONTINUE' notamment aux surfaces de contact QUAD9 ce qui a
+   permis de faire tourner le calcul sans modification.
+   
+   Conclusion
+   ==========
+   
+   On clot cette fiche et on attendra la restitution de la fiche 11803 en version de
+   développement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013127 DU 2009-02-06 15:22:45
+TYPE aide utilisation concernant Code_Aster (VERSION 7.0)
+TITRE
+   Detection de contact dans DYNA_NON_LINE alors qu'il n'y en a pas
+FONCTIONNALITE
+   A . Position du problème
+   ========================
+   
+   On a observé sur des études de chutes de grappe (et à l'occasion de la création de la
+   macro-commande REPTIL) des anomalies de résolution du contact (à compléter et vérifier) :
+   
+   * il y a parfois des difficultés voire des impossibilités à converger alors que la
+   configuration étudiée n'implique aucun contact (configuration droite du guide, grappe droite)
+   * pire on observe parfois des situations où il y a convergence avec détection de contact
+   alors que la configuration est droite (guide comme grappe).
+   
+   Au moment des difficultés ou des pas de temps fautifs, on voit apparaître des messages du
+   type :
+    <CONTACT> <> LIAISON    10(N26     /EL M39     ):  PIVOT NUL         ( TYPE: FROT. 2   )
+    <CONTACT> <> LIAISON     6(N22     /EL M35     ):  PIVOT NUL         ( TYPE: FROT. 2   )
+   
+   Cette fiche a pour but d'apporter des explications à ces comportements. Pour ceux qui ne
+   seraient intéressés que par les actions prises, merci de sauter à la conclusion.
+   
+   B . Éclaircissement
+   ===================
+   
+   Avant d'entrer dans les détails, précisons ce que sont les messages affichés cités
+   ci-dessus. Il s'agit d'un mécanisme, intégré par la plupart des algorithmes de contact
+   discret, qui permet la détection de redondances entre d'une part des CL et des conditions
+   de contact, d'autre part des CL et des conditions de frottement. Quand une telle
+   coïncidence se produit, on prend le parti de supprimer les conditions de
+   contact/frottement pour préserver la CL et empêcher la singularité de la matrice de
+   contact. On en avertit l'utilisateur par cet affichage non débrayable.
+   Ce point et son traitement sont détaillés dans la documentation de référence du
+   contact/frottement discret R5.05.50.
+   
+   Ces affichages sont donc purement informatifs, et ne doivent pas être pris pour
+   l'activation de contact (comme nous le verrons par la suite). Seul l'affichage à la fin
+   d'un pas de temps fait foi, par exemple :
+      NOMBRE FINAL DE LIAISONS DE CONTACT   :        2
+   
+   C . Présentation du cas-test
+   ============================
+   
+   Emmanuel a constitué un cas-test qui reproduit les difficultés rencontrés dans les études.
+   Ce cas-test est constitué d'un guide formé par un entonnoir (maillage fait de plaques) et
+   d'une grappe modélisée par une poutre. Bien que le maillage soit 3D, la modélisation est
+   restreinte au 2D en bloquant le degré de liberté de tous les DDLs suivant l'axe Oz.
+   La grappe (droite) est positionnée au milieu du guide (dont les parois sont droites et
+   parfaitement symétriques) et elle chute sous poids propre. On introduit des conditions de
+   C/F sur les noeuds de la poutre (qui sont donc esclaves) afin d'empêcher le contact avec
+   les parois (maîtres donc) à gauche comme à droite de celle-ci.
+   La première remarque que l'on peut faire c'est que cette façon de modéliser le contact est
+   problématique car des conditions de contact incompatibles peuvent être écrites sur les
+   noeuds esclaves (néanmoins il n'est pas possible en conservant une modélisation poutre
+   d'intervertir maîtres et esclaves, la notion de normale n'étant pas définie sur un élément
+   dégénéré qu'est un segment en 3D). Passons ce détail.
+   
+   Pour modéliser l'épaisseur des guides et la section de la grappe on approche les éléments
+   géométriques que sont les TRIA3 des plaques et les SEG2 des poutres, de sorte qu'ils
+   soient séparés dans le maillage d'une distance équivalente au jeu initial. Cette façon de
+   faire est non standard (on dispose désormais de paramètres DIST_MAIT, DIST_ESCL,
+   DIST_COQUE et DIST_POUTRE pour réprésenter l'épaisseur des éléments de structure.) mais
+   n'est pas (a priori) problématique.
+   
+   Du point de vue résolution du contact, on modélise un frottement de coulomb. L'algorithme
+   de résolution est la méthode 'LAGRANGIEN' en contact et frottement 3D.
+   
+   D . Analyse du cas-test et des résultats
+   ========================================
+   
+   Si on s'en tient aux résultats, ils sont parfaitement justes puisque qu'aucun contact
+   n'est détecté à aucun pas de temps de la chute (qui est donc libre).
+   Néanmoins, en analysant le fichier de message, on se rend compte qu'à l'instant 0.0038, on
+   n'arrive pas à converger (non sans avoir détecté du contact) et on est obligé de
+   redécouper le pas de temps.
+   En activant un affichage verbeux, on voit qu'effectivement 2 liaisons (correspondant à 2
+   noeuds esclaves) sont activées dès la première itération de Newton du pas de temps 0.0038.
+    Le contact qui s'en suit déforme le guide et on n'atteint jamais un équilibre dans
+   l'algorithme de Newton (d'où le rédécoupage).
+   
+   Arrêtons nous pour faire 2 remarques :
+   * sur un exemple très simple, on reproduit le problème plus global rencontré dans les études
+   * ici il n'y a pas eu convergence avec un état de contact non nul. Comme le fait remarquer
+   Emmanuel, l'activation du contact (qui tend, suite au choc, à exciter le guide très mou
+   suivant un de ces modes de vibrations) aurait pu conduire à un équilibre non physique mais
+   qui satisfasse les conditions de C/F.
+   
+   Pour comprendre ce qu'il se passe (pourquoi active-t-on des liaisons alors que le jeu a
+   toutes les chances de rester positif), il faut entrer dans l'algorithme de contact après
+   la première itération de Newton (rappel : le contact discret dans Aster agit en correction
+   après chaque prédiction/correction de l'algorithme global). Pour cela j'ai fait avancer
+   l'algorithme 'LAGRANGIEN' pas à pas en mode debug.
+   On s'est alors aperçu comme bien des fois, que l'algorithme ne fait que ce qu'on lui dit
+   de faire :
+   1/ Au début du pas de temps t=0.0038 on fait un appariement entre les noeuds esclaves et
+   les facettes maîtres pour déterminer le jeu initial sur cette configuration équilibrée et
+   construire un opérateur A permettant de calculer les jeux actualisés étant donné un petit
+   déplacement delta_u. Si ce déplacement n'est pas petit, l'appariement n'est plus valide,
+   et le calcul du jeu n'a plus de sens.
+   2/ On fait la prédiction de Newton qui nous fournit un delta_u
+   3/ On entre dans le contact et l'on va corriger delta_u
+      a/ pour cela on calcule les jeux actualisés à l'aide de l'opérateur A et du déplacement
+   delta_u
+      b/ si ce jeu est négatif sur une des liaisons alors on l'active
+   
+   Ici 2 liaisons ont un jeu < 0 et sont donc activées. Pourtant l'état au début du pas de
+   temps à t=0.0038 (cf image jointe) laisse à penser que le déplacement prédit (qui est de
+   -0.00305 pour tous les noeuds de la grappe suivant l'axe de celle-ci) n'entraînera aucune
+   interpénétration et donc aucun jeu < 0. C'est vrai : sauf que le jeu n'est pas calculé sur
+   la géométrie actuelle mais est "actualisé" (et c'est la toute la différence) à partir de
+   l'opérateur A et du déplacement delta_u.
+   Or ici delta_u = - 0.00305, qui est l'ordre de grandeur de la hauteur de l'entonnoir
+   (0.004), n'est pas infinitésimal et donc l'actualisation du jeu n'a pas de sens si la
+   surface de contact n'est pas plane (c'est à dire si sa normale varie beaucoup). Ici les 2
+   points problématiques se trouvent être au niveau de l'entonnoir et sont appariés avec des
+   facettes obliques (les parois de l'entonnoir). Le déplacement important conduit les 2
+   noeuds problématiques à sortir de l'entonnoir et à se retrouver dans le rétreint.
+   L'actualisation des jeux donnent des valeurs négatives car les points sont passés sous le
+   prolongement des parois obliques, bien qu'ils soient toujours à l'intérieur du rétreint.
+   
+   E . Conclusion
+   ==============
+   
+   On a donc vu qu'il est tout à fait normal que les algorithmes de contact détectent une
+   interpénétration alors qu'il n'y en a aucune visuellement à tout moment de l'algorithme de
+   Newton. Cela est rendu possible par la façon de calculer le jeu : un appariement est
+   réalisé après chaque équilibre de Newton, puis le jeu est actualisé avec une hypothèse de
+   petits déplacements. Ainsi la notion de contact en grands déplacements peut être vu comme
+   l'accumulation de plusieurs cycles de réactualisation-convergence avec petits déplacements.
+   
+   Existe-t-il des solutions de contournements ?
+   
+   * La première idée qui vient à l'esprit est que le pas de temps doit être adapté (limité)
+   pour que les incréments de déplacement ne fassent pas sortir du domaine de validité de
+   l'appariement courant (i.e. un noeud esclave donné continue de se projeter sur la maille
+   avec laquelle il a été apparié ou une de ses voisines).
+   * Enfin une dernière possibilité est de réaliser un changement de pente plus doux, c'est à
+   dire un congé, maillé suffisamment finement. Là encore la contrainte géométrique devient
+   moins forte.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ?de jointe
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013145 DU 2009-02-19 08:14:49
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   bug CONTACT : prise en compte de plusieurs SANS_GROUP_NO
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Dans un calcul de contact comportant 2 zones de contact, avec chacune la présence du
+   mot-clé SANS_GROUP_NO, on constate que le seul le SANS_GROUP_NO de la première zone est
+   pris en compte.
+   
+   Analyse
+   =======
+   
+   Le calcul utilise des surfaces de contact QUAD8. Comme les QUAD8 sont déconseillés en
+   contact, on fait des manipulations (suppressions automatiques des noeuds milieux,
+   créations de relations linéaires) qui conduisent à retailler SANS_GROUP_NO en souterrain.
+   Cela est fait dans la routine CFSUEX.
+   Or on le fait mal ce qui conduit à perdre la liste SANS_GROUP_NO au delà de la 2ème zone
+   de contact.
+   
+   Conclusion
+   ==========
+   
+   On corrige. Le bug est là depuis longtemps mais il n'est pas problématique et n'entraîne
+   pas de résultats faux.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ?de jointe
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013116 DU 2009-02-03 08:54:37
+TYPE aide utilisation concernant Code_Aster (VERSION 7.0)
+TITRE
+   Contact avec ?ments quadratiques : r?tions de contact
+FONCTIONNALITE
+   Faciliter le post-traitement du contact discret
+   ===============================================
+   
+   1/ Position du problème
+   
+   Cette fiche pourrait se renommer ainsi. En effet elle soulève la difficulté à accéder à
+   des grandeurs physiques quand on traite le contact avec une méthode discrète.
+   Rappel :
+   -- méthodes discrètes : les conditions de contact sont vérifiées en chaque noeud esclave,
+   il n'y pas de nouvelles inconnues dans le problème et des forces nodales sont appliquées
+   pour vérifier l'équilibre (comme une réaction existe là où l'on impose une CL).
+   -- méthode continue : l'écriture au sens faible des conditions de contact entraîne
+   l'apparition d'un DDL supplémentaire (multiplicateur de contact) dont le sens physique est
+   celui d'une pression.
+   
+   Dans un cas on accède directement à la grandeur physique adéquate (la pression) dans
+   l'autre, on connait seulement l'état de contact, et on peut relever les forces nodales sur
+   la surface de contact au même titre que les réactions d'appuis (associées aux CL).
+   Pour simplifier l'interprétation, on trouve néanmoins dans la SD VALE_CONT, une grandeur
+   appelée RN qui est simplement la projection des forces nodales (de contact) suivant la
+   normale esclave au noeud considéré : ce n'est pas une pression mais bien une force.
+   
+   2/ Analyse du cas fourni
+   
+   Sur l'étude jointe où est modélisé le contact de Hertz entre un plan rigide et une boule
+   déformable, on observe que :
+   -- dans le cas où les éléments finis sont des HEXA8, les forces nodales sont lisses et
+   permettent "de remonter" à des pressions en divisant la somme des forces sur un élément
+   par sa surface.
+   -- dans le cas où l'on utilise des HEXA20 ou des HEXA27, les forces nodales oscillent
+   (tout en restant de signe négatif suivant la normale sortante) et la tentative de remonter
+   à des pressions de contact est veine. On observera cependant que la contrainte SIZZ (le
+   contact se faisant suivant la direction z) aux points de Gauss comme aux noeuds, ne
+   présente pas d'oscillations.
+   
+   3/ Sur un exemple plus simple
+   
+   On pourrait penser à une erreur de programmation dans la restitution des forces : il n'en
+   est rien (le caractère semble-t-il correct des contraintes en atteste). Ce sont les
+   éléments quadratiques qui provoquent ce comportement, ils illustrent par ailleurs assez
+   bien que la notion de force nodale n'a pas de sens physique réel (ce n'est qu'une notion
+   qui vient de la discrétisation en éléments finis).
+   En effet il est amusant de calculer la contribution aux forces nodales (au second membre)
+   d'un chargement de pression uniforme sur un élément quadratique (SEG3, QUAD8 ou QUAD9). Le
+   CR que je joins en annexe comporte ces calculs.
+   On peut ensuite expérimenter sur le cas-test simplissime SSNV167B et ssnv167C.
+   Pour résumer :
+   
+   -- SEG3 : la contribution au noeud milieu est 4 fois plus importante qu'aux noeuds sommets
+   mais elle est de même signe
+   -- QUAD8 : la contribution aux noeud milieux est 4 fois plus importante qu'aux noeuds
+   sommets **mais** elle est de signe opposé.
+   -- QUAD9 : la contribution au noeud milieu de la face est 4 fois plus importante qu'aux
+   noeuds milieux, elles-mêmes 4 fois plus importantes qu'aux noeuds sommets. Toutes ont le
+   même signe.
+   
+   Ce qui ressort premièrement c'est que le QUAD8 n'est pas adapté pour traiter le contact (à
+   cause du signe opposé), c'est d'ailleurs pour cette raison que dans Aster, en présence de
+   QUAD8, les noeuds milieux sont exclus du contact et liés aux noeuds sommets. Cela a pour
+   conséquence de rigidifier la maille mais on obtient au moins une solution correcte (en
+   déplacement et en contrainte).
+   Le deuxième point est que les forces nodales ne sont pas une grandeur intuitive : sur un
+   élément quadratique, appliquer une pression uniforme ne revient pas à appliquer des forces
+   nodales équireparties (c'est le cas sur QUAD4 ou un SEG2).
+   Enfin le QUAD9 (maille volumique HEXA27) ne souffre pas de la pathologie du QUAD8 mais les
+   forces nodales n'en restent pas moins contre-intuitives.
+   
+   Conclusion
+   ==========
+   
+   Les conseils qui s'appliquent en présence de contact avec des éléments quadratiques sont
+   donc les suivants :
+   
+   * privilégier des TETRA10 ou des HEXA27 (à la limite des PENTA15 si le contact est suivant
+   les TRIA6).
+   * attention à l'interprétation. Se fier toujours aux contraintes.
+   * utiliser la méthode 'CONTINUE' qui donne directement la pression de contact (via le DDL
+   LAGS_C).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ?de jointe
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 03/03/2009 - 09:24:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013154 DU 2009-02-20 13:21:47
+TYPE express concernant Code_Aster (VERSION 9.4)
+TITRE
+   Cas test NOOK ssns106g
+FONCTIONNALITE
+   Problème :
+   -------------
+   
+   Suite aux modifications du couplage entre GLRC_DM et VMIS_XXX via KIT_DDI, le cas test
+   ssns106g ne fonctionne plus.
+   
+   
+   Solution :
+   -------------
+   
+   Modification du cas test afin d'ajouter le mot clés ITER_MAXI_DEBORST = 15
+   
+   COMP_INCR=_F(
+                RELATION ='KIT_DDI',
+                RELATION_KIT = ('GLRC_DM','VMIS_ISOT_LINE'),
+                ITER_MAXI_DEBORST = 15,
+                ),
+   
+   Le fichier lgdmvm.f a été modifié afin que si l'utilisateur de définit pas le mot clés
+   ITER_MAXI_DEBORST, la valeur soit automatiquement affectée à 15.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssns106g
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013149 DU 2009-02-19 10:28:18
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.4.5, le cas-test ssls124a est NOOK sur Rocks et Calibre 4.
+FONCTIONNALITE
+   Problème :
+   -----------
+   
+   Le cas test ssls124a est NOOK sur Calibre4 et Rocks
+   
+   
+   Solution :
+   ------------
+   
+   La solution consiste à :
+   _modifier la valeur du coefficient de Poisson de 0.3 à 0 afin de retrouver la solution
+   poutre quand il existe plusieurs éléments dans la largeur de la poutre
+   _imposer de façon plus strict la condition d'encastrement quand il existe plusieurs
+   éléments dans la largeur de la poutre
+   
+   Validation :
+   -------------
+   
+   Cas test ssls124a
+   
+   Résultat :
+   -----------
+   
+   Le fait de changer la valeur du coefficient de Poisson permet de gagner en précision sur
+   l'ensemble des test sauf sur la configuration à très fort élancement. On a été obligé de
+   passer l'erreur relative de 6 à 8%
+   
+   N.B. :
+   -------
+   
+   Le cas test ssls124b a été modifié de la même manière afin de garder une cohérence. On a
+   gagné en précision sur l'ensemble des cas test.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : V3.03.124
+VALIDATION
+   ssls124x
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT sdll141d                       boyere E.BOYERE           184    184      0
+ CASTEST MODIF sdll140a                       boyere E.BOYERE           400     77      4
+ CASTEST MODIF ssls124a                     sfayolle S.FAYOLLE          530    346    214
+ CASTEST MODIF ssls124b                     sfayolle S.FAYOLLE          341      2      2
+ CASTEST MODIF ssns106g                     sfayolle S.FAYOLLE          498      2      1
+ FORTRAN MODIF algorith/projmr                boyere E.BOYERE           212    125     72
+ FORTRAN MODIF elements/lgdmvm              sfayolle S.FAYOLLE          418      6      1
+ FORTRAN MODIF elements/pogyro                boyere E.BOYERE           148     28     14
+ FORTRAN MODIF elements/ptgy01                boyere E.BOYERE           175      4      4
+ FORTRAN MODIF modelisa/cfsuex                desoza T.DESOZA           116      2      2
+  PYTHON MODIF Messages/elements2             boyere E.BOYERE           228      1      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         184       184              +184
+ MODIF :   10        3066       593     319      +274
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   11        3250       777     319      +458 

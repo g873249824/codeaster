@@ -1,0 +1,1723 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 11/12/2010 - 11:30:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014125 DU 2009-10-30 07:58:20
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+    CALC_ELEM
+FONCTIONNALITE
+   Probleme:
+   =========
+   
+   Il semble y avoir un bug dans la détermination des numéros d'ordre. Les calculs ont été
+   effectués pour les instants 6.0, 6.2, 6.4, 6.6, 6.8....
+   
+   L'instant 6.6 correspond au seul numéro d'ordre 33.
+   
+      resu=CALC_ELEM(reuse = resu,
+                    OPTION=('SIEF_ELNO_ELGA','EQUI_ELNO_SIGM','EPSP_ELNO','VARI_ELNO_ELGA',),
+                    INST=6.5999999999999996,
+   ....
+                    PRECISION=9.9999999999999995E-07,
+                    NORME='VMIS',
+                    RESULTAT=resu,
+                    );
+   
+      
+      !-----------------------------------------------------------------------------!
+      ! <A> <UTILITAI8_38>                                                          !
+      !                                                                             !
+      !                                                                             !
+      !  Plusieurs champs correspondant à l'accès demandé pour la sd_resultat  resu !
+      !                                                                             !
+      !  accès INST : 6.6                                                           !
+      !                                                                             !
+      !   nombre : 2 NUME_ORDRE retenus : 33, 43, 0                                 !
+      !                                                                             !
+      !                                                                             !
+      !                                                                             !
+      ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette              !
+      ! alarme, vous pouvez obtenir des résultats inattendus !                      !
+      !-----------------------------------------------------------------------------!
+   
+   
+   Réponse:
+   ========
+   Patrick a trouvé la réponse tout seul. Il y a une erreur dans un des STAT_NON_LINE.
+   NUME_INST_INIT = 27
+   NUME_INST_FIN = 38
+   
+   au lieu de NUME_INST_FIN = 28
+   
+   Que fait Aster dans ce cas ?
+   ============================
+   
+    NUME_INST_* ne donne que les accès dans la liste d'instants. La manière dont fonctionne
+   l'archivage est découplée de cette numérotation. Il ne va donc pas écraser les instants
+   calculés (quand il risque de le faire, il y a un message d'alarme), il va les archiver
+   deux fois, à des numéros distincts (d'où l'alarme dans IMPR_RESU).
+   
+   Pour l'affichage, c'est juste que le message prévoit d'écrire trois numéros d'ordres
+   confondus mais qu'il y en a deux.
+   Je corrige cette petite coquille dans RSUTNU.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR andriam      ANDRIAMBOLOLONA Hari   DATE 11/12/2010 - 11:30:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015691 DU 2010-10-07 13:56:58
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    DYNA_LINE_HARM - Carton avec sensibilitxc3xa9
+FONCTIONNALITE
+   Contexte :
+   La procédure utilisée pour les calculs de sensibilité consiste à appliquer au second membre du système un chargement qui est 
+   égal au produit des dérivées des matrices élémentaires par le déplacement ou l’accélération.
+   Pour les calculs harmoniques, ceci est assuré par dy2mbr qui appelle vechde.
+   Pour les calculs transitoires, on fait appel à dlfext qui appelle vechde.
+   Mickael a constaté une incohérence sur la dimension d'un vecteur en argument de vechde.
+   Dans le programme appelant, on passe en argument un vecteur déclaré de taille 1 et dans vechde, cet argument est de taille 
+   variable. Ce qui n’est pas très propre, surtout si on fait appel à la deuxième valeur du vecteur par exemple.
+   
+   Analyse :
+   En regardant de plus près dans vechde, on constate que cette routine n'appelle que la première valeur du vecteur concerné.
+   Donc, les calculs tournent sans problème et il n’y a pas de résultat faux.
+   
+   Proposition :
+   Pour assurer une certaine cohérence et une meilleure lisibilité, je propose que l’on fasse passer ZK24(JCHAR) en argument de 
+   vechde dans les programmes appelant : dy2mbr et dlfext.
+   Correction à reporter en version d'exploitation.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    les cas test sensd*
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 11/12/2010 - 11:30:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015260 DU 2010-06-28 12:59:39
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Bug dans DYNA_TRAN_MODAL ?
+FONCTIONNALITE
+   En poursuite dans DYNA_TRAN_MODAL il y avait un dépassement de tableau lors de la recopie
+   des résultats repris du premier calcul vers les résultats de la poursuite. Cela pouvait
+   provoquer un écrasement aval (On débordait le tableau des numéros d'ordre d'une case.).
+   Mais a priori le risque de résultats faux est faible.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout sur DYNA_TRAN_MODAL
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR debonnieres  DE BONNIERES Philippe   DATE 11/12/2010 - 11:30:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015352 DU 2010-07-16 16:33:39
+TYPE anomalie concernant Code_Aster (VERSION 9.7)
+TITRE
+    ecart entre META_LEMA_ANI et Norton avec PETIT_REAC
+FONCTIONNALITE
+   Dans le cadre du projet Crocodile 2, j'ai ete amene a realiser une comparaison entre le 
+   modele de
+   comportement META_LEMA_ANI degenere en une loi isotrope de Norton et le modele de Norton 
+   proprement
+   dit, sur un cas-test en traction simple avec PETIT_REAC en 2D axisymetrique (la traction 
+   se faisant
+   suivant l'axe).
+   J'ai constate, pour une deformation imposee de 20%, un ecart significatif de l'ordre de 
+   12% sur le
+   deplacement dans la direction transverse entre les deux modeles, alors que ces deux 
+   modeles sont
+   censes coincider (c'est d'ailleurs le cas en petites deformations).
+   
+   
+   J'ai corrige le probleme en utilisant pour integrer la loi uniquement SIGM et non plus 
+   EPSM (il s'agit d'un probleme intrinseque à PETIT_REAC, cf reponse de JMP à la fiche 
+   15353)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.22.136
+VALIDATION
+    HSNV136A HSNV136B
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 11/12/2010 - 11:30:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015313 DU 2010-07-08 12:21:28
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    ERRE_ELEM_SIGM - erreur developpeur
+FONCTIONNALITE
+   Problème :
+   ========
+   Quand on met en oeuvre le très pertinent problème consistant à bloquer tous les ddls d'une
+   structure et qu'ensuite on calcule l'option ERRE_ELEM_SIGM on s'arrête fatalement.
+   
+   Analyse :
+   =======
+   Dans ce test, le champ de contrainte et d'erreur sont nuls. Or pour l'erreur relative, on
+   norme avec la norme de sigma. Dans notre test, on divise par zéro.
+   
+   Correction :
+   ==========
+   On blinde pour ne plus diviser par zéro.
+   
+   Impacts :
+   =======
+   erglme.f
+   te0375.f
+   te0377.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tests ERRE_ELEM_SIGM
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 11/12/2010 - 11:30:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015837 DU 2010-10-27 15:21:15
+TYPE anomalie concernant Code_Aster (VERSION 9.8)
+TITRE
+    probleme de convergence, liaison unilaterale
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   [Initialement cette fiche issue de l'assistance technique était une AOM. Il s'est en fait
+   avéré que les fichiers soumis par l'utilisateur montraient un bug]
+   
+   '''
+   Demande emise dans le cadre de l'AT (Minh-Bao LE, Minh-Bao LE, Thsard CIFRE EDF SEPTEN - LMS)
+   
+   Tout d'abord, il vous remercie pour l'aide que vous lui avez apportée (fiche 15794).
+   
+   A propos des remarques sur le modèle d'avancement de fissure, il pense que la non
+   convergence est liée au traitement de la condition de liaison unilatérale.
+   
+   Il nous a envoyé le fichier commande et le maillage .med correspondant. Nous avons
+   retravaillé les fichiers pour pouvoir faire passer les études en STA10 sur Bull.
+   
+   En appliquant le paramètre CTLVR à 1 ou 2 dans le fichier de commande, nous pouvons
+   changer la modélisation du contact par CONTACT ou par LIAISON_UNILATER. Ces deux options
+   modélisent normalement le même problème (l'interdiction de la pénétration de la lèvre de
+   la fissure), mais le calcul utilisant CONTACT converge alors que le calcul avec
+   LIAISON_UNILATER diverge.
+   '''
+   
+   Analyse
+   =======
+   
+   On constate que le calcul avec CONTACT contre une surface rigide converge sans problème
+   tandis que le calcul avec LIAISON_UNILATER diverge dès l'instant suivant la première
+   activation de la liaison.
+   
+   Effectivement il y a un bug dans la programmation de la liaison unilatérale.
+   
+   C'est ma faute : en 9.2.19 (dans la fiche issue11906) j'ai corrigé cette fonctionnalité
+   qui ne pouvait pas marcher avant. Plusieurs bugs avaient été corrigés dans cette fiche
+   dont un qui portait sur la mise à jour du jeu : elle n'était pas faite auparavant.
+   J'ai donc ajouté un boucle pour la faire : malheureusement à l'époque je n'étais qu'un
+   débutant du contact et je me suis planté. La boucle a été faite sur NBLIAC au lieu de
+   NBLIAI (notez la subtile différence).
+   
+   J'ai introduit un cas-test (ZZZZ237B) pour valider la liaison unilatérale. Malheureusement
+   dans ce test j'active toutes les liaisons d'un coup donc NBLIAC=NBLIAI. Il existe un autre
+   test qui se rapproche beaucoup de l'étude jointe à cette fiche (HPLP310A) mais lui aussi
+   ne pose pas de problème actuellement.
+   Ainsi tout calcul qui active la liaison unilatérale en ne commençant pas par les premiers
+   noeuds contraints ne pouvait pas marcher.
+   
+   Correction
+   ==========
+   
+   - je corrige algocu.f
+   - j'ajoute en INFO=2 une impression des jeux pour aider au débuggage
+   - je restitue une modélisation de type contact de Hertz avec une sphère sur un plan rigide
+   (pour activer les liaisons une par une et en partant de la fin du GROUP_NO définissant la
+   surface de contact)
+   
+   V9
+   ==
+   
+   Il faut faire la même modif en V9. Il n'y avait pas de résultats faux mais une convergence
+   impossible.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tests LIAISON_UNILATER
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 11/12/2010 - 11:30:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015716 DU 2010-10-11 16:54:26
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Variabilitedu MODELE: pbm dans POST_ELEM, CALC_ELEM et CALC_G ?
+FONCTIONNALITE
+   POST_ELEM MASS_INER : les résultats peuvent etre faux quand le modèle
+   varie d'un pas de temps à l'autre.
+   
+   On interdit dans POST_ELEM MASS_INER le post-traitement quand on donne un 
+   resultat dans lequel le modèle varie d'un pas de temps à l'autre. 
+   Dans ce dernier cas, on demande à l'utilisateur de donner le numéro d'ordre ou 
+   explicitement le nom du modèle qui a servi pour le calcul à ce numéro d'ordre.
+   
+   Cas-test : sslp105a. On calcule MASS_INER à des instants différents, le modèle 
+   ayant evolue.
+   
+   On previent dans la doc de POST_ELEM.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.81.22 U4.44.01
+VALIDATION
+    sslp105a
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR nistor       NISTOR Ionel           DATE 11/12/2010 - 11:30:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013099 DU 2009-01-29 08:29:08
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Anomalie constatee sur DEFI_MODELE_GENE
+FONCTIONNALITE
+   Problème
+   ---------------------------------------------
+   Un utilisateur de la sous-structuration dynamique (Franck Meissonnier) 
+   a constaté que l'ordre dans lequel les instances du mot-clé factoriel 
+   SOUS_STRUC sont renseignées dans DEFI_MODELE_GENE a une influence sur 
+   le résultat final:
+   Par example, si on déclare,
+      MOD_GENE=DEFI_MODELE_GENE(INFO=1,
+                               SOUS_STRUC=(_F(NOM='SS_ARB',
+                                              MACR_ELEM_DYNA=ME_ARB),
+                                           _F(NOM='SS_TABL',
+                                              MACR_ELEM_DYNA=ME_TABL)),
+                               LIAISON=_F(SOUS_STRUC_2='SS_ARB',
+                                          INTERFACE_2='PALIER_A'),
+                                          SOUS_STRUC_1='SS_TABL',
+                                          INTERFACE_1='PALIER_T',
+                                          OPTION='CLASSIQUE',
+                               VERIF=_F(CRITERE='RELATIF',
+                                        STOP_ERREUR='OUI',
+                                        PRECISION=9.9999999999999995E-
+   07), );
+   le calcul avec passe, alors que si on déclare,
+      MOD_GENE=DEFI_MODELE_GENE(INFO=1,
+                               SOUS_STRUC=(_F(NOM='SS_TABL',
+                                              MACR_ELEM_DYNA=ME_TABL),
+   		                      _F(NOM='SS_ARB',
+                                              MACR_ELEM_DYNA=ME_ARB),),
+                               LIAISON=_F(SOUS_STRUC_2='SS_ARB',
+                                          INTERFACE_2='PALIER_A'),
+                                          SOUS_STRUC_1='SS_TABL',
+                                          INTERFACE_1='PALIER_T',
+                                          OPTION='CLASSIQUE',
+                               VERIF=_F(CRITERE='RELATIF',
+                                        STOP_ERREUR='OUI',
+                                        PRECISION=9.9999999999999995E-
+   07),);
+   
+   le calcul sur le modal qui suit plante (problème de matrice 
+   numériquement singulière).
+   On observe qu’ici on ne renseigne pas dans SOUS_STRUC ni TRANS ni 
+   ANGL_NAUT (mots-clé facultatifs sans valeurs par defaut) or ce detail 
+   est important comme on le verra par la suite !
+   
+   
+   Diagnostique :
+   
+   Rendre un diagnostique complet pour cette anomalie a pris du temps car 
+   lorsqu’on essaie de reproduire l’erreur avec nos cas-tests ont obtient 
+   des résultats différents :
+   -cas-tests qui passent sans problème
+   -cas-tests qui sortent en NOOK 
+   -cas-tests qui plantent sur conflit dans les nœuds des interfaces
+   -cas-tests qui plantent sur matrice numériquement singulière dans le 
+   calcul modal d’après.
+   
+   Avec l’aide de Mathieu Corus, on a épluché tous ces cas de figure et 
+   les explications sont les suivantes :
+   1.cas-tests qui passent :
+   sont des cas-tests simples, deux sous-structures basées sur des 
+   maillages différentes ou sur le même maillage. Si l’utilisateur 
+   inverse ici l’ordre des sous-structures mais renseigne TRANS et 
+   ANGL_NAUT il n’aura aucun souci. Si il ne le fait pas mais la création 
+   du modèle généralisé a besoin d’une simple translation, ça passe 
+   aussi. En plus, les TEST_RESU de ces cas-tests ne doivent porter que 
+   sur la vérification des fréquences propres.
+   
+   2.cas-tests qui sortent en NOOK :
+   idem avec le cas précédent (tests simples, besoin seulement d’une 
+   translation etc.) mais les TEST_RESU de ces cas-tests portent aussi 
+   sur la vérification des déplacements dans des nœuds identifiés avec 
+   leur étiquette. On fait alors une erreur d'interprétation si on veut 
+   évaluer une quantité d'intérêt en se basant sur la numérotation des 
+   nœuds du maillage. Suivant l'ordre des déclaration des macro-éléments, 
+   un nœud peut se trouver sur le bord de la structure globale ou sur 
+   l'interface milieu. Il faut créer en préalable un groupe de nœuds basé 
+   sur des critères géométriques.
+   
+   3.les cas-tests qui plantent
+   Il s’agit des deux dernières situations qui ont une explication 
+   commune. D’ habitude sont des cas plus complexes : plusieurs sous-
+   structures, avec des rotations et translations à déclarer, etc. Les 
+   mots-clé TRANS et ANGL_NAUT sont facultatifs mais s’ils ne sont pas 
+   renseignés, le code calcule lui même des translations et impose 
+   (0.0,0.0, 0.0) pour les angles nautiques. Le problème c’est que pour 
+   le calcul des translations il possède une heuristique en faisant 
+   l’hypothèse que la première sous-structure déclarée dans SOUS_STRUC 
+   sert de référence (d’origine en quelque sort). Les translations des 
+   autres sous-structures sont alors calculées par rapport à cette 
+   référence. Considérons l’exemple d’une fleur dont on voudrait calculer 
+   les fréquences propres par sous-structuration : si la première sous-
+   structure déclarée et le calice , l’ordre des pétales ne compte plus 
+   (mais il faut donner les bonnes rotations) ; si par contre, on déclare 
+   d’abord une pétale on va sortir en erreur sauf si TRANS et ANGL_NAUT 
+   sont renseignés pour toutes les sous-structures. En effet, dans le 
+   code, si il ne trouve par des valeurs pour TRANS, alors il va les 
+   calculer et suivant la configuration plus ou moins compliquée du 
+   modèle final, il a beaucoup de chances de se planter car il prends par 
+   défaut une référence qui n’est pas naturelle.
+   
+   Solution:
+   ---------------------------------------------------------------------
+   
+   On rende obligatoires dans le catalogue TRANS et ANGL_NAUT. On  supprime 
+   aussi les blocs fortran de calcul « automatique » des translations et 
+   imposition des rotations dans arg126.f.
+   Les  cas-tests de la base avec de la sous-structuration dynamique sont impactés:
+   on introduit partout les bons translations et rotations.
+   
+   Impact:
+   ---------------------------------------------------------------------
+   fdlv102a, fdlv102b, fdlv102c, fdlv104a,fdlv110a
+   perf006a, perf006b, sdld102a, sdld102b, sdld102c
+   sdll113a, sdll113b, sdls01c, sdls106a, sdls106b
+   sdls106c, sdls106d, sdls111a, sdlv302b, sdlv402a
+   sdnl104b, sdnl105b, sdnl105d, shll100a, shll100b
+   shll100c, shls200a, shlv301a, zzzz208b
+   
+   arg126.f
+   
+   defi_modele_gene.capy
+   
+   
+   Jours de travail: 7 Ionel + 1 Mathieu
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.65.02
+VALIDATION
+    liste des ca-tests appelant DEFI_MODELE_GENE
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 8.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 11/12/2010 - 11:30:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015718 DU 2010-10-12 13:33:48
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    CREA_RESU / AFFE + champ de fonctions => danger
+FONCTIONNALITE
+   Problème :
+   ----------
+   Sébastien Meunier a essayé de créer avec CREA_RESU une sd_resultat en évaluant un champ de
+   fonctions pour plusieurs instants.
+   Mais le champ de fonctions est un champ de EPSI_F.
+   La programmation de CREA_RESU / AFFE (routine crtype.f) suppose implictement que la
+   grandeur "fonction" (ici EPSI_F) a exactement les memes composantes que la grandeur réelle
+   associée (ici EPSI_R). Ce qui n'est pas vrai, d'où des valeurs farfelues dans la sd produite.
+                                                                                            
+                           
+                                                                                            
+                           
+   Correction :
+   ------------
+   Je blinde la fonctionnalité en la restreignant aux 2 seules grandeurs qui possèdent la
+   propriété énoncée ci-dessus : DEPL_F/R et TEMP_R/F
+                                                                                            
+                           
+   Après cette "correction", le message d'erreur est le suivant :
+                                                                                            
+                           
+                                                                                            
+                           
+   !---------------------------------------------------------------------------------------------!
+   !.<F>.<CALCULEL2_5>...........................................................................!
+   !.............................................................................................!
+   !.Erreur.utilisateur.dans.CREA_RESU...........................................................!
+   !...Quand.on.utilise.la.commande.CREA_RESU.avec.le.mot.clé.AFFE./.CHAM_GD.et.que.le...........!
+   !...champ.est.un.champ.de.fonctions.(de.la.géométrie.et/ou.du.temps),.il.faut.que.la.grandeur.!
+   !...associée.à.ce.champ.soit.TEMP_F.ou.DEPL_F.................................................!
+   !.............................................................................................!
+   !...Ici,.la.gradeur.est.:.EPSI_F..............................................................!
+   !---------------------------------------------------------------------------------------------!
+                                                                                            
+                           
+   Validation :
+   ------------
+   Essais perso en modifiant le test hsnv100f
+                                                                                            
+                           
+   NEW9 :
+   ------
+   je propose de reporter ce "blindage" en NEW9.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  15718
+     crtype.f
+     calculel2.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015768 DU 2010-10-19 09:13:40
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    MECA_STATIQUE + calcul SIEF_ELGA_DEPL en "reuse" => bug
+FONCTIONNALITE
+   Problème :
+   ----------
+   Sébastien est tombé sur un problème avec MECA_STATIQUE + SIEF_ELGA_DEPL en "reuse".
+                                                                                            
+                           
+   En regardant le source d' op0046.f, on voit que l'on calcule SIEF_ELGA_DEPL sur TOUS les
+   pas de temps du calcul, ce qui est idiot quand on est en "reuse" : on recalcule le
+   SIEF_ELGA_DEPL des pas de temps déjà calculés. Cela n'améliore pas les performances !
+                                                                                            
+                           
+   Pour Sébastien, c'est encore plus grave (erreur fatale) car les variables de commandes
+   fournies pour le "reuse" n'existent plus pour les pas de temps déjà calculés => erreur <F>
+   : "impossible d'extrapoler à gauche".
+                                                                                            
+                           
+   Correction :
+   ------------
+   Je me contente de corriger légèrement la routine op0046.f :
+   Dans la boucle sur tous les numéros d'ordre, si le champ SIEF_ELGA_DEPL est déjà calculé,
+   on ne refait pas le calcul.
+                                                                                            
+                           
+   Validation :
+   ------------
+   En faisant un petit "write" temporaire, j'ai pu me convaincre que le calcul de
+   SIEF_ELGA_DEPL est maintenat fait une seule fois.
+   
+   NEW9 :
+   ------
+   La correction est facile à reporter en NEW9
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  15768
+     op0046.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 0.15
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 11/12/2010 - 11:30:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015871 DU 2010-11-05 14:30:36
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Message pas clair dans POURSUITE si la base n'a pas ete decompressee
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Si l'utilisateur oublie de cocher la case "compressé", le message 
+   émis par POURSUITE n'est pas très clair.
+   Le message est identique que la base ne soit pas lisible ou 
+   absente.
+   
+   
+   Correction
+   ==========
+   
+   L'absence du fichier glob.1/bhdf.1 est vérifiée, mais on tombe 
+   alors dans une branche prévue pour eficas puisque dans ce cas, 
+   eficas reconstruit le contexte après avoir demandé le fichier de 
+   commandes précédent la POURSUITE.
+   
+   Cependant, à cet endroit, on peut vérifier si on est dans Aster 
+   et alors, on émet ce message avec deux conseils pour 
+   l'utilisateur :
+   
+   """"""
+   Il n'y a pas de fichier glob.1 ou bhdf.1 dans le répertoire 
+   courant.
+   
+   Conseils :
+    - Vérifiez que vous avez une base (de type base ou bhdf) dans 
+   votre étude.
+    - Vérifiez si elle doit être décompressée ou pas.
+   """"""
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    poursuite sans base
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 11/12/2010 - 05:38:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015513 DU 2010-09-08 09:16:40
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+    la routine exlima est mal specifiee (et mal realisee)
+FONCTIONNALITE
+   Problème :
+   ----------
+   La routine exlima est imprudente : elle a en entrée le nom d'un mot clé facteur (MFAC)
+   pour déterminer la liste des éléments finis définis sous MFAC/GROUP_MA et MFAC/MAILLE,
+   mais comme elle n'a pas d'argument correspondant au numéro d'occurrence, elle se contente
+   de scruter l'occurrence numéro 1.
+                                                                                            
+                                                                                            
+                                          
+   Corrections :
+   -------------
+   * On ajoute l'argument IOCC à la routine exlima.f et on modifie ses appelants.
+   * On ajoute une nouvelle routine exlim3.f équivalente à exlima.f masi qui boucle sur
+   toutes les occurrences du mot clé facteur pour fabriquer l'enveloppe de la liste des mailles.
+     Cette routine est utilisée dans toutes les routines de POST_ELEM : peecin.f, peepot.f, ...
+                                                                                            
+                                                                                            
+                                          
+   Analyse pour les éventuels résultats faux :
+   -------------------------------------------
+   Les resultats ne peuvent etre faux que si le mots clé facteur est répétable. Ce cas ne
+   concerne que les commandes POST_ELEM et RECA_WEYBULL.
+                                                                                            
+                                                                                            
+                                          
+   Validation :
+   ------------
+   passage de 138 tests variés utilisant les commandes impactées.
+                                                                                            
+                                                                                            
+                                          
+   Résultats faux :
+   -----------------
+   Les commandes suivantes donnent des résultats faux si elles sont utilisées avec plusieurs
+   occurrences et si les mailles concernées par les occurrences 2, 3, ... ne sont pas
+   incluses dans la liste des mailles de l'occurrence 1.
+                                                                                            
+                                                                                            
+                                          
+     * POST_ELEM    /CARA_GEOM
+     * POST_ELEM    /ENER_CIN
+     * POST_ELEM    /ENER_POT
+     * POST_ELEM    /INDIC_ENER
+     * POST_ELEM    /MASS_INER
+     * POST_ELEM    /WEIBULL
+     * RECA_WEIBULL /RESU
+                                                                                            
+                                                                                            
+                                          
+   Par exemple, si l'utilisateur demande :
+                                                                                            
+                                                                                            
+                                          
+   MAS1 = POST_ELEM(MODELE = MODELE, CHAM_MATER = CHMAT,
+                      MASS_INER =(
+                         _F(MAILLE=('M101')),
+                         _F(MAILLE=('M101','M102',)),
+                      ))
+   IMPR_TABLE(TABLE=MAS1)
+                                                                                            
+                                                                                            
+                                          
+   Il obtiendra :
+   #ASTER 10.02.15 CONCEPT MAS1 CALCULE LE 20/09/2010 A 15:19:17 DE TYPE
+   #TABLE_SDASTER
+    LIEU     ENTITE   MASSE        CDG_X        CDG_Y        CDG_Z         ...
+    M101     MAILLE    9.93750E-02  5.06667E-01 -1.66667E-03  0.00000E+00
+    M101     MAILLE    9.93750E-02  5.06667E-01 -1.66667E-03  0.00000E+00
+    M102     MAILLE    0.00000E+00  0.00000E+00  0.00000E+00  0.00000E+00
+                                                                                            
+                                                                                            
+                                          
+   On voit que le calcul n'a pas été fait sur la maille M102. Le résultat est faux !
+   
+    
+   Liste des fichiers impactés par la correction de la fiche:  15513
+     eclpgr.f  exlim3.f  exlima.f  mecalm.f  medom2.f  nmdopi.f
+     op0038.f  op0106.f  op0167.f  pecage.f  peecin.f  peenca.f
+     peepot.f  peingl.f  pemain.f  peweib.f  rdtres.f  thaclm.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    138 tests bien choisis
+DEJA RESTITUE DANS : 10.2.19
+NB_JOURS_TRAV  : 0.8
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015396 DU 2010-07-28 13:51:28
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    etendre l'utilisation de EXTR_COMP aux cham_gd_sdaster
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans le cadre du chantier STAT_NON_LINE en python, il est nécessaire de tester le
+   code_retour de l'integration de la loi de comportement.
+                                                                                            
+                
+   On aimerait utiliser la fonctionnalité EXTR_COMP mais on ne le peut pas.
+   Du coup, dans pynl02a.comm on trouve :
+         CODE=EXTR_TABLE(TYPE_RESU='cham_gd_sdaster',
+                          TABLE=CONT, NOM_PARA='NOM_SD',
+                          FILTRE=_F(NOM_PARA='NOM_OBJET', VALE_K='CODE_RETOUR'),)
+                                                                                            
+                
+         cod = aster.getvectjev("CODE               .CELV        ")
+         if max(cod) > 0 :
+            print 'echec d integration de la loi de comportement'
+            FIN()
+                                                                                            
+                
+   Ce qui n'est pas très joli (l'appel à getvectjev).
+                                                                                            
+                
+                                                                                            
+                
+   Evolution :
+   -----------
+   Le premier problème est de ne pas pouvoir appeler EXTR_COMP sur le champ CODE. La raison
+   en est qu'EXTR_COMP n'est autorisé que pour les objets de type cham_no_sdaster et
+   cham_elem, alors que la commande EXTR_TABLE ne sait créer que des cham_gd_aster.
+                                                                                            
+                
+   Pour résoudre ce problème, o est obligé de modifier légèrement le fortran d'op0173 :
+   95,96c95,99
+   <       ELSEIF ( TYPESD .EQ. 'CHAM_GD_SDASTER' ) THEN
+   ---
+   >       ELSEIF ( TYPESD .EQ. 'CHAM_GD_SDASTER'  .OR.
+   >      &         TYPESD .EQ. 'CHAM_NO_SDASTER'  .OR.
+   >      &         TYPESD .EQ. 'CARTE_SDASTER'    .OR.
+   >      &         TYPESD .EQ. 'CHAM_ELEM' ) THEN
+                                                                                            
+                
+   On peut alors faire :
+         CODE=EXTR_TABLE(TYPE_RESU='cham_elem',
+                          TABLE=CONT, NOM_PARA='NOM_SD',
+                          FILTRE=_F(NOM_PARA='NOM_OBJET', VALE_K='CODE_RETOUR'),)
+                                                                                            
+                
+         if max(CODE.EXTR_COMP("IRET",[]).valeurs) > 0 :
+            print 'echec d integration de la loi de comportement'
+            FIN()
+                                                                                            
+                
+   Malheureusement, le test pynl02a devient alors faux du fait d'un bug dans EXTR_COMP qui
+   suppose que tous les cham_elem et cham_no sont de type "réel" (la routine prcoch.f
+   travaille toujours dans ZR quelque soit le type du champ), alors que le champ de
+   code_retour est de type "entier".
+                                                                                            
+                
+   Après correction de ce bug, le test redevient OK.
+                                                                                            
+                
+                                                                                            
+                
+   Validation :
+   ------------
+   Je modifie le test pynl02a comme indiqué ci-dessus.
+                                                                                            
+                
+   NEW9 :
+   ------
+   Je pense qu'on peut corriger la routine prcoch.f en version 9 car elle pose problème pour
+   les champs entiers ou complexes.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  15396
+     op0173.f  prcoch.f
+     pynl02a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    pynl02a
+DEJA RESTITUE DANS : 10.2.18
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015600 DU 2010-09-24 15:19:10
+TYPE anomalie concernant Code_Aster (VERSION 10.4)
+TITRE
+    plantage de CREA_CHAMP avec operation DISC si elements BARRE
+FONCTIONNALITE
+   Problème :
+   ----------
+   Joumana a voulu transformer avec CREA_CHAMP / DISC un cham_elem/ELGA en cham_no.
+   Aster s'arrete brutalement (ASSERT).
+                                                                                            
+                           
+   Correction :
+   ------------
+   Il y a effectivement une faute de frappe dans la routine cesgno.f : permutation de NNO et NPG.
+   Du coup, si sur un element, le nombre de points de gauss est différent du nombre de
+   noeuds, on est arretés dans cette routine.
+   On corrige la faute de frappe.
+                                                                                            
+                           
+   Validation :
+   ------------
+   J'enrichis le test ssll110a pour tester cette fonctionnalité.
+                                                                                            
+                           
+   NEW9 :
+   ------
+   je propose de reporter la correction de cesgno.f en NEW9
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  15600
+     cesgno.f
+     ssll110a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssll110a
+DEJA RESTITUE DANS : 10.2.18
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 11/12/2010 - 05:38:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015675 DU 2010-10-05 14:43:07
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    REAC_GEOM='SANS' fait disparaitre le tableau de convergence (episode 4)
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   L'affichage du tableau de convergence en présence de contact souffre de petits problèmes
+   cosmétiques :
+   
+   * en REAC_GEOM='SANS', le tableau ne s'affiche pas
+   * en mode RESOLUTION='NON' (sur toutes les zones) et formulation 'CONTINUE', idem
+   * en mode RESOLUTION='NON' (sur toutes les zones) et formulation 'DISCRETE', on affiche
+   quand même les colonnes liées au nombre d'itérations et au critère géométrique
+   * l'affichage des colonnes en mode manuel (mot-clé facteur AFFICHAGE) pour la formulation
+   'CONTINUE' ne marche pas (catalogue et fortran incohérents)
+   
+   Un autre problème lié à l'affichage mais non lié au contact est aussi traité :
+   INFO_RESIDU='OUI' ne fonctionne pas pour autre chose que NOM_COLONNE='STANDARD' (erreur de
+   programmation)
+   
+   Corrections
+   ===========
+   
+   On corrige les anomalies décrites (simples branchements IF non prévus) et on valide :
+   
+   * visuellement pour les problèmes liés au contact
+   * en modifiant SSNA102D pour afficher toutes les colonnes en mode manuel pour INFO_RESIDU
+   
+   Impact : impper.f, impdef.f, nmconv.f
+            stat_non_line.capy, dyna_non_line.capy
+            ssna102d.comm
+   
+   V9 : impper.f, impdef.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout
+DEJA RESTITUE DANS : 10.2.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR devesa       DEVESA Georges         DATE 11/12/2010 - 05:38:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015690 DU 2010-10-07 13:48:27
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    probleme avec EXCIT_GENE de DYNA_NON_LINE
+FONCTIONNALITE
+   Il y a un problème avec EXCIT_GENE de DYNA_NON_LINE.
+   Il semble bien que depuis la V9.3.12, l'option EXCIT_GENE de 
+   DYNA_NON_LINE ne fonctionne plus en V9 et en V10. Elle marche 
+   toujours en V8 mais avec DYNA_TRAN_EXPLI.
+   Pour mémoire cette option permet d'introduire des forces 
+   généralisées sur un modèle condensé modalement alors qu'on 
+   résout avec l'option PROJ_MODAL et MASS_GENE sur un modèle non 
+   linéaire plus réduit mais non condensé modalement.
+   De plus avec ces modifs, ça ne pouvait plus marcher avec 
+   EXCIT_GENE pour diverses raisons:
+   En V9: - dans NMRESG la variable FORGEN n'est plus définie avant 
+   d'être utilisée.
+   En V10: - dans NDYNKK il y a conflit de nom entre les variables 
+   FORGEN et FONGEN dû à un suffixe commun .FOG (avant .FONG 
+   et .FORG); 
+           - dans NMRESG le nom de l'objet VALFON vient écraser 
+   indûment sa valeur initiale et on a ensuite un problème 
+   d'ouverture d'objet non créé.
+   Enfin, c'est carrément l'option PROJ_MODAL et MASS_GENE qui est 
+   en danger, ce qui n'est pas mis en évidence par le cas test 
+   SDNV107A, car selon la taille du problème, on peut avoir un 
+   débordement de mémoire dans MXMOAM où on recopie un vecteur de 
+   la taille du problème réduit dans un vecteur de la taille du 
+   problème global. Cela est dû au résultat de l'appel à MGINFO qui 
+   ne renvoie pas la bonne taille, celle du problème réduit.
+   Il faut donc aussi corriger MGINFO.
+   En outre, il y a un autre bug nécessitant de corriger la routine 
+   NDLOAM car dans les calculs avec l'option PROJ_MODAL et 
+   MASS_GENE, la reprise d'un calcul précédent ne permet pas de 
+   récupérer ses champs généralisés calculés et on repart avec des 
+   champs généralisés nuls. Ce qui peut créer des résultats faux. 
+   
+   On valide le test du mot clé EXCIT_GENE par l'introduction d'une 
+   nouvelle modélisation SDNV107C où on permute les rôles d'une 
+   zone condensée et d'une zone non linéaire par rapport à 
+   SDNV107A, ce qui permet d'introduire le chargement par 
+   EXCIT_GENE sur la zone condensée. On compare un résultat de 
+   déplacement par rapport à un résultat AUTRE_ASTER obtenu par un 
+   calcul sur le modèle complet.
+   La correction de la reprise de calcul est également testée par 
+   ce cas test en fractionnant le calcul en 2 passes pour avoir une 
+   reprise.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.3.12
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.3.12
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V5.03.107
+VALIDATION
+    test sdnv107c
+DEJA RESTITUE DANS : 10.2.19
+NB_JOURS_TRAV  : 2.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 11/12/2010 - 05:38:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015719 DU 2010-10-12 14:21:12
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Erreur avec RECU_FONCTION
+FONCTIONNALITE
+   Irmela a repéré une erreur embarrassante dans le RECU_FONCTION des harm_gene.
+   
+   L'opérateur écrasait systématiquement le mot clef NOM_CHAM spécifié par l'utilisateur et
+   restituait à la place le champ 'DEPL' (déplacement).
+   L'erreur est présente depuis au moins la version 8 et le risque de résultats faux était
+   réel lorsque l'utilisateur faisait un calcul harmonique sur base modale et voulait
+   dépouiller des résultats d'accélération ou de vitesse directement par RECU_FONCTION. 
+   Il obtenait alors les déplacements au lieu de la grandeur souhaitée.
+   S'il passait par REST_BASE_PHYS (ou maintenant REST_GENE_PHYS), il n'y avait pas de
+   problème il obtenait le résultat demandé.
+   
+   La correction dans la routine RFHGE2 est très simple.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : v8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : v8.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    SDLV124
+DEJA RESTITUE DANS : 10.2.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 11/12/2010 - 05:38:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015830 DU 2010-10-26 15:08:30
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Probleme de memoire avec putvectjev
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Dans une macro-commande (en développement), cette boucle consomme beaucoup de mémoire :
+   
+   for k, freqk in enumerate(lfreq):                     
+   ____...
+   ____nomcham =DYNHGEN.TACH.get()[ii_cham][k].strip()
+   ____aster.putvectjev( nomcham + '.VALE________', nbmodt,tuple(range(1,nbmodt+1)),vec,vec,1 ) 
+   
+   
+   En fait, ce n'est pas putvectjev qui pose problème mais le get() sur le .TACH.
+   En effet, DYNHGEN.TACH.get() est équivalent à aster.getcolljev('DYNHGEN____________.TACH').
+   Le getcolljev retourne un dictionnaire de 139 valeurs chacune étant un tuple de 512
+   chaînes de 24 caractères, la clé étant un entier.
+   
+   
+   Correction
+   ==========
+   
+   On peut mesurer la consommation mémoire avec le VmPeak. C'est la dernière valeur du tuple
+   retourné par aster.jeinfo().
+   Avec cette mesure, on constate que la consommation mémoire est de 3691.68 ko/itérations.
+   
+   En fait, il faut décrémenter le comptage des références sur les objets stockés dans le
+   dictionnaire. Il faut faire :
+   
+   PyDict_SetItem(dict, key, value);
+   Py_DECREF(key);
+   Py_DECREF(value);
+   
+   car PyDict_SetItem incrémente le compteur des références sur la clé et la valeur.
+   
+   Si on ne décrémente pas ce compteur, les objets sont donc encore référencés même quand
+   l'objet est supprimé dans la macro (ici nommé nomcham).
+   
+   L'ordre de grandeur est là 139 x 512 x 24 = 1668 ko (facteur 2 par rapport à la mesure).
+   Il faudrait chercher en détail ce que coûte le stockage d'un K24 côté python, les clés...
+   (un tuple coûte apparemment 28 octets + en plus des éléments qu'il contient).
+   
+   Après ajout des Py_DECREF nécessaires, on peut faire les 512 itérations de la boucle avec
+   une perte nulle.
+   
+   
+   La documentation de PyDict_SetItem n'est pas très claire à ce sujet (et des questions
+   similaires sur le web vont dans ce sens).
+   En vérifiant, les autres appels à PyDict_SetItem dans le reste du source, on voit que la
+   même erreur est présente aussi dans aster.GetResu (appelé par EXTR_COMP).
+   On corrige tous ces appels.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test joint
+DEJA RESTITUE DANS : 10.2.23
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 11/12/2010 - 05:38:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015843 DU 2010-10-28 08:02:13
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW10.2.22, les cas-test plexu02a s'arretent en test NOOK sur Bull
+FONCTIONNALITE
+   Le cas-test plexu02a est NOOK. Le problème provient de la version d'Europlexus qui est
+   utilisée. Celle-ci est la version de développement et elle a été modifiée récement pour
+   corriger une anomalie.
+   
+   Texte explicatif de Serguei :
+   """
+   Un petit écart sur les résultats de référence dans ce test est la conséquence de la
+   correction d'une anomalie côté EUROPLEXUS (fiche d'anomalie n°124) qui a corrigée un bug
+   relatif à la prise en compte des masses ajoutées ponctuelles dans un calcul multi-domaine. 
+   
+   Les nouvelles valeurs données désormais par EUROPLEXUS sont donc plus justes et il faut
+   les prendre comme valeurs de référence dans le test Aster plexu02a.
+   """
+   
+   En conséquence, les valeurs de référence du test Aster plexu02a sont modifiées pour coller
+   aux nouvelles valeurs données par Europlexus.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    plexu02a
+DEJA RESTITUE DANS : 10.2.23
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR meunier      MEUNIER Sébastien     DATE 11/12/2010 - 05:38:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015831 DU 2010-10-26 15:29:15
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Anomalies routines dpdedi.et dpvpdi.f
+FONCTIONNALITE
+   Les routines dpdedi.f et dpvpdi.f sont identiques. Je résorbe dpdedi.f, qui comporte de
+   plus une anomalie.
+   
+   En effet, dans les 2 routines, on a le test (l.55 - 57 de dpdedi et l.58 - 59 de dpvpdi) :
+   
+    ELSEIF   (((IISNAN(TR).EQ.0).OR.(IISNAN(TD).EQ.0).OR.
+   &         (IISNAN(TF).EQ.0)).AND.(ALPHA.NE.0.D0)) THEN
+     CALL U2MESS('F','CALCULEL_15')
+   
+   qui dit que si une variable de commandes parmi T+, T- ou Tref est NaN, on sort en anomalie.
+   
+   Or, d'après la fiche 9875, iisnan(x) rend un entier /= 0 si x est "NaN".
+   
+   Donc ce n'est pas le test précédent qu'il faut faire mais le test suivant :
+   
+    ELSEIF   (((IISNAN(TR).NE.0).OR.(IISNAN(TD).NE.0).OR.
+   &         (IISNAN(TF).NE.0)).AND.(ALPHA.NE.0.D0)) THEN
+     CALL U2MESS('F','CALCULEL_15')
+   
+   J'effectue donc le changement dans dpvpdi.f.
+   
+   Je rajoute une ligne dans la documentation des routines utilitaires (d6.00.01) expliquant
+   le fonctionnement de iisnan.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : d6.00.01
+VALIDATION
+    aucune
+DEJA RESTITUE DANS : 10.2.23
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 11/12/2010 - 05:38:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015547 DU 2010-09-15 16:50:03
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Verifier que l'inverse du coefficient de cisaillement des POU_D_T dans AFFE_CARA_ELEM est plus grand que 1
+FONCTIONNALITE
+   Je poursuis la fiche que j'ai essayé de présenter la semaine dernière. Depuis Thomas m'a
+   donné des éléments intéressants. Il m'a montré que dans la programmation de Code_Aster une
+   poutre de Timoshenko dont les coefficients de cisaillement sont nuls est strictement
+   équivalente à une poutre d'Euler (POU_D_E). C'est une astuce utilisée parfois pour
+   retrouver les valeurs de POU_D_E avec une modélisation POU_D_T. Mais on ne peut pas donner
+   de sens clair à autre chose que Ay=Az=0. Le seul cas où clairement l'astuce a été employée
+   dans ce cadre est FORMA11d.
+   La tentation de mettre les coefficients de cisaillement à zéro est aussi rencontrée dans
+   le cadre des modélisations POU_C_T (poutres courbes), POU_D_TG (poutres de Timoshenko avec
+   gauchissement) et POU_D_T_GD (grandes déformations). On cherche alors à se rapprocher de
+   la modélisation d'Euler tout en enrichissant grandement la description ou la cinétique de
+   ce type de poutre. Thomas semblait d'accord avec moi pour dire que cela n'apporte pas
+   beaucoup de cohérence à vouloir à la fois sophistiquer et appauvrir la modélisation. 
+   
+   Je maintiens donc ma proposition d'évolution et reprends le texte de la semaine dernière.
+   
+   
+   Lorsqu'on entre directement les caractéristiques d'inertie de la poutre dans
+   AFFE_CARA_ELEM (plutôt que de faire confiance à l'opérateur pour les géométries simples ou
+   que de passer par MACR_CARA_POUTRE), on peut facilement confondre l'inverse du coefficient
+   de cisaillement Ay (resp. Az), demandé par Code_Aster, avec son inverse ky (resp. kz),
+   couramment cité dans la littérature. 
+   
+   La doc U4.42.01 [AFFE_CARA_ELEM] est claire sur ce point. Elle donne l'expression de
+   l'aire réduite de cisaillement :
+   Ay'= ky.A avec ky=1/Ay, nombre adimensionnel systématiquement inférieur à l'unité.
+   
+   Or confondre ky et Ay peut conduire à des erreurs importantes. Par exemple, pour un calcul
+   de poutre rectangulaire peu élancée entrer 5/6 (coefficient de cisaillement classique pour
+   une poutre rectangulaire) au lieu de 1.2 peut donner une erreur supérieure à 10% sur
+   certaines fréquences propres.
+   
+   On introduit donc une sécurité dans le fortran pour arrêter l'utilisateur s'il spécifie un
+   Ay ou un Az inférieur à 1.
+   L'idéal aurait été de le faire dans le catalogue d'AFFE_CHAR_MECA. Mais ce n'est pas
+   possible avec les règles actuelles.
+   
+   En revanche, en suivant les consignes de Jean-Luc, le garde-fou est très facile à faire,
+   dans affpou :
+   
+   C --- VERIFICATION QUE LES AY, AZ SONT >= 1
+         DO 7 I = 1 , NCAR
+            IF ( (CAR(I)(1:2).EQ.'AY').OR.(CAR(I)(1:2).EQ.'AZ')) THEN
+               IF ( VAL(I) .LT. 1.0D0 ) THEN
+                  VALKM = CAR(I)
+                  VALRM = VAL(I)
+                  CALL U2MESG('F','MODELISA_23',1,VALKM,0,VALIM,1,VALRM)
+               ENDIF
+            ENDIF
+   7     CONTINUE
+   
+   et le message qui va avec :
+   
+   23 : _("""
+    AFFE_CARA_ELEM :
+    La caractéristique %(k1)s, coefficient de cisaillement, pour les poutres doit toujours
+   être >=1.0
+      Valeur donnée : %(r1)f
+   """),
+   
+   Il y a un léger impact sur les cas tests, car dans quelques fichiers de commandes, les
+   coefficients de cisaillement ne respectaient pas la nouvelle règle. Globalement l'effet
+   est faible car les valeurs testées ne dépendent que peu des coefficients de cisaillement.
+   
+   FORMA11d (calcul modal d'une cuve de réacteur) : on remplace Ay=Az=0 par une modélisation
+   en POU_D_E => pas de modif des résultats
+   
+   SSLL102g et SSLL102k (flexion d'une poutre) : on remplace Ay=Az=0 par Ay=Az=10/9 (poutre
+   circulaire pleine) => légère modification de la flèche, contraintes quasi-inchangées
+   
+   MISS02a : Ay=Az=0.93 remplacé par Ay=Az=1 => pas d'impact sur les résultats.
+   MISS04a : idem
+   
+   SDLL102a (portique soumis à des efforts électrodynamiques) : on remplace Ay=Az=0 par
+   Ay=Az=1 => légère modification des valeurs de non-régression mais l'écart avec les
+   résultats d'essai reste inchangé
+   
+   SDLL400a (poutre excentrée) : le calcul était fait en POU_D_E, les coefs Ay et Az
+   n'étaient pas pris en compte => pas de modif
+   
+   SDLX02c (calcul de tuyauterie) : on met Ay=Az=2 => on ajuste les tolérances (données par
+   une moyenne de codes de calcul)
+   
+   SSLL103a etSSLL103b (flambement d'une cornière) :  on remplace Ay=Az=0 par Ay=Az=1 => on
+   fait passer les tolérances de quelques résultats par rapport aux calculs analytiques de 1%
+   à 5%
+   
+   SSNL103a (poutre cantilever en grande rotation) : on fait passer Ay=Az=1/4 à Ay=Az=4 =>
+   pas de modif des résultats (On fait passer le nombre d'itérations de 6 à 9.)
+   
+   
+   SSNL502c (poutre en flambement) : on remplace Ay=Az=0 par Ay=Az=1 => on ajuste les
+   tolérances par rapport à la solution analytique
+   
+   SDLL23b (poutre soumise à un séisme) :  on fait passer Ay=Az=.8333 à Ay=Az=1.2 => pas
+   d'effet sur les résultats testés.
+   NB : ce test doit être complété (cf fiche 11812) pour tester les réactions nodales. Sur
+   ces résultats l'influence est grande (20% d'écart). C'est le cas d'une poutre peu élancée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v2.08.011, v3.01.102, v1.10.121, v1.10.123, v2.02.102, v2.02.400, v2.05.02, v3.02.103, v6.02.103, v6.02.502, v2.02.023
+VALIDATION
+    astout + test local
+DEJA RESTITUE DANS : 10.2.20
+NB_JOURS_TRAV  : 4.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 11/12/2010 - 05:38:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015597 DU 2010-09-24 09:35:16
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Message ASSEMBLA_66 pas clair
+FONCTIONNALITE
+   Problème :
+   ========
+   Lors de la foramtion, un stagiaire est tombé sur le message ASSEMBLA_66. 
+   ...!------------------------------------------------------------------!
+   ...!.<EXCEPTION>.<ASSEMBLA_66>........................................!
+   ...!..................................................................!
+   ...!.Problème.dans.NULILI.F:.on.a.au.moins.deux.maillages.différents:.!
+   ...!...-.maillage.1:.MAIL.............................................!
+   ...!...-.maillage.2:.MAIL2............................................!
+   ...!------------------------------------------------------------------!
+   
+   Le message n'est pas clair et n'aide pas l'utilisateur. Il faut le reformuler !
+   
+   Analyse :
+   =======
+   Les charges ont été construites sur un modèle différent (car le maillage est différent) de
+   celui donné dans MECA_STATIQUE.
+   
+   Correction :
+   ==========
+   On reformule le message en donnant une piste :
+   
+   ...!-------------------------------------------------------------------------------!
+   ...!.<EXCEPTION>.<ASSEMBLA_66>.....................................................!
+   ...!...............................................................................!
+   ...!..Il.faut.vérifier.la.cohérence.des.maillages.dans.les.structures.de.données...!
+   ...!..MODE.et.CHAR..Les.maillages.devraient.être.les.mêmes.........................!
+   ...!...............................................................................!
+   ...!..On.trouve.au.moins.deux.maillages.différents:................................!
+   ...!...-.maillage.1.:.MAIL.........................................................!
+   ...!...-.maillage.2.:.MAIL2........................................................!
+   ...!...............................................................................!
+   ...!..Détails.:....................................................................!
+   ...!... Le.maillage.1.:.MAIL.est lié.au.ligrel.1.:.MODE.....MODELE.................!
+   ...!.. .Le.maillage.2.:.MAIL2.est lié.au.ligrel.2.:.CHAR.....CHME.LIGRE............!
+   ...!-------------------------------------------------------------------------------!
+   
+   Impacts :
+   =======
+   nulili.f
+   assembla.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test elementaire
+DEJA RESTITUE DANS : 10.2.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 11/12/2010 - 05:38:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015598 DU 2010-09-24 10:21:04
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+    AR05 temps anormalement long pour un IMPR_RESU au format MED d'un gros RESULTAT
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   En réalisant un calcul modal sur un assez gros maillage (près de 500 000) DDL j'ai échoué
+   sur l'IMPR_RESU au format MED des 20 modes que j'avais calculés. L'exécution s'est arrêtée
+   en CPU_LIMIT après plus de 9000 s passées dans la commande.
+   
+   J'ai constaté que ce temps excessivement long est dû au fait que j'avais laissé
+   négligemment le mot clef MAILLAGE en plus du mot CLEF RESULTAT dans l'IMPR_RESU.
+   Avec le mot clef RESULTAT seul, la commande ne prend que 20 s.
+   """
+   
+   
+   Analyse :
+   ---------
+   Le temps CPU anormalement long constaté est dû à la routine IRTYEL. Cette routine
+   construit un vecteur alloué à la taille du nombre de mailles dans lequel on stocke le type
+   d'élément fini de chacune des mailles. Ce vecteur se nomme : '&&IRTYEL.TYPELEM'.
+   
+   Premier constat, pour construire ce tableau, IRTYEL réalise des boucles imbriquées :
+   - sur les mailles (dans le cas d'Emmanuel : 897 007),
+   - sur les grels (6 677),
+   - sur l'objet '.LIEL' de chaque grel (18 205).
+   
+   Ce qui fait potentiellement 109 035 493 028 495 itérations... Heureusement, il y a un GOTO
+   qui lorsqu'on a trouvé une maille nous permet de faire moins de boucles...
+   
+   Pour extraire l'info qu'on recherche, ce n'est vraiment pas optimisé... Pour gagner
+   énormément de temps, il suffit de retirer la boucle sur les mailles et on obtient le même
+   résultat en 897 007 fois moins d'itération !
+   
+   De plus, dans le cas d'IMPR_RESU au format MED, ce tableau, en plus d'être long à
+   construire, ne sert à rien (jamais relu...).
+   
+   Dernier élément, un tableau contenant exactement l'information qu'on souhaite reconstruire
+   est déjà disponible dans le modèle : le vecteur '.MAILLE'.
+   
+   
+   Solution :
+   ----------
+   On résorbe IRTYEL et on la remplace par un JEVEUO sur le '.MAILLE' du modèle. Avec cette
+   modif, on passe de 9000 secondes à moins de 1 pour imprimer le maillage !
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9lxc3xa9mentaire + cas test IMPR_RESU
+DEJA RESTITUE DANS : 10.2.18
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 11/12/2010 - 05:38:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015629 DU 2010-09-29 09:22:41
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+    Mettre en acces restreint les cas-tests et documentations portant sur des modeles confidentiels
+FONCTIONNALITE
+   Un certain nombre de cas-tests sont basés sur des modélisations de structures 
+   confidentielles (composants ou batiments de paliers existants ou EPR).
+   On les passe donc en accès restreint (NIV_PUB_WEB='INTRANET').
+   Les cas-tests concernés :
+   miss06a
+   miss06b
+   miss06c
+   sdll131a
+   sdls108a
+   zzzz200a
+   zzzz200c
+   zzzz200d
+   
+   Les documents suivantes doivent être mises en accès restreint :
+   V1.10.125
+   V2.02.131
+   V2.03.108
+   
+   Ces modifications sont à reporter en version 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.10.125, V2.02.131, V2.03.108
+VALIDATION
+    sans objet
+DEJA RESTITUE DANS : 10.2.18
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 11/12/2010 - 05:38:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015660 DU 2010-10-04 14:49:27
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+    Erreur de syntaxe avec message peu clair du superviseur
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Si on écrit dans un fichier de commande : 
+   
+   CHAPP=AFFE_CHAR_MECA(MODELE=MODELE,
+                        PESANTEUR=_F(GRAVITE=9.81,
+                                      DIRECTION=(0.,0.,-1.,),),);
+   
+   La validation du jeu de commandes s'arrête sans message pour 
+   l'utilisateur.
+   
+   
+   Correction
+   ==========
+   
+   Il s'agit d'un piège dans lequel l'utilisateur peut facilement 
+   tomber lors d'un changement de syntaxe d'une version à une 
+   autre.
+   
+   Dans le cas où l'on fournit une liste de valeurs alors qu'un 
+   mot-clé facteur est attendu, le message d'erreur est assez 
+   clair :
+   
+   ___Etape : AFFE_CHAR_MECA    ligne : 31    fichier : 'fort.1'
+   ______Mot-clé facteur multiple : PESANTEUR
+   _________! L'occurrence n 1  du mot-clé facteur : PESANTEUR   
+   n'est pas valide !
+   
+   
+   Dans le cas inverse (on fournit un mot-clé facteur alors qu'on 
+   attend une liste de valeurs), la remontée est du type :
+   
+     File "Python/Execution/E_SUPERV.py", line 371, in main
+       ier=appli.main()
+     File "Python/Execution/E_SUPERV.py", line 366, in main
+       return self.Execute()
+     File "Python/Execution/E_SUPERV.py", line 232, in Execute
+       cr=j.report()
+     File "./Python/Validation/V_JDC.py", line 53, in report
+       self.cr.add(e.report())
+     File "./Python/Validation/V_ETAPE.py", line 219, in report
+       self.isvalid(cr='oui')
+     File "./Python/Validation/V_ETAPE.py", line 116, in isvalid
+       valid=self.valid_child()
+     File "./Python/Validation/V_ETAPE.py", line 48, in 
+   valid_child
+       if not child.isvalid():
+     File "./Python/Validation/V_MCSIMP.py", line 151, in isvalid
+       for val in lval:
+     File "/usr/lib/python2.6/UserDict.py", line 22, in 
+   __getitem__
+       raise KeyError(key)
+   KeyError: 0
+   
+   
+   Le problème est que l'on essaie de boucler sur les valeurs 
+   d'un mot-clé simple et pour savoir si on a affaire à une 
+   liste, on regarde si l'objet a la méthode 'len'.
+   Or un mot-clé facteur (_F qui dérive de UserDict) a une 
+   méthode 'len' mais on ne peut pas itérer sur un mot-clé 
+   facteur.
+   
+   La solution consiste a permet cette itération. On pourra alors 
+   vérifier chaque élément.
+   On est alors arrêter avec un message peu plus clair pour 
+   l'utilisateur :
+   
+   Mot-clé simple : PESANTEUR
+     'GRAVITE' (de type <type 'str'>) n'est pas d'un type 
+   autorisé: ('R',)
+   
+     Nombre d'arguments de {'GRAVITE': 9.8100000000000005, 
+   'DIRECTION': (0.0, 0.0, -1.0)} incorrect (min = 4, max = 4)
+   Fin Mot-clé simple : PESANTEUR
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test xc3xa9lxc3xa9mentaire en erreur
+DEJA RESTITUE DANS : 10.2.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015704 DU 2010-10-08 16:12:35
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Mauvais typage dans les arguments fournis aux routines MED
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Beaucoup de tests plantent en 32 bits avec gfortran (au moins avec gfortran 4.4.3).
+   Point commun : il utilise un maillage med en donnée.
+   
+   
+   Correction
+   ==========
+   
+   On s'aperçoit que les coordonnées des noeuds lus valent 
+   n'importe quoi.
+   En regardant la documentation de référence de la routine 
+   efcool, on lit que le nom des coordonnées et les unités des
+   coordonnées (variables OUT de efcool) sont des chaînes de 16 caractères au lieu de 8
+   depuis med 2.2.
+   
+   En modifiant la déclaration de ces tableaux de chaînes, le 
+   test forma01a passe.
+   
+   Remarques : 
+   - La doc MED présente les arguments OUT de type CHARACTER*(*), ce qui laisse supposer
+   qu'il s'adapte aux variables qui lui 
+   sont fournies. Il n'en est rien.
+   
+   - dans irmmno, le changement a déjà été fait.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    forma01a
+DEJA RESTITUE DANS : 10.2.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT hsnv136a                      macocco K.MACOCCO          225    225      0
+ CASTEST AJOUT hsnv136b                      macocco K.MACOCCO          152    152      0
+ CASTEST AJOUT sdnv107c                        micol A.MICOL            651    651      0
+ CASTEST MODIF fdlv102a                      macocco K.MACOCCO          465      5      3
+ CASTEST MODIF fdlv102b                      macocco K.MACOCCO          296      5      3
+ CASTEST MODIF fdlv102c                      macocco K.MACOCCO          321      5      3
+ CASTEST MODIF fdlv104a                      macocco K.MACOCCO          303      5      3
+ CASTEST MODIF fdlv110a                      macocco K.MACOCCO          495      7      3
+ CASTEST MODIF forma11d                        micol A.MICOL            183      4      4
+ CASTEST MODIF miss02a                         micol A.MICOL            530      3      3
+ CASTEST MODIF miss04a                         micol A.MICOL            322      4      3
+ CASTEST MODIF miss06a                         micol A.MICOL            651      3      2
+ CASTEST MODIF miss06b                         micol A.MICOL            798      2      2
+ CASTEST MODIF miss06c                         micol A.MICOL            801      2      2
+ CASTEST MODIF perf005a                      macocco K.MACOCCO          110      1     18
+ CASTEST MODIF perf006a                      macocco K.MACOCCO          212     10      5
+ CASTEST MODIF perf006b                      macocco K.MACOCCO          212     10      5
+ CASTEST MODIF plexu02a                        micol A.MICOL            459      4      4
+ CASTEST MODIF sdld102a                      macocco K.MACOCCO          789      9      5
+ CASTEST MODIF sdld102b                      macocco K.MACOCCO          471      9      5
+ CASTEST MODIF sdld102c                      macocco K.MACOCCO          342      9      5
+ CASTEST MODIF sdll102b                        micol A.MICOL            260     59     27
+ CASTEST MODIF sdll113a                      macocco K.MACOCCO          432      7      3
+ CASTEST MODIF sdll113b                      macocco K.MACOCCO          466      7      3
+ CASTEST MODIF sdll131a                        micol A.MICOL           1477      2      2
+ CASTEST MODIF sdll23b                         micol A.MICOL            125      2      2
+ CASTEST MODIF sdll400a                        micol A.MICOL            240      1      3
+ CASTEST MODIF sdls01c                       macocco K.MACOCCO          502     11      5
+ CASTEST MODIF sdls106a                      macocco K.MACOCCO          389      8      4
+ CASTEST MODIF sdls108a                        micol A.MICOL           2468      2      2
+ CASTEST MODIF sdls111a                      macocco K.MACOCCO          408      9      3
+ CASTEST MODIF sdlv302b                      macocco K.MACOCCO          385      7      3
+ CASTEST MODIF sdlv402a                      macocco K.MACOCCO          347      1      1
+ CASTEST MODIF sdlx02c                         micol A.MICOL            121     16     17
+ CASTEST MODIF sdnl104b                      macocco K.MACOCCO          480      6      3
+ CASTEST MODIF sdnl105b                      macocco K.MACOCCO          568     10      4
+ CASTEST MODIF sdnl105d                      macocco K.MACOCCO          567     10      4
+ CASTEST MODIF shll100a                      macocco K.MACOCCO          702      8      4
+ CASTEST MODIF shll100b                      macocco K.MACOCCO          652      8      4
+ CASTEST MODIF shll100c                      macocco K.MACOCCO          589      8      4
+ CASTEST MODIF shls200a                      macocco K.MACOCCO          568      8      3
+ CASTEST MODIF shlv301a                      macocco K.MACOCCO          494      5      2
+ CASTEST MODIF ssll102g                        micol A.MICOL            181      4      4
+ CASTEST MODIF ssll102k                        micol A.MICOL            156      2      2
+ CASTEST MODIF ssll103a                        micol A.MICOL            320     15     15
+ CASTEST MODIF ssll103b                        micol A.MICOL            265     10     12
+ CASTEST MODIF ssll110a                        micol A.MICOL            141     15      1
+ CASTEST MODIF sslp105a                      macocco K.MACOCCO          551     20      1
+ CASTEST MODIF ssnl103a                        micol A.MICOL            128      4      4
+ CASTEST MODIF ssnl502c                        micol A.MICOL            424      6      6
+ CASTEST MODIF yyyy103d                        micol A.MICOL            290      3      3
+ CASTEST MODIF yyyy110a                        micol A.MICOL            195      2      2
+ CASTEST MODIF yyyy110b                        micol A.MICOL            192      2      2
+ CASTEST MODIF zzzz200a                        micol A.MICOL            462      2      2
+ CASTEST MODIF zzzz200c                        micol A.MICOL            468      2      2
+ CASTEST MODIF zzzz208b                      macocco K.MACOCCO          455     10      4
+ CASTEST MODIF zzzz240a                        micol A.MICOL            162      2      1
+CATALOPY MODIF commande/defi_modele_gene     macocco K.MACOCCO           50      4      4
+CATALOPY MODIF commande/dyna_non_line          micol A.MICOL            403      2      2
+CATALOPY MODIF commande/stat_non_line          micol A.MICOL            381      2      2
+       C MODIF supervis/astermodule            micol A.MICOL           4186      7      1
+ FORTRAN AJOUT modelisa/exlim3                 micol A.MICOL            156    156      0
+ FORTRAN MODIF algeline/op0167                 micol A.MICOL            939      1      1
+ FORTRAN MODIF algorith/algocu               macocco K.MACOCCO          520      3      3
+ FORTRAN MODIF algorith/arg126               macocco K.MACOCCO          267      5    135
+ FORTRAN MODIF algorith/crtype               macocco K.MACOCCO          452     13      2
+ FORTRAN MODIF algorith/dlfext               macocco K.MACOCCO          374      9     13
+ FORTRAN MODIF algorith/dpdedi                 micol A.MICOL             60      2      2
+ FORTRAN MODIF algorith/dy2mbr               macocco K.MACOCCO          334      5      9
+ FORTRAN MODIF algorith/impper                 micol A.MICOL            190      2      3
+ FORTRAN MODIF algorith/lcedga               macocco K.MACOCCO          435      6      9
+ FORTRAN MODIF algorith/meacmv                 micol A.MICOL            468      2      2
+ FORTRAN MODIF algorith/mestat                 micol A.MICOL            261      4      9
+ FORTRAN MODIF algorith/mginfo                 micol A.MICOL             89      3      3
+ FORTRAN MODIF algorith/ndloam                 micol A.MICOL            153      8      8
+ FORTRAN MODIF algorith/nmdopi                 micol A.MICOL            312      2      2
+ FORTRAN MODIF algorith/nmresg                 micol A.MICOL            232      2      1
+ FORTRAN MODIF algorith/op0046               macocco K.MACOCCO          270     14      8
+ FORTRAN MODIF algorith/vectme                 micol A.MICOL            124     10     35
+ FORTRAN MODIF assembla/nulili                 micol A.MICOL            235     10      4
+ FORTRAN MODIF calculel/cesgno                 micol A.MICOL            254      3      3
+ FORTRAN MODIF calculel/eclpgm                 micol A.MICOL            387      2      2
+ FORTRAN MODIF calculel/eclpgr                 micol A.MICOL            352      2      2
+ FORTRAN MODIF calculel/erglme               macocco K.MACOCCO          252     18      1
+ FORTRAN MODIF calculel/mecalm                 micol A.MICOL           2473      2      2
+ FORTRAN MODIF calculel/medom2                 micol A.MICOL            112      2      2
+ FORTRAN MODIF calculel/medome               macocco K.MACOCCO          228     22      4
+ FORTRAN MODIF calculel/meriro                 micol A.MICOL            133      2     10
+ FORTRAN MODIF calculel/op0038                 micol A.MICOL            160      2      2
+ FORTRAN MODIF calculel/op0173                 micol A.MICOL            115      5      2
+ FORTRAN MODIF calculel/peenca                 micol A.MICOL            155      3     17
+ FORTRAN MODIF calculel/rdtres                 micol A.MICOL            246      2      2
+ FORTRAN MODIF calculel/thaclm                 micol A.MICOL            864      2      2
+ FORTRAN MODIF elements/resu74               macocco K.MACOCCO          248     13      7
+ FORTRAN MODIF elements/te0375               macocco K.MACOCCO          597     20      6
+ FORTRAN MODIF elements/te0377               macocco K.MACOCCO          620     33      1
+ FORTRAN MODIF modelisa/affpou                 micol A.MICOL            163     15      2
+ FORTRAN MODIF modelisa/exlima                 micol A.MICOL            129      6      9
+ FORTRAN MODIF modelisa/lrmmno                 micol A.MICOL            224      3      2
+ FORTRAN MODIF prepost/irmail                  micol A.MICOL            293      2      4
+ FORTRAN MODIF prepost/op0106                  micol A.MICOL            925      3      3
+ FORTRAN MODIF prepost/prcoch                  micol A.MICOL            361     61     29
+ FORTRAN MODIF utilitai/dismcm                 micol A.MICOL            276     71    159
+ FORTRAN MODIF utilitai/pecage                 micol A.MICOL            203      2      2
+ FORTRAN MODIF utilitai/peecin                 micol A.MICOL            369      2      2
+ FORTRAN MODIF utilitai/peepot                 micol A.MICOL            320      2      2
+ FORTRAN MODIF utilitai/peingl                 micol A.MICOL            740      2      2
+ FORTRAN MODIF utilitai/pemain                 micol A.MICOL            223      2      2
+ FORTRAN MODIF utilitai/peweib                 micol A.MICOL            437      2      2
+ FORTRAN MODIF utilitai/rfhge2                 micol A.MICOL            193      2      2
+ FORTRAN MODIF utilitai/rsutnu               macocco K.MACOCCO          451      7      2
+ FORTRAN SUPPR prepost/irtyel                  micol A.MICOL             67      0     67
+  PYTHON MODIF Cata/ops                      macocco K.MACOCCO          490      3      1
+  PYTHON MODIF Messages/algorith12           macocco K.MACOCCO          368      1      5
+  PYTHON MODIF Messages/algorith               micol A.MICOL            214      1      7
+  PYTHON MODIF Messages/assembla               micol A.MICOL            268     11      4
+  PYTHON MODIF Messages/calculel2            macocco K.MACOCCO          387     11      1
+  PYTHON MODIF Messages/calculel6            macocco K.MACOCCO          357      9      1
+  PYTHON MODIF Messages/modelisa               micol A.MICOL            529      7      8
+  PYTHON MODIF Messages/supervis             macocco K.MACOCCO          460      9      1
+  PYTHON MODIF Messages/utilitai8            macocco K.MACOCCO          275      7      2
+  PYTHON MODIF Noyau/N_VALIDATOR               micol A.MICOL           1215      1      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    4        1184      1184             +1184
+ MODIF :  117       52191       882     820       +62
+ SUPPR :    1          67                67       -67
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :  122       53442      2066     887     +1179 

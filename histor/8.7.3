@@ -1,0 +1,716 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR cano         CANO Valérie           DATE 21/07/2008 - 14:25:30
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012305 DU 2008-07-17 08:37:44
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug dans la m?llurgie pour le ZIRCALOY
+FONCTIONNALITE
+   Depuis toujours, il y a un bug dans le modèle de 
+   comportement métallurgique du ZIRCALOY.
+   Cela concerne la commande 
+   CALC_META (COMP_INCR='ZIRC')
+   
+   Pour le modèle au refroidissement (transformation 
+   phase chaude en phase froide), il manque une valeur 
+   absolue dans une équation.
+   
+   En version 9, je ne corrige pas car le modèle va 
+   changer (voir autre fiche).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Test
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 27/08/2008 - 16:47:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012179 DU 2008-06-10 15:53:02
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   POST DYNA MODA T en "floating point exception"
+FONCTIONNALITE
+   Dans une étude, POST_DYNA_MODA_T plante sur une erreur de "floating point".
+   Cette étude a une particularité : les statistiques de choc se résument à un seul point. 
+   Or on essaie d'en calculer la variance au carré, qui est la moyenne des carrés moins le
+   carré de la moyenne.
+   On vérifie facilement que cette grandeur est toujours positive et que s'il n'y a qu'un
+   échantillon elle vaut zéro. 
+   Mais, dans ce dernier cas, les forces de choc étant de l'ordre de 10E6, une erreur
+   résiduelle subsiste et elle peut mener à une grandeur légérement négative (de l'ordre de
+   10E-5). Cela
+   pose problème lorsque l'on tente d'en extraire la racine carrée.
+   Plus précisément cela vient du fait que pour le compilateur en nodebug les opérations
+   suivantes ne mènent pas un résultat nul :
+   y=x
+   y2 = y*y puis z = y2 -x*x < 0.0
+   ce qui pose problème lorsque l'on veut en extraire la racine carrée.
+   Grâce aux éclaircissements de Jacques, j'ai pu expliquer ce phénomène par la précision
+   machine, qui est plus grande lors des opérations de calcul que lors du stockage des
+   variables. Le carré y2 est stocké avec 16 chiffres exacts. En revanche le calcul de x*x
+   dans les registres internes est plus précis et n'est pas tronqué par un stockage. Le carré
+   y2 étant de l'ordre de 10E11, il est précis jusqu'à la quatrième décimale et la différence
+   entre y2 et x*x donne donc un réel de l'ordre de 10E-5.
+   
+   Pour contourner la difficulté, j'introduis artificiellement une étape supplémentaire :
+   x2=x*x puis z = y2 - x2 = 0.0
+   Et là, ça marche puisque j'ai forcé le code à procéder au même arrondi!
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 27/08/2008 - 16:47:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012307 DU 2008-07-17 12:44:35
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   mxc3xa9tallurgie : l'xc3xa9tat mxc3xa9tallurgique est initialisxc3xa9 par dxc3xa9faut xc3xa0 0. : ce n'est pas bien
+FONCTIONNALITE
+   Problème:
+   ---------
+   La commande CREA_CHAMP / AFFE -> CART_VAR2R utilisée pour créer l'état initial des calculs
+   métallurgiques, initialise à 0. les composantes non renseignées par l'utilisateur.
+                                                                                            
+                           
+   Correction:
+   -----------
+   1) On modifie CREA_CHAMP pour que les valeurs non renseignées soient mise à "R8VIDE()".
+   2) Dans les te0320 et te0321, on regarde si les valeurs qui doivent etre renseignées le
+   sont bien.
+      Si ce n'est pas le cas, on émet l'erreur fatale suivante :
+    
+      !----------------------------------------------------------------------!
+      ! <F> <ELEMENTS5_44>                                                   !
+      !                                                                      !
+      ! Erreur utilisateur :                                                 !
+      !   L'état métallurgique initial produit par CREA_CHAMP est incomplet. !
+      ! Conseil :                                                            !
+      !   Pour le Zircaloy, il faut renseigner V1 et V2                      !
+      !   Pour l'acier, il faut renseigner V1, V2, ..., V5                   !
+      !                                                                      !
+      ! Cette erreur est fatale. Le code s'arrete.                           !
+      !----------------------------------------------------------------------!
+   
+   NEW8 :
+   ------
+   
+   Correction caraff.f :
+   
+   48c48
+   <       REAL*8        RBID
+   ---
+   >       REAL*8        RBID,RVID,R8VIDE
+   83a84
+   >          RVID=R8VIDE()
+   87c88
+   <             ZR(JVALV-1+K) = 0.D0
+   ---
+   >             ZR(JVALV-1+K) = RVID
+   
+   Pour les te0320.f et te0321.f :
+   La correction est "mélangée" à celle de la fiche 12239.
+   
+   Jacques Pellet fournira à CS, les corrections à faire en NEW8 pour les fiches 12239 et 12307.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso basxc3xa9 sur mtlp101a
+NB_JOURS_TRAV  : 0.4
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012298 DU 2008-07-15 08:30:05
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   routines cnsfus.f et cesfus.f fragiles pour les grands coefficients
+FONCTIONNALITE
+   Problème :
+   -----------
+   On ne peut pas combiner de champs réels avec CREA_CHAMP si les coefficients de la
+   combinaison sont trop grands.
+   C'est à dire dès que le coefficient est supérieur au plus grand des entiers possibles sur
+   la plateforme.
+   Par exemple, sur plateforme 32 bits, il ne faut pas dépasser le coefficient 2.e9
+                                                                                            
+                           
+                                                                                            
+                           
+   Analyse et Correction :
+   -----------------------
+   Le problème vient du fait que l'on calcule systématiquement :
+   COEFI=NINT(COEFR)
+   Alors que COEFI ne sert que pour les champs "entiers".
+                                                                                            
+                           
+   Sur une machine I4, NINT(x) se plante dès que x est > 2.e9.
+   Il faut protéger l'appel à NINT par un "IF (TSCA.EQ.'I')"
+                                                                                            
+                           
+   NEW8 :
+   -------
+   On peut reporter la correction suivante en NEW8 :
+   cesfus.f:282c282
+   cesfus.f:<           COEFI = NINT(COEFR)
+   cesfus.f:---
+   cesfus.f:>           IF (TSCA.EQ.'I') COEFI = NINT(COEFR)
+                                                                                            
+                           
+   cnsfus.f:165c165
+   cnsfus.f:<           COEFI = NINT(COEFR)
+   cnsfus.f:---
+   cnsfus.f:>           IF (TSCA.EQ.'I') COEFI = NINT(COEFR)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012239 DU 2008-06-26 12:53:57
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   CALC_META, plantage avec certains xc3xa9lxc3xa9ments (TETRA,...)
+FONCTIONNALITE
+   Problème:
+   ---------
+   CALC_META se plante dans te0064/acier.f (floating point exception) pour un gros maillage
+   de tetra4
+                                                                                            
+                                                                                            
+                                               
+   Analyse du problème:
+   --------------------
+   Le problème vient de l'option META_INIT_ELNO :
+   Dans le catalogue des éléments qui calculent cette option, le paramètre PPHASIN est
+   déclaré ELGA, alors que le fortran (te0321 et te0320) le suppose ELNO.
+                                                                                            
+                        
+   Pour les TETRA4 (qui n'ont qu'1 point de Gauss), on croit récupérer 4 valeurs sur les 4
+   noeuds de l'élément, alors qu'en réalité, les 3 dernières valeurs sont celles des 3 TETRA
+   qui suivent le TETRA4 "courant" dans le GREL !
+                                                                                            
+                         
+   Pour les derniers éléments du grel, comme ils n'ont pas pas de successeurs, on lit des
+   valeurs non initialisées (voire initialisées à NaN par caundf.f). D'où le plantage observé.
+                                                                                            
+                       
+   Correction:
+   ------------
+   1) je supprime l'option META_INIT qui se sert plus à rien.
+   2) je modifie le paramètre PPHASIN de l'option META_INIT_ELNO pour tous les éléments qui
+   calculent cette option : le champ d'entrée est maintenant associé à un mode local de type
+   'ELEM' (et non plus 'ELGA').
+   3) je modifie les 2 routines te0320.f et te0321.f pour tenir compte du point 2)
+                                                                                            
+                         
+   Validation:
+   -----------
+   Passage de l'étude de l'utilisateur.
+                                                                                            
+                       
+   Resultats faux:
+   ---------------
+   Le bug ne peut se produire que si le nombre de noeuds est supérieur au nombre de points de
+   Gauss de l'élément. Dans ce cas, on se sert des valeurs de l'élément suivant, ce qui
+   conduit potentiellement à des résultats faux.
+                                                                                            
+                        
+   Les éléments dangereux (au vu de leur catalogue) sont :
+     - les TETRA10 et TETRA4 de la modélisation 3D
+     - les HEXA8 et PENTA6 de la modélisation 3D_DIAG
+     - les TRIA6 de la modélisation AXIS_DIAG
+     - les TRIA3 et TRIA6 de la modélisation AXIS_FOURIER
+                                                                                            
+                         
+   Remarque : Aucun de ces éléments buggués n'est utilisé dans les 29 tests de métallurgie !
+                                                                                            
+                         
+   Ces éléments ont-ils pu produire des résultats faux ?
+   J'ai fait un essai en modifiant le test mltp100b (HEXA20 -> TETRA4). Le test s'est alors
+   arreté en erreur <F> dans la routine zacier.f (comme l'étude fournie avec cette fiche).
+                                                                                            
+                        
+   J'en déduis que les "NaN" ajoutés par calcul.f au bout des champs locaux ont joué leur
+   role de protection contre les erreurs de programmation et que l'utilisation des éléments
+   buggués n'a pas pu provoquer de résultats faux (mais seulement des erreurs <F> !!).
+                                                                                            
+                         
+   Conclusion : RESULTAT_FAUX : NON
+                                                                                            
+                         
+   NEW8 :
+   -------
+   On pourrait reporter en version 8 les modifs suivantes :
+                                                                                            
+                           
+   CATA/gener_th3d_3.cata:49d48
+   CATA/gener_th3d_3.cata:<    OPTION__   META_INIT               -1
+   CATA/gener_th3d_3.cata:64d62
+   CATA/gener_th3d_3.cata:<    OPTION__   META_INIT               -1
+   CATA/gener_th3d_3.cata:116c114
+   CATA/gener_th3d_3.cata:<     EPHASIN_ = VAR2_R   ELGA__ RIGI    (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_th3d_3.cata:---
+   CATA/gener_th3d_3.cata:>     CPHASIN_ = VAR2_R   ELEM__         (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_th3d_3.cata:219c217
+   CATA/gener_th3d_3.cata:<     META_INIT_ELNO      321   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  EPHASIN_ PPHASIN  DDL_THER PTEMPER
+   CATA/gener_th3d_3.cata:---
+   CATA/gener_th3d_3.cata:>     META_INIT_ELNO      321   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  CPHASIN_ PPHASIN  DDL_THER PTEMPER
+                                                                                            
+                           
+   CATA/gener_th3dd3.cata:85c85
+   CATA/gener_th3dd3.cata:<     EPHASIN_ = VAR2_R   ELGA__ RIGI    (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_th3dd3.cata:---
+   CATA/gener_th3dd3.cata:>     CPHASIN_ = VAR2_R   ELEM__         (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_th3dd3.cata:188c188
+   CATA/gener_th3dd3.cata:<     META_INIT_ELNO      321   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  EPHASIN_ PPHASIN  DDL_THER PTEMPER
+   CATA/gener_th3dd3.cata:---
+   CATA/gener_th3dd3.cata:>     META_INIT_ELNO      321   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  CPHASIN_ PPHASIN  DDL_THER PTEMPER
+                                                                                            
+                           
+   CATA/gener_thaxd2.cata:35d34
+   CATA/gener_thaxd2.cata:<    OPTION__   META_INIT               -1
+   CATA/gener_thaxd2.cata:53d51
+   CATA/gener_thaxd2.cata:<    OPTION__   META_INIT               -1
+   CATA/gener_thaxd2.cata:100c98
+   CATA/gener_thaxd2.cata:<     EPHASIN_ = VAR2_R   ELGA__ RIGI    (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_thaxd2.cata:---
+   CATA/gener_thaxd2.cata:>     CPHASIN_ = VAR2_R   ELEM__         (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_thaxd2.cata:205c203
+   CATA/gener_thaxd2.cata:<     META_INIT_ELNO      320   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  EPHASIN_ PPHASIN  DDL_THER PTEMPER
+   CATA/gener_thaxd2.cata:---
+   CATA/gener_thaxd2.cata:>     META_INIT_ELNO      320   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  CPHASIN_ PPHASIN  DDL_THER PTEMPER
+                                                                                            
+                           
+   CATA/gener_thaxf2.cata:56c56
+   CATA/gener_thaxf2.cata:<     EPHASIN_ = VAR2_R   ELGA__ RIGI    (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_thaxf2.cata:---
+   CATA/gener_thaxf2.cata:>     CPHASIN_ = VAR2_R   ELEM__         (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_thaxf2.cata:131c131
+   CATA/gener_thaxf2.cata:<     META_INIT_ELNO      320   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  EPHASIN_ PPHASIN  DDL_THER PTEMPER
+   CATA/gener_thaxf2.cata:---
+   CATA/gener_thaxf2.cata:>     META_INIT_ELNO      320   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  CPHASIN_ PPHASIN  DDL_THER PTEMPER
+                                                                                            
+                           
+   CATA/gener_thpl_2.cata:114c114
+   CATA/gener_thpl_2.cata:<     EPHASIN_ = VAR2_R   ELGA__ MASS    (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_thpl_2.cata:---
+   CATA/gener_thpl_2.cata:>     CPHASIN_ = VAR2_R   ELEM__         (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_thpl_2.cata:225c225
+   CATA/gener_thpl_2.cata:<     META_INIT_ELNO      320   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  EPHASIN_ PPHASIN  DDL_THER PTEMPER
+   CATA/gener_thpl_2.cata:---
+   CATA/gener_thpl_2.cata:>     META_INIT_ELNO      320   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  CPHASIN_ PPHASIN  DDL_THER PTEMPER
+                                                                                            
+                           
+   CATA/gener_thpld2.cata:35d34
+   CATA/gener_thpld2.cata:<    OPTION__   META_INIT               -1
+   CATA/gener_thpld2.cata:53d51
+   CATA/gener_thpld2.cata:<    OPTION__   META_INIT               -1
+   CATA/gener_thpld2.cata:100c98
+   CATA/gener_thpld2.cata:<     EPHASIN_ = VAR2_R   ELGA__ RIGI    (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_thpld2.cata:---
+   CATA/gener_thpld2.cata:>     CPHASIN_ = VAR2_R   ELEM__         (V1       V2       V3    
+     V4       V5       )
+   CATA/gener_thpld2.cata:205c203
+   CATA/gener_thpld2.cata:<     META_INIT_ELNO      320   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  EPHASIN_ PPHASIN  DDL_THER PTEMPER
+   CATA/gener_thpld2.cata:---
+   CATA/gener_thpld2.cata:>     META_INIT_ELNO      320   IN__   CCOMPOR  PCOMPOR  CMATERC 
+   PMATERC  CPHASIN_ PPHASIN  DDL_THER PTEMPER
+                                                                                            
+                           
+   F/te0320.f:93c93
+   F/te0320.f:<                 METAPG(1+7*(KN-1)+J)=ZR(IPHASI+5*(KN-1)+J)
+   F/te0320.f:---
+   F/te0320.f:>                 METAPG(1+7*(KN-1)+J)=ZR(IPHASI+J)
+   F/te0320.f:111,112c111,112
+   F/te0320.f:<               METAPG(1+3*(KN-1))=ZR(IPHASI+5*(KN-1))
+   F/te0320.f:<               METAPG(1+3*(KN-1)+1)=ZR(IPHASI+5*(KN-1)+1)
+   F/te0320.f:---
+   F/te0320.f:>               METAPG(1+3*(KN-1))=ZR(IPHASI)
+   F/te0320.f:>               METAPG(1+3*(KN-1)+1)=ZR(IPHASI+1)
+                                                                                            
+                           
+   F/te0321.f:88c87
+   F/te0321.f:<             METAPG(1+7* (KN-1)+J) = ZR(IPHASI+5* (KN-1)+J)
+   F/te0321.f:---
+   F/te0321.f:>             METAPG(1+7* (KN-1)+J) = ZR(IPHASI+J)
+   F/te0321.f:105,106c104,105
+   F/te0321.f:<           METAPG(1+3* (KN-1)) = ZR(IPHASI+5* (KN-1))
+   F/te0321.f:<           METAPG(1+3* (KN-1)+1) = ZR(IPHASI+5* (KN-1)+1)
+   F/te0321.f:---
+   F/te0321.f:>           METAPG(1+3* (KN-1)) = ZR(IPHASI)
+   F/te0321.f:>           METAPG(1+3* (KN-1)+1) = ZR(IPHASI+1)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie + test perso
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 27/08/2008 - 16:47:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012294 DU 2008-07-10 16:25:38
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Fichier de maillage produit par GMSH 2.2  ne comportant pas de groupe
+FONCTIONNALITE
+   Problème :
+   ==========
+   Aster ne sait pas lire les maillages *.msh et *.med qui ne comportent aucun groupe (maille
+   ou noeud), on suppose que les maillages comportent au moins un groupe.
+   Dans les deux cas, on plante proprement mais avec un message pas très explicite.
+   
+   On note qu'Aster sait lire les maillages *.mail sans groupe.
+   
+   Correction :
+   ============
+   On reproduit le comportement d'Aster avec les maillages *.mail dans PRE_GMSH pour les
+   fichiers *.msh et dans LIRE_MAILLAGE, FORMAT='MED' pour les fichiers *.med. On peut
+   désormais lire un fichier de maillage *.msh ou *.med ne comportant aucun groupe.
+   
+   On en profite pour vérifier, avant de lire dans le fichier *.msh si celui-ci existe.
+   
+   Impact :
+   ========
+   lrmmf3.f
+   lrmmf4.f
+   med.py
+   
+   gmeelt.f
+   gmlelt.f
+   gmsast.f
+   
+   ulopen.f
+   utilitai5.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Liste restreinte + cas tests perso
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 27/08/2008 - 16:47:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012292 DU 2008-07-10 12:58:20
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Solveur GCPC - sslp104c
+FONCTIONNALITE
+   Problème :
+   ----------
+   Si on fait passer le test sslp104c en changeant de solveur :
+        SOLVEUR=_F(METHODE='GCPC',
+                   NIVE_REMPLISSAGE=2,
+                   RESI_RELA=1e-6,),);
+                                                                                            
+                           
+   Et si le test est en JXVERI='OUI', alors le code s'arrete en erreur F à la fin de
+   MECA_STATIQUE.
+                                                                                            
+                           
+                                                                                            
+                           
+   Analyse et correction :
+   -----------------------
+   En instrumentant le code avec des "CALL JXVERI", on s'aperçoit que le problème vient de la
+   routine pcfull.f et plus précisément de la ligne :
+          ICPCP(IC1)=JJ
+                                                                                            
+                           
+   Remarque: cette instruction était également signalée comme "Invalid" par le "valgrind"
+   passé par Thomas De Soza.
+                                                                                            
+                           
+   On est dans la routine qui cherche à prévoir (factorisation symbolique) quel sera le
+   profil de la matrice de préconditionnement par LDLT incomplet / NIVE_REMPLISSAGE=2.
+                                                                                            
+                           
+   Je ne comprends pas grand chose aux routines pcldlt.f, pcstru.f et pcfull.f.
+   Elles font partie de l'héritage de Jean-Pierre Grégoire ...
+                                                                                            
+                           
+   Le problème est de déterminer le nombre de termes qu'aura la matrice factorisée (NZ), mais
+   pour cela, il faut faire une "simulation" et on a besoin de tableaux (comme ICPC) dont on
+   ne connait pas la taille a priori !
+    
+   On est donc conduit à adopter une stratégie essai / échec dans la routie pcldlt.f :
+     on boucle autour de pcstru.f et on recommence si l'estimation de NZMAX est insuffisante.
+                                                                                            
+                           
+   Dans la routine pcfull.f, on voit de JP Grégoire a prévu que l'on déborde de ICPCP :
+   Au début de la boucle 50, il regarde s'il pourra traiter la ligne I.
+   S'il estime que non, il va à l'étiquette 90 pour calculer ce qui lui manque.
+   Malheureusement, cette estimation est insuffisante et ce test montre que l'on peut quand
+   meme déborder de ICPCP.
+                                                                                            
+                           
+   Je rajoute donc un autre test (juste avant de provoquer le débordement de tableau).
+                                                                                            
+                           
+   Je ne jurerais pas que c'est la meilleure correction et si quelqu'un souhaite se plonger
+   dans ce problème ...
+                                                                                            
+                           
+   remarque perfide pour aider celui qui s'y collera la prochaine fois :
+     le test de JP Grégoire :
+           IF (IC1+NCREMX.GT.LCA) THEN   # (ici LCA = NZMAX)
+     fait penser que NCREMX est une estimation du nombre max de termes nouveaux dus à
+   l'élimination de la ligne I.
+     J'ai fait quelques écritures qui montrent que parfois NCREMX est négatif !!
+                                                                                            
+                           
+                                                                                            
+                           
+   Validation :
+   ------------
+   Le test joint est OK avec ma correction.
+                                                                                            
+                           
+                                                                                            
+                           
+   NEW8 :
+   ------
+                                                                                            
+                           
+   dans pcfull.f :
+                                                                                            
+                           
+   Ajouter juste avant la ligne :
+          ICPCP(IC1)=JJ
+   le petit bloc :
+          IF (IC1.GT.LCA) THEN
+            ISTOP=I
+            GOTO 90
+          ENDIF
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.7
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 27/08/2008 - 16:47:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012138 DU 2008-05-28 16:41:38
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : DeltaCad
+TITRE
+   Problxc3xa8me dans IMPR_RESU format MED
+FONCTIONNALITE
+   Objectif
+   ========
+   Dans certains cas, L'IMPR_RESU au format MED de champs nodaux génère des NaN aux noeuds là
+   où les composantes ne sont pas définies. Par exemple, lorsqu'un modèle contient des
+   éléments volumiques et des éléments de structure, les composantes DRX, DRY et DRZ aux
+   noeuds des éléments volumiques ne sont pas définies. Pourtant MED a besoin de leur
+   attribuer une valeur.  L'objectif de cette fiche est de prolonger les champs nodaux par
+   zéro la où ils ne sont pas definis. Un message est émis dans le .mess pour en informer
+   l'utilisateur.
+   
+   Developpement
+   =============
+   1)bibfor: ircmva.f
+   On vérifie l'absence d'une composante sur un noeud via l'objet .CNSL de la SD cham_no. Si
+   c'est le cas, on impose la valeur nulle en ce noeud et on émet un message d'information.
+   
+   2)bibpyt: med.py
+   On enrichit ce catalogue par un message d'information dédié à ce cas de figure:
+   "Votre modèle semble être composé de plusieurs modélisations, 
+   les composantes qui n'existent pas pour une partie du modèle ont été mises a zero."
+   
+   
+   
+   Validation
+   ==========
+   1) passage de l'étude fournie + vérification de l'absence de NaN dans le .mess
+   
+   2) cas-test maison dans lequel on a crée un champ en forçant DX=1 DY=2 DZ=3 sur tout le
+   maillage et en surchargeant par DRX=4 DRY=5 et DRZ=6 sur les mailles des éléments de
+   structure. On a construit ensuite un resultat de type evol_elas a partir de ce champ pour
+   le fournir a l'IMPR_RESU/MED. On a ajoute ensuite un LIRE_RESU suivi d'un
+   IMPR_RESU/RESULTAT pour vérifier la relecture du fichier med.
+   
+   Résultats:
+   - Le fichier med généré est correct, nous l'avons relu dans SalomeMeca2008 et nous avons
+   valide les resultats affichés.
+   - la commande LIRE_RESU relit correctement le fichier med et les valeurs imprimées sont
+   correctes.
+   
+   3) passage de la liste restreinte
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.05.21
+VALIDATION
+   Cas-tests perso + liste restreinte
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR corus        CORUS Mathieu          DATE 27/08/2008 - 16:47:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012182 DU 2008-06-11 11:44:00
+TYPE anomalie concernant Code_Aster (VERSION 9.2)
+TITRE
+   Vecteur de frequence rendu par la FFT de CALC_FONCTION
+FONCTIONNALITE
+   Problemes :
+   
+   Erreur sur le calcul du vecteur de frequence rendu par la FFT de CALC_FONCTION. Pour un
+   echantillon de longueur N points, avec un pas de temps (constant) de dt, le vecteur de
+   frequence associe est 
+   
+   F=(0:(N-1))/(N*dt)
+   
+   et non
+   
+   F=(0:(N-1))/((N-1)*dt)
+   
+   Il y a egalement un probleme de normalisation du vecteur transforme. Ceci est transparent
+   dans le cas d'une utilisation couplee de la transformee directe, puis inverse.
+   
+   D'autre part, la tranformée de Fourier inverse n'etait pas completement correcte, si le
+   nombre de point du vecteur initial est pair.
+   
+   Traitement :
+   
+   La FFT de CALC_FONCTION a ete reecrite pour correspondre à la definition classique de la
+   FFT.
+   
+   La FFT inverse avec option SYME='OUI' a ete reecrite pour correspondre egalement a la
+   definition classique.
+   
+   Dans le cas de la tranformee de Fourier inverse d'un vecteur de longueur N avec l'option
+   SYME = 'NON', On choisi de prolonger par continuite le vecteur pour construire un
+   echantillon de longeur 2*N (et non de longueur 2*N-1 comme c'est classiquement le cas)
+   pour des raison de simplicite de post traitement. 
+   
+   
+   Cas tests : 
+   
+   zzzz100b et miss07b
+   
+   Le cas test zzzz100b a ete remis a jour, et passe sans probleme. Il meriterait cependant
+   qu'on se penche sur une validation plus fiable des fonctionnalites de traitement du
+   signal, les valeurs de references etant des grandeurs non verifiables (issues du meme
+   calcul, dans un autre envoronnement). Elle ne teste que les erreurs "de programmation", et
+   non les erreurs de methode.
+   
+   Le cas test miss07b a egalement ete remis a jour, et passe sans probleme.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.32.04
+VALIDATION
+   zzzz100b, miss07
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF miss07b                       macocco K.MACOCCO          429     35     32
+ CASTEST MODIF zzzz100b                      macocco K.MACOCCO          256     13     13
+CATALOGU MODIF typelem/gener_th3d_3          macocco K.MACOCCO          236      3      5
+CATALOGU MODIF typelem/gener_th3dd3          macocco K.MACOCCO          202      3      3
+CATALOGU MODIF typelem/gener_thaxd2          macocco K.MACOCCO          220      3      5
+CATALOGU MODIF typelem/gener_thaxf2          macocco K.MACOCCO          121      4      3
+CATALOGU MODIF typelem/gener_thpl_2          macocco K.MACOCCO          241      4      3
+CATALOGU MODIF typelem/gener_thpld2          macocco K.MACOCCO          221      3      5
+ FORTRAN MODIF algeline/pcfull               macocco K.MACOCCO          284      5      2
+ FORTRAN MODIF algorith/impact               macocco K.MACOCCO          163      4      4
+ FORTRAN MODIF algorith/zevolu                  cano V.CANO              71      2      2
+ FORTRAN MODIF calculel/cesfus               macocco K.MACOCCO          377      2      2
+ FORTRAN MODIF calculel/cnsfus               macocco K.MACOCCO          250      2      2
+ FORTRAN MODIF elements/te0320               macocco K.MACOCCO          154     22      8
+ FORTRAN MODIF elements/te0321               macocco K.MACOCCO          142     18      9
+ FORTRAN MODIF modelisa/lrmmf3               macocco K.MACOCCO          429      2      2
+ FORTRAN MODIF modelisa/lrmmf4               macocco K.MACOCCO          205      2      6
+ FORTRAN MODIF prepost/gmeelt                macocco K.MACOCCO          230      8      3
+ FORTRAN MODIF prepost/gmlelt                macocco K.MACOCCO          216     15      4
+ FORTRAN MODIF prepost/gmsast                macocco K.MACOCCO           54     14      9
+ FORTRAN MODIF prepost/ircmva                macocco K.MACOCCO          233     13      3
+ FORTRAN MODIF utilitai/caraff               macocco K.MACOCCO          154      4      3
+  PYTHON MODIF Messages/elements4            macocco K.MACOCCO          338     10      1
+  PYTHON MODIF Messages/maillage             macocco K.MACOCCO           84      6      1
+  PYTHON MODIF Messages/modelisa5            macocco K.MACOCCO          417      1      5
+  PYTHON MODIF Utilitai/t_fonction           macocco K.MACOCCO          669     47     34
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   26        6396       245     169       +76
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   26        6396       245     169       +76 

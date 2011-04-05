@@ -1,0 +1,383 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 22/02/2010 - 13:27:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014639 DU 2010-02-16 10:20:35
+TYPE anomalie concernant Code_Aster (VERSION 9.7)
+TITRE
+   En NEW9.6.3, le cas-test wdnp101a est NOOK sur Rocks.
+FONCTIONNALITE
+   Valeur testee NOOK dans le cas-test WDNP101A:
+   
+   1)Valeur testee mal adaptee au probleme traite. Il est preferable de tester la valeur du
+   spectre a une frequence donnee plutot que de rechercher la frequence associee a la valeur
+   maximale du spectre (solution adoptee pour le test en version NEW10 pour les modelisations
+   A et B).
+   
+   2) Modification du cas-test:
+   
+   -) Valeur du spectre testee pour f=2.5Hz (en coherence avec la version NEW10)
+   
+   -) Elargissement des tolerances sur les accelerations relevees en tete de  la colonne de
+   sol: passage de 1% a 2%
+   
+   3) Impact documentaire: V7.34.101
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.34.101
+VALIDATION
+   WDNP101A
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 02/03/2010 - 18:27:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014375 DU 2010-01-06 09:29:14
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   TOLE_APPA en mxc3xa9thode continue ne fonctionne pas
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Si on utilise le mot-clé TOLE_APPA=d0 en méthode 'CONTINUE' pour exclure de l'appariement
+   des noeuds esclaves dont le noeud maître le plus proche est à une distance supérieure à
+   d0, alors on plante : 
+   !----------------------------------------------------!
+   !.<F>.<JEVEUX_01>....................................!
+   !....................................................!
+   !....................................................!
+   !...REPERTOIRE.DE.....53.NOMS.NE.CONTIENT.PAS.******.!
+   !....................................................!
+   !....................................................!
+   !....................................................!
+   !.Cette.erreur.est.fatale..Le.code.s'arrete..........!
+   !----------------------------------------------------!
+   
+   Correction
+   ==========
+   
+   Actuellement si un tel noeud est exclus, alors on saute l'appariement et donc il n'existe
+   pas de maille maître pour créer l'élément de contact entre surface maître et esclave.
+   On plante donc dans la recherche du nom de la maille maître.
+   
+   En méthode 'CONTINUE', il faut toujours réaliser l'appariement et créer l'élément de
+   contact, c'est seulement ensuite dans le calcul des termes élémentaires que l'on viendra
+   annuler les termes ad-hoc dans la matrice et le second membre pour "simuler" l'éviction du
+   noeud (faute de quoi on aurait une matrice singulière).
+   
+   On modifie donc la routine MMREND pour renvoyer un logique supplémentaire qui dit le point
+   de contact courant est exclus par TOLE_APPA. Si c'est le cas on fait quand même
+   l'appariement et on attache au tableau TABFIN l'information sur le point de contact.
+   Tout se passe alors comme si le noeud était dans SANS_GROUP_NO.
+   
+   Validation
+   ==========
+   
+   On rajoute dans zzzz237a 2 calculs : 
+   * un premier avec TOLE_APPA=1.0 en formulation discrète 'CONTRAINTE'
+   * un second avec TOLE_APPA=1.0 en formulation 'CONTINUE'
+   
+   Sur ce test simplissime (2 carrés), cela revient à exclure tous les noeuds du contact. On
+   vérifie alors qu'on a bien interpénétration d'une valeur égale au déplacement imposé.
+   
+   Impact
+   ======
+   
+   F : mmrend.f, mappar.f, rechmn.f, rechno.f
+   CT : zzzz237a
+   
+   À faire en V9 aussi.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz231a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 02/03/2010 - 18:27:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014584 DU 2010-02-09 11:58:41
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   affe_char_meca + ROTATION + CENTRE => resultats faux
+FONCTIONNALITE
+   Problème :
+   ----------
+   Si on prend le test sslv104a (CHAR_MECA_ROTA_R) et qu'on lui ajoute le mot clé CENTRE qui
+   permet de choisir un point par lequel passe l'axe de rotation (CENTRE vaut 0,0,0 par
+   défaut), le test reste OK ce qui est complètement faux !
+                                                                                            
+                           
+   Il n'y a rien d'étonnant à cela, car dans le fortran de la routine cbrota.f, on ne fait
+   jamais le GETVR8 sur le mot clé CENTRE !!
+                                                                                            
+                           
+   Resultats FAUX :
+   ----------------
+   Tous les chargements de rotations sont faux si l'axe de rotation ne passe pas par le point
+   (0,0,0)
+   Le bug semble exister depuis toujours (version 3) : le mot clé CENTRE n'a jamais été récupéré.
+                                                                                            
+                           
+   Correction :
+   ------------
+   Je modifie cbrota.f pour récupérer les valeurs du mot clé CENTRE.
+                                                                                            
+                           
+   Validation :
+   ------------
+   Je modifie le test sslv104 pour tester le mot clé CENTRE :
+   Le maillage est translaté du vecteur (10.,10., 10.)
+   et on déplace l'axe de rotation en le forcant à passer par le point (10., 10., 10.)
+   La solution de référence (analytique) est ainsi préservée.
+                                                                                            
+                           
+   La modélisation "A" (3D) reste OK.
+   Mais les modélisations B et C (coque_3D) restent NOOK. En effet, la routine qui traite ce
+   chargement pour les coque_3D (forcen.f) n'a pas prévu que l'axe de rotation puisse passer
+   par autre chose que l'origine de l'espace.
+   => Je corrige forcen.f et les tests redeviennent OK.
+                                                                                            
+                           
+   Impact documentaire :
+   ---------------------
+   V3.04.104 : sslv104
+                                                                                            
+                           
+   NEW9 :
+   ------
+   Les bugs doivent etre corrigés en version 9 :
+     cbrota.f  fcent.f   forcen.f
+                                                                                            
+                           
+   Remarque :
+   ----------
+   En traitant cette fiche, je me suis aperçu d'autres problèmes concernant l'option
+   CHAR_MECA_ROTA_R.
+   Comme je ne souhaite pas corriger tous ces problèmes, j'émets une nouvelle fiche (14594)
+   qui sera traitée par qui de droit.
+                                                                                            
+                           
+                                                                                            
+                           
+                                                                                            
+                           
+   Liste des fichiers impactés par la correction de la fiche:  14584
+     cbrota.f  fcent.f   forcen.f
+     sslv104a.comm  sslv104b.comm  sslv104c.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.04.104
+VALIDATION
+   sslv104
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 02/03/2010 - 18:27:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012133 DU 2008-05-28 08:05:55
+TYPE evolution concernant Code_Aster (VERSION )
+TMA : CS
+TITRE
+   MN01 - Recherche linxc3xa9aire MIXTE
+FONCTIONNALITE
+   Objectif:
+   --------
+   Il s'agit de faire un bilan de l'utilisation de la méthode 'MIXTE' en remplacement de la
+   méthode 'CORDE' dans le mot-clé RECH_LINEAIRE de STAT_NON_LINE. 
+   
+   Realisation:
+   ------------
+   Point 1: Etablissement d'un tableau comparant les deux méthodes et suivant le critère
+   "nombres d'iterations de Newton" lors de chaque appel à stat_non_line pour 187 cas-tests.
+   
+   Point 2: Modification de 8 cas-tests dans les cas ou la méthode mixte est meilleure. Il
+   s'agit des tests suivants
+   ssnp142b, wtnp113d, ssna302b.mess, ssnl106h.mess,
+   wtnp113c, hsnv120b.mess, ssnl127a.mess et wtnv134a.mess.
+   Il est à noter que le nombre d'iteration dans le dernier stat_non_line du cas wtnv134a est
+   passé de 306 à 311.
+   
+   Point 3: Correction de la routine zbinit.fIl faut modifier 
+         IF (F0.GE.0) THEN 
+           CALL ASSERT(.FALSE.)
+         ENDIF
+   Par
+         IF (F0.GT.0) THEN 
+           CALL ASSERT(.FALSE.)
+         ENDIF
+   Car la fonctionnelle initiale peut être égale à zéro quand on est en élasticité. A faire en v9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.01
+VALIDATION
+   liste complxc3xa8te
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 02/03/2010 - 18:27:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014359 DU 2010-01-04 14:05:48
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Cas-test sdld34a montre des variables non initialisxc3xa9es dans DYNA_LINE_TRAN
+FONCTIONNALITE
+   Thomas a découvert une variable non initialisée dans la définition de l'instant initial de
+   calcul de certains schémas en temps de DYNA_LINE_TRAN.
+   Dans DYNA_LINE_TRAN, si le schéma en temps choisi par l'utilisateur est implicite (WILSON,
+   NEWMARK), la liste des instants de calcul est déterminée par une LIST_REEL dont la
+   première valeur est l'instant initial (à la STAT/DYNA_LINE_NON_LINE). Jusqu'ici il n'y pas
+   de problème.
+   Si le schéma en temps est explicite (DIFF_CENTRE, ADAPT), le mode d'entrée des instants de
+   calcul est comme celui de DYNA_TRAN_MODAL et l'utilisateur donne un instant final
+   (INST_FIN), un pas de temps (PAS) et un instant initial (INST_INIT). INST_INIT est
+   facultatif et s'il est absent, on suppose qu'il est nul.
+   Malheureusement l'initialisation dans ce dernier cas n'était pas faite et on pouvait se
+   retrouver avec une valeur quelconque, généralement proche de zéro mais pas toujours.
+   Je rétablis l'initialisation telle qu'elle se doit d'être.
+   J'ajoute aussi un message d'information à l'égard de l'utilisateur.
+   
+   Risque de résultats faux :
+   depuis au moins la version 7, dans DYNA_LINE_TRAN avec les méthodes en temps explicites
+   (DIFF_CENTRE et ADAPT), lorsque l'utilisateur a laissé à la commande le soin d'initialiser
+   à zéro l'instant initial, les conditions initiales peuvent être mal prises en compte. Si
+   le calcul est sensible à ces conditions initiales, les résultats sont susceptibles d'être
+   faussés sur tout le calcul transitoire.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : u4.53.02
+VALIDATION
+   sdld34a, astout
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR nistor       NISTOR Ionel           DATE 02/03/2010 - 18:27:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014652 DU 2010-02-17 14:59:44
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   macro_mode_meca + DST (V9.4)
+FONCTIONNALITE
+   Problème :
+   ---------------------------------------
+   Lors d’un calcul modal avec MACRO_MODE_MECA on calcule bien des modes, mais la commande 
+   termine en erreur avec le message suivant. 
+   
+   !----------------------------!
+   ! <EXCEPTION> <ALGELINE3_11> !
+   !                            !
+   !                            !
+   !  structure résultat vide   !
+   !                            !
+   !                            !
+   !                            !
+   !                            !
+   !----------------------------!
+   
+   
+   Diagnostique :
+   ----------------------------------------
+   L’arrêt en erreur se produit au niveau de l’extraction des modes propres dans l’opérateur 
+   EXTR_MODE qui est 
+   appelé par la macro-commande MACRO_MODE_MECA. En effet l’utilisateur renseigne dans la 
+   syntaxe de cette macro-
+   commande le mot-clé factor FILTRE_MODE qui active l’extraction des modes suivant un filtre 
+   (MASS_EFFE_UN 
+   ici ) et en respectant un critère (1.E-3 ici). Or il se trouve qu’aucun mode calculé ne 
+   rempli pas ce critère 
+   d’extraction (tous ont une masse effective unitaire inférieure à 1.E-3 quelque soit la 
+   direction).
+   
+   Solution :
+   -----------------------------------------
+   L’utilisateur doit changer son filtre et/ou le critère d’extraction ou renoncer tout 
+   simplement au filtre (le 
+   mot clé facteur est facultatif), comme il l’a fait lors de l’essais avec MODE_ITER_SIMULT, 
+   s’il veut obtenir 
+   tous les modes demandés. 
+   Par contre le message d’erreur (ALGELINE3_11) n’est pas clair donc je propose un nouveau 
+   texte plus parlant 
+   avec un conseil :
+   
+   « L’extraction des modes a échoué.
+   La structure de données mode_meca est vide ou aucun mode ne remplit le critère d’extraction.
+   Conseils & solution :
+     Vérifiez le résultat de votre calcul modal et/ou modifiez votre filtre d’extraction. »
+   
+   Impact dans les sources :
+   -------------------------------------------
+   Algeline3.py
+   
+   
+   Validation :
+   -------------------------------------------
+   L’étude fournie
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude de l'utilisateur
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF wdnp101a                     foucault A.FOUCAULT        1222      8     11
+ CASTEST MODIF zzzz237a                      macocco K.MACOCCO          362     94      2
+ FORTRAN MODIF algorith/dltp0                macocco K.MACOCCO          134      5      1
+ FORTRAN MODIF algorith/mappar               macocco K.MACOCCO          416     11     11
+ FORTRAN MODIF algorith/mmrend               macocco K.MACOCCO          147     12      8
+ FORTRAN MODIF algorith/rechmn               macocco K.MACOCCO          192      6      3
+ FORTRAN MODIF algorith/rechno               macocco K.MACOCCO          279      6      3
+ FORTRAN MODIF algorith/zbinit               macocco K.MACOCCO           66      2      2
+ FORTRAN MODIF elements/fcent                macocco K.MACOCCO           76      8      4
+ FORTRAN MODIF elements/forcen               macocco K.MACOCCO           75     38     37
+ FORTRAN MODIF modelisa/cbrota               macocco K.MACOCCO           49      9      7
+  PYTHON MODIF Messages/algeline3            macocco K.MACOCCO          439      5      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   12        3457       204      91      +113
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   12        3457       204      91      +113 

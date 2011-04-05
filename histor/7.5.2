@@ -1,0 +1,533 @@
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhpd L.SALMONA   DATE  le 06/09/2005 a 10:21:19
+
+-----------------------------------------------------------------------------
+CORRECTION AL 2005-210
+   POUR_LE_COMPTE_DE : J. LAVERNE
+   NB_JOURS_TRAV : 1.5
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE
+   TITRE:  TEST_RESU en relatif sur des valeurs nulles
+   DETAILS :
+   Cette fiche se trouve etre en double avec l'EL2005-175 déjà réalisée par
+   ailleurs. Par contre un bug a été trouvé dans la routine d'impression des
+   resultats du test : utites.f.
+   En effet le format d'affichage du pourcentage d'erreur est F7.3 pour des
+   réels compris entre -999.99 et 999.99. Lorsque le réel est positif, pas de
+   probleme, le format est bien adapté. Par contre pour une valeur de -100 ou
+   inférieure il faut mettre F7.2 ( -100.00 ). C'est ce qui est fait dans la
+   routine utites pour les erreurs inférieures à -99.9.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : cas tests sdll109a, sdlx301a et sdnx300b qui ont révélé le bug.
+
+
+-----------------------------------------------------------------------
+--- AUTEUR galenne E.GALENNE   DATE  le 06/09/2005 a 08:44:43
+
+------------------------------------------------------------------------------------
+CORRECTION AL 2005-205
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE : CALC_G_LOCAL_T : operandes R_INF_FO et R_SUP_FO
+   FONCTIONNALITE
+   Dans CALC_G_LOCAL_T et CALC_THETA, on peut faire varier le rayon des couronnes theta le
+   long du fond de fissure, en fonction donc de l'abscisse curviligne 'ABSC'.
+   Cependant la variable des fonctions RINF_FO, RSUP_FO et MODULE_FO devait être nommée 'X',
+   alors qu'elle désignait bien l'abscisse curviligne !
+   On remplace donc 'X' par 'ABSC' dans les routines gveri2, gveri3 et gverig
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      sslv110a->e : remplacement des fonctions en 'X' par des fonctions en 'ABSC'
+      (résultat identique puisque, à part le nom de la variable, rien n'est modifié)
+
+------------------------------------------------------------------------------------
+REALISATION EL 2005-206
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE : POST_K1_K2_K3 / précision
+   FONCTIONNALITE
+   Dans l'opérateur POST_K1_K2_K3, la cohérence entre les maillages des deux lèvres est
+   vérifiée (position et nombre de noeuds).
+   Pour certains noeuds du fond de fissure de l'étude de cette fiche, le nombre de noeuds
+   est différent entre les 2 lèvres et le calcul de K n'est donc pas effectué. On modifie
+   la routine pkfond pour que le calcul soit quand même effectué dans ce cas (s'il y a
+   suffisament de noeuds), une alarme signalant le problème à l'utilisateur.
+   Cependant l'anomalie dans cette étude est liée à un problème de précision. On en profite
+   donc pour tout remettre à plat : l'utilisateur fourni une précision (PREC_VIS_A_VIS),
+   égale par défaut à 0.1.
+   Pour un noeud donné du fond de fissure, un noeud des lèvres est retenu s'il vérifie
+   les 3 conditions suivantes :
+      * distance par rapport au plan normal à la fissure < prec * d1, où d1 est la distance
+   entre 2 noeuds successifs du fond de fissure
+      * distance par rapport au fond de fissure < ABSC_CURV_MAXI*(1+prec/10)
+      * distance par rapport à son vis à vis sur l'autre lèvre < prec*Rmax, où Rmax est
+   la distance du noeud retenu le plus éloigné du fond de fissure (sensiblement égal à
+   ABSC_CURV_MAXI en général).
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+      DOC_U : U4.82.05  (POST_K1_K2_K3)
+         EXPL_ : Critères de précision à expliciter
+   VALIDATION
+      sslv134b, ssnv166a/b
+
+------------------------------------------------------------------------------------
+REALISATION EL 2005-128
+   NB_JOURS_TRAV  : 7
+   INTERET_UTILISATEUR : OUI
+   TITRE : AOM : MACR_ASPIC_MAIL / Problème de génération de maillage
+   FONCTIONNALITE
+   Cette fiche a été émise à cause d'un plantage dans gibi en voulant modéliser une
+   fissure 'COURTE', droite et débouchante dans un piquage de type 1.
+   L'anomalie est située dans la procédure de correction de la profondeur de la fissure
+   (pour prendre en compte transformation plaque-tube). On fait plusieurs modifications :
+   * incohérence entre la doc et la macro sur la convention de signe de la position
+   azimutale theta (cas fissure droite, type 1 ou 2)
+   * pour améliorer l'ergonomie de la macro (et débugger plus facilement), on ajoute en
+    fin de macro un calcul pour identification la profondeur de la fissure dans le
+    maillage généré (fissure courte débouchante uniquement !). La profondeur apparait dans
+    le FICHIER MESS, à la fin des commandes de la macro.
+    Principe : à partir du groupe de noeuds (ordonnés) du fond de fissure, on détermine
+    les 2 noeuds extrémités puis le noeud le plus profond. La plus grande distance entre
+    ce noeud et les noeuds médians des lèvres définie la profondeur de la fissure.
+   * cette petite évolution permet de vérifier que la correction de profondeur de fissure
+   est efficace dans la plupart des cas (droit ou incliné, type 1 ou 2, interne ou
+   externe   : écart inférieur à 5% avec la donnée utilisateur)... SAUF si l'angle
+   azimutal theta et l'angle de soudure alpha sont grands (theta > 60° ; 30<alpha<50°)
+   pour les fissures courtes, droites et débouchantes en peau externe, piquage de type 1.
+   --> Dans ces cas-là, on "corrige la correction" de profondeur en prenant en compte la
+   variation azimutale de la longueur de la soudure. Cette correction n'est activée que si
+   on détecte que la précision "risque" d'être médiocre.
+   Avec ces différentes corrections, l'erreur de la profondeur de la fissure est
+   inférieure à 5% dans la majorité des cas. Le maillage ayant posé problème est généré
+   sans difficulté.
+   Remarque : il est normal que dans le cas d'une fissure de type 'LONGUE', la fissure ne
+   soit pas débouchante : la procédure de maillage n'a pas été construite pour le faire !
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+    DOC_U : U4.PC.10  (MACR_ASPIC_MAIL)
+         EXPL_ : indiquer que la profondeur de fissure du maillage généré apparait dans le
+           fichier MESS.
+   DETAILS
+      Fichier modifié : macr_aspic_mail_ops.py
+   VALIDATION
+      aspic02a +  cas test de la fiche
+
+------------------------------------------------------------------------------------
+CORRECTION AL 2005-245
+   NB_JOURS_TRAV  : 1
+   INTERET_UTILISATEUR : OUI
+   TITRE : DEFI_FOND_FISS ET POST_K1_K2_K3 / Type de mailles du fond de fissure
+   FONCTIONNALITE
+   Le type de mailles du fond de fissure (SEG2 ou SEG3) est utilisé dans l'opérateur
+   POST_K1_k2_K3 pour déterminer sur quels noeuds le résultat doit être affiché.
+   Le type de maille TYPE se trouve dans la structure de données FOND_FISS (depuis 7.2.4)
+   et est identifié dans l'opérateur DEFI_FOND_FISS.
+   Malheureusement TYPE n'était calculé que si le fond de fissure était défini par
+   l'utilisateur par un GROUP_MA et avec un NOEUD_ORIG / GROUP_NO_ORIG. Dans tous les autres
+   cas (GROUP_MA sans origine ou GROUP_NO), le calcul plantait dans POST_K1_K2_K3 :
+   <F> <POST_K1_K2_K3> BUG: MANQUE .TYPE
+   --> on complète la routine gverif
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      sslv134b : calcul de K à partir de plusieurs définitions du fond de fissure
+
+
+-----------------------------------------------------------------------
+--- AUTEUR lebouvie F.LEBOUVIER   DATE  le 11/07/2005 a 17:46:52
+
+------------------------------------------------------------------------------
+REALISATION EL 2005-176
+   NB_JOURS_TRAV  : 4.0
+   POUR_LE_COMPTE_DE : J. PELLET
+   INTERET_UTILISATEUR : OUI
+   TITRE : Faire du ménage dans certains cas-tests
+   FONCTIONNALITE :
+   DETAILS :
+   1. Objectif
+      24 tests donnent des tolérances supérieures à 50% sur certaines de leurs
+      valeurs, soit au total, 156 valeurs qu'Aster trouvent OK alors qu'elles
+      sont différentes de plus de 50% des valeurs attendues !
+      hsna120a, rccm03a,  sdll109a, sdlx301a, sdnx300a, sdnx300b, sensd07a,
+      shlv100a, shlv100e, ssls100i, ssls117d, ssls502a, ssls502b, ssls502c,
+      ssls502d, sslv04l,  ssna100a, ssna100b, ssnl502c, ssns501a, ssns501b,
+      tpla07a,  tplp303a, tplp303c
+      L'objectif de cette fiche est de regarder si ces écarts Aster/référence
+      sont bien tous expliqués dans les docs V ou dans le fichier .comm.
+      Si l'origine des écarts n'est pas décrit, on propose un traitement pour
+      les cas-tests.
+   2. Traitement
+    2.1 Cas-tests modifiés
+      - hsna120a : la valeur de référence reportée dans le fichier .comm ne
+        correspond pas à la valeur de référence citée dans la doc V (faute de
+        frappe).
+          => On corrige le fichier de commande.
+      - rccm03a : les écarts constatés concernent des petites valeurs.
+        L'origine de ces écarts est décrite dans la doc V.
+          => On remplace CRITERE='RELATIF' en CRITERE= 'ABSOLU'
+      - sdlx310a : Dans ce cas-test les résultats Aster sont comparés aux
+        résultats obtenus avec CASTEM et avec SAMCEF.
+        .Les valeurs obtenues par Aster pour les composantes DRZ (Réaction
+         nodale) et MT sont presques nulles (~E-13). L'origine de ces écarts
+         est décrite dans la doc V.
+           => On supprime tous les TEST_RESU portant sur MT et DRZ (réaction).
+        .Les écarts constatés sur certaines valeurs des composantes MASS_EFFE_DX,
+         MASS_EFFE_DY et MASS_EFFE_DZ par Aster sont éloignées des valeurs
+         obtenues par SAMCEF, ce qui n'est pas le cas des valeurs obtenues
+         avec CASTEM. L'origine de ces écarts est décrite dans la doc V
+           => Aucune modification
+       - sensd07a: Doc V absente, la tolérance élevée prise en compte est
+         expliquée dans le fichier .comm. Les écarts constatés concernent des
+         petites valeurs.
+          => On remplace CRITERE='RELATIF' en CRITERE= 'ABSOLU'
+       - tpla300a, tpla300c: l'origine des écarts est décrite dans la doc V.
+         Les écarts constatés concernent des petites valeurs.
+          => On remplace CRITERE='RELATIF' en CRITERE= 'ABSOLU'
+    2.3 Emission d'une fiche REX
+      - sdll109: aucun commentaire n'a été trouvé dans la doc V ou dans le
+        fichier .comm pour expliquer les écarts.
+          => Emission d'une fiche d'anomalie (AL2005-244)
+      - sdnx300a,sdnx300b: pas de doc V et aucun commentaire dans le fichier
+        .comm
+          => Emission d'une fiche d'anomalie (AL2005-240)
+      - ssls117d: pas d'explication sur l'origine des écarts
+          => Emission d'une fiche d'évolution documentation (ED2005-019)
+      - tpla07a: Ecarts commentés dans la Doc V, mais pas d'explication
+        précise
+          => Emission d'une fiche d'évolution logiciel (EL2005-193)
+    2.4 Aucune modification
+        Pour les cas-tests suivants, l'origine des écarts importants constatés
+        est décrit dans la doc V:
+        shlv100a, shlv100e, ssls100i, ssls502a, ssls502b, ssls502c,ssls502d
+        sslv04l,  ssnl502c, ssna100a, ssna100b, ssns501a, ssns501b
+    3. Fichiers restitués
+       hsna120a, rccm03a, sdlx310a, sensd07a, tpla303a, tpla303c
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   NON
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : cas-tests restitués
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mabbas M.ABBAS   DATE  le 06/09/2005 a 09:29:31
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-046
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE   CONTACT - HEXA20/QUAD8
+   FONCTIONNALITE:
+     La realisation du contact avec une maille de peau de type QUAD8 et
+     avec les fonctions de formes modifiees (PROJECTION='QUADRATIQUE')
+     donnent manifestement des resultats faux.
+     On devrait, dans ce cas-test simple, obtenir les memes deplacements
+     qu'avec un QUAD8 et des fonctions de forme non modifiees
+     (PROJECTION='LINEAIRE').
+         Il y a un gros doute sur les fonctions de forme utilisees.
+   DETAILS:
+    La correction apportee en Hors Arex dans la V8.1.10 corrige le
+    probleme.
+    La projection quadratique des mailles de peau QUAD8
+    consiste a utiliser des fonctions de forme modifiees pour que
+    les forces de reactions nodales soient bien toutes dans le bon sens.
+    (EL 2002-167).
+    Une projection quadratique "exacte" (avec des fonctions de forme
+     quadratiques "classiques") donnent des oscillations sur les
+     forces nodales de contact.
+    En mode "lineaire", Aster utilise des fonctions de forme lineaire
+    et fait une liaison cinematique entre noeuds milieux et noeuds
+    sommets.
+    C'est cette liaison (routine cacoeq) qui n'avait pas ete
+    correctement supprimee lors du passage en projection "quadratique".
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI DEPUIS : 7.2.6
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION:
+     ssnv167b
+
+
+-----------------------------------------------------------------------
+--- AUTEUR pabhhhh N.TARDIEU   DATE  le 11/07/2005 a 16:18:35
+
+------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE
+   DETAILS
+    Dans le fichier recal.py utilisé dans MACR_RECAL, on crée un
+    objet Python temporaire du nom de "F", ce qui n'est pas très
+    heureux... On le renomme en "_F_".
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   VALIDATION :
+   IMPACT_DOCUMENTAIRE : NON
+
+
+-----------------------------------------------------------------------
+--- AUTEUR rezette C.REZETTE   DATE  le 11/07/2005 a 14:26:27
+
+------------------------------------------------------------------------------
+REALISATION EL 2005-193
+   NB_JOURS_TRAV  : 1.0
+   POUR_LE_COMPTE_DE : J.PELLET
+   INTERET_UTILISATEUR : OUI
+   TITRE : tpla07a
+   FONCTIONNALITE
+   DETAILS :
+   Il a été signalé dans le fichier V4.01.007-A, l'émission d'une AL pour
+   résorber une imprécision de flux (65%).
+   Le but de cette fiche a été de répondre à ce problème de précision.
+   La solution retenue a été de raffiner légèrement le maillage puis de
+   transformer les mailles linéaires en mailles quadratiques.
+   Nous avons donc raffiné le maillage 2D:
+     - le découpage est passé de 4 à 5 éléments suivant x.
+     - le découpage est passé de 40 à 49 éléments suivant y.
+   Le maillage obtenu comporte :
+          1089 NOEUDS
+          108 SEG3
+	  490 TRIA6
+   Cette intervention a permis de faire passer toutes les tolérances à moins
+   de 5%.	
+   Cas-test modifiés  : cas-test tpla07a + ajout tpla07a.geo
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_V : V4.01.007
+       EXPL_ : Modification du maillage(raffinement + mailles quadratiques)
+   VALIDATION : tpla07a
+
+
+-----------------------------------------------------------------------
+--- AUTEUR vabhhts J.PELLET   DATE  le 06/09/2005 a 09:42:10
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-213
+   NB_JOURS_TRAV : 2.0   (déjà payé pour la version NEW8)
+   INTERET_UTILISATEUR : OUI
+   TITRE  STAT_NON_LINE : remplissage de la base Volatile
+   FONCTIONNALITE
+   Dans les transitoires (STAT_NON_LINE par exemple) ayant beaucoup de pas de temps,
+   on alloue et détruit de nombreux petits objets JEVEUX temporaires. La place de ces petits
+   objets sur la base volatile n'était pas toujours récupérée. Au fur et à mesure de la
+   progression du calcul, la base Volatile augmentait de taille sans que son contenu réel
+   n'augmente vraiment ! On pouvait ainsi "exploser" le /tmp et perdre tout son travail.
+   La correction consiste à insérer dans la boucle en temps, un appel à une nouvelle
+   routine JEVEUX (écrite gentiment par Jean-Pierre) : CALL JERECU('V')
+   Cette routine passe en revue tous les enregistrements vides et les "réactive".
+   J'ai instrumenté de la même manière les commandes suivantes :
+       stat_non_line/dyna_non_line, meca_statique
+       calc_elem, calc_g_local_t, calc_g_theta_t, crea_resu, extr_mode,
+       impr_resu, modi_repere, post_elem, post_k1_k2_k3, recu_fonction
+   Pour m'aider à localiser les routines à instrumenter, je me suis appuyé sur
+   la liste des routines modifiées lors de la correction de l'AL 2003-289 : il s'agissait
+   de mettre des JEMARQ/JEDEMA dans les boucles sur les numéros d'ordre afin de ne
+   pas laisser trainer des objets en mémoire par erreur.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_D : D6.02.01 : routines JEVEUX
+     EXPL_: parler de l'intérêt de JERECU
+
+   VALIDATION  : j'ai fait un petit essai très démonstratif du bon travail effectué par JERECU.
+   On voit (tableau ci-dessous) que le taux de remplissage de la base Volatile reste maintenant
+   constant au cours du calcul alors qu'avant la correction, ce taux tendait inexporablement vers zéro.
+
+      INST  taux remplissage     taux remplissage
+            sans JERECU          avec JERECU
+
+        1   0.0                    0.0
+        2   0.741190501476         0.741190501476
+        3   0.806204421427         0.761403596444
+        4   0.667332304907         0.657773197347
+        5   0.602090970628         0.628148044853
+        6   0.511661601895         0.601006396029
+        7   0.475681238075         0.642434475047
+        8   0.434848255356         0.651141771841
+        9   0.42734329346          0.642024152662
+       10   0.386581972932         0.653140641277
+       ...
+       32   0.144879456716         0.657091013376
+       33   0.137727478309         0.638321771221
+       ...
+       61   0.0839902088675        0.561299106532
+       62   0.0822382028742        0.690892791025
+
+   DETAILS
+
+//////////////////////////////////////////////////////////////////////////////////////
+   Dernière minute :
+   -----------------
+1) Suite aux diverses anomalies survenues lors de l'introduction de l'usage de
+   la routien JERECU dans le code :
+   1) on restitue en version 7 la version débugguée de JERECU (voir AL 2005-270 et consorts)
+   2) on n'appelle pas JERECU dans les 2 routines
+      focrr0.f  focrr2.f       (voir AL 2005-304)
+2) Je ne modifie pas pkfond.f (conflit avec Erwan)
+
+   Liste des fichiers modifiés:
+  crprol.f  crtype.f  irecri.f  jerecu.f  mecalm.f  mestat.f
+  op0053.f  op0070.f  op0077.f  op0168.f  op0188.f  op0191.f
+  pechli.f  peecin.f  peepot.f  peingl.f  peritr.f  peweib.f
+  pewext.f  thaclm.f
+
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-274
+   NB_JOURS_TRAV : 0.1
+   INTERET_UTILISATEUR : NON
+   TITRE  MECA_STATIQUE / plantage dans l'impression d'un message d'erreur
+   FONCTIONNALITE
+     Dans l'étude de l'utilisateur, la factorisation de la matrice échoue
+     sur un pivot nul sur un ddl de lagrange lié à une relation linéaire
+     (sans doute sur-abondante).
+     Malheureusement, la routine d'impression du message présentait un petit
+     bug provoquant un message supplémentaire :
+     "OBJET DE COLLECTION CONTIG DE LONGUEUR NULLE"
+     Je corrige ce petit bug ... mais cela n'empechera pas pas le code
+     de s'arreter en erreur fatale du fait du pivot nul.
+   DETAILS
+    Liste des fichiers modifiés:
+     imppiv.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION  : je n'ai pas fait passer cette étude annoncée comme "grosse".
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-286
+   NB_JOURS_TRAV : 0.2
+   INTERET_UTILISATEUR : NON
+   TITRE "RECU_FONCTION UTCH19 STOP"
+   FONCTIONNALITE
+     Jean-Michel a très bien analysé ce bug. Il faut effectivement utiliser
+     DISMOI('TYPE_SCA','GRANDEUR',..) pour déterminer le type de la grandeur
+     R/C/... et non pas regarder NOGD(6:6) (qui ne vaut pas "R" pour DOMMAG !!).
+   DETAILS
+     Ce bug existait dans 3 autres routines. Je les corrige.
+     Liste des fichiers modifiés:
+       cnoaff.f  focrr0.f  focrr2.f  op0090.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+///////////////////////////////////////////////////////////////////////////////
+  Dernière minute :
+  ----------------
+  Je suis obligé d'augmenter la mémoire de 2 tests :
+     wtnv122a : 16Mo -> 32Mo
+     ssnl119a : 16Mo -> 32Mo
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF hsna120a                     lebouvie F.LEBOUVIER        763      3      3
+ CASTEST MODIF rccm03a                      lebouvie F.LEBOUVIER       4279      1      1
+ CASTEST MODIF sdlx301a                     lebouvie F.LEBOUVIER       4327      1    514
+ CASTEST MODIF sensd07a                     lebouvie F.LEBOUVIER        505      6      3
+ CASTEST MODIF sslv110a                      galenne E.GALENNE          509     10     10
+ CASTEST MODIF sslv110b                      galenne E.GALENNE          273     10     10
+ CASTEST MODIF sslv110c                      galenne E.GALENNE          376     10     10
+ CASTEST MODIF sslv110d                      galenne E.GALENNE          286     10     10
+ CASTEST MODIF sslv110e                      galenne E.GALENNE          364      8      8
+ CASTEST MODIF sslv134b                      galenne E.GALENNE          693     73      1
+ CASTEST MODIF ssnl119a                      vabhhts J.PELLET           186      1      1
+ CASTEST MODIF ssnv167b                       mabbas M.ABBAS            448     33     45
+ CASTEST MODIF tpla07a                       rezette C.REZETTE          346    150    163
+ CASTEST MODIF tplp303a                     lebouvie F.LEBOUVIER        120      1      2
+ CASTEST MODIF tplp303c                     lebouvie F.LEBOUVIER         96      2      2
+ CASTEST MODIF wtnv122a                      vabhhts J.PELLET           441      1      1
+ FORTRAN AJOUT jeveux/jerecu                 vabhhts J.PELLET           165    165      0
+ FORTRAN MODIF algeline/op0168               vabhhts J.PELLET           457      2      1
+ FORTRAN MODIF algorith/crprol               vabhhts J.PELLET           287      2      1
+ FORTRAN MODIF algorith/crtype               vabhhts J.PELLET           381      2      1
+ FORTRAN MODIF algorith/gveri3               galenne E.GALENNE          168      4      4
+ FORTRAN MODIF algorith/mestat               vabhhts J.PELLET           305      2      1
+ FORTRAN MODIF algorith/op0070               vabhhts J.PELLET           831      3      2
+ FORTRAN MODIF algorith/op0191               vabhhts J.PELLET           144      2      1
+ FORTRAN MODIF algorith/pewext               vabhhts J.PELLET           143      2      1
+ FORTRAN MODIF calculel/mecalm               vabhhts J.PELLET          2285     29      1
+ FORTRAN MODIF calculel/op0053               vabhhts J.PELLET           748      3      1
+ FORTRAN MODIF calculel/op0077               vabhhts J.PELLET           577      3      1
+ FORTRAN MODIF calculel/thaclm               vabhhts J.PELLET           924      9      1
+ FORTRAN MODIF elements/gveri2               galenne E.GALENNE          186      3      3
+ FORTRAN MODIF elements/gverif               galenne E.GALENNE          774     64      5
+ FORTRAN MODIF elements/gverig               galenne E.GALENNE          294      2      2
+ FORTRAN MODIF modelisa/quadco                mabbas M.ABBAS             98     16     29
+ FORTRAN MODIF prepost/irecri                vabhhts J.PELLET           472      2      1
+ FORTRAN MODIF prepost/op0188                vabhhts J.PELLET           319      2      1
+ FORTRAN MODIF prepost/pkfond                galenne E.GALENNE          753     10      8
+ FORTRAN MODIF prepost/pkrecu                galenne E.GALENNE          187      9      7
+ FORTRAN MODIF utilitai/cnoaff               vabhhts J.PELLET           488      6      4
+ FORTRAN MODIF utilitai/focrr0               vabhhts J.PELLET           211      2      2
+ FORTRAN MODIF utilitai/focrr2               vabhhts J.PELLET           414      2      2
+ FORTRAN MODIF utilitai/imppiv               vabhhts J.PELLET           134      3      6
+ FORTRAN MODIF utilitai/op0090               vabhhts J.PELLET           286      2      2
+ FORTRAN MODIF utilitai/pechli               vabhhts J.PELLET           194      2      1
+ FORTRAN MODIF utilitai/peecin               vabhhts J.PELLET           366      2      1
+ FORTRAN MODIF utilitai/peepot               vabhhts J.PELLET           318      2      1
+ FORTRAN MODIF utilitai/peingl               vabhhts J.PELLET           710      2      1
+ FORTRAN MODIF utilitai/peritr               vabhhts J.PELLET           411      2      1
+ FORTRAN MODIF utilitai/peweib               vabhhts J.PELLET           452      2      1
+ FORTRAN MODIF utilitai/utites               cibhhpd L.SALMONA          224     31      1
+  PYTHON MODIF Macro/recal                   pabhhhh N.TARDIEU          379      3      3
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         165       165              +165
+ MODIF :   49       28932       552     882      -330
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   50       29097       717     882      -165 

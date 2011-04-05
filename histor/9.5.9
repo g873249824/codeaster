@@ -1,0 +1,532 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 27/10/2009 - 10:12:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013883 DU 2009-09-16 07:05:47
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   PILOTAGE en DDL_IMPO s'arrete anormalement
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Dans cette version modifiée du test SSNL133A (on pilote en déplacement au lieu de piloter
+   en effort), le test s'arrête et termine proprement alors qu'il n'a pas convergé.
+   
+   Détails
+   =======
+   
+   Je pilote la structure (une équerre) en déplacement (PILOTAGE/DDL_IMPO) suivant le noeud
+   'PC' et la composante 'DX'. Je demande un coefficient multiplicateur obtenu par le
+   pilotage ETA_PILO_MAX de 5.0
+   Ma liste d'instants va de 0.0 à 10.0. Je suis à l'instant 0.208, ma matrice devient non
+   inversible (mais j'ai sélectionné STOP_SINGULIER='DECOUPE') je devrais donc m'attendre à
+   subdiviser.
+   Or comme avant matrice singulière le ETA_PILOTAGE calculé valait 5.0, il m'affiche :
+   SUBDIVISION DU PAS DE TEMPS EN    4 SOUS PAS
+   puis termine le STAT_NON_LINE !
+   
+   Solution
+   ========
+   
+   Effectivement, quand le pilotage atteint ses bornes, un flag est mis à .TRUE. (FINPAS). Ce
+   flag sert ensuite à sortir de la boucle en temps. Le problème, c'est que ce flag est levé
+   dans NMCONV AVANT la vérification des erreurs survenues pendant l'itération de Newton
+   (dans ce cas, une matrice non factorisable).
+   Du coup, le code croit avoir atteint les bornes, ce qui se traduit par deux problèmes:
+   - il archive le pas de temps croyant qu'il est correct (alors que c'est faux, puisqu'on a
+   eu une erreur).
+   - il sort de STAT_NON_LINE comme s'il avait convergé.
+   
+   Il y a risque de résultats faux quand:
+   - Le pilotage est arrivé au bout (lettre B dans le tableau de convergence)
+   - Il y a eu une erreur quelconque pendant les itérations du dernier pas de temps
+   STAT_NON_LINE finit en OK_ALARM alors que le résultat est faux.
+   
+   En passant, je corrige un petit bug d'affichage (sans conséquence sur la justesse du
+   calcul). STAT_NON_LINE affiche deux fois la dernière itération de Newton quand il y a une
+   erreur. 
+   
+   Impact: NMCONV
+   A faire en v9
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014007 DU 2009-10-09 09:35:36
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Suite Fiche 13965 : Charge de type 'DIDI' incompatible avec prediction extrapol
+FONCTIONNALITE
+   Problème:
+   =========
+   
+   Quand on utilise des charges de type DIDI avec une prdiction en "EXTRAPOL" ou en
+   "DEPL_CALCULE", les résultats sont FAUX.
+   
+   Diagnostic:
+   ===========
+   
+   Il vient du fait que dans STAT_NON_LINE, on ne teste jamais explicitement qu'on respecte
+   les conditions limites car elles sont toujours linéaires (il suffit de les imposer une
+   fois au début pour qu'elles soient OK)
+   Dans les méthodes EXTRAPOL (ou DEPL_CALCULE), on procède à une reprojection explicite des
+   CL de Dirichlet pour justement les respecter. Il manquait le second membre correspondant à
+   DIDI.
+   
+   Traitement:
+   ===========
+   
+   Il suffit d'ajouter le second membre "CNDIDI" lors du calcul en prédiction.
+   
+   Impact: NMASSD
+   
+   Résultats faux: DIDI + PREDICTION ='TANGENTE' ou PREDICTION ='DEPL_CALCULE'
+   
+   
+   A faire en v9
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hsnv121a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014075 DU 2009-10-21 08:57:05
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Alarme MECANONLINE5_5
+FONCTIONNALITE
+   L'alarme MECANONLINE5_5 se déclenche intempestivement dans trois cas-tests (sdnd102c/d,
+   sdnv100f).
+   Cette alarme est là pour prevenir que l'usage de la pénalisaiton pour le contact discret
+   ou les éléments de type DIS_CHOC implique de réactualiser la matrice à chaque itération.
+   Pour supprimer l'alarme:
+   - sdnd102c/d: il suffit de mettre REAC_ITER=1
+   - sdnv100f: c'est un cas explicite pour lequel le message n'a pas de sens. Il faut
+   modifier NMCHRM
+   
+   Impact: NMCHRM+cas-tests
+   A faire en v9 (pour nmchrm au moins)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdnd102c/d, sdnv100f
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 26/10/2009 - 18:15:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014017 DU 2009-10-09 15:29:39
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   DKT relation ELAS_COQUE contraintes fausses
+FONCTIONNALITE
+   Correction d'une erreur sur les éléments de plaque dans 
+   SIEF_ELGA_DEPL relation ELAS_COQUE : les contraintes 
+   étaient mal calculées sur les différents niveaux des 
+   couches.
+   
+   Pour l'option SIGM_ELNO_DEPL, il y avait la même erreur 
+   que pour EPSI_ELNO_DEPL (fiche 13979) dans le cas où la 
+   coque a plusieurs couches sans passer par DEFI_COQU_MULT 
+   : les contraintes  étaient calculées sur une seule couche
+   
+   On en profite pour faire du ménage dans les routines.
+   Création de 2 routines supplémentaires dktsie et dkqsie.
+   Ménage dans xxxcol avec xxx=dkt,dkq,dst,dsq,q4g
+   
+   Validation dans les tests SSLS502A et B.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.1.1
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SSLS502A SSLS502B
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR devesa       DEVESA Georges         DATE 26/10/2009 - 15:53:42
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013393 DU 2009-05-07 15:27:14
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   RIGI_PARASOL : impression dans le fichier resultat
+FONCTIONNALITE
+   Les valeurs de raideurs ou d'amortissement au noeud calculées par 
+   RIGI_PARASOL n'étaient plus écrites dans le fichier RESULTAT au 
+   format des commandes de Code_Aster, et ceci malgré l'utilisation 
+   de INFO=2, comme spécifié dans le paragraphe 17.4 de la doc 
+   U4.42.01-I.
+   Et en effet, ce problème apparaissait lorsqu'on affectait ces 
+   caractéristiques aux noeuds ou mailles tardives, c'est-à-dire 
+   sans la présence du mot clé GROUP_MA_POI1. Dans ce dernier cas, 
+   cela marche.
+   On corrige donc la routine ACEARP pour que cela fonctionne 
+   également dans le cas des mailles tardives. Et pour satisfaire un 
+   souhait de Mathieu, on imprime dorénavant ces informations dans 
+   le fichier MESSAGE plutôt que dans le fichier RESULTAT si INFO=2 
+   (d'où l'impact dans la doc).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.42.01
+VALIDATION
+   cas test ZZZZ200A
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR fernandes    FERNANDES Roméo        DATE 27/10/2009 - 07:05:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013738 DU 2009-08-21 09:14:00
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   bug ssnv158d (LAIGLE)
+FONCTIONNALITE
+   Le plantage est du a une division par zero qui peut effectivement se produire lors du
+   calcul de la derivee du critère par rapport au deviateur des contraintes.
+   
+   On trappe cette division par zero et on active le découpage (global) du pas de temps
+   si celui-ci a ete demande par l'utilisateur, sinon on plante.
+   
+   Attention, l'operation qui contient cette division par zero est commune aux lois de Laigle
+   et CJS. Dans le cas CJS, l'erreur est stoppee, mais la remontee d'erreur pour un eventuel
+   decoupage des pas de temps n'a pas ete faite (necessaire? car probablement beaucoup de
+   routines a impacte. TMA?).
+   
+   Pas de restitution de cas test, celui proposé par Samuel dans le cadre de cette fiche
+   d'anomalie passe.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test ssnv158d modifie
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014079 DU 2009-10-21 14:47:15
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   BUG LAIGLE
+FONCTIONNALITE
+   Une erreur s'est glissée dans une routine (de projection au sommet de la surface de
+   charge) de la loi de comportement LAIGLE. Deux
+   variables sont inversées entre la routine appelante et la routine appelée! Fort
+   heureusement cet appel se produit dans des cas extrêmes et très occasionnellement.
+   
+   Cette erreur peut être la cause de résultats FAUX depuis la version 7.0.10 mais pas
+   d'impact sur les tests de la base aster.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.10
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.0.10
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests LAIGLE + CJS
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 26/10/2009 - 17:45:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014086 DU 2009-10-22 12:10:56
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   ARCH_ETAT_INIT : bug en poursuite
+FONCTIONNALITE
+   Dans la routine NMCRAR, dès qu'on détecte la présence de ARCH_ETAT_INIT = 'OUI', 
+   alors on met le numéro d'archivage à zéro : NUMARC = 0.
+   Avant la version 9.2.14, on vérifiait en plus si on était en poursuite (DERNIE ne 
+   vaut alors pas 0) et dans ce cas, on s'arrêtait en erreur <F> avec le message :
+   "impossible d'archiver l'état initial : le concept est réentrant (ARCHIVAGE)"
+   
+   En 9.2.14, le test par rapport à DERNIE fut retiré, ainsi donc que le message et 
+   l'arrêt en erreur <F> associé. Donc on peut laisser ARCH_ETAT_INIT en poursuite et 
+   cela remet à zéro le numéro d'archivage.
+   
+   En plus d'entraîner la perte de la solution calculée avant la poursuite, on peut 
+   avoir des résultats faux si l'on tente d'extraire des valeurs suivant leur numéro 
+   d'ordre si l'on croit que ce numéro d'ordre commence avec le premier appel à 
+   l'opérateur de résolution non linéaire (STAT_NON_LINE, THER_NON_LINE ou 
+   DYNA_NON_LINE). Si l'on accède par instant (recommandé !), pas de risque de 
+   résultat faux : on n'aura aucune valeur en retour si l'instant est antérieur à la 
+   poursuite.
+   
+   Pour éviter ce bug, deux solutions :
+   - revenir au fonctionnement d'avant la 9.2.14 et s'arrêter en erreur si le mot-clé 
+   ARCH_ETAT_INIT  est présent en poursuite,
+   - être plus "user friendly" et en cas de poursuite, passer outre et ne pas tenir 
+   compte d'ARCH_ETAT_INIT.
+   
+   Je préconise la deuxième voie. Pour cela je teste la valeur de DERNIE : si il est 
+   bien nul (cas sans reprise) alors on met bien NUMARC à 0, sinon, on ne fait rien 
+   et on emet juste une alarme (message ARCHIVAGE_99)
+   "L'option d'archivage de l'état initial ne sert que lors du premier calcul,
+   son appel dans les poursuites suivantes est ignoré (ARCHIVAGE, ARCH_ETAT_INIT)"
+   
+   On valide en modifiant légèrement le cas-test SDLD31A qui faisait déjà des 
+   poursuites. On rajoute : ARCHIVAGE = _F(ARCH_ETAT_INIT = 'OUI'), lors des reprises 
+   de REPHHTP.
+   Je modifie aussi un instant de poursuite de manière à tester des valeurs à un 
+   instant antérieur à la poursuite en question. Ainsi, sans la modification, ces 
+   valeurs n'existent pas et le TEST_RESU est NOOK. Avec la modification c'est OK.
+   
+   Impact sources et fichiers :
+   - nmcrar.f,
+   - archivage.py (message 99),
+   - sdld31a.comm.
+   
+   Le report en version 9 est facile car :
+   - nmcrar.f et archivage.py sont inchangés,
+   - sdld31a existe déjà.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.2.14
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.2.14
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03, V02.01.031
+VALIDATION
+   sdld31a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 27/10/2009 - 10:13:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014070 DU 2009-10-20 14:09:11
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Prediction de GLRC
+FONCTIONNALITE
+   Problème :
+   ~~~~~~~~~~~
+   
+   Dans l'étape de prédiction élastique lors de l'intégration de la loi de comportement de
+   GLRC_DM, il est nécessaire de résoudre deux polynômes d'ordre 4. Pour trouver les racines
+   de ces polynômes, la routine zeropn.f est utilisée. La méthode utilisée est celle de la
+   recherche des valeurs propres de la matrice compagnon. Dans le cas du calcul SMART réalisé
+   par Irméla, la routine zeropn s'arrête sur un CALL ASSERT
+   
+   CALL VPHQRP(ZR(JMAT),DEGRE,DEGRE,ICODE,RACINE,BIDON,1,VBID,30,IER,IBID)
+   CALL ASSERT(IER.EQ.0)
+   
+   Ce CALL ASSERT s'active quand la méthode itérative de recherche des valeurs propres ne
+   converge pas.
+   
+   Solutions :
+   ~~~~~~~~~~~~
+   
+   La solution adoptée a été de modifier la fonction zeropn
+   
+   <<SUBROUTINE ZEROPN( DEGRE, AI, RACINE )
+   
+   >>SUBROUTINE ZEROPN( KSTOP, DEGRE, AI, RACINE, IER )
+   
+   Le paramètre KSTOP permet de spécifier si on doit s'arrêter ou non si la résolution ne
+   converge pas.
+   De plus, on remonte le code erreur.
+   
+   
+   >>IF (KSTOP.EQ.' ') GOTO 40
+   >>
+   >>IF (IER .NE. 0) THEN
+   >>  CALL U2MESI(KSTOP,'ALGORITH17_6',1,IER)
+   >>ENDIF
+   >>
+   >>40   CONTINUE
+   
+   La fonction zeropn est utilisé une seule autre fois dans le code par la fonction cribif.
+   
+   Dans l'intégration de la loi de comportement de GLRC_DM (gldloc.f), on teste le code
+   retour de zeropn. Si celui-ci ne vaut pas 0, on utilise une autre méthode de prédiction
+   qui est plus robuste mais moins précise.
+   
+   Fichiers modifiés : gldloc.f, zeropn.f, cribif.f
+   Cas-tests : sdns106e,ssnp125a,ssnp125b,ssns106x,ssnv208a,SMART
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 27/10/2009 - 14:25:01
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014081 DU 2009-10-22 07:57:19
+TYPE express concernant Code_Aster (VERSION 10.1)
+TITRE
+   Des erreurs au sein du solveur de contact GCP
+FONCTIONNALITE
+   Analyse :
+   --------
+   1- Depuis le 1er jour, l'algorithme du GCP pour le contact comporte une erreur algorithmique
+   au niveau du préconditionnement. Il y avait une confusion entre la direction de recherche
+   et le gradient. On préconditionnait la première au lieu de la seconde. Cette erreur avait
+   des conséquences même en l'absence de préconditionneur car elle impactait la formule de
+   conjugaison. 
+   
+   Néanmoins ceci ne déclenchait pas de résultats faux ; seule la convergence était altérée.
+   
+   2- Il y avait une petite erreur qui empêchait l'usager d'augmenter le nombre
+   d'itérations max (on prenait un min au lieu d'un max).
+   
+   3- Dans le GCP, pour voir si un noeud était exclu du contact pour cause de projection
+   hors-zone (TOLE_PROJ_EXT), on testait si son jeu était à R8VIDE. Ceci était réalisé dans
+   CHMANO.F. Or depuis la 8.3.13, le jeu n'est plus mis à R8VIDE dans un tel cas ; on
+   interroge plutôt une fonction, CFEXCL. Or ceci n'était pas fait dans le GCP. Il y a donc
+   un risque de résultats faux depuis la 8.3.13. 
+   
+   
+   
+   Corrections :
+   ------------
+   1- J'ai remis l'algorithme au propre. Les gains de performance devraient être notables.
+   Comme la conjugaison fonctionne bien, j'ai augmenté le nombre par défaut d'itérations de
+   GCP sans réinitialiser la direction de recherche  : de 3 on passe à 20.
+   
+   AU passage, j'augmente le nombre d'itérations max par défaut : de 2*NBLIAI on passe à
+   10*NBLIAI.
+   
+   2- J'ai corrigé l'erreur qui empêchait l'usager d'augmenter le nombre d'itérations max.
+   
+   3- On appelle CFEXCL pour tester si un noeud est à exclure du contact.
+   
+   Enfin, je modifie l'initialisation de l'algorithme. Avant, on partait toujours d'un état nul ;
+   je propose de partir de l'état précédent, ce qui permet un gain de performance substantiel
+   quand l'état de contact évolue de manière régulière.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.9
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.2.9
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.50
+VALIDATION
+   as_tout
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF hsnv121a                        abbas M.ABBAS            218      2      1
+ CASTEST MODIF sdld31a                       greffet N.GREFFET          637      6      3
+ CASTEST MODIF sdnd102c                        abbas M.ABBAS            247      2      1
+ CASTEST MODIF sdnd102d                        abbas M.ABBAS            243      3      1
+ CASTEST MODIF ssls502a                    desroches X.DESROCHES        283     57     30
+ CASTEST MODIF ssls502b                    desroches X.DESROCHES        277     23      2
+ CASTEST MODIF ssna102e                      tardieu N.TARDIEU          251      7      5
+ CASTEST MODIF ssnp125a                     sfayolle S.FAYOLLE          492      2      1
+ CASTEST MODIF ssnp125b                     sfayolle S.FAYOLLE          421      2      1
+ CASTEST MODIF ssns106a                     sfayolle S.FAYOLLE          957      1      1
+ CASTEST MODIF ssns106b                     sfayolle S.FAYOLLE         1423      1      1
+ CASTEST MODIF ssns106c                     sfayolle S.FAYOLLE         1534     45     45
+ CASTEST MODIF ssns106d                     sfayolle S.FAYOLLE          419      1      1
+ CASTEST MODIF ssns106e                     sfayolle S.FAYOLLE          533     21     21
+ CASTEST MODIF ssns106f                     sfayolle S.FAYOLLE          737      1      1
+ CASTEST MODIF ssns106g                     sfayolle S.FAYOLLE          493      1      1
+ CASTEST MODIF ssnv208a                     sfayolle S.FAYOLLE          592      1      1
+CATALOPY MODIF commun/c_contact              tardieu N.TARDIEU          318      2      2
+ FORTRAN AJOUT elements/dkqsie             desroches X.DESROCHES        172    172      0
+ FORTRAN AJOUT elements/dktsie             desroches X.DESROCHES        168    168      0
+ FORTRAN MODIF algeline/calcpj             fernandes R.FERNANDES        137      2      2
+ FORTRAN MODIF algeline/calcq              fernandes R.FERNANDES         84     10      3
+ FORTRAN MODIF algeline/lcpllg             fernandes R.FERNANDES        296     17     14
+ FORTRAN MODIF algeline/lglini             fernandes R.FERNANDES        147      7      5
+ FORTRAN MODIF algeline/lglite             fernandes R.FERNANDES        127      6      4
+ FORTRAN MODIF algeline/lgljpl             fernandes R.FERNANDES        150      6      4
+ FORTRAN MODIF algeline/solrei             fernandes R.FERNANDES         83      6      4
+ FORTRAN MODIF algeline/solren             fernandes R.FERNANDES         55      4      4
+ FORTRAN MODIF algorith/algocg               tardieu N.TARDIEU          683    119     70
+ FORTRAN MODIF algorith/cjside             fernandes R.FERNANDES        348      4      4
+ FORTRAN MODIF algorith/cjsiid             fernandes R.FERNANDES        424      4      4
+ FORTRAN MODIF algorith/cjsjde             fernandes R.FERNANDES        771      3      3
+ FORTRAN MODIF algorith/cjsjid             fernandes R.FERNANDES        850      3      3
+ FORTRAN MODIF algorith/cjstde             fernandes R.FERNANDES        267      3      3
+ FORTRAN MODIF algorith/cjstid             fernandes R.FERNANDES        317      3      3
+ FORTRAN MODIF algorith/cribif              sfayolle S.FAYOLLE          123      3      3
+ FORTRAN MODIF algorith/lcjpla             fernandes R.FERNANDES         68      4      4
+ FORTRAN MODIF algorith/nmassd                 abbas M.ABBAS            176     18      2
+ FORTRAN MODIF algorith/nmchrm                 abbas M.ABBAS            234      2      2
+ FORTRAN MODIF algorith/nmconv                 abbas M.ABBAS            523      9      9
+ FORTRAN MODIF algorith/nmcrar               greffet N.GREFFET          269      4      2
+ FORTRAN MODIF algorith/plasti             fernandes R.FERNANDES        446      6      4
+ FORTRAN MODIF algorith/pregcp               tardieu N.TARDIEU          266      5      8
+ FORTRAN MODIF algorith/zeropn              sfayolle S.FAYOLLE          109     22      3
+ FORTRAN MODIF elements/dkqcol             desroches X.DESROCHES        181     19    170
+ FORTRAN MODIF elements/dktcol             desroches X.DESROCHES        186     19    138
+ FORTRAN MODIF elements/dsqcol             desroches X.DESROCHES        432     38    232
+ FORTRAN MODIF elements/dstcol             desroches X.DESROCHES        330     31    147
+ FORTRAN MODIF elements/gldloc              sfayolle S.FAYOLLE          228     83     29
+ FORTRAN MODIF elements/q4gcol             desroches X.DESROCHES        346     27    100
+ FORTRAN MODIF elements/te0033             desroches X.DESROCHES        319      4      6
+ FORTRAN MODIF modelisa/acearp                devesa G.DEVESA           538     56     13
+  PYTHON MODIF Messages/algorith17          sfayolle S.FAYOLLE           44      4      1
+  PYTHON MODIF Messages/archivage            greffet N.GREFFET           38      6      1
+  PYTHON MODIF Messages/mecanonline            abbas M.ABBAS            152      1      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         340       340              +340
+ MODIF :   53       19822       736    1128      -392
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   55       20162      1076    1128       -52 

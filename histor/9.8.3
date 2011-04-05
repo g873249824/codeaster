@@ -1,0 +1,1121 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 02/11/2011 - 10:39:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016219 DU 2011-01-17 11:28:32
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.8.1, les cas-tests forma03d, ssna110a, zzzz159a, b, c, d, et e s'arretent en erreur fatale sur Aster4.
+FONCTIONNALITE
+   Il y a deux problèmes avec les tests MACR_RECAL en version 9.
+   
+   1. le module python Gnuplot essaie d'importer numpy qui alors rentre 
+   en conflit avec l'installation de Numeric (libumath.so incompatible 
+   visiblement).
+   
+   Comme :
+   - Gnuplot est optionnel (on peut utiliser Xmgrace)
+   - on est en v9
+   - on change bientot Python en Python 2.6
+   on désactive Gnuplot en version 9.
+   
+   2. Les imports des modules d'asrun utilisaient encore les anciens 
+   noms de module, dépréciés depuis asrun 1.8.0. Ces modules de 
+   compatibilité ont été supprimés en 1.9.1.
+   On modifie les imports en conséquence.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    forma03d, ssna110a, zzzz159a, b, c, d, et e
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016268 DU 2011-01-24 10:23:18
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    bug dans DEFI_LIST_REEL
+FONCTIONNALITE
+   Problème
+   ========
+   
+   L'utilisateur fait : 
+   linstS = DEFI_LIST_REEL( DEBUT=0.0, INTERVALLE=( _F(JUSQU_A = 1.0, 
+   PAS= 2.0,),),)
+   
+   => L'alarme ALGORITH13_82 est émise, puis écrasement plus loin.
+   
+   
+   Correction
+   ==========
+   
+   On vérifie le PAS dans op0024. Dans le cas présent, on est 
+   maintenant arrêté avec :
+   
+   !-----------------------------------------------------------------
+   --------!
+   ! <EXCEPTION> <ALGORITH9_15> . . . . . . . . . . . . . . . . . . . 
+   . . . .!
+   ! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   . . . . !
+   ! Le pas (2.000000) est plus grand que l'intervalle [0.000000, 
+   1.000000]. !
+   !-----------------------------------------------------------------
+   --------!
+   
+   
+   On vérifie à la tolérance de 1.e-3, soit avec :
+   
+   linstS = DEFI_LIST_REEL( DEBUT=0.0, INTERVALLE=( _F(JUSQU_A = 1.0, 
+   PAS= 1.0001,),),)
+   
+   L'erreur n'est pas relevée, la liste construite est [0.0, 1.0].
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test joint
+DEJA RESTITUE DANS : 9.8.2, 10.3.10
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 03/01/2011 - 08:06:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016271 DU 2011-01-24 11:23:42
+TYPE anomalie concernant Code_Aster (VERSION 10.3)
+TITRE
+    En NEW10.3.8, les cas-tests plexu01a et plexu02a s'arretent en erreur fatale sur Aster4.
+FONCTIONNALITE
+   Problème :
+   =========
+   Les tests plexu02a et plexu02b s'arrêtent en erreur sur Aster-4
+   
+   Analyse :
+   ========
+   Le fichier contenant l'exécutable EUROPLEXUS n'a plus la même localisation sur le nouveau
+   serveur. Et les arguments d'appel ont été modifiés.
+   
+   Correction apportée:
+   ===================
+   On modifie le source de la commande catapy/commande/calc_europlexus.capy :
+   32c32
+   <         LOGICIEL = SIMP(statut='f', typ='TXM', defaut='/home/europlex/EPXD/bin/europlexus'),
+   ---
+   >         LOGICIEL = SIMP(statut='f', typ='TXM',
+   defaut='/home/europlex/EPXD/EUROPLEXUS_GESTION/runepx_d'),
+   
+   et de la macro python bibpyt/Macro/calc_europlexus_ops.py : 
+   
+   119c119
+   <   else: EXEC = '/home/europlex/EPXD/bin/europlexus'
+   ---
+   >   else: EXEC = '/home/europlex/EPXD/EUROPLEXUS_GESTION/runepx_d'
+   2319,2322c2319
+   < #     EXEC_LOGICIEL(LOGICIEL='cd %s ; unset TMPDIR ; %s -usetmpdir %s ; iret=$? ; cd %s
+   ; echo "Code_Retour Europlexus : $iret" ; exit 0' % (self.pwd + self.REPE, self.EXEC,
+   fichier_epx, self.pwd),
+   < #                   CODE_RETOUR_MAXI=-1,
+   < #                   INFO=2)
+   <      EXEC_LOGICIEL(LOGICIEL='cd %s ; unset TMPDIR ; %s %s ; iret=$? ; cd %s ; echo
+   "Code_Retour Europlexus : $iret" ; exit 0' % (self.pwd + self.REPE, self.EXEC,
+   fichier_epx, self.pwd),
+   ---
+   >      EXEC_LOGICIEL(LOGICIEL='cd %s ; unset TMPDIR ; %s -usetmpdir %s ; iret=$? ; cd %s ;
+   echo "Code_Retour Europlexus : $iret" ; exit 0' % (self.pwd + self.REPE, self.EXEC,
+   fichier_epx, self.pwd),
+   
+   
+   Avec ces modifications les tests s'exécutent et sortent correctement, mais des erreurs
+   sont rencontrées lors de la relecture des fichiers MED .
+   
+   PLEXUO1A:
+   
+     
+   !------------------------------------------------------------------------------------------------!
+      ! <EXCEPTION> <MED_77>                                                                
+             !
+      !                                                                                     
+             !
+      ! -> On ne peut lire aucune valeur du champ CHAMP___CONTRAINTE___002 dans le fichier
+   d'unité 99. !
+      !   -> Risques et conseils:                                                           
+             !
+      !      Ce problème est peut-être lié à une incohérence entre le champ à lire dans     
+             !
+      !      le fichier MED (NOEU/ELGA/ELNO/...) et le type du champ que vous avez demandé  
+             !
+      !      (mot clé TYPE_CHAM).                                                           
+             !
+     
+   !------------------------------------------------------------------------------------------------!
+      
+      
+     
+   !------------------------------------------------------------------------------------------------!
+      ! <EXCEPTION> <MED_77>                                                                
+             !
+      !                                                                                     
+             !
+      ! -> On ne peut lire aucune valeur du champ CHAMP___CONTRAINTE___002 dans le fichier
+   d'unité 99. !
+      !   -> Risques et conseils:                                                           
+             !
+      !      Ce problème est peut-être lié à une incohérence entre le champ à lire dans     
+             !
+      !      le fichier MED (NOEU/ELGA/ELNO/...) et le type du champ que vous avez demandé  
+             !
+      !      (mot clé TYPE_CHAM).                                                           
+             !
+     
+   !------------------------------------------------------------------------------------------------!
+      
+      
+      !---------------------------------------------------------------------------!
+      ! <EXCEPTION> <MED_37>                                                      !
+      !                                                                           !
+      ! -> La lecture est donc impossible.                                        !
+      !   -> Risque & Conseil :                                                   !
+      !      Veuillez vérifier l'intégrité du fichier MED avec medconforme/mdump. !
+      !---------------------------------------------------------------------------!
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    plexu01a et plexu02a
+DEJA RESTITUE DANS : 10.3.10
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016322 DU 2011-01-28 16:06:23
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Ecriture du .SMOS.SMHC dans IMPR_CO
+FONCTIONNALITE
+   Problème : 
+   ==========
+   
+   IMPR_CO imprime mal des objets Jeveux de type IS (INTEGER *4), une partie des valeurs
+   entières stockées devant le segment de valeurs apparait à l'impression. 
+   L'alignement par rapport au tableau INTEGER *8 est mal géré lors de l'impression. 
+   
+    IMPRESSION SEGMENT DE VALEURS >NUME          .SMOS.SMHC        <
+    >>>>>  
+         1 -          367            0            0    268435456            1
+         6 -            2            3            1            2            3
+        11 -            4            1            2            3            4
+   
+   Correction :
+   ============
+   
+   La correction dans jjimpo.f à effectuer est la suivante :
+   
+   113c113,114
+   <             JI = 1 + ((JISZON +KADM-1)*LOIS+ IDECI +LADM)/(LOR8/2)
+   ---
+   >             JI = 1 + ((JISZON +KADM-1)/LOR8)*2*LOIS+ IDECI/LOR8*2 + 
+   >      &               LADM/LOR8*2
+   
+   Validation :
+   ============
+   
+   Sur le test zzzz208b, on rajoute ATTRIBUT='OUI' dans IMPR_CO pour montrer que l'on traite
+   des objets de type IS.
+   L'impression de NUME          .SMOS.SMHC est correcte :
+   
+    IMPRESSION SEGMENT DE VALEURS >NUME          .SMOS.SMHC        <
+    >>>>>  
+         1 -            1            2            3            1            2
+         6 -            3            4            1            2            3
+        11 -            4            5            1            2            3
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz208b
+DEJA RESTITUE DANS : 10.3.15
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 03/01/2011 - 08:06:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016370 DU 2011-02-07 08:39:18
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.8.2, le cas-test perf008d s'arrete par manque de mémoire sur Aster 4.
+FONCTIONNALITE
+   Manque de mémoire dans perf008d.
+   On passe le .para à 3600 Mo.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perf008d
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 03/01/2011 - 08:06:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016083 DU 2010-12-16 12:52:26
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW10.3.2, le cas-test fdlv110a s'arrete anormalement sur Aster4.
+FONCTIONNALITE
+   En creusant un peu plus j'ai pu trouver une solution.
+   Ce cas-test utilise en fait deux domaines fluides séparés par une paroi.
+   Lors du calcul de masse ajoutée, on cherche donc à résoudre un problème au 
+   laplacien (analogie thermique) sur ces deux domaines à la fois.
+   Or on ne fixe la température en un point que sur un des deux domaines. 
+   L'autre domaine se retrouve sans aucun point où la température serait 
+   imposée : le champ de température solution est donc défini à une constante 
+   près, d'où le message de matrice à inverser singulière (ou presque).
+   On avait d'ailleurs mis, dans CALC_MATR_AJOU :
+         SOLVEUR=_F( STOP_SINGULIER = 'NON'),
+   Donc je modifie les conditions aux limites : j'impose la température en 
+   deux noeuds : un pour chaque domaine fluide.
+   
+   Le maillage fluide vient d'Ideas (UL 21) : je modifie donc le fichier 
+   fdlv110a.21.
+   Je retire aussi de fdlv110a.comm le STOP_SINGULIER = 'NON' qui ne sert 
+   plus car le système est bien posé.
+   
+   Pas d'impact doc car on ne rentre pas dans ce niveau de détail.
+   
+   Report en version 9 : très simple car le fichier fdlv110a.21 est identique.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fdlv110a
+DEJA RESTITUE DANS : 10.3.12
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tran         TRAN Van-xuan          DATE 03/01/2011 - 08:06:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016136 DU 2011-01-03 16:34:11
+TYPE anomalie concernant Code_Aster (VERSION 10.4)
+TITRE
+    Fluage /dommage de Lemaitre : ecart D_CUMULE en fonction du pas de temps
+FONCTIONNALITE
+   Contexte :
+   
+   Cette fiche d’ anomalie a été émise lors de la détermination des durées de vie des Organes d'Admission Vapeur 
+   du parc THF pour le compte de la DTEP. Il s’agit d’estimer l’indicateur de l’endommagement (D_CUMULE) du 
+   point critique de structure sous le fluage en utilisant la loi de Lemaitre-Sermage.
+   
+   Problème :
+   La valeur de D_CUMULE augmente si on augmente le nombre de pas de calcul.
+   
+   Identification de problème : 
+   Dans les doc V et R  : D = sigma d(ti) et dans te0512.f : DOMCU(IGAU) = DOMCU(IGAU) + DOMLE(IGAU).
+   Le dommage cumulé correspond donc à un cumul de cumul. 
+   
+   Après des discussions avec Jean, Pascal, Erwan, Said, Jean-Michel, on confirme que le paramètre "D_CUMULE" 
+   tel que programmé n'a pas de sens physique. Le critère nous semble devoir porter sur le D "instantané" (déjà 
+   calculé, appelé D_LEMA).
+   
+   On est arrive également à montrer mathématiquement la condition d’application de la loi de Lemaitre. Cette 
+   preuve est insérée dans le doc R pour ider à l’utilisation.
+   
+   On constate que les études antérieures (basées sur le paramètre D_CUMULE mal calculé) peuvent donnent
+   des indications pertinentes sur la localisation probable d'un éventuel endommagement, mais
+   ne sont pas exploitables en terme de temps à rupture.
+   
+   Solutions :
+   Pour éviter des confusion, on décide d'enlever ce paramètre.
+   - Modification de subroutine: te0512 
+   - Modification des catalogues: grandeur_simple__, gener_me3d_3, gener_meax_2, meca_hexs8
+   - Modification des castest: szlz109a, szlz110a, szlz111a, szlz111b
+   et les docs concernants.
+   
+   Comme la loi de Lemaitre n’est pas applicable, on a essayé d’utiliser d’autre modélisations disponibles dans 
+   Code_Aster pour répondre  aux besoins :
+   1.	On ne peut pas utiliser la loi couplée VENDOCHAB à cause du manque de courbes expérimentales de 
+   fluage.
+         2.  Selon Félix Latourte de MMC, la loi HAYURST développée par MMC mais non restituée
+   pour le moment semble répondre à cette question. En effet, il essaie d’identifier les paramètres.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2.19
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.2.19
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R7.04.01, U2.01.04, U4.83.01, V9.01.109, V9.01.110, V9.01.111
+VALIDATION
+    szlz109a, szlz110a, szlz111a, szlz111b
+DEJA RESTITUE DANS : 10.3.13
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 03/01/2011 - 08:06:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016288 DU 2011-01-26 10:12:31
+TYPE anomalie concernant Code_Aster (VERSION 10.4)
+TITRE
+    RUPT : CALC_G et G negatif
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   sur l'étude la fiche 16230, on trouve un G totalement faux (négatif...)
+   
+   commande CALC_G, option CALC_G, fissure X-FEM
+   en prenant l'option CALC_K_G, le G devient OK...
+   
+   
+   Solution :
+   ----------
+   
+   Après analyse, le problème vient de la non prise en compte des chargements volumiques par
+   l'option CALC_G de CALC_G
+   (te0288). Lors de la restitution sur les charges volumiques pour X-FEM (en 9.3.16), le
+   calcul de G a été traité que pour l'option CALC_K_G.
+   La correction consiste à calculer dans le te0288 les forces nodales correspondant aux
+   charges volumiques (nouvelle routine xcgvfo, dorénavant aussi appelée par le te0297), puis
+   par l'ajout du terme volumique popur G (xgelem).
+   
+   On ajoute aussi aux catalogues des éléments X-FEM 3D les paramètres relatifs aux charges
+   volumiques (ces paramètres existaient déjà pour les éléments 2D) pour l'option CALC_G et
+   CALC_G_F.
+   
+   De plus, la correction de ce bug a permis de mettre en évidence un autre bug, dans
+   l'affichage des quantités élémentaires en INFO=2 pour l'option CALC_K_G en 3D pour lissage
+   LEGENDRE-LEGENDRE.
+   Normalement, ces quantités élémentaires ne servent à pas grand chose.
+   
+   impact : 
+   te0288.f te0297.f xcgfvo.f  xgelem.f (et gkmet1.f pour le bug d'affichage)
+   gener_me_xh.cata   gener_me_xhh.cata  gener_me_xhtc.cata  gener_me_xtc.cata
+   gener_me_xhc.cata  gener_me_xht.cata  gener_me_xt.cata
+   
+   
+   Validation :
+   le seul test qui valide les charges volumiques pour X-FEM est le ssnv185p, qui ne teste
+   actuellement que l'option CALC_K_G. 
+   On rajoute un test sur l'option CALC_G.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.3.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.3.16
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.04.185
+VALIDATION
+    etude + ssnv185p
+DEJA RESTITUE DANS : 10.3.13
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016434 DU 2011-02-17 09:00:13
+TYPE anomalie concernant Code_Aster (VERSION 10.4)
+TITRE
+    En NEW10.3.13, le cas-test ssnp138b est NOOK sur Aster4, Rocks et Calibre5.
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   En NEW10.3.13, le cas-test ssnp138b est NOOK sur toutes les plates-formes.
+   Le cas-test est un test X-FEM avec chargements volumiques.
+   Le test en question porte sur la valeur du taux de restitution d'énergie (commande CALC_G, 
+   option CALC_G).
+   
+   
+   
+   Solution :
+   ----------
+   
+   La fiche 16288 (RUPT : CALC_G et G negatif) a corrigé un bug portant sur la non prise en 
+   compte des chargements volumiques par l'option CALC_G de CALC_G pour les fissures X-FEM.
+   Lors de la restitution de cette fiche, on a cru que le seul test qui valide les charges 
+   volumiques pour X-FEM est le ssnv185p, qui ne teste actuellement que l'option CALC_K_G. 
+   On a alors rajouté un test sur l'option CALC_G.
+   
+   Mais le test ssnp138b teste justement le calcul de G pour les charges volumiques avec 
+   l'option CALC_G !
+   Mais ce test est bien évidemment "faux".
+   Dans le ssnp138b, le G obtenu par CALC_G, option CALC_K_G vaut 1.19751E-04 pour la fissure 
+   inclinée à 0° et 5.64356E-05 pour la fissure à 45°.
+   Or on prenait comme valeur de réf 1.1488233E-04 (ang=0°) et 5.186283E-05 (ang=45°) pour 
+   tester le G de CALC_G, option CALC_G !
+   Désormais, on retrouve bien pareil entre option CALC_G et option CALC_K_G.
+   
+   impact : ssnp138b.comm
+   modif de la valeur de réf pour les tests sur CALC_G, option CALC_G.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.03.138
+VALIDATION
+    ssnp138b
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR meunier      MEUNIER Sébastien     DATE 03/01/2011 - 08:06:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016374 DU 2011-02-07 12:58:29
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Anomalie CREA_CHAMP('ELGA_NEUT_F')
+FONCTIONNALITE
+   Problème :
+   ==========
+   
+   Dans le test joint, je cherche à créer un champ de fonctions aux points de Gauss sur un
+   modèle mécanique classique D_PLAN. Ce champ de fonctions a vocation à être ensuite évalué
+   pour définir un champ de contraintes analytique (chose assez classique !). Le champ de
+   fonctions comporte ici 3 composantes : SIXX, SIYY et SIXY.
+   
+   J'utilise PROL_ZERO='OUI' car ce mot-clef est obligatoire pour un champ de contraintes (cf
+   doc U2.01.09, définition analytique d'un champ de contraintes, p.2) et j'obtiens l'alarme :
+   
+      !-------------------------------------------------------------------!
+      ! <A> <CALCULEL6_77>                                                !
+      !                                                                   !
+      ! Problème lors de l'affectation du champ SIEFINI1.                 !
+      !   Des valeurs n'ont pas été recopiées dans le CHAM_ELEM final.    !
+      !   Ce problème peut être dû à l'utilisation du mot-clé TOUT='OUI'. !
+      !   Il est possible de vérifier le champ produit avec INFO=2.       !
+      !                                                                   !
+      !                                                                   !
+      ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette    !
+      ! alarme, vous pouvez obtenir des résultats inattendus !            !
+      !------------------------------------------------------------------
+   
+   Sur ces conseils, je vérifie donc le champ créé avec INFO=2. Effectivement, le champ de
+   fonctions est mal défini sur les mailles de bord car toutes les mailles de bord ignorent
+   la fonction SIGXY0 en composante 'X3'.
+   
+   Diagnostic:
+   ===========
+   
+   Ce sont donc les 128 mailles de bord SEG3 pour lesquelles ils manquent une composante.
+   Dans mon cas, cela n'est pas grave du tout car je cherche juste à définir un champ de
+   contraintes à l'intérieur de la structure, et non pas au bord. C'est la plupart des
+   applications de ce genre d'affectation de fonctions analytiques.
+   
+   Cependant, on peut quand même être rigoureux en affectant la fonction sur les éléments de
+   bord et au passage enlever l'alarme.
+   
+   On le fait donc !
+   
+   Je me suis rendu compte au passage que sur certains éléments volumiques, et non pas de
+   bord, on ne pouvait pas affecter des fonctions sur l'intégralité des composantes, ce qui
+   est plus grave ! Les catalogues concernés sont 7 sur les 8 modifiés :
+   
+   gener_ej2d_hm   gener_sda262  gener_suc262
+   gener_me2vf2tq  gener_mf2fi2  gener_sdm262  gener_suc362
+   
+   Solution proposée :
+   ===================
+   
+   Jacques a déjà solutionné cette fiche pour le cas des éléments D_PLAN_HM (fiche 14805). Je
+   mets donc en place cette solution pour les 8 catalogues problématiques :
+   
+   gener_ej2d_hm   gener_medpl1  gener_sda262  gener_suc262
+   gener_me2vf2tq  gener_mf2fi2  gener_sdm262  gener_suc362
+   
+   Pour enlever l'alarme CALCULEL6_77, il suffit d'étendre les champs neutre des éléments.
+   Pour cela, on fait la modification sauivante dans les catalogues d'éléments :
+   
+       EGNEUT_F = NEUT_F   ELGA__ RIGI    (X1       X2       )
+       EGNEUT_R = NEUT_R   ELGA__ RIGI    (X1       X2       )
+   
+   par
+   
+       EGNEUT_F = NEUT_F   ELGA__ RIGI    (X[dime])
+       EGNEUT_R = NEUT_R   ELGA__ RIGI    (X[dime}])
+   où dime est la dimension du vecteur des contraintes de l'élément.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test joint
+DEJA RESTITUE DANS : 10.3.13
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016333 DU 2011-01-31 18:35:38
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Plantage sale dans MACR_ECLA_PG sslv200a
+FONCTIONNALITE
+   Problème :
+   ==========
+   Dans le test sslv200a, en rajoutant une commande MACR_ECLA_PG sur les contraintes aux
+   points de Gauss, on est arrêté salement par le message d'erreur développeur :
+   
+   Erreur numérique (floating point exception).
+   
+   On est cependant prévenu au préalable que des choses se passent mal car on a plusieurs
+   fois (pour plusieurs mailles du maillage) un message d'information du type :
+   
+   Il n'est pas encore possible de découper le type_element :  MECA_TETRA10  en sous-éléments
+       elrefa  :  T10 ;
+       famille :  FPG5.
+    Faites une demande d'évolution.
+   
+   Solution :
+   ==========
+   Je transforme le message d'information en message d'erreur fatale. On est ainsi arrêté
+   proprement dès qu'on rencontre une maille que MACR_ECLA_PG ne sait pas traiter.
+   
+   Impact :
+   ========
+   ecla2d.f et ecla3d.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test joint
+DEJA RESTITUE DANS : 10.3.13
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016285 DU 2011-01-26 08:06:59
+TYPE anomalie concernant Code_Aster (VERSION 10.3)
+TITRE
+    Option EPMH_xxx n'existe pas ?
+FONCTIONNALITE
+   Problème :
+   ==========
+   On trouve une trace dans epsvmc l. 156 de l'option epmh_***. Pourtant, elle n'est dans
+   aucun catalogue d'éléments.
+   
+   Solution :
+   ==========
+   On enlève cette trace.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    aucune
+DEJA RESTITUE DANS : 10.3.12
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 03/01/2011 - 08:06:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016352 DU 2011-02-02 13:34:31
+TYPE anomalie concernant Code_Aster (VERSION 10.3)
+TITRE
+    Alarme intempestive dans CALC_ELEM : <CALCULEL5_51>
+FONCTIONNALITE
+   Suppression du message <CALCULEL5_51> lors d'un CACL_ELEM/ORIENTATION
+   Il n'y a aucune raison d'émettre ce message
+   
+   
+   L'ancienne situation :
+   a) AFFE_CARA_ELEM/ORIENTATION
+   ...CALC_ELEM
+   Pas de message
+   
+   b) AFFE_CARA_ELEM/ORIENTATION
+   ...CALC_ELEM/ANGLE_REP
+   Message : Le repère de post-traitement a été défini dans la commande AFFE_CARA_ELEM mot
+   clé facteur COQUE. Il est conseillé de définir ce repère à l'aide du mot clé ANGL_REP ou
+   VECTEUR du mot clé facteur REPE_COQUE de la commande CALC_ELEM.
+   ==> Il n'y a pas de raison d'émettre ce message, car c'est ce que fait l'utilisateur
+   
+   c) AFFE_CARA_ELEM
+   ...CALC_ELEM/ANGLE_REP
+   Pas de message
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage xc3xa9tude
+DEJA RESTITUE DANS : 10.3.13
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 03/01/2011 - 08:06:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016380 DU 2011-02-08 16:57:17
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TMA : DeltaCad
+TITRE
+    Bug POST_ELEM(MINMAX)
+FONCTIONNALITE
+   1) Anomalie
+   -----------
+   POST_ELEM/MINMAX : les valeurs extremales d'un champ aux noeuds sur certaines 
+   composantes ne sont pas correctes. 
+   
+   
+   2) Présentation
+   ---------------
+   Le problème est le suivant: on dispose d'un champ de deplacement 
+   comportant 3 composantes (DX,DY,PRE1) valant respectivement 0,0 
+   et 1 sur tous les noeuds du champ. On s'intéresse aux valeurs min 
+   et max des composantes DX et DY. Théoriquement, on devrait 
+   obtenir MIN_DX = MAX_DX = MIN_DY = MAX_DY = 0. Or on trouve 1 
+   pour les valeurs maximales.
+   
+   Plusieurs anomalies ont ete décelées dans la routine pemaxn.f :
+   - la composante ICMP utilisée doit être le numero d'ordre de la 
+   composante dans le champ, et non le numéro d'ordre de la 
+   composante dans la liste des composantes fournies par 
+   l'utilisateur.
+   Dans l'exemple en question, si on s'intéresse uniquement à la 
+   composante PRE1, i.e. la 3eme dans la liste des composantes du 
+   champs, on doit avoir ICMP=3 et non ICMP=1 (1 = 1ere et unique 
+   composante fournie).
+   - le nombre de composantes NBCMP utilisé pour se deplacer dans la 
+   liste des valeurs du champ doit être le nombre maximum de 
+   composantes du champ et non le nombre de composantes fournies. 
+   Par exemple, si l'utilisateur s'intéresse à DX et DY, NBCMP ne 
+   doit valoir 2 mais 3 (DX, DY, PRE1).
+   
+   Remarque:
+   La routine spécifique aux cham_elem (pemaxe.f) ne présente pas 
+   ces anomalies.
+   
+   3) Correction
+   -------------
+   Routine pemaxn.f :
+   a) Le numero de la composante est obtenu en cherchant la 
+   composante en cours dans la liste des composantes du cham , grâce 
+   à le fonction INDIK8
+   b) Le nombre de composantes max est obtenu en consultant 
+   l'objet .CNSD du champ nodal.
+   
+   4) Validation
+   -------------
+   a)On enrichit le cas-test ssnv194a pour tester le minmax de certaines cmp d'un 
+   champ de déplacement au premier numéro d'ordre.
+   Par un IMPR_RESU du champ et un IMPR_TABLE, on vérifie 
+   que les valeurs fournies par POST_ELEM sont maintenant correctes.
+   
+   b) Passage de l'etude fournie + enrichissement de cette étude 
+   pour tester les cas suivants: 
+   - RESULTAT ou CHAM_GD,
+   - TOUT='OUI' ou GROUP_MA,
+   - 1 composante ou plusieurs
+   
+   Remarque: le mot-clé GROUP_MA est accepté par la commande pour 
+   les champs aux noeuds, mais si on l'utilise, une alarme est émise 
+   signalant que TOUT les noeuds du modèle sont pris en compte pour 
+   le calcul du min & max.
+   En d'autre terme, l'utilisation de GROUP_MA pour les champs aux 
+   noeuds n'a pas d'effet.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv194a
+DEJA RESTITUE DANS : 10.3.15
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016389 DU 2011-02-09 17:29:34
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TMA : DeltaCad
+TITRE
+    [FORUM] POST_ELEM sur configuration deformxc3xa9e
+FONCTIONNALITE
+   Un calcul avec POST_ELEM sur configuration déformée
+   (GEOMETRIE='DEFORMEE') échoue avec l'erreur :
+   
+      !---------------------------!
+      ! <EXCEPTION> <UTILITAI_55> !
+      !                           !
+      ! champ inexistant:         !
+      !---------------------------!
+   
+   Présentation
+   -------------
+   Lorsque l'utilisateur renseigne une SD Resultat avec un numéro d'ordre, 
+   Code_Aster se charge d'extraire le champ déplacement à 
+   partir de ces données. Ensuite des vérifications sont effectuées sur ce champ par 
+   l'intermédiaire de la routine CHPVE2. Or 
+   l'appel à cette fonction est placé avant l'extraction du champ, ce qui explique 
+   pourquoi Code_Aster ne trouve pas le champ.
+   
+   Correction
+   ----------
+   L'appel à la routine CHPVE2 a été déplacé pour figurer après l'appel à la routine 
+   RSEXCH dans l'OP0107 (ligne 125).
+   
+   Validation
+   ----------
+   On enrichit le cas-test sdlx102b pour tester MASS_INER avec la déformée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdlx102b
+DEJA RESTITUE DANS : 10.3.15
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 03/01/2011 - 08:06:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016200 DU 2011-01-14 08:16:39
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    MACR_LIGN_COUPE mot-clé VECT_Y
+FONCTIONNALITE
+   Dans le catalogue de MACR_lIGN_COUPE, le mot clé VECT_Y doit être facultatif et non
+   obligatoire, comme il l'est dans le POST_RELEVE_T sous-jacent à la macro. Pas d'impact sur
+   la doc qui est correcte.
+   
+   Report à faire en version 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude jointe + cas tests
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR meunier      MEUNIER Sébastien     DATE 03/01/2011 - 08:06:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016321 DU 2011-01-28 14:27:59
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Documentation de CALC_ELEM(EPVC_ELGA,EPVC_ELNO)
+FONCTIONNALITE
+   Problème :
+   =========
+   
+   On ne trouve pas dans la documentation de calc_elem d'explication sur la signification des
+   options EPVC_ELGA et EPVC_ELNO.
+   
+   Solution :
+   ==========
+   
+   Un paragraphe est rajouté dans la documentation de calc_elem sur la signification des
+   options EPVC_ELGA et EPVC_ELNO par Sylvie.
+   
+   Réponse de Sylvie Michel :
+   ==========================
+   
+   Cette option a été développée pour les besoins en dépouillement en génie civil : elle ne
+   calcule donc que les déformations liées à la thermique, à l'hydratation et au séchage (on
+   n'utilise jamais la variable de commande d'irradiation en génie civil). Elles sont
+   accessibles avec les noms de composantes suivantes : EPTHER_L, EPTHER_T, EPTHER_N, EPSECH
+   et EPHYDR. 
+   
+   Je n'ai pas viser l'exhaustivité, j'ai simplement prévu en plus de mes besoins que les
+   déformations thermiques pouvaient être orthotropes.
+   
+   En revanche, rien n'empêche d'ajouter de nouvelles composantes pour calculer les
+   déformations liées à la corrosion ou à l'irradiation. En revanche, il faut aller chercher
+   dans les lois de comportement concernées comment sont calculées ces déformations pour être
+   cohérent.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.19
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.81.01
+VALIDATION
+    aucune
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 03/01/2011 - 08:06:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016396 DU 2011-02-10 10:05:48
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Créer une vérification du nombre d'entiers codés
+FONCTIONNALITE
+   Problème :
+   ----------
+   Comment faire en sorte que le code ne se plante pas si on se contente d'ajouter des
+   composantes dans une grandeur existante (par exemple DEPL_R) ?
+   
+   Réponse :
+   ---------
+   Je ne crois pas qu'il soit possible de faire une vérification automatique du nombre
+   d'entiers codés des grandeurs :
+   
+   Le nombre de CMPS dans une grandeur peut varier au cours des années et peut franchir à
+   l'occasion  les "multiples de 30", ce qui entraine un changement du nombre d'entiers codés
+   nécessaires pour cette grandeur.
+   
+   Il est donc important que les routines Fortran ne "gravent" pas dans le marbre le nombre
+   d'entiers codés des grandeurs (ni d'ailleurs la "position" des CMPS d'une grandeur : par
+   exemple, toujours supposer que DEPL_R(1)='DX').
+   
+   Je ne vois pas comment vérifier automatiquement la généricité du fortran.
+   
+   Les problèmes apparus lorsque J. Beaurain (ou P. Massin) ont essayé de dépasser 120 CMPS
+   dans DEPL_R, ont été résolus dans le cadre de la fiche 16107. Les deux problèmes
+   rencontrés n'étaient pas liés (comme je l'avais d'abord cru) à une programmation trop en
+   "dur". Il s'agissait de deux bugs que l'on n'avait pas encore observés par malchancce (ou
+   par chance si l'on veut !) car les grandeurs EPSI_R, VAR2_R et DEPL_R avaient toutes les 3
+   le même nombre d'entiers codés (4), ce qui masquait les bugs.
+   
+   Cette fiche est donc "sans suite" car corrigée par 16107
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016107 DU 2010-12-21 15:42:01
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Problèmes si DEPL_R a plus de 120 CMPS
+FONCTIONNALITE
+   Problème :
+   ----------
+   Quand on ajoute des CMPS dans la grandeur DEPL_R (au dela de 120) :
+    - le test zzzz162a devient NOOK
+    - les tests sdlv128a,b devient NOOK
+                                                                                            
+                                                                        
+   Analyse :
+   ---------
+   1) Pour le test zzzz162a :
+   Il s'agit d'un bug de la routine idensd.f qui détermine si 2 PROF_CHNO sont identiques.
+   Pour vérifier cette identité, on compare les objets .DEEQ, .LILI et .NUEQ, ce qui permet
+   de vérifier que les cmps sont bien rangées dans le meme ordre et qu'elles sont les memes
+   pour tous les noeuds.
+                                                                                            
+                                                                        
+   Ici, les champs de VARI_NOEU ont 2 CMPS par noeud de numéro 1 et 2 (V1, V2)  et les champs
+   de DEPL ont également 2 CMPS par noeud de numéro 1 et 2 (DX, DY). Les objets .DEEQ sont
+   donc identiques et les PROF_CHNO sont considérés comme identiques. On les économise en
+   n'en gardant qu'un.
+                                                                                            
+                                                                        
+   Jusqu'à présent, le nombre d'entiers codés pour DEPL_R (120 CMPS) et VAR2_R (100 CMPS) est
+   le meme : 4. Tout se passe bien !
+   Mais si l'on ajoute des CMPS à DEPL_R, on passe à 5 entiers codés pour DEPL_R.
+                                                                                            
+                                                                        
+   Du coup, l'objet .PRNO du PROF_CHNO n'est plus identique et on se plante plus loin, car
+   les cmps du champ sont mal interprétées.
+                                                                                            
+                                                                        
+   2) Pour les tests sdlv128a,b :
+   Il s'agit d'une erreur des fichiers de commande qui n'est pas "trappée" par le code et qui
+   est sans importance jusqu'ici :
+   La commande coupable est :
+      MODESEXP=PROJ_CHAMP( RESULTAT=MODEAIR, NOM_CHAM='EPSI_NOEU',
+                           NUME_DDL=NUMEXP, ...);
+   C'est une erreur de vouloir imposer la numérotation des champs EPSI_NOEU avec la
+   numérotation NUMEXP qui concerne les ddls de DEPL_R.
+   Mais cette erreur ne se voit pas actuellement car les ddls utilisés dans ce test sont
+   toujours les ddls 1,2 et 3 (DX/DY/DZ ou EPXX/EPYY/EPZZ) et le nombre d'entiers codés pour
+   DEPL_R er EPSI_R est le meme (4).
+                                                                                            
+                                                                        
+   Si le nombre d'entiers codés diffère entre DEPL_R et EPSI_R (ce qui arrive si DEPL_R passe
+   à 5), les champs de MODESEXP (EPSI_R) sont mal interpretés et les résultats du tests sont
+   NOOK.
+                                                                                            
+                                                                        
+   Corrections :
+   -------------
+     * Je corrige la routine idensd.f pour qu'elle vérifie également que l'objet .PRNO est
+   identique.
+     * Je corrige les tests sdlv128a,b (suppression du mot clé NUME_DDL=NUMEXP)
+     * Je "blinde" la programmation de PROJ_CHAMP / NUME_DDL pour vérifier la cohérence entre
+   la numérotation que l'on veut imposer et les champs auquels ont veut l'imposer. Pour le
+   test sdlv128b (sans sa correction) l'erreur produite est :
+                                                                                            
+                                                                        
+   !--------------------------------------------------------------------------!
+   !.<F>.<CALCULEL4_6>........................................................!
+   !..........................................................................!
+   !.Erreur.utilisateur.(ou.programmeur).:....................................!
+   !..On.veut.imposer.la.numérotation.des.ddls.du.cham_no.MODESEXP.013.000001.!
+   !..avec.le.nume_ddl.NUMEXP.........NUME....................................!
+   !..Mais.ces.2.structures.de.données.sont.incompatibles.....................!
+   !..Par.exemple.:...........................................................!
+   !.....-.ce.n'est.pas.le.meme.maillage.sous-jacent..........................!
+   !.....-.ce.n'est.pas.la.meme.grandeur.sous-jacente.........................!
+   !--------------------------------------------------------------------------!
+                                                                                            
+                                                                        
+                                                                                            
+                                                                        
+   Validation :
+   ------------
+   Les 3 tests sont OK si j'ajoute 8 CMPS bidons dans DEPL_R
+                                                                                            
+                                                                        
+   NEW9 :
+   ------
+   Bien que ces 2 erreurs apparaissent lorsque les nombres d'entiers codés de DEPL_R, VAR2_R
+   et EPSI_R diffèrent, ce qui n'est pas vrai en version 9 (il faut 4 entiers codés pour ces
+   3 grandeurs), je propose de reporter les corrections en NEW9.
+                                                                                            
+                                                                        
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  16107
+     cnscno.f  idensd.f
+     calculel4.py
+     sdlv128a.comm  sdlv128b.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    3 tests incriminés
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 03/01/2011 - 08:06:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016378 DU 2011-02-08 07:32:13
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Bug dans jjprem
+FONCTIONNALITE
+   En 10.1.10, la routine JJPREM a été modifiée de manière à :
+   - étendre la catalogue de nombres premiers nécessaires à la construction de la table de
+   hashage de JEVEUX
+   - améliorer l'algorithme de dichotomie qui rendait une réponse sous-optimale
+   
+   Mais en faisant ces évolutions, j'ai introduit un bug dans l'algorithme qui pouvait
+   conduire à obtenir des adresses négatives.
+   
+   Voici la correction (merci Nicolas S.!) :
+   
+   142c142
+   <            I = MAX(I - J,1)
+   ---
+   >            I = I - J
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage de tests posant probl?me
+DEJA RESTITUE DANS : 10.3.12
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF fdlv110a                      macocco K.MACOCCO          494      2      3
+ CASTEST MODIF forma03d                     courtois M.COURTOIS         330      2      2
+ CASTEST MODIF perf008d                      macocco K.MACOCCO          133      3      3
+ CASTEST MODIF sslx102b                      macocco K.MACOCCO          275     40      2
+ CASTEST MODIF ssna110a                     courtois M.COURTOIS        2117      2      2
+ CASTEST MODIF ssnp138b                      macocco K.MACOCCO          393      7      4
+ CASTEST MODIF ssnv185p                      macocco K.MACOCCO          409     43      2
+ CASTEST MODIF ssnv194a                      macocco K.MACOCCO          218      2      2
+ CASTEST MODIF szlz109a                      macocco K.MACOCCO          178      2      2
+ CASTEST MODIF szlz110a                      macocco K.MACOCCO          867      4     23
+ CASTEST MODIF szlz111a                      macocco K.MACOCCO          203      2      2
+ CASTEST MODIF szlz111b                      macocco K.MACOCCO          203      2      2
+ CASTEST MODIF zzzz159a                     courtois M.COURTOIS         113      2      2
+ CASTEST MODIF zzzz159b                     courtois M.COURTOIS         114      2      2
+ CASTEST MODIF zzzz159c                     courtois M.COURTOIS         124      2      2
+ CASTEST MODIF zzzz159d                     courtois M.COURTOIS         129      2      2
+ CASTEST MODIF zzzz159e                     courtois M.COURTOIS         104      2      2
+ CASTEST MODIF zzzz208b                      macocco K.MACOCCO          456      5      4
+CATALOGU MODIF compelem/grandeur_simple__    macocco K.MACOCCO          912      3      4
+CATALOGU MODIF typelem/gener_me3d_3          macocco K.MACOCCO          659      4      4
+CATALOGU MODIF typelem/gener_me_xh           macocco K.MACOCCO          333      4      3
+CATALOGU MODIF typelem/gener_me_xhc          macocco K.MACOCCO          368      4      3
+CATALOGU MODIF typelem/gener_me_xht          macocco K.MACOCCO          333      4      3
+CATALOGU MODIF typelem/gener_me_xhtc         macocco K.MACOCCO          374      4      3
+CATALOGU MODIF typelem/gener_me_xt           macocco K.MACOCCO          339      4      3
+CATALOGU MODIF typelem/gener_me_xtc          macocco K.MACOCCO          376      4      3
+CATALOGU MODIF typelem/gener_meax_2          macocco K.MACOCCO          577      4      4
+CATALOGU MODIF typelem/gener_medpl1          macocco K.MACOCCO          161      6      4
+CATALOGU MODIF typelem/meca_hexs8            macocco K.MACOCCO          572      4      4
+CATALOPY MODIF commande/calc_europlexus      macocco K.MACOCCO          151      3      3
+CATALOPY MODIF commande/macr_lign_coupe      macocco K.MACOCCO          123      3      3
+ FORTRAN AJOUT elements/xcgfvo               macocco K.MACOCCO          169    169      0
+ FORTRAN MODIF algorith/op0024              courtois M.COURTOIS         214     12      5
+ FORTRAN MODIF calculel/cnscno               macocco K.MACOCCO          368     37     12
+ FORTRAN MODIF calculel/ecla2d               macocco K.MACOCCO          438     11     16
+ FORTRAN MODIF calculel/ecla3d               macocco K.MACOCCO         1016     16     22
+ FORTRAN MODIF calculel/mechc1               macocco K.MACOCCO          239      8     10
+ FORTRAN MODIF elements/epsvmc               macocco K.MACOCCO          183      9      9
+ FORTRAN MODIF elements/gkmet1               macocco K.MACOCCO          134      7      6
+ FORTRAN MODIF elements/te0288               macocco K.MACOCCO          246     27      9
+ FORTRAN MODIF elements/te0297               macocco K.MACOCCO          234      6     88
+ FORTRAN MODIF elements/te0512               macocco K.MACOCCO          433     16     26
+ FORTRAN MODIF elements/xgelem               macocco K.MACOCCO          455     52     17
+ FORTRAN MODIF jeveux/jjimpo                 macocco K.MACOCCO          212      3      4
+ FORTRAN MODIF jeveux/jjprem                 macocco K.MACOCCO           89      3      3
+ FORTRAN MODIF utilitai/idensd               macocco K.MACOCCO           90     11      7
+ FORTRAN MODIF utilitai/op0107               macocco K.MACOCCO          301      3      3
+ FORTRAN MODIF utilitai/pemaxn               macocco K.MACOCCO          185     28     24
+  PYTHON MODIF Macro/calc_europlexus_ops     macocco K.MACOCCO         2549      8      4
+  PYTHON MODIF Macro/macr_recal_ops         courtois M.COURTOIS        1031     10     18
+  PYTHON MODIF Macro/reca_calcul_aster      courtois M.COURTOIS         876      4      4
+  PYTHON MODIF Macro/reca_utilitaires       courtois M.COURTOIS         231      5      4
+  PYTHON MODIF Macro/test_temps_ops         courtois M.COURTOIS         251      4      4
+  PYTHON MODIF Messages/algorith8           courtois M.COURTOIS         266      1      5
+  PYTHON MODIF Messages/algorith9           courtois M.COURTOIS         298      5      1
+  PYTHON MODIF Messages/calculel4            macocco K.MACOCCO          364     11      1
+  PYTHON MODIF Messages/calculel5            macocco K.MACOCCO          350      9     11
+  PYTHON MODIF Messages/xfem                 macocco K.MACOCCO          228     10      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         169       169              +169
+ MODIF :   57       23419       493     422       +71
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   58       23588       662     422      +240 

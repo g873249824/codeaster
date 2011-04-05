@@ -1,0 +1,777 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 01/11/2011 - 05:02:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016073 DU 2010-12-16 10:19:45
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    CRS : passage à ftnchek 3.3.1
+FONCTIONNALITE
+   Problème :
+   ----------
+   Thomas De Soza a remarqué que la dernière version de ftnchek (3.3.1) vérifie plus de
+   choses que celle que l'on utilise dans l'agla / CRS (2.7).
+                                                                                            
+                           
+   En particulier, un message est émis lorsque l'on utilise un tableau "automatic"
+                                                                                            
+                           
+   Cette version de ftnchek pourrait peut-être traiter un peu de fortran 90 ...
+                                                                                            
+                           
+                                                                                            
+                           
+   Evolution :
+   -----------
+   On refabrique un nouveau CRS basé sur ftnchek 3.3.1.
+                                                                                            
+                           
+   Les messages émis par fnchek ne sont pas exactement les memes mais on a réussi à retrouver
+   à peu près tous les anciens messages qui nous intéressaient. Pour ceux-ci, on a gardé les
+   memes numéros "CRS".
+                                                                                            
+                           
+   Quelques nouveaux messages sont détectés dans les sources actuels d'aster (numéros > 1000) :
+   CRS_1036 4   Integer quotient expr  converted to real
+   CRS_1322 2   Nonstandard syntax: internal file cannot be used with list-directed I/O
+   CRS_1359 4   Error: SUBROUTINE block not closed when DO loop terminating statement encountered
+   CRS_1356 4   Error: no construct to end here
+   CRS_1364 4   Error: ENDIF statement does not match DO block it closes
+   CRS_1404 2   Warning: Nonstandard syntax: local array cannot have variable size
+   CRS_1427 4   Warning: function not set when RETURN encountered
+   CRS_1992 4   Error: syntax error, unexpected identifier, expecting end of statement
+                                                                                            
+                           
+   Le message qui a motivé cette fiche est le message 1404 concernant les "automatic array"
+   de Fortran.
+   Il est émis dans 174 routines.
+   Je n'ai pas le temps de vérifier que les tableaux concernés sont de taille raisonable
+   (quelques dizaines de ko).
+   Je rajoute systématiquement dans ces sources le "C TOLE CRS_1404"
+                                                                                            
+                           
+   Pour les autres messages de niveau 4, j'ai fait quelques corrections dans les sources pour
+   les faire disparaitre.
+   
+   NEW9 :
+   ------
+   Je pense qu'il serait sympa de faire le meme genre de correction en NEW9. cela évitera aux
+   malheureux correcteurs de la NEW9 de se faire gronder.
+                                                                                            
+                           
+                                                                                            
+                           
+   Détails :
+   ---------
+   1) Je n'ai pas compris pourquoi, mais la routine te0353 provoquait des messages très
+   inquiétants (1359, 1356,1364 et 1992). Je l'ai "réindentée" avec TOOLPACK et maintenant
+   tout va bien.
+                                                                                            
+                           
+   2) Les messages suivants (avec leur code_retour CRS) ont déjà été rencontrés dans des
+   sources Aster.
+      Mais d'autres messages sont possibles ; par défaut, le code retour d'un message est "4".
+                                                                                            
+                           
+   CRS_000 4 Nonportable usage: File contains tabs
+   CRS_200 4 non standard:(INCLUDE interdit)
+   CRS_201 4 non standard:(DO sans label)
+   CRS_202 4 non standard:(END DO)
+   CRS_203 4 non standard:(fonction sans arguments) : parentheses required
+   CRS_205 4 non standard:(NAMELIST)
+   CRS_206 0 non standard:(declaration hors norme: REAL*8, ...)
+   CRS_208 4 non standard:(type DOUBLE COMPLEX)
+   CRS_210 0 non standard:(IMPLICIT NONE)
+   CRS_215 4 type mismatch between DO index and bounds
+   CRS_224 4 non standard:(fonctions interdites dans les PARAMETER) intrinsic function or
+   **REAL in PARAMETER defn
+   CRS_227 4 hollerith constant may not be portable
+   CRS_230 2 Module contains no executable statements
+   CRS_300 0 nonstandard type combination in expression: (cplx C + dble D, ...)
+   CRS_301 4 non standard:adjustable size cannot be concatenated here
+   CRS_302 0 non portable:expr mixes default and explicit precision items mixes default and
+   explicit precision operands  (real*8 * dble expr, ...)
+   CRS_311 0 Warning: char*9 const 'F1_D_SIGM' truncated to char*8 NOMRES
+   CRS_400 4 non standard: directive pre-processeur (not processed)
+   CRS_410 0 nonstandard double precision complex constant
+   CRS_411 4 non standard: (format invalide)
+   CRS_412 4 Zero-length string not allowed
+   CRS_413 4 character constant length exceeds 255
+   CRS_416 4 non standard: inline comment
+   CRS_419 4 non standard: > 19 continuation lines
+   CRS_501 0 Function may modify argument or  modifies common variable
+   CRS_504 0 Nonstandard intrinsic functions referenced:
+   CRS_505 2 Names longer than 6 chars (nonstandard):
+   CRS_506 4 Names containing nonstandard characters (_, ...)
+   CRS_507 2 Identifiers which are not unique in first six chars
+   CRS_508 2 Mixed types equivalenced (not portable):
+   CRS_510 4 Common block has mixed character and non-character variables (nonstandard)
+   CRS_512 2 Variables set but never used:
+   CRS_513 2 Variables used before set:
+   CRS_602 2 character variable length exceeds 255
+   CRS_606 4 Constant not evaluated: value of 0 assumed
+   CRS_701 4 No path to this statement
+   CRS_725 4 Statement out of order
+   CRS_730 4 type mismatch between intrinsic function arguments: intg const , real*8 X1
+   CRS_731 0 precision mismatch in intrinsic argument list: real*8 expr , dble const
+   CRS_737 4 type mismatch: char*80 expr assigned to intg NOMCON
+   CRS_738 0 illegal argument data type for intrinsic function (DIMAG : cplx*16, ...)
+   CRS_739 0 argument mismatch in stmt function F : dummy real*8 X vs actual dble const
+   CRS_745 2 wrong number of arguments for intrinsic function (ABORT, ...)
+   CRS_748 4 Error: Symbol redeclared
+   CRS_772 4 Nonstandard syntax: character string should be delimited by apostrophes
+   CRS_774 4 Unknown logical/relational operator or constant (.T.,.F.,.XOR.,...)
+   CRS_1020 0   Warning: promotion may not give desired precision: dble const 1.D0 + real*8 NU
+   CRS_1021 0   Warning: comparison mixes terms of different precision
+   CRS_1022 0   Warning: integer quotient expr (((IP1-1)*(IP1-2))/2) used in exponent
+   CRS_1023 0   Warning: integer quotient expr NBV/ITROIS  converted to real
+   CRS_1035 0   Nonportable usage: mixed default and explicit precision items (exemple : I, I4)
+   CRS_1036 4   Integer quotient expr  converted to real
+   CRS_1322 2   Nonstandard syntax: internal file cannot be used with list-directed I/O
+   CRS_1359 4   Error: SUBROUTINE block not closed when DO loop terminating statement encountered
+   CRS_1356 4   Error: no construct to end here
+   CRS_1364 4   Error: ENDIF statement does not match DO block it closes
+   CRS_1404 2   Warning: Nonstandard syntax: local array cannot have variable size
+   CRS_1427 4   Warning: function not set when RETURN encountered
+   CRS_1805 0   Warning in module XXXX: Variables may be used before set
+   CRS_1806 0   Warning in module XXXX: Variables declared but never referenced
+   CRS_1808 0   Warning in module CBPRES: Labels defined but not used
+   CRS_1992 4   Error: syntax error, unexpected identifier, expecting end of statement
+   CRS_1995 0   Warning: Common block IVARJE Elements used but never set
+   CRS_1996 0   Invoked in module XXXX
+   
+                                                                                            
+                                                                                            
+                          
+   3) Finalement, à cause de conflits de restitution, je ne modifie pas les routines suivantes :
+   abscvf.f xcopco.f xmase2.f xmcoor.f xmrema.f xnmel2.f xnmgr.f xnmgr2.f xnmpl2.f xrige2.f
+   arltep.f
+   invjax.f reereg.f xbsig.f xbsigr.f xdecqu.f xgelem.f xnmel.f xnmpl.f xpesro.f xpoajd.f
+   xpoajm.f
+   xsifel.f xteddl.f xtyele.f lcejmr.f impmin.f impper.f impstd.f
+    
+                           
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  16073
+   
+   sources de l'agla +
+   
+     abscvf.f  arlapl.f  arlas9.f  arlteb.f  arltec.f  arlted.f
+     arltem.f  arltep.f  ascalc.f  asefen.f  aseihm.f  cabr2g.f
+     cabrp0.f  cabrsl.f  cacina.f  calcul.f  calfft.f  cmphdi.f
+     cmphii.f  coeihm.f  coeime.f  connor.f  cvmjpl.f  dalp2d.f
+     dalp3d.f  dilele.f  dilopt.f  dmgmod.f  draacn.f  dsingu.f
+     edgani.f  elmddl.f  epsdil.f  epsreg.f  equdil.f  equreg.f
+     erhmv2.f  fgrccm.f  fneihm.f  fnodil.f  fnoreg.f  gerpas.f
+     gkmet3.f  gkmet4.f  impmin.f  impper.f  impstd.f  intfac.f
+     intinc.f  intsma.f  invjax.f  irch19.f  irgnal.f  klgcou.f
+     klg.f     lcdpeq.f  lcedga.f  lcejex.f  lcejfr.f  lcejli.f
+     lcejmr.f  lcjacp.f  lcmaec.f  lcmaei.f  lcmafl.f  lcmmap.f
+     lcmmat.f  lcmmcv.f  lcmmj2.f  lcmmja.f  lcmmjp.f  lcmmvx.f
+     lcplnl.f  lcreli.f  lect82.f  lsqpol.f  lxscan.f  matinv.f
+     matthm.f  maxele.f  mdfcho.f  mdfedy.f  mdflam.f  mecalg.f
+     meficg.f  memax.f   mgauss.f  moconm.f  modint.f  nipl2d.f
+     nmasf3.f  nmfi2d.f  nmfi3d.f  nmfici.f  nmgc2d.f  nmgc3d.f
+     nmgrib.f  nmgz2d.f  nmgz3d.f  nmplgs.f  nmsh1.f   nspl2d.f
+     nspl3d.f  numddl.f  op0094.f  ordon1.f  ordon2.f  pemaxe.f
+     pemaxn.f  permlo.f  permr8.f  pipef3.f  pjxxut.f  plint3.f
+     pmathm.f  pminit.f  pregcp.f  rdif01.f  reereg.f  reerel.f
+     refere.f  reg2gr.f  regele.f  rk21co.f  rsingu.f  singue.f
+     singum.f  te0353.f  tumass.f  turigi.f  vfcfks.f  xbsig2.f
+     xbsig3.f  xbsig.f   xbsigr.f  xcopco.f  xdecqu.f  xdelt1.f
+     xdelt2.f  xfovol.f  xgelem.f  xintar.f  xinvac.f  xjacff.f
+     xlagsp.f  xmase2.f  xmase3.f  xmcoor.f  xmilac.f  xmilar.f
+     xmilfi.f  xmrema.f  xneuvi.f  xnewto.f  xnmel2.f  xnmel3.f
+     xnmel.f   xnmgr2.f  xnmgr3.f  xnmgr.f   xnmpl2.f  xnmpl3.f
+     xnmpl.f   xpesro.f  xpoajd.f  xpoajm.f  xpocmp.f  xpoffo.f
+     xpolsn.f  xrell1.f  xrell2.f  xrige2.f  xrige3.f  xrmes2.f
+     xsella.f  xsifel.f  xsifle.f  xteddl.f  xtyele.f  xtyhea.f
+     zeropn.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    rien de particulier
+DEJA RESTITUE DANS : 10.3.3
+NB_JOURS_TRAV  : 2.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 01/11/2011 - 05:02:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015973 DU 2010-11-26 13:29:16
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Message supprime par erreur
+FONCTIONNALITE
+   Problème :
+   ========
+   En 9.2.9, le message ELEMENTS_45 a été remplacé (par erreur ?) par ELEMENTS_90 dans
+   dpolyh.f et supprimé en 10.0.17.
+   
+   ELEMENTS_45
+   L'un des coefficients materiaux N_VP et M_VP de la loi de comportement VENDO_CHAB 
+   est négatif. Or ce n'est physiquement pas possible.
+   
+   ELEMENTS_90
+   Erreur de programmation :
+      L'attribut NBSIGM n'est pas défini pour cette modélisation.
+   Solution :
+      Il faut modifier la catalogue phenomene_modelisation__.cata pour ajouter NBSIGM pour
+   cette modélisation.
+   
+   Correction :
+   ==========
+   Même en rétablissant le meesage, il ne correspond pas au contexte. On remplace par un ASSERT
+   
+   Impacts :
+   =======
+   dpolyh.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    *
+DEJA RESTITUE DANS : 10.3.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR andriam      ANDRIAMBOLOLONA Hari   DATE 01/11/2011 - 05:02:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016031 DU 2010-12-08 09:25:30
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    CREA_RESU cree systematiquement un nouveau numero d'ordre pour les mode_meca
+FONCTIONNALITE
+   Constat :
+   Si on utilise CREA_RESU pour enrichir une sd mode_meca avec un autre champ (EPSI_NOEU_DEPL par exemple), on 
+   crée systématiquement un nouveau numéro d’ordre.
+   Ceci est réalisé même si le mode (NUME_MODE, FREQ) existe déjà. On est alors en présence de deux numéros 
+   d’ordre pour le même NUME_MODE.
+   
+   Correction :
+   Une modification est apportée à crtype.f afin de ne pas créer un nouveau numéro d’ordre si le NUME_MODE 
+   existe déjà dans la sd mode_meca à surcharger.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tous les cas test appelant CREA_RESU
+DEJA RESTITUE DANS : 10.3.2
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 01/11/2011 - 05:02:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015976 DU 2010-11-29 07:43:43
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.7.8, le cas-test perf005c est NOOK sur Aster 4.
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   En NEW9.7.8, le cas-test perf005c est NOOK sur Aster 4.
+   """
+   
+   
+   Solution :
+   ----------
+   Le NOOK provient de la commande TEST_TEMPS qui a été retirée en NEW10. On fait la même
+   chose en NEW9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perf005c
+DEJA RESTITUE DANS : 10.3.2
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 01/11/2011 - 05:02:21
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014576 DU 2010-02-08 08:38:38
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    CTC2 - Macro-elements avec methode continue
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Olivier Nicolas avait demandé à utiliser les macro-éléments avec le contact. On avait fait
+   la (petite) évolution nécessaire (il existe d'ailleurs le cas-test ssnv193).
+   Malheureusement, cette évolution était restreinte au cas de la formulation discrète. Il
+   doit être possible de permettre l'usage des macro-éléments avec la méthode continue sans
+   trop de problèmes.
+   
+   Réponse
+   =======
+   
+   Le simple changement 'DISCRETE' en 'CONTINUE' dans DEFI_CONTACT ne suffit pas.
+   STAT_NON_LINE ne converge pas.
+   Dans un premier temps, il a été nécessaire de refaire le cas test ssnv193. Deux cubes l'un
+   sur l'autre. Celui du dessus fait 1m de coté et on le déplace de 1m vers le bas -> à al
+   fin, le cube est plat !
+   On a aussi des "ARRET='NON'" dans SNL, RESI_GLOB_MAXI=0.01 (!)
+   
+   Bref, en refaisant le cas-test, ça ne marche toujours pas.
+   
+   Après investigations, le problème est le suivant:
+   - la matrice assemblée des sous-structures est construite au début de SNL, dans NMINIT,
+   car, à priori, elle ne change jamais (c'est tout l'intérêt de la sous-structuration ! )
+   - on multiplie cette matrice par le vecteur déplacement à chaque itération de NEwton
+   (routine NMMACV) pour obtenir un second membre.
+   C'est cette dernière opération qui est fausse. En effet, pour multiplier, on utilise
+   MRMULT, qui ne vérifie pas la cohérence des numérotations entre la MATR_ASSE et le CHAM_NO
+   (pour d'évidentes raisons de performances !)
+   Or, dans la méthode continue, la numérotation (objets SMOS.SMDE et .SMOS.SMDI) est
+   modifiée à chaque fois que l'on recrée une numérotation (éléments tardifs de contact, dans
+   NUMER3).
+   Du coup, il y a incohérence des numérotations !
+   Pour corriger, on proposer de dupliquer le NUME_DDL:
+   - le NUME_DDL standard qui sert au calcul. Il est modifié par la rénumérotation des
+   LIGRELs tardifs (méthode continue)
+   - un NUME_DDL fixe. Ce NUME_DDL est conservé tout au long du calcul. Il est utilisé pour
+   les matrices constantes. En l'occurrence, ici, la matrice des sous-structures. Mais aussi,
+   plus tard, la matrice masse.
+   Ce NUME_DDL fixe n'est pas créé si on a  ni macro-éléments, ni de contact continue. 
+   
+   Validation
+   ==========
+   
+   Je modifie le cas-test ssnv193a (un cube élastique sur un plan rigide):
+   Premier calcul (référence) - Contact méthode CONTINUE sans macro-élément
+   Second calcul  - Contact méthode CONTINUE avec macro-élément
+   Troisième calcul  - Contact méthode DISCRETE avec macro-élément
+   Les trois calculs donnent les mêmes résultats.
+   
+   Résultats faux
+   ==============
+   
+   Il peut y avoir des résultats faux méthode continue + macro-éléments statiques, bien qu'en
+   général Newton ne converge pas.
+   Correction en 9 : interdire les macro-éléments avec le contact continu
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.04.193
+VALIDATION
+    ssnv193a
+DEJA RESTITUE DANS : 10.3.2
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 01/11/2011 - 05:02:21
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015904 DU 2010-11-15 13:56:55
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    prise en compte GROUP_MA dans MODI_REPERE
+FONCTIONNALITE
+   MODI_REPERE REPERE 'CYLINDRIQUE' sur les champs ELGA :
+   on a une alarme qui nous informe que des noeuds sont sur Oz (or il ne semble 
+   pas y en avoir) et on plante en débordement de tableau.
+   
+   ANALYSE : Pour calculer le repère cylindrique, on a besoin de calculer les 
+   coordonnées des points de Gauss sur la maille courante. L'erreur se situe là : 
+   on identifiait les points de GAUSS aux noeuds!
+   Outre le fait que le calcul du repère était faux, sur des HEXA20 (cas de la 
+   fiche), on a plus de pts de Gauss (27) que de noeuds (20), ce qui causait le 
+   débordement.
+   
+   CORRECTION : dans la routine chrpel on calcule les coordonnées des points de 
+   Gauss par appel à la routine manopg qui, à partir des coordonnées des noeuds et 
+   de la matrice de passage noeuds=>gauss, calcule les coordonnées des points de 
+   Gauss. On contruit le repère en calculant le vecteur radial qui relie le point 
+   de Gauss à l'axe Oz.
+   
+   VALIDATION : on teste un changement de repere cylindrique sur un champ 
+   SIEF_ELGA_DEPL dans le cas-test SSLV04B. On compare à une solution analytique.
+   
+   Réponse au point b :
+   ne serait-il pas plus prudent de prolonger à ZERO les impressions là
+   où modi_repere n'est pas explicitement requis par l'utilisateur?
+   Un champ produit par MODI_REPERE est non-réutilisable pour faire des calculs, 
+   seuls des post-traitements sont licites. On ne fait donc pas de traitement a 
+   posteriori (prolongement par 0, réduction du champ, etc...) sur les champs post-
+   traités.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 6.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 6.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    SSLV04B
+DEJA RESTITUE DANS : 10.3.4
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015876 DU 2010-11-08 15:21:01
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] COQUE_3D ne tient pas compte de RELATION dans COMP_ELAS
+FONCTIONNALITE
+   Si on utilise une modélisation COQUE_3D avec COMP_ELAS dans STAT_NON_LINE alors 
+   lors de l'intégration du comportement on supposera que le comportement 
+   est 'ELAS'.
+   
+   On émet une erreur fatale dans le TE0414 si RELATION != 'ELAS' sous COMP_ELAS 
+   pour les COQUE_3D.
+   
+   la doc U4.51.11 est claire à ce sujet.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    aucune
+DEJA RESTITUE DANS : 10.3.4
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014839 DU 2010-03-23 17:31:00
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    coques DKT + excentrement => resultats faux
+FONCTIONNALITE
+   Elements de plaque excentrés : résultats différents sur les contraintes aux pts 
+   de Gauss entre MECA_STATIQUE et STAT_NON_LINE élastique.
+   
+   C'est l'option SIEF_ELGA_DEPL qui est fausse : l'excentrement n'est pas pris en 
+   compte dans la routine dxsief.
+   
+   On corrige et on rajoute un test sur les contraintes dans SSLS111A.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.03.111
+VALIDATION
+    SSLS111A
+DEJA RESTITUE DANS : 10.3.4
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR bodel        BODEL Charles          DATE 01/11/2011 - 05:02:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016126 DU 2010-12-30 13:30:15
+TYPE anomalie concernant Code_Aster (VERSION 10.3)
+TITRE
+    Probleme a l'utilisation CALC_ESSAI
+FONCTIONNALITE
+   Probleme :
+   ----------
+   Deux problemes ont ete constates au lancement de CALC_ESSAI en interactif. En NEW10, le
+   message d'erreur est le suivant : 
+   
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! Erreur dans la macro CALC_ESSAI                                       !
+   ! Traceback (most recent call last):                                    !
+   !    File "./Eficas/Build/B_MACRO_ETAPE.py", line 106, in _Build        !
+   !     ier= apply(self.definition.proc,(self,),d)                        !
+   !    File "./Eficas/Macro/calc_essai_ops.py", line 78, in calc_essai_ops!
+   !     out_modifstru,                                                    !
+   !    File "./Eficas/Macro/calc_essai_ops.py", line 158, in              !
+   ! create_interactive_window                                             !
+   !     from Calc_essai.ce_ihm_expansion import InterfaceCorrelation      !
+   !    File "./Eficas/Calc_essai/ce_ihm_expansion.py", line 35, in ?      !
+   !     from Calc_essai.modes import ParamProjMesuModal                   !
+   !  ImportError: No module named modes                                   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+   Lors du renommage des fichiers python de CALC_ESSAI, une modification a ete oubliee dans
+   un import. On corrige dans ce_ihm_expansion.py
+   
+   En NEW9, le message est le suivant : 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! Erreur dans la macroCALC_ESSAI                                        !
+   ! Traceback (most recent calllast):                                     !
+   !    File "./Eficas/Build/B_MACRO_ETAPE.py", line 105, in_Build         !
+   !     ier= apply(self.definition.proc(self,),d)                         !
+   !   File "./Eficas/Macro/calc_essai_ops.py", line 76, in calc_essai_ops !
+   !     out_modifstru)                                                    !
+   !    File "./Eficas/Macro/calc_essai_ops.py", line 201, in              !
+   ! create_interactive_window                                             !
+   !     tabs, mess = create_tab_mess_widgets(tk, UNITE_RESU)              !
+   !  NameError: global name 'UNITE_RESU' is not defined                   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+   On corrige le fichier calc_essai_ops pour la version NEW9 (j'envoie le fichier à Karina
+   pour la restit).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdls139a
+DEJA RESTITUE DANS : 10.3.4
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 01/11/2011 - 05:02:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015979 DU 2010-11-29 09:15:50
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Bug dans GRAD_EPSI lixc3xa9 au projecteur de coupure
+FONCTIONNALITE
+   Problème :
+   L'utilisation de GRAD_EPSI requiert de calculer un projecteur de coupure qui relaxe les
+   déformations régularisées si l'endommagement est à saturation.
+   Il s'agit d'un tenseur d'ordre 4 qui vaut généralement l'identité (endommagement non
+   saturé) ou le tenseur nul (endommagement saturé) si le modèle est à endommagement isotrope.
+   Dans le cas de ENDO_ORTH_BETON, il s'agit d'un tenseur plus complexe puisqu'on relaxe
+   uniquement les directions saturées.
+   Dans la routine nmplge.f qui assemble les différents termes de la matrice tangente
+   élémentaire pour GRAD_EPSI en 2D et 3D, la dernière brique à la fin du programme (après le
+   commentaire MATRICE K:E(KL,N),E(PQ,M)) n'assemble pas les bons termes.
+   En effet, la matrice P (projecteur de coupure) influe sur tous les termes assemblés, alors
+   qu'il ne doit influer que sur la première partie. 
+   cf p.189 et equation 166 p.163 de la thèse de V.Godard
+   
+   Solution :
+   Il suffit d'appliquer le projecteur aux premiers termes de l'équation uniquement. 
+   
+   Validation :
+   J'ai essayé de trouver un cas-test qui mettrait en avant un problème lié à cette erreur de
+   programmation. J'ai réussi à faire des calculs de plaques entaillées où l'endommagement
+   arrive à saturation, mais les résultats avec ou sans la modification sont quasiment
+   identiques. 
+   J'ai l'impression que les risques de résultats faux sont extrêmement faibles, sans que je
+   puisse affirmer qu'ils sont nuls.
+   Au final, la validation repose simplement sur les cas-tests existants. Je les ai passés
+   sur NEW10 (calibre) et NEW9 (bull).
+   
+   Impact sources :
+   NMPLGE.F
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tout cas-test avec GRAD_EPSI
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 01/11/2011 - 05:02:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016146 DU 2011-01-05 08:43:46
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    ELAS (ORTHO) : Prise en compte de la variation de la tempxc3xa9rature incorrecte
+FONCTIONNALITE
+   Cette fiche est émise dans le cadre des travaux effectués pour la fiche EL_15625 "
+   Vérification de
+   la bonne prise en compte de la température dans les lois de comportement dans Code_Aster".
+   
+   Problème :
+    - Le comportement ELAS_ORTH_FO, variable avec la température donne des résultats faux
+   dans STAT_NON_LINE avec COMP_INCR. Mais il est correct pour COMP_ELAS ou MECA_STATIQUE.
+   
+   Solution : on prend en compte la variation de tous les coefficients d'élasticité avec la
+   température dans le comportement incrémental, suivant la méthode décrite dans R5.03.02, et
+   R5.03.11
+   
+   Le test sslv131a permet de vérifier la non régression.
+   Un futur test sera restitué dans le cadre de la fiche 15625, pour valider complètement
+   l'impact de la variation de température sur le résultat.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.8
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.3.8
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sslv131a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF perf005c                      macocco K.MACOCCO          110      2     12
+ CASTEST MODIF ssls111a                      macocco K.MACOCCO          238     14      3
+ CASTEST MODIF sslv04b                       macocco K.MACOCCO          728     25      2
+ FORTRAN MODIF algeline/connor               macocco K.MACOCCO          446      3      2
+ FORTRAN MODIF algorith/ascalc               macocco K.MACOCCO          219      3      3
+ FORTRAN MODIF algorith/asefen               macocco K.MACOCCO          232      3      2
+ FORTRAN MODIF algorith/cabr2g               macocco K.MACOCCO          170      3      3
+ FORTRAN MODIF algorith/cabrp0               macocco K.MACOCCO          153      3      3
+ FORTRAN MODIF algorith/cabrsl               macocco K.MACOCCO          151      3      3
+ FORTRAN MODIF algorith/calfft               macocco K.MACOCCO           70      3      2
+ FORTRAN MODIF algorith/chrpel               macocco K.MACOCCO          937    229     14
+ FORTRAN MODIF algorith/cmphdi               macocco K.MACOCCO          184      3      2
+ FORTRAN MODIF algorith/cmphii               macocco K.MACOCCO          162      3      2
+ FORTRAN MODIF algorith/crtype               macocco K.MACOCCO          473     22      2
+ FORTRAN MODIF algorith/cvmjpl               macocco K.MACOCCO          372      3      2
+ FORTRAN MODIF algorith/dilele               macocco K.MACOCCO          120      3      3
+ FORTRAN MODIF algorith/dilopt               macocco K.MACOCCO           59      3      2
+ FORTRAN MODIF algorith/edgani               macocco K.MACOCCO          138      3      2
+ FORTRAN MODIF algorith/epsdil               macocco K.MACOCCO           64      3      3
+ FORTRAN MODIF algorith/epsreg               macocco K.MACOCCO           57      3      2
+ FORTRAN MODIF algorith/equdil               macocco K.MACOCCO           56      3      2
+ FORTRAN MODIF algorith/equreg               macocco K.MACOCCO           57      3      2
+ FORTRAN MODIF algorith/exfonc               macocco K.MACOCCO          274      5      2
+ FORTRAN MODIF algorith/fnodil               macocco K.MACOCCO           92      3      3
+ FORTRAN MODIF algorith/fnoreg               macocco K.MACOCCO           74      3      3
+ FORTRAN MODIF algorith/gerpas               macocco K.MACOCCO          230      3      3
+ FORTRAN MODIF algorith/impmin               macocco K.MACOCCO          133      3      2
+ FORTRAN MODIF algorith/impper               macocco K.MACOCCO          191      3      2
+ FORTRAN MODIF algorith/impstd               macocco K.MACOCCO          130      3      2
+ FORTRAN MODIF algorith/lcdpeq               macocco K.MACOCCO           85      3      2
+ FORTRAN MODIF algorith/lcedga               macocco K.MACOCCO          434      3      4
+ FORTRAN MODIF algorith/lcejex               macocco K.MACOCCO          215      3      2
+ FORTRAN MODIF algorith/lcejli               macocco K.MACOCCO          258      3      2
+ FORTRAN MODIF algorith/lcmaec               macocco K.MACOCCO           70      3      2
+ FORTRAN MODIF algorith/lcmaei               macocco K.MACOCCO          120      3      2
+ FORTRAN MODIF algorith/lcmafl               macocco K.MACOCCO          152      3      2
+ FORTRAN MODIF algorith/lcmmap               macocco K.MACOCCO          499      3      3
+ FORTRAN MODIF algorith/lcmmat               macocco K.MACOCCO          378      3      3
+ FORTRAN MODIF algorith/lcmmcv               macocco K.MACOCCO          136      3      2
+ FORTRAN MODIF algorith/lcmmja               macocco K.MACOCCO          284      3      3
+ FORTRAN MODIF algorith/lcmmjp               macocco K.MACOCCO          158      3      3
+ FORTRAN MODIF algorith/lcmmvx               macocco K.MACOCCO          122      3      3
+ FORTRAN MODIF algorith/lcplnl               macocco K.MACOCCO          246      3      3
+ FORTRAN MODIF algorith/matinv               macocco K.MACOCCO           63      3      2
+ FORTRAN MODIF algorith/mdfcho               macocco K.MACOCCO          533      3      4
+ FORTRAN MODIF algorith/mdflam               macocco K.MACOCCO           74      2      3
+ FORTRAN MODIF algorith/nipl2d               macocco K.MACOCCO          355      3      3
+ FORTRAN MODIF algorith/nmasf3               macocco K.MACOCCO          268      3      4
+ FORTRAN MODIF algorith/nmfi2d               macocco K.MACOCCO          157      3      2
+ FORTRAN MODIF algorith/nmfi3d               macocco K.MACOCCO          142      2      2
+ FORTRAN MODIF algorith/nmfici               macocco K.MACOCCO           75      2      1
+ FORTRAN MODIF algorith/nmgc2d               macocco K.MACOCCO          332      3      3
+ FORTRAN MODIF algorith/nmgc3d               macocco K.MACOCCO          317      3      3
+ FORTRAN MODIF algorith/nmorth               macocco K.MACOCCO          221     21     12
+ FORTRAN MODIF algorith/nmplge               macocco K.MACOCCO          312     12      8
+ FORTRAN MODIF algorith/nspl2d               macocco K.MACOCCO          232      3      3
+ FORTRAN MODIF algorith/nspl3d               macocco K.MACOCCO          217      3      3
+ FORTRAN MODIF algorith/pipef3               macocco K.MACOCCO           82      2      1
+ FORTRAN MODIF algorith/pmathm               macocco K.MACOCCO           62      3      2
+ FORTRAN MODIF algorith/pregcp               macocco K.MACOCCO          267      3      2
+ FORTRAN MODIF algorith/rdif01               macocco K.MACOCCO          106      3      3
+ FORTRAN MODIF algorith/reg2gr               macocco K.MACOCCO           93      3      2
+ FORTRAN MODIF algorith/regele               macocco K.MACOCCO          106      3      3
+ FORTRAN MODIF algorith/rk21co               macocco K.MACOCCO          111      3      3
+ FORTRAN MODIF algorith/xcopco               macocco K.MACOCCO          106      4      2
+ FORTRAN MODIF algorith/xjacff               macocco K.MACOCCO          136      3      2
+ FORTRAN MODIF algorith/xlagsp               macocco K.MACOCCO          265      3      2
+ FORTRAN MODIF algorith/xmrema               macocco K.MACOCCO          301      3      2
+ FORTRAN MODIF algorith/xnmel2               macocco K.MACOCCO          349      3      3
+ FORTRAN MODIF algorith/xnmel3               macocco K.MACOCCO          361      3      3
+ FORTRAN MODIF algorith/xnmel                macocco K.MACOCCO          182      3      3
+ FORTRAN MODIF algorith/xnmpl2               macocco K.MACOCCO          370      3      3
+ FORTRAN MODIF algorith/xnmpl3               macocco K.MACOCCO          389      3      3
+ FORTRAN MODIF algorith/xnmpl                macocco K.MACOCCO          188      3      3
+ FORTRAN MODIF algorith/xrell1               macocco K.MACOCCO          194      3      2
+ FORTRAN MODIF algorith/xrell2               macocco K.MACOCCO          324      3      2
+ FORTRAN MODIF algorith/xsella               macocco K.MACOCCO          191      3      2
+ FORTRAN MODIF algorith/zeropn               macocco K.MACOCCO          110      3      2
+ FORTRAN MODIF assembla/numddl               macocco K.MACOCCO           65      3      2
+ FORTRAN MODIF calculel/calcul               macocco K.MACOCCO          525      3      3
+ FORTRAN MODIF calculel/mecalg               macocco K.MACOCCO          504      3      3
+ FORTRAN MODIF calculel/meficg               macocco K.MACOCCO          429      3      3
+ FORTRAN MODIF calculel/memax                macocco K.MACOCCO          217      3      2
+ FORTRAN MODIF calculel/mgauss               macocco K.MACOCCO          283      3      3
+ FORTRAN MODIF calculel/refere               macocco K.MACOCCO          152      3      2
+ FORTRAN MODIF elements/dpolyh               macocco K.MACOCCO           49      3      3
+ FORTRAN MODIF elements/draacn               macocco K.MACOCCO          170      3      2
+ FORTRAN MODIF elements/dxsief               macocco K.MACOCCO          215      7      6
+ FORTRAN MODIF elements/erhmv2               macocco K.MACOCCO          367      3      3
+ FORTRAN MODIF elements/gkmet3               macocco K.MACOCCO          238      3      2
+ FORTRAN MODIF elements/gkmet4               macocco K.MACOCCO          259      3      2
+ FORTRAN MODIF elements/klgcou               macocco K.MACOCCO          129      3      2
+ FORTRAN MODIF elements/klg                  macocco K.MACOCCO           99      3      2
+ FORTRAN MODIF elements/lsqpol               macocco K.MACOCCO          223      3      2
+ FORTRAN MODIF elements/moconm               macocco K.MACOCCO          275      3      2
+ FORTRAN MODIF elements/nmgrib               macocco K.MACOCCO           95      3      2
+ FORTRAN MODIF elements/reereg               macocco K.MACOCCO          139      3      2
+ FORTRAN MODIF elements/te0353               macocco K.MACOCCO          434    302    309
+ FORTRAN MODIF elements/te0414               macocco K.MACOCCO          147      9      2
+ FORTRAN MODIF elements/tumass               macocco K.MACOCCO          281      3      2
+ FORTRAN MODIF elements/turigi               macocco K.MACOCCO          258      3      2
+ FORTRAN MODIF elements/xbsig2               macocco K.MACOCCO          205      3      2
+ FORTRAN MODIF elements/xbsig3               macocco K.MACOCCO          213      3      2
+ FORTRAN MODIF elements/xbsig                macocco K.MACOCCO          148      3      2
+ FORTRAN MODIF elements/xbsigr               macocco K.MACOCCO          158      3      2
+ FORTRAN MODIF elements/xfovol               macocco K.MACOCCO          242      3      2
+ FORTRAN MODIF elements/xgelem               macocco K.MACOCCO          420      3      3
+ FORTRAN MODIF elements/xpesro               macocco K.MACOCCO          200      3      2
+ FORTRAN MODIF elements/xrmes2               macocco K.MACOCCO          142      3      2
+ FORTRAN MODIF elements/xsifel               macocco K.MACOCCO          522      3      3
+ FORTRAN MODIF elements/xsifle               macocco K.MACOCCO          384      3      3
+ FORTRAN MODIF elements/xteddl               macocco K.MACOCCO          243      4      3
+ FORTRAN MODIF modelisa/arlas9               macocco K.MACOCCO          102      3      2
+ FORTRAN MODIF modelisa/intinc               macocco K.MACOCCO          180      3      2
+ FORTRAN MODIF modelisa/intsma               macocco K.MACOCCO          242      3      3
+ FORTRAN MODIF modelisa/plint3               macocco K.MACOCCO          692      3      3
+ FORTRAN MODIF prepost/dalp2d                macocco K.MACOCCO          234      3      2
+ FORTRAN MODIF prepost/dalp3d                macocco K.MACOCCO          220      3      2
+ FORTRAN MODIF prepost/dsingu                macocco K.MACOCCO          112      3      2
+ FORTRAN MODIF prepost/fgrccm                macocco K.MACOCCO           82      3      3
+ FORTRAN MODIF prepost/irch19                macocco K.MACOCCO          180      3      3
+ FORTRAN MODIF prepost/irgnal                macocco K.MACOCCO          170      3      2
+ FORTRAN MODIF prepost/rsingu                macocco K.MACOCCO          190      3      2
+ FORTRAN MODIF prepost/singue                macocco K.MACOCCO          203      3      2
+ FORTRAN MODIF prepost/singum                macocco K.MACOCCO          563      3      3
+ FORTRAN MODIF prepost/xpoajd                macocco K.MACOCCO          195      3      3
+ FORTRAN MODIF prepost/xpoajm                macocco K.MACOCCO          144      3      2
+ FORTRAN MODIF prepost/xpocmp                macocco K.MACOCCO          117      3      2
+ FORTRAN MODIF prepost/xpoffo                macocco K.MACOCCO          136      3      2
+ FORTRAN MODIF stbtrias/lect82               macocco K.MACOCCO           96      3      2
+ FORTRAN MODIF supervis/lxscan               macocco K.MACOCCO          309      3      3
+ FORTRAN MODIF utilifor/permlo               macocco K.MACOCCO           49      3      2
+ FORTRAN MODIF utilifor/permr8               macocco K.MACOCCO           49      3      2
+ FORTRAN MODIF utilitai/op0094               macocco K.MACOCCO          117      3      3
+ FORTRAN MODIF utilitai/ordon1               macocco K.MACOCCO           46      3      2
+ FORTRAN MODIF utilitai/ordon2               macocco K.MACOCCO           48      3      2
+ FORTRAN MODIF utilitai/pemaxe               macocco K.MACOCCO          224      3      2
+ FORTRAN MODIF utilitai/pemaxn               macocco K.MACOCCO          181      3      2
+  PYTHON MODIF Macro/calc_essai_ops          macocco K.MACOCCO          231      6      5
+  PYTHON MODIF Messages/algorith2            macocco K.MACOCCO          286     14      2
+  PYTHON MODIF Messages/elements5            macocco K.MACOCCO          212      8      2
+  PYTHON MODIF Messages/mecanonline3         macocco K.MACOCCO           85      7      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :  142       31193      1062     689      +373
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :  142       31193      1062     689      +373 

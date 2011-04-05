@@ -1,0 +1,402 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR nicolas      NICOLAS O.             DATE 05/07/2006 - 16:51:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009687 DU 2006-04-18 05:45:04
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TMA : CS
+TITRE
+   MACRO_MATR_ASSE
+FONCTIONNALITE
+   La macro-commande MACRO_MATR_ASSE presente un bug lorsque l'utilisateur donne pour option
+   RIGI_MECA_HYST.
+   En fait, l'erreur provient du fait que cette option necessite de renseigner le mot cle
+   RIGI_MECA dans CALC_MATR_ELEM hors ce cas de figure n'etait pas traite dans le python de
+   la macro.
+   
+   On traite donc ce cas (RIGI_MECA_HYST) de la meme maniere que pour AMOR_MECA, en prenant
+   par defaut RIGI_MECA=la matrice qui vient d'etre calculee par la macro elle meme.
+   
+   On en profite pour rajouter le mot cle CHAR_CINE qui permet l'utilisation de la macro avec
+   prise en compte des conditions aux limites de type charges cinematique (AFFE_CHAR_CINE).
+   Modif a prevoir dans la doc U4.61.21.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.61.21
+VALIDATION
+   sdld313a
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET N.             DATE 05/07/2006 - 16:51:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009766 DU 2006-05-15 15:10:51
+TYPE express concernant Code_Aster (VERSION 2.x)
+NB_JOURS_TRAV  : 0.1
+TITRE
+   JJIMPO : probleme de compilation avec Intel fortran 9.1.032 en 32 bits
+FONCTIONNALITE
+   En accord avec Jean-Pierre Lefebvre, on corrige la routine.
+   Les deux lignes semblables :
+   WRITE ( UNIT , '((I7,'' - '','//FMT//'))')
+   presentent des doubles parentheses "bizarres". On ecrit donc :
+   WRITE ( UNIT , '(I7,'' - '','//FMT//')')
+   La compilation sur toutes les plateformes (Compaq, Linux
+   Calibre, SuSE, Rocks) passe avec les compilos disponibles (gcc,
+   Intel...).
+   A noter qu'avec le compilo Intel 9.0.032 ou plus ancien,
+   l'ancienne routine jjimpo se compilait sans problemes...
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Compilation OK
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 05/07/2006 - 16:51:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009612 DU 2006-03-29 12:24:26
+TYPE evolution concernant Code_Aster (VERSION 8.2)
+NB_JOURS_TRAV  : 3.5
+TITRE
+   AFFE_CHAR_CINE + matrice non symetrique => problemes
+FONCTIONNALITE
+   Les "charges cinematiques" (AFFE_CHAR_CINE) sont
+   maintenant possibles avec les matrices non symetriques.
+   
+   
+   
+   
+   Details :
+   ---------
+   En NEW8 :
+   =========
+   la routine ASMCHC a ete modifiee pour traiter les
+   matrices non symetriques.
+   
+   Suite a l'evolution de ASMCHC, je me suis apercu que
+   cette correction etait insuffisante pour le test que
+   j'avais choisi. En effet, pour obtenir une matrice non-
+   symetrique, j'avais choisi des "forces suiveuses".
+   Dans le cas des forces suiveuses, on assemble dans une
+   matrice qui existe deja d'autres matrices elementaires
+   (ASMATR/CUMUL='CUMU').Il y avait alors collision entre
+   les appels a ASMCHC en fin d'ASMATR et les resultats
+   etaient faux. Il fallait modifier l'assemblage / 'CUMU'
+   pour bien tenir compte des charges cinematiques.
+   
+   Je me suis alors convaincu qu'il serait plus simple de
+   faire le traitement des charges cinematiques (recopie de
+   KLI dans .CCVA, mise a 1 de la diagonale, ...) le plus
+   tard possible. Cela permet d'ignorer les objets des
+   charges cinematiques lors des combinaisons lineaires et
+   de l'assemblage / 'CUMU'.
+   On fait donc maintenant appel a ASMCHC au dernier
+   moment : au debut de la resolution (PRERES) ou au debut
+   du produit matrice*vecteur (MRMULT).
+   
+   J'ai aussi developpe une routine MTMCHC permettant
+   de "retablir" (partiellement) le .VALM d'une matrice a
+   partir du .CCVA pour que l'on puisse encore combiner une
+   matrice ayant servi a une produit matrice*vecteur ou une
+   resolution. Cette fonctionalite est necessaire aux
+   calculs modaux : on fait : F=M*U, F=K*U puis recherche
+   des modes propres de (K+s*M).
+   
+   
+   IMPACT_DOC :
+   - SD matr_asse (D4.06.10) :
+   REFA(3)= / 'ELIMF'  -> la matrice a des ddls
+   elimines et  l'elimination (appel a ASMCHC) a ete faite
+   / 'ELIML'  -> la matrice a des ddls
+   elimines et  l'elimination est "latente" (pas encore
+   faite)
+   / ' '      -> la matrice n'a pas de ddls
+   elimines.
+   - D6.00.01 : liste des utilitaires :
+   -ajouter MTMCHC : traitement des charges
+   cinematiques : passage .VALM -> .CCVA et reciproquement
+   
+   
+   
+   Validation :
+   -----------
+   Ajout d'un nouveau test (zzzz213b) pour valider
+   AFFE_CHAR_CINE sur les matrices non-symetriques.
+   Il s'agit d'un probleme de coques avec forces
+   suiveuses.
+   La validation se fait en comparant les resultats
+   obtenus avec ceux d'AFFE_CHAR_MECA.
+   Ce test dure environ 8s.
+   
+   Passage (sur clpaster) de tous les tests (30)
+   utilisant les charges cinematiques (hors MUMPS).
+   
+   En NEW7 :
+   =========
+   On se contente d'arreter l'utilisateur par un message
+   d'erreur fatale car le traitement des charges
+   cinematiques a ete entierement revu en NEW8.
+   La routine NEW7 modifiee est fournie en piece jointe ci-
+   dessous.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : D4.06.10 D6.00.01
+VALIDATION
+   nouveau test (zzzz213b)
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pabhhhh      TARDIEU N.             DATE 05/07/2006 - 16:51:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009840 DU 2006-06-14 09:43:03
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+NB_JOURS_TRAV  : 0.5
+TITRE
+   Ameliorations pour MACR_RECAL
+FONCTIONNALITE
+   Dans reca_algo.py:
+   -----------------
+   Je blinde la division par zero par la production d'un UTMESS.
+   
+   Dans recal.py:
+   -----------------
+   Je teste en plus que precedemment:
+   - le type des courbes experimentales (Numeric.Array)
+   - la dimension des courbes experimentales (Nx2)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Passage test zzzz159a modifie
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR acbhhcd      DEVESA G.              DATE 05/07/2006 - 16:51:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009788 DU 2006-05-19 20:00:26
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+NB_JOURS_TRAV  : 0.3
+TITRE
+   AFFE_CARA_ELEM option RIGI_MISS
+FONCTIONNALITE
+   Dans le cas particulier de l'affectation de raideurs
+   RIGI_MISS sous une geometrie uniquement plane de
+   cote Z constante, chose jamais vue jusqu'a present
+   car les geometries de BR sont volumiques en general,
+   la routine ACEARM modifie en douce le parametre NDIM
+   de 3 a 2 et donc les composantes de raideur en Z
+   sont effacees d'ou probleme plus tard. Il faut donc
+   commentariser les 2 lignes qui permettent ce
+   changement comme d'ailleurs cela avait ete fait pour
+   ACEARP concernant les raideurs RIGI_PARASOL.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009830 DU 2006-06-09 20:50:13
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+NB_JOURS_TRAV  : 0.3
+TITRE
+   PROJ_MATR_BASE et MODE_MECA
+FONCTIONNALITE
+   On remplace l'appel a COPMOD par celui a COPMO2 dans les routines PROJMR PROJMC
+   et OP0072 pour les modes de type MODE_MECA.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude et cas tests
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR jmbhh01      PROIX J.M.             DATE 05/07/2006 - 16:51:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009861 DU 2006-06-22 07:49:39
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+NB_JOURS_TRAV  : 0.1
+TITRE
+   dimensionnement vecteur COMPOR dans nmflam.f
+FONCTIONNALITE
+   probleme de lecture avec longueur max supposee en dur (longueur =16) pour COMPOR.VALE
+   dans
+   la routine nmflam.f
+   
+   Suite a l'integration de comportements THM, ce vecteur est passe a une longueur 20 :
+   bug.
+   
+   
+   correction restituee par B.Riou et Thomas De Soza en 8.3.4
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   aucune
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mabbas       ABBAS M.               DATE 05/07/2006 - 16:51:31
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009201 DU 2005-11-15 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+NB_JOURS_TRAV  : 4.0
+TITRE
+   contact mode VERIF pour etude de type aspic-ascouf
+FONCTIONNALITE
+   SUite correction 9777, le contact mode VERIF ne fonctionne toujours
+   pas dans ASPIC/ASCOUF.
+   Plantage dans CFCOEF.
+   Aspic/Ascouf utilisent des elements quadratiques et donc des TRIA6
+   pour definir le contact. IL y a un probleme d'initialisation du
+   vecteur COEFNO lors de la projection sur un TRIA6. Seul le ssnv128k
+   teste cette configuration (TRIA6) et il n'a jamais plante.
+   On corrige en initialisant systematiquement COEFNO dans PROJEC.
+   La validation de la correction de ce bug sera la realisation de la
+   fiche 6740.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv128k
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 008836 DU 2005-06-30 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 7.5)
+NB_JOURS_TRAV  : 4.0
+TITRE
+   grandissement sous irradiation et floating point exception
+FONCTIONNALITE
+   Les poutres multifibres ne supportent pas la definition de leurs
+   caracteristiques elementaires par la commande AFFE_CARA_ELEM avec
+   l'option:
+   SECTION='CERCLE' ou SECTION='RECTANGLE'
+   Le cas n'etait pas prevu. On plantait en pivot quasi nul car les
+   caracteristiques (en particulier coefficient de cisaillement) etaient
+   initalises a R8MAEM (un grand nombre).
+   Du coup, pas de risque de resultat faux.
+   On modifie affgen.f pour prendre en compte ces poutres.
+   On modifie ssnl132a pour valider.
+   
+   Les modelisations "TUYAU" et "3D_FAISCEAU" plantent avec le blindage
+   car elles utilisent la section "CERCLE" ou "RECTANGLE" et que les
+   sections reduites de cisaillement sont indefinies dans ces cas.
+   On ajoute tuyau et 3D_FAISCEAU a la liste des elements pouvant
+   utiliser CERCLE et RECTANGLE. On met AY et AZ a zero pour ces deux cas
+   (on n'a pas besoin de AY et AZ dans la formulation des elements).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnl132
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009033 DU 2005-09-23 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.1)
+NB_JOURS_TRAV  : 3.0
+TITRE
+   ssnl132a linux debug
+FONCTIONNALITE
+   Meme pathologie que 8836.
+   Mauvaise prise en compte des caracteristiques de section generiques
+   pour les poutres multifibres.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnl132a
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009699 DU 2006-04-21 12:46:52
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TMA : CS
+TITRE
+   Recherche lineaire dans STAT_NON_LINE
+FONCTIONNALITE
+   La definition des mots cles RHO_MAX, RHO_MIN et RHO_EXCL de la
+   recherche lineaire n'avait
+   aucun impact sur le choix reel du RHO optimal. Ces valeurs etaient
+   tout simplement
+   ignorees et les valeur 10e-2 et 10 etaient inscrites en dur.
+   Desormais, on fait en sorte de recuperer les valeurs donnees par
+   l'utilisateur. De plus,
+   on a ajoute des verifications supplementaires sur la compatibilite de
+   RHO_MAX, RHO_MIN et
+   RHO_EXCL.
+   Imaginons un utilisateur tordu qui definirait RHO_MIN=-0.01,
+   RHO_MAX=10 et RHO_EXCL=0.03. Au niveau du fortran ce cas n'etait pas
+   pris en compte pour
+   definir le RHO utilise. Il faut exclure que RHO_MIN soit compris entre
+   -RHO_EXCL et
+   RHO_EXCL car cela revient a definir de maniere factice un RHO_MIN egal
+   en fait RHO_EXCL.
+   De meme RHO_MAX ne doit pas etre compris entre -RHO_EXCL et RHO_EXCL.
+   Une alarme avertissant l utilisateur que la valeur de RHO_MIN
+   (respectivement RHO_MAX)
+   choisi sera en fait la valeur de
+   RHO_EXCL(respectivement -RHO_EXCL) est donc emise dans ce cas la.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03
+VALIDATION
+   ssnp15a,ssnp15b,ssnv102c et ssnv118b
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdld313a                      cibhhpd L.SALMONA          129     17     25
+ CASTEST MODIF ssnp15a                       cibhhpd L.SALMONA          887      3      1
+ CASTEST MODIF ssnp15b                       cibhhpd L.SALMONA          745      5      1
+ CASTEST MODIF ssnp15c                       cibhhpd L.SALMONA          627      3      2
+ CASTEST MODIF ssnv102c                      cibhhpd L.SALMONA          304      2      1
+ CASTEST MODIF ssnv118b                      cibhhpd L.SALMONA          372      3      2
+  PYTHON MODIF Macro/macro_matr_asse_ops     cibhhpd L.SALMONA          155      5      3
+  PYTHON MODIF Macro/reca_algo               cibhhpd L.SALMONA          271      5      1
+  PYTHON MODIF Macro/recal                   cibhhpd L.SALMONA          396     18      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    9        3886        61      37       +24
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    9        3886        61      37       +24 

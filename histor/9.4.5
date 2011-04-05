@@ -1,0 +1,2044 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR andriam      ANDRIAMBOLOLONA Hari   DATE 16/02/2009 - 14:19:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012883 DU 2008-11-24 14:43:54
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   sdls112a et SDVERI=OUI
+FONCTIONNALITE
+   Contexte :
+   On mettant SDVERI='OUI' sur le cas test sdls112a, on constate que le concept base_modale
+   produit par DEFI_BASE_MODALE avec l'option ORTHO_BASE est incorrect.
+   
+   Analyse :
+   Le vecteur .REFD du concept base_modale produit par DEFI_BASE_MODALE/ORTHO_BASE n'a pas
+   été crée correctement.
+   On affecte par exemple à REFD[4] une variable non initialisée (censée être le nom de
+   l'interface dans le cas d'un calcul de sous-structuration).
+   
+   Correction :
+   Créer proprement le .REFD si l'utilisateur choisi l'option ORTHO_BASE :
+   renseigner les matrices (masse, rigidité, amortissement) associées à la base créée et
+   initialiser REFD[4] par une chaîne de caractère vide.
+   
+   Routine modifiée : refe99.f
+   
+   Je ne pense pas que cette anomalie puisse générer des résultats faux car le calcul se
+   plante si on essaie d'exploiter les résultats obtenus.
+   
+   Validation :
+   Cas test sdls112a en SDVERI='OUI'.
+   J'ai rajouté également un test permettant de vérifier l'orthogonalité de la base obtenue.
+   On teste le produit scalaire des vecteurs de base via un calcul MAC qui devrait être une
+   matrice identité car les vecteurs sont orthogonaux entre-eux.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test sdls112a en mode SDVERI='OUI'
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 17/02/2009 - 13:47:11
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012908 DU 2008-11-28 16:58:27
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MN10 - CONTACT - matrice singulixc3xa8re dans la mxc3xa9thode 'CONTINUE'
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Actuellement quand on essaye avec la méthode 'CONTINUE' de définir du contact (seul) dans
+   certaines zones et du contact avec frottement dans d'autres, le calcul plante dès la
+   première résolution linéaire en pivot vraiment nul (i.e. matrice non inversible).
+   Théoriquement cette situation est permise contrairement au contact discret (où une seule
+   méthode de résolution est possible à la fois, contact seul et contact avec frottement
+   étant deux méthodes distinctes).
+   
+   Analyse
+   =======
+   
+   La méthode 'CONTINUE' s'appuie sur une formulation mixte, elle ajoute donc des DDLs au
+   problème et pour cela dans AFFE_CHAR_MECA/CONTACT on enrichit (comme si l'utilisateur
+   avait fait un AFFE_MODELE) le modèle avec la modélisation adéquate à choisir parmi :
+   - CONT_DVP_2D : contact en 2D (ddl : DX DY LAGS_C)
+   - COFR_DVP_2D : contact/frottement en 2D (ddls : DX DY LAGS_C LAGS_F1)
+   - CONT_DVP_3D : contact en 3D (ddl : DX DY DZ LAGS_C)
+   - COFR_DVP_3D : contact/frottement en 3D (ddls : DX DY DZ LAGS_C LAGS_F1 LAGS_F2)
+   ==> Ceci est actuellement bien fait en distinguant les zones avec et sans frottement.
+   
+   Les matrices de rigidité dues à la prise en compte du contact/frottement (et qui
+   enrichissent la rigidité tangente) sont calculées par les options RIGI_CONT et RIGI_FROT
+   par appel à CALCUL sur un ligrel construit dans MMLIGR (après chaque (ré)appariement).
+   De la même manière qu'il existe une modélisation pour le contact et une modélisation pour
+   le frottement, il existe 1 EF pour le contact (qui ne contribue qu'aux DDLs DEPL LAGS_C)
+   et 1 EF pour le frottement (qui contribue à tous les DDLs).
+   ==> Dans MMLIGR, le ligrel était construit de tel sorte qu'on affectait le mauvais EF
+   (celui de contact) en cas de mélange zones avec contact seul et zones avec contact/frottement.
+   
+   Ainsi certains DDLs ne portaient aucune rigidité et par conséquent entraînaient une
+   matrice singulière.
+   
+   Conclusion
+   ==========
+   
+   On corrige dans MMLIGR et MMLIGE la façon d'affecter les éléments finis : on construit
+   ainsi un ligrel comportant à la fois des EF de contact et des EF de contact/frottant.
+   
+   La validation montre cependant des lacunes : dans MMINFP, ITER_FROT_MAXI renvoyé est celui
+   de la zone 1 (de sorte que si elle n'est pas en frottement, alors celui-ci vaut 0). Ceci
+   sera de toute manière repris proprement dans la création d'AFFE_CONTACT (ITER_FROT_MAXI
+   sera par exemple un paramètre constant ne dépendant pas des zones de contact).
+   
+   Enfin MMMRES n'est pas adapté à la présence de zones avec contact seul au milieu de zones
+   avec contact/frottant et plante en erreur numérique en accédant à des valeurs non
+   initialisées. Là encore MMMRES est réécrit dans le cadre d'une autre fiche et prendra
+   mieux en compte ces particularités.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssna102d modifixc3xa9
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013029 DU 2009-01-08 08:51:59
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MN10 - CONTACT - Correction de cfgeom suite couverture de code
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Suite à la couverture de code de la STA9.4 on voit que la routine REAJEU n'est plus
+   couverte, or elle a été introduite par la fiche 5782 et corrigée en 11413 pour éviter un
+   problème en cas de :
+   * contact sur géométrie initiale
+   * rédécoupage du pas de temps
+   
+   En effet le vecteur jeu est constamment modifié et ponctuellement recalculé en cas
+   d'appariement. Or quand il n'y a pas d'appariement (cas de REAC_GEOM='SANS'), le jeu n'est
+   donc plus recalculé correctement au moment de la subdivision du pas de temps (on repart
+   avec le dernier jeu qui n'est pas forcément juste).
+   
+   Détails
+   =======
+   
+   On rétablit le paramètre ITERAT dans REAJEU (ce n'est pas ce qu'il y a de plus élégant
+   mais le numéro de l'itération est le seul déterminant ici).
+   
+   Validation
+   ==========
+   
+   Aucun test ne valide ce cas (sinon on l'aurait vu avant). Je vais essayer d'en fabriquer un.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.25
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 16/02/2009 - 18:11:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012781 DU 2008-11-07 12:39:55
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   modif TE0477
+FONCTIONNALITE
+   Correction d'une erreur sur les éléments SHB :
+   on modifie le calcul de l'incrément de déformation en 
+   non-linéaire, qui était faux (appels à SH1EPS SH2EPS 
+   SH6EPS SH8EPS dans te0477.f non corrects pour les 4 
+   éléments de la famille)
+   
+   Modification de 2 cas-tests Aster SHB : ssns101a à 
+   ssns101g et ssns102a et ssns102b (voir transparents)
+   
+   Ajout du cas-test ssns109 pour tester la pertinence de 
+   la correction : comparaison solution Aster - solution 
+   analytique. (voir fichier .ppt joint)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.3.6
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.05.101  V6.05.102  V6.05.109
+VALIDATION
+   SSNS101 SSNS102 SSNS109
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013070 DU 2009-01-16 14:42:21
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Erreur dans les donnxc3xa9es du cas-test Fourier SSLV303A
+FONCTIONNALITE
+   Frnck Meissonnier m'a fait remarquer une erreur dans 
+   la donnée d'un chargement du cas test SSLV303A.
+   
+   Il s'agit d'un chargement pesanteur mode 1 en 
+   axisymétrique Fourier.
+   Le module et la direction du chargement sont faux, et 
+   curieusement les 2 erreurs se compensent et donnent 
+   des résultats justes (conformes à la solution 
+   analytique)
+   
+   On corrige le chargement dans le cas-test et la doc V 
+   associée.
+   On explique aussi en détail dans la doc U2.07.01 (notice 
+   d'utilisation Fourier) la façon d'entrer un chargement 
+   pesanteur en Fourier.
+   + renvoi à cette notice dans AFFE_CHAR_MECA mot-clé 
+   PESANTEUR dans le cas Fourier.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.04.303 U2.07.01 U4.44.01
+VALIDATION
+   SSLV303A
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 17/02/2009 - 13:14:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013008 DU 2008-12-22 10:15:28
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   wtnv134a - NOOK en debug sur Bull
+FONCTIONNALITE
+   Probleme releve:
+   ----------------
+   Cas test wtnv134a NOOK en mode DEBUG sur BULL
+   
+   Cause du probleme releve:
+   -------------------------
+   Utilisation dans ce cas-test de la methode de Recherche 
+   Lineaire disponible dans l'operateur STA_NON_LINE.
+   
+   Les simulations en mode DEBUG et NODEBUG ont un 
+   comportement différent à partir de l'instant de calcul 
+   49.00. L'utilisation du mode de recherche lineaire ne 
+   renvoie pas la meme valeur pour le coefficient RHO :
+   -)1.18239 (DEBUG) 
+   -)1.0000 (NODEBUG).
+   
+   La difference des resultats est alors pour les valeurs 
+   NOOK de 2% maximum par rapport au mode NODEBUG.
+   
+   L'activation des differents mecanismes du modele de 
+   Hujeux sont pourtant identiques durant l'integration du 
+   modele.
+   
+   Solutions proposees:
+   -------------------
+   1)Le passage de ce cas-test en desactivant la methode de 
+   recherche lineaire conduit a obtenir une reponse 
+   similaire pour les deux modes de simulation en mode 
+   DEBUG et NODEBUG.
+   
+   2)Passage du critere RESI_INTE_RELA de 1E-6 a 1E-7 
+   permet d'obtenir les memes reponses pour les deux modes 
+   de simulation. (--> Solution choisie)
+   
+   Impact sur les sources:
+   -----------------------
+   Nul
+   
+   Impact documentaire:
+   --------------------
+   V731134A
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1.21
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : V7.31.134
+VALIDATION
+   CAS-TEST WTNV134a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013037 DU 2009-01-08 15:09:40
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   En NEW 9.4.2, le cas-test wdnp101a est NOOK sur Rocks.
+FONCTIONNALITE
+   Probleme releve:
+   ----------------
+   En NEW 9.4.2, le cas-test wdnp101a est NOOK sur Rocks.
+   Les tests NOOK dans le fichier .resu sont les suivants:
+   "
+    ---- TABLE: TAB_INF2 NOM_PARA: RMS                     
+                                          
+   REFERENCE: NON_REGRESSION  
+   NOOK TAB_INF2     RELA    95.435 % VALE: 
+   3.2679054666274D+00
+   RMS               TOLE    10.000 % REFE: 
+   1.6721200000000D+00
+   
+   ---------------------------------------------------------
+   -----------------------
+   "
+   et
+   "
+   ---------------------------------------------------------
+   -----------------------
+    ---- TABLE: MAXSP    NOM_PARA: FREQ                    
+                                          
+   REFERENCE: NON_REGRESSION  
+   NOOK              RELA   547.059 % VALE: 
+   1.6500000000000D+01
+    MAX              TOLE     1.000 % REFE: 
+   2.5500000000000D+00
+   
+   
+   I)Anomalies relevees:
+   ---------------------
+   
+   1)Debordement des tableaux Q, AD, KSI dans hujtid.f:
+   ****************************************************
+   -)Ces tableaux ont ete dimensionnes initialement a 3 
+   composantes, car ils n'intervenaient que pour le calcul 
+   des 3 seuils deviatoires. 
+   L'erreur provient d'une boucle sur les mecanismes du 
+   modele de Hujeux. Si 4 mecanismes sont sollicites 
+   simultanement, l'algorithme genere un debordement. Il 
+   faut redimensionner ces tableaux a 4.
+   
+   -)Routines impactees: hujtid.f
+   
+   2)Cas d'un echec local d'integration du modele de Hujeux
+   ********************************************************
+   -)Les donnees d'entree SIGD, DEPS et VIND ont ete 
+   modifiees lors de l'integration du modele. Il faut leur 
+   reaffecter leur valeur initiale stockee prealablement.
+   
+   -)routine impactee: nmhuj.f
+   
+   3)Anomalie pour restreindre la prediction en contrainte 
+   a des valeurs strictement negatives:
+   ********************************************************
+   -)L'algorithme mis en place fait une faute en 
+   considerant le facteur de restriction le plus fort au 
+   lieu du plus faible.
+   
+   -)routine impactee: hujpre.f
+   
+   4)Application d'un facteur de correction au predicteur 
+   de contraintes
+   ******************************************************
+   -)La prediction en contraintes etablie dans la routine 
+   hujiid pour initialiser l'algorithme de Newton local 
+   doit etre controlee. Ce controle doit empecher le renvoi 
+   d'un etat de contrainte comportant des composantes 
+   SIxx,SIyy ou SIzz en traction. L'algorithme etabli dans 
+   hujpre.f permet de corriger cette anomalie.
+     La meme anomalie existe pour le predicteur de 
+   contraintes utilise dans la definition du domaine 
+   potentiel de mecanismes actifs. Pour corriger ce point, 
+   la routine hujpre.f est appelee dans hujres.f au lieu de 
+   hujela.f
+   
+   -)routine impactee: hujiid.f, hujres.f, nmhuj.f
+   
+   5)Prediction des facteurs de mobilisation dans hujiid:
+   ******************************************************
+   Il faut limiter les valeurs de ces variables internes a 
+   1 pour les seuils monotones et a la valeur du facteur de 
+   mobilisation des mecanismes deviatoires monotones pour 
+   les seuils cycliques.
+   
+   6)Anomalies liees a la gestion des mecanismes 
+   deviatoires cycliques:
+   *******************************************************
+   Cette anomalie explique la grande variabilite des 
+   resultats en fonction des plates-formes et egalement en 
+   mode Debug et NoDebug, meme apres considerations des 
+   corrections apportees ci-dessus. 
+   La gestion actuelle des surfaces de charge deviatoires 
+   cycliques ne garantit pas le non-chevauchement de ces 
+   surfaces dans l'espace des contraintes. 
+   
+   a)Chevauchement Cyclique-Monotone:
+   ----------------------------------
+   L'algorithme introduit dans Gefdyn est efficace pour 
+   traiter ce point. On calcule la position absolue du 
+   centre de la surface deviatoire cyclique a laquelle on 
+   ajoute le rayon de cette meme surface. Si cette somme 
+   est superieure au rayon monotone de la surface 
+   deviatoire associee, alors le chevauchement est etabli 
+   et il faut modifier les caracteristiques de la surface 
+   de charge deviatoire cyclique.
+   
+   routines impactees: hujact, hujdrc 
+   
+   b)Chevauchement cyclique-cylique:
+   ---------------------------------
+   Un test de proximite entre la position de l'etat de 
+   contrainte dans le plan devitoire considere et la 
+   surface de charge precedemment consideree est introduit 
+   pour empecher l'occurence de cette anomalie.
+   
+   routines impactees: hujjid, hujmid, hujpot, hujpxd
+   
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   II)Resultats obtenus:
+   ---------------------
+   1)Cas test wdnp101a:
+   ********************
+   Sensibilite tres faible sur les differentes plates-
+   formes pour les valeurs testees lors de simulation en 
+   mode Debug ou Nodebug.
+   
+   Remarque:
+   --------
+   Les seuils de tolerance sont abaisses de 10% a 1% pour 
+   l'ensemble des valeurs testees.
+   
+   2)Cas test ssnv208a et wtnv133a:
+   --------------------------------
+   Pour ces deux cas tests, il faut modifier le seuil de 
+   tolerance d'une valeur testee relative aux deformations 
+   volumiques.
+   -)Passage de 3% a 4% d'erreur
+   
+   3)Autres cas-tests:
+   -------------------
+   L'ensemble des cas-tests appelant la loi de Hujeux ont 
+   ete testes et aucune sensibilite n'est constate selon le 
+   choix de la plate-forme ou du mode de resolution Debug 
+   ou Nodebug. 
+   Tests realises sur les plates-formes BULL, ROCKS, 
+   CALIBRE4 et CALIBRE5. 
+   (ssnv197x,ssnv204x,ssnv205a,ssnv207a,wtnv132a,wtnv133b,wt
+   nv134a)
+   
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   III)Conclusion:
+   ---------------
+   1)Sources fortan modifiees:
+   hujact.f, hujdp.f, hujdrc.f, hujiid.f, hujjid.f, 
+   hujmid.f, hujpot.f, hujpre.f, hujpxd.f, hujres.f, 
+   hujtid.f, nmhuj.f
+   
+   2)Cas tests modifies:
+   ---------------------
+   wdnp101a, wtnv133a, ssnv208a
+   
+   3)DOC V a modifier:
+   -------------------
+   V604208A, V731133A, DOC CAS-TEST wdnp101a
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1.18
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : V6.04.208A, V7.31.133A,
+VALIDATION
+   CAS-TEST
+NB_JOURS_TRAV  : 10.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR fournier     FOURNIER Isabelle      DATE 29/01/2009 - 10:48:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012898 DU 2008-11-27 09:42:32
+TYPE anomalie concernant Salome (VERSION 2009.1)
+TITRE
+   PAL 878 : Post-traitement des contraintes avec des prismes
+FONCTIONNALITE
+   L'anomalie de visualisation des résultats sur les élements prismes est résolu 
+   dans la version Salome-Meca2009.1
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012871 DU 2008-11-20 14:13:52
+TYPE evolution concernant Salome (VERSION )
+TITRE
+   PAL 888 : GEOM: en tui, avoir un MakeTranslationVecH
+FONCTIONNALITE
+   La fonction TUI est MakeTranslationVectorDistance(Objet,Vecteur,Distance)le 
+   permet déjà.
+   Fiche classée résolue
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sans objet
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012816 DU 2008-11-14 07:42:21
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 866 : Extrusion along a path : selection wire impossible
+FONCTIONNALITE
+   Version Salome-Meca 2009.1 : Pour "Extrusion along a path", ajout d'un 
+   bouton "Selection of unpublished edges". Quand ce bouton n'est pas coché, on 
+   peut donc sélectionner un wire pour faire l'extrusion.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012742 DU 2008-10-29 08:07:53
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 829 : VISU: impossible d'afficher deux champs aux noeuds crxc3xa9xc3xa9s par IMPR_RESU/GROUP_MA
+FONCTIONNALITE
+   L'anomalie d'affichage d'un deuxième champ à un autre instant ou mode est 
+   résolue dans la version Salome-Meca 2009.1
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012690 DU 2008-10-22 14:31:00
+TYPE evolution concernant Salome (VERSION )
+TITRE
+   PAL 859 : Documentation Mesh element Info
+FONCTIONNALITE
+   La Documentation de Mesh Element Info a été mise à jour dans la version Salome-
+   Meca 2009.1
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012626 DU 2008-10-14 08:56:53
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 855 : Plantage avec opxc3xa9ration COMMON
+FONCTIONNALITE
+   L'intersection (common) entre un tore et une boîte est corrigée dans la version 
+   Salome-Meca-2009.1
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012604 DU 2008-10-09 07:11:00
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 856 : Dans Visu en python, Display n'affiche qu'une courbe en 4.1.3 au lieu de plusieurs en 3.2.9
+FONCTIONNALITE
+   Correction dans la version Salome-Meca 2009.1: toutes les courbes sont 
+   affichées et non plus seulement la dernière.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012585 DU 2008-10-06 07:18:43
+TYPE aide utilisation concernant Salome (VERSION 2008.1)
+TITRE
+   Probleme pour mailler en 2D
+FONCTIONNALITE
+   La partition par un plan horizontal est maintenant possible dans la version 
+   Salome-Méca 2009.2 suite à une correction de l'outil partition.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012562 DU 2008-09-30 11:14:45
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 825 : Compute maillage en script
+FONCTIONNALITE
+   Version Salome-Meca 2009.1 : Le calcul (compute) du maillage réglé sur la 
+   fissure circulaire aboutit maintenant dans le script (comme c'était le cas dans 
+   l'IHM).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012561 DU 2008-09-30 11:05:00
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 824 : bug Rotation d'un solide
+FONCTIONNALITE
+   Version Salome-Meca 2009.1 : Correction de la rotation d?un solide auparavant 
+   translaté
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012496 DU 2008-09-18 07:24:15
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 814 : Bug dans MakePartition
+FONCTIONNALITE
+   Salome-Meca 2009.1 : La partition pour la fissure circulaire intérieure est 
+   résolue. On note que le script joint s'arrête dans un MakeCut qui suit. On 
+   retrouve alors le problème déjà identifié de la fiche 12505.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012486 DU 2008-09-16 16:49:25
+TYPE evolution concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 821 : Comportement export maillage lorsqu'aucun maillage seleclectionne
+FONCTIONNALITE
+   Version Salome-Meca 2009.1 : Lorsqu'aucun maillage n'est sélectionné et qu'on 
+   active la fonction 'export maillage' : un message apparaît maintenant.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012451 DU 2008-09-04 13:22:28
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL803 : Dumpstudy avec rxc3xa9volution du maillage
+FONCTIONNALITE
+   Version Salome_Meca 2009.1 : 
+   - Le nommage des groupes suite à une révolution du maillage est corrigé dans 
+   le script généré par le dumpstudy qui utilise maintenant la fonction Rotation 
+   sweep ou RotationSweepObject qui est documentée.
+   - Dans le script, la fonction attend la liste des identités des éléments ou le 
+   nom d'un groupe. Il faut donc soit utiliser le groupe de faces correspondant 
+   au maillage entier, soit récuperer la liste des identités des faces.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012293 DU 2008-07-10 16:03:28
+TYPE evolution concernant Salome (VERSION )
+TITRE
+   PAL 790 : "Scalar map and deformed shape" et champs aux noeuds
+FONCTIONNALITE
+   Dans la version Salome-Meca 2009.1, on dispose de la visualisation d'un champ 
+   ELNO sur une vue déformée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012220 DU 2008-06-19 13:36:41
+TYPE anomalie concernant Salome (VERSION 2008.1)
+TITRE
+   PAL 789 : VISU animation scalar map of deformed shape sur ensemble DEPL
+FONCTIONNALITE
+   Version Salome-Méca 2009.1 : La Scalar Map on deformed est corrigée lorsqu'on 
+   sélectionne le champ entier.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012215 DU 2008-06-17 13:56:08
+TYPE anomalie concernant Salome (VERSION 2009.2)
+TITRE
+   PAL 788 : Visualisation des points de Gauss de l'xc3xa9lxc3xa9ment PYRAM5
+FONCTIONNALITE
+   Version Salome-Meca 2009.1 : La localisation dans la visulaisation des points 
+   de Gauss pour les éléments pyramides a été corrigée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012201 DU 2008-06-17 13:27:03
+TYPE evolution concernant Salome (VERSION )
+TITRE
+   PAL 759 : Crxc3xa9ation automatique des groupes de mailles sur groupes gxc3xa9omxc3xa9triques
+FONCTIONNALITE
+   Version Salome-Meca 2009.1 : La fonctionalité "Create Groups From Geometry" 
+   permet après une sélection multiple sur les groupes géométriques de créer en 
+   une seule fois tous les groupes de mailles correspondants.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011541 DU 2007-12-10 10:26:44
+TYPE evolution concernant Salome (VERSION )
+TITRE
+   PAL 628 : sauvegarde des images d'une animation avec un nom "croissant"
+FONCTIONNALITE
+   Salome-Meca2008.2 : on respecte l'ordre alphabétique des noms d'images pour le
+   logiciel qui servira à les agglomérer en film.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011478 DU 2007-11-20 09:55:12
+TYPE anomalie concernant Salome (VERSION 2.x)
+TITRE
+   Impossibilitxc3xa9 de mailler ce reacteur avec SALOME
+FONCTIONNALITE
+   Cette géométrie présente la particularité d'avoir des épaisseurs très 
+   petites de 0.05  sur des hauteurs de 13.
+   Avec la version 4.1.2 et l'utilisation des nouveaux mailleurs, on peut 
+   mailler en 3D ce réacteur (BLsurf usersize = 0.2)(cf. image jointe)
+   On obtient 567002 tetra et 99661 noeuds en un temps rapide (dans 
+   l'épaisseur de 0.2, on a un seul élément ce qui est inévitable avec cette 
+   géométrie sinon on arrive à des nombres de noeuds faramineux ou bien à des 
+   maillages très mauvais).
+   
+   Il me semble que pour cette étude, la démarche qui a été prise, c'est à 
+   dire un maillage coque me semble la bonne méthode. En effet, le maillage 
+   volumique sera toujours plus volumineux que le maillage coque dupliqué.
+   
+   Par contre, il est possible de ne pas faire d'opérations de maillage dans 
+   Aster pour obtenir une double paroi (conditions limites sodium/acier)
+   En effet, à partir du maillage coque de l'objet réacteur,  
+   on copie ce maillage (translation nulle avec option copy élements et 
+   génération des groupes): on a alors dans le maillage, des doubles coques 
+   ainsi que les groupes initiaux et les groupes dupliqués correspondant aux 
+   groupes initiaux.
+   Ce maillage peut être alors utilisé sans avoir à recréer les groupes, la 
+   coorespondance est implicite au travers du nom du groupe :
+   groupi avec groupi_translated.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Sans objet
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012715 DU 2008-10-24 07:07:09
+TYPE anomalie concernant Eficas (VERSION 1.7)
+TITRE
+   Eficas QT : Taille de fenxc3xaatre
+FONCTIONNALITE
+   Eficas 1.15 : La fenêtre QT est redimensionable.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012713 DU 2008-10-24 06:50:40
+TYPE anomalie concernant Eficas (VERSION 1.7)
+TITRE
+   Eficas QT : Importer valeurs
+FONCTIONNALITE
+   Eficas V1.15 : En QT, Importer valeurs fonctionne. Le format scientifique est bien pris en
+   compte. Le séparateur type plusieurs blancs aussi.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   validation IHM
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012712 DU 2008-10-24 06:49:53
+TYPE anomalie concernant Eficas (VERSION 1.7)
+TITRE
+   Eficas QT : Entrxc3xa9e des valeurs d'une liste ordonnxc3xa9e
+FONCTIONNALITE
+   Eficas 1.15 : La saisie des valeurs pour une liste ordonnée a été corrigée en 
+   version QT
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012550 DU 2008-09-29 11:30:40
+TYPE anomalie concernant Eficas (VERSION 1.7)
+TITRE
+   EFICAS_SRC : Vue des xc3xa9lxc3xa9ments structure lorsque paramxc3xa8tres
+FONCTIONNALITE
+   Eficas V1.15 : la vue des éléments de structure dans Salome-Meca 2009.1 est 
+   possible lorsque les caractéristiques géométriques sont données sous forme de 
+   paramètres.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012549 DU 2008-09-29 07:04:46
+TYPE anomalie concernant Eficas (VERSION 1.7)
+TITRE
+   Anomalie Enregistrer sous (QT)
+FONCTIONNALITE
+   Eficas V1.15 : En version QT, la fonction "Enregistrer sous" a été corrigée 
+   qui impactait aussi la fonctionalité "Nouveau fichier".
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012541 DU 2008-09-26 09:12:09
+TYPE evolution concernant Eficas (VERSION )
+TITRE
+   Cacher le dossier Eficas_install
+FONCTIONNALITE
+   Eficas V1.15 : Le dossier Eficas_Install est transformé en dossier caché 
+   (.Eficas_Aster). Le dossier pouvant exister pour une version précédente 
+   n'est pas repris.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010745 DU 2007-04-03 12:07:30
+TYPE evolution concernant Eficas (VERSION )
+TITRE
+   Eficas : Homogxc3xa9nxc3xa9isation prxc3xa9sentation oxc3xb9 la selection intervient
+FONCTIONNALITE
+   Homogeneisation des entres de groupes (liste  d'une valeur ou de plusieurs). 
+   Le bouton relier slection n'apparait plus (Eficas 1.14 dans Salome_Meca 
+   2008.2)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Validation IHM
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 16/02/2009 - 10:45:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013112 DU 2009-02-02 10:24:55
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   CALC_G en non lineaire et en 3D : erreur numerique
+FONCTIONNALITE
+   Problème
+   --------
+   L'étude jointe, correspondant à un calcul élastoplastique en 3D, donne des valeurs "NaN"
+   en sortie de CALC_G.
+   
+   Explication
+   -----------
+   Dans le te0027 correspondant à l'option CALC_G en 3D, on calcule en particulier un terme
+   thermique dépendant de la dérivée de l'énergie par rapport à la température.
+   Ici, comme le problème est mécanique pur, ce dernier terme n'est pas défini.
+   Solution : il faut faire comme en 2D et ne calculer le terme thermique que si il y a bien
+   un champ de température de défini.
+   
+   Validation
+   ----------
+   Cette étude montre un manque de validation : le seul test de CALC_G en élastoplasticité
+   est en 2D.
+   On restitue donc un nouveau cas test 3D : modélisation b du cas test ssnp102,
+   correspondant à une extrusion du maillage 2D de la modélisation a. Les résultats sont
+   cohérents entre les deux modélisations.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : V6.03.102
+VALIDATION
+   ssnp102b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013102 DU 2009-01-29 09:59:43
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   En NEW 9.4.4, les cas-tests rccm04a, rccm10a, rccm10b et rccm11a sont NOOK sur Bull.
+FONCTIONNALITE
+   Problème
+   --------
+   Les cas test rccm04a, rccm10a, rccm10b et rccm11a sont NOOK sur Bull depuis la correction
+   d'anomalies dans POST_RCCM en 9.4.4 (avec des écarts dépassants parfois 300%).
+   A noter que ces tests étaient bien OK lors de la restitution, et qu'ils sont OK sur toutes
+   les autres plateformes.
+   
+   Correction
+   ----------
+   Grâce à un passage par valgrind (merci Thomas), on peut suspecter que le problème vient
+   d'une variable non initialisée (SPS(2) dans rc3201). La correction de cette routine permet
+   bien de retrouver les bons résultats sur bull.
+   On profite de la restitution pour supprimer un certain nombre de variables non utilisées
+   dans une trentaine de routines de POST_RCCM.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.4.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rccm*
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR meunier      MEUNIER Sébastien      DATE 16/02/2009 - 15:13:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013118 DU 2009-02-03 17:04:06
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Arlequin avec patch xc3xa0 1 maille - bug en INFO=2
+FONCTIONNALITE
+   Changement version dev - > version exploitation
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   1 test joint + 2 tests fiche 12273
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 17/02/2009 - 08:42:09
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013114 DU 2009-02-02 15:44:12
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   Modification fichiers .para
+FONCTIONNALITE
+   Problème :
+   ----------
+   Certains .para sont surdimensionnés.
+   
+   Solution:
+   ---------
+   On regarde tous les cas test les uns après les autres et si, pour un cas test donné le
+   temps du .para est supérieur à deux fois le max du temps d'exécution du cas test au
+   28/01/2009 sur les différentes plateformes (Bull, Rocks, Calibre 4 et 5), alors on
+   redimensionne le .para.
+   
+   Dans ce contexte, on modifie 711 .para.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 16/02/2009 - 14:07:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012978 DU 2008-12-11 15:16:44
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   GLRC_DM + VMIS_XXX_LINE (KIT_DDI) problxc3xa8me contraintes planes
+FONCTIONNALITE
+   Problème :
+   ----------------
+   
+   On teste le modèle de comportement GLRC_DM + plasticité VMIS_CINE/ISOT_LINE via KIT_DDI.
+   Lorsque l'algorithme de contrainte plane de converge pas, on sort sur un CALL_ASSERT.
+   
+   Résolution :
+   --------------
+   
+   Les fichiers te0409.f, nmcoup.f, dxglrc.f et lgdmvm.f ont été modifiés.
+   Ces modifications ont consisté à :
+   _modifier le CALL_ASSERT par un IRET de non CV
+   _donner la possibilité de définir un critère de CV absolu ou relatif
+   _mettre en place un test sur la convergence de la résolution de la loi de comportement
+   _brancher l'élément te0409 sur l'algorithme de redécoupage du pas de temps
+   
+   Validations :
+   -------------
+   
+   Sur le cas test problématique mis en pièce jointe ainsi que sur les cas test de la base
+   ssns106f et ssns106g.
+   
+   N.B. :
+   -------
+   
+   Comme il n'y avait pas de critère de vérification de convergence sur l'intégration de la
+   loi de comportement, les études effectuées avec GLRC_DM + plasticité VMIS_CINE/ISOT_LINE
+   via KIT_DDI peuvent ne pas avoir données de résultats correctes.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssns106
+NB_JOURS_TRAV  : 7.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012349 DU 2008-07-29 13:28:32
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Problxc3xa8me dxc3xa9finition axes orthotropie modxc3xa8le GLRC_DAMAGE
+FONCTIONNALITE
+   Problème :
+   ----------------
+   
+   La loi GLRC_DAMAGE permet de définir un modèle de béton orthotrope 
+   pour la partie plastique. Il convient donc d?orienter convenablement 
+   ce matériau. Pour cela, l?opérateur AFFE_CARA_ELEM permet de définir  
+   un repère local dans le plan tangent en tout point d?une coque via 
+   ANGL_REP ou VECTEUR. On observe que la définition des axes d'orthotropie n'est pas 
+   correcte dans Aster. C'est la projection de V (vecteur d'orthotropie) dans le repère
+   global qui n'est pas correcte.
+   
+   Résolution :
+   --------------
+   
+   Le fichier maglrc a été modifié :
+   
+   Avant :
+   
+   CALL JEVECH('PCACOQU','L',ICACOQ)
+   ALPH = ZR(ICACOQ + 1)
+   BETA = ZR(ICACOQ + 2)
+   VGLOB(1) = COS(ALPH)
+   VGLOB(2) = SIN(ALPH)
+   VGLOB(3) = COS(BETA)
+   
+   Après :
+   
+   CALL JEVECH('PCACOQU','L',ICACOQ)
+   ALPH = ZR(ICACOQ+1)*R8DGRD()
+   BETA = ZR(ICACOQ+2)*R8DGRD()
+   VGLOB(1)=COS(BETA)*COS(ALPH)
+   VGLOB(2)=COS(BETA)*SIN(ALPH)
+   VGLOB(3)=-SIN(BETA)
+   
+   
+   Validations :
+   -------------
+   
+   Cas test sdns106a
+   
+   N.B. :
+   -------
+   
+   Il est à noter que le cas test sdns106a ne permet pas de vérifier l'influence de l'angle
+   d'orthotropie sur les résultats. Un cas test de comparaison avec EPX a été mis en place
+   mais a révélé des problèmes dans le calcul d'EPX.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.14
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdns106a
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013052 DU 2009-01-13 10:06:38
+TYPE express concernant Code_Aster (VERSION 9.4)
+TITRE
+   Test des xc3xa9lxc3xa9ments SHBxx pour des plaques xc3xa0 xc3xa9paisseur variable
+FONCTIONNALITE
+   Problématique :
+   ----------------
+   
+   On cherche à connaître la capacité des éléments de coque volumique SHBxx à gérer les
+   variations d'épaisseurs. 
+   
+   Étude :
+   -------
+   
+   Pour ce faire un nouveau cas test est mis en place. Ce test représente un calcul
+   quasi-statique d?une plaque en flexion, encastrée à une extrémité, et soumise à une force
+   verticale à l?autre extrémité. Quatre modélisations sont testées :
+   
+   Les éléments finis SHB8  pour une variation linéaire de l?épaisseur de la plaque
+   (modélisation A)
+   Les éléments finis SHB20  pour une variation linéaire de l?épaisseur de la plaque
+   (modélisation B)
+   Les éléments finis SHB8  pour une variation quadratique de l?épaisseur de la plaque
+   (modélisation C)
+   Les éléments finis SHB20  pour une variation quadratique de l?épaisseur de la plaque 
+   (modélisation D)
+   
+   Résultat :
+   ----------
+   
+   Les éléments SHBxx permettent de prendre en compte une variation d'épaisseur. Il existe
+   cependant des limitations. L'élément linéaire SHB8 est incapable de prendre en compte
+   correctement une variation quadratique contrairement au élément SHB20.
+   
+   N.B. :
+   -------
+   
+   Corrections des cas tests ssls124x : modification de l'imposition des CCL afin de prendre
+   en compte les cas où on a plusieurs éléments dans la largeur.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.03.133
+VALIDATION
+   ssls133
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT ssls133a                     sfayolle S.FAYOLLE          162    162      0
+ CASTEST AJOUT ssls133b                     sfayolle S.FAYOLLE          101    101      0
+ CASTEST AJOUT ssls133c                     sfayolle S.FAYOLLE          103    103      0
+ CASTEST AJOUT ssls133d                     sfayolle S.FAYOLLE           95     95      0
+ CASTEST AJOUT ssna102f                       desoza T.DESOZA           316    316      0
+ CASTEST AJOUT ssnp102b                      galenne E.GALENNE          387    387      0
+ CASTEST AJOUT ssns109a                    desroches X.DESROCHES        336    336      0
+ CASTEST AJOUT ssns109b                    desroches X.DESROCHES        335    335      0
+ CASTEST AJOUT ssns109c                    desroches X.DESROCHES        335    335      0
+ CASTEST AJOUT ssns109d                    desroches X.DESROCHES        335    335      0
+ CASTEST MODIF adls102a                     sellenet N.SELLENET         201      2      1
+ CASTEST MODIF adlv301a                     sellenet N.SELLENET         159      2      1
+ CASTEST MODIF ascou01a                     sellenet N.SELLENET         329      2      1
+ CASTEST MODIF ascou02a                     sellenet N.SELLENET          88      2      1
+ CASTEST MODIF ascou03a                     sellenet N.SELLENET          90      2      1
+ CASTEST MODIF ascou04a                     sellenet N.SELLENET         378      2      1
+ CASTEST MODIF ascou06a                     sellenet N.SELLENET          76      2      1
+ CASTEST MODIF ascou07a                     sellenet N.SELLENET         234      2      1
+ CASTEST MODIF ascou08a                     sellenet N.SELLENET         305      2      1
+ CASTEST MODIF ascou10a                     sellenet N.SELLENET         358      2      1
+ CASTEST MODIF ascou11a                     sellenet N.SELLENET         103      2      1
+ CASTEST MODIF ascou12a                     sellenet N.SELLENET         309      2      1
+ CASTEST MODIF ascou14a                     sellenet N.SELLENET         300      2      1
+ CASTEST MODIF ascou15a                     sellenet N.SELLENET         186      2      1
+ CASTEST MODIF ascou16a                     sellenet N.SELLENET         403      2      1
+ CASTEST MODIF ascou17a                     sellenet N.SELLENET          85      2      1
+ CASTEST MODIF ascou18a                     sellenet N.SELLENET         293      2      1
+ CASTEST MODIF ascou19a                     sellenet N.SELLENET         386      2      1
+ CASTEST MODIF ascou23a                     sellenet N.SELLENET         117      2      1
+ CASTEST MODIF aspic01b                     sellenet N.SELLENET         570      2      1
+ CASTEST MODIF aspic03a                     sellenet N.SELLENET         264      2      1
+ CASTEST MODIF aspic04a                     sellenet N.SELLENET         148      2      1
+ CASTEST MODIF aspic05a                     sellenet N.SELLENET         149      2      1
+ CASTEST MODIF aspic06a                     sellenet N.SELLENET         142      2      1
+ CASTEST MODIF aspic07a                     sellenet N.SELLENET         194      2      1
+ CASTEST MODIF cabri02a                     sellenet N.SELLENET         492      2      1
+ CASTEST MODIF cabri02b                     sellenet N.SELLENET         416      2      1
+ CASTEST MODIF cente01a                     sellenet N.SELLENET         995      2      1
+ CASTEST MODIF comp001c                     sellenet N.SELLENET         190      2      1
+ CASTEST MODIF comp001f                     sellenet N.SELLENET         197      2      1
+ CASTEST MODIF comp001g                     sellenet N.SELLENET         207      2      2
+ CASTEST MODIF comp002b                     sellenet N.SELLENET         208      2      1
+ CASTEST MODIF comp002c                     sellenet N.SELLENET         212      2      2
+ CASTEST MODIF comp002h                     sellenet N.SELLENET         381      2      2
+ CASTEST MODIF comp002i                     sellenet N.SELLENET         314      2      2
+ CASTEST MODIF comp005a                     sellenet N.SELLENET         290      2      1
+ CASTEST MODIF comp005b                     sellenet N.SELLENET         290      2      1
+ CASTEST MODIF comp005c                     sellenet N.SELLENET         290      2      1
+ CASTEST MODIF comp005d                     sellenet N.SELLENET         303      3      1
+ CASTEST MODIF demo001a                     sellenet N.SELLENET         295      2      1
+ CASTEST MODIF demo002a                     sellenet N.SELLENET         519      2      1
+ CASTEST MODIF demo003a                     sellenet N.SELLENET         202      2      1
+ CASTEST MODIF demo004a                     sellenet N.SELLENET         254      2      1
+ CASTEST MODIF demo004b                     sellenet N.SELLENET         261      2      1
+ CASTEST MODIF efica02a                     sellenet N.SELLENET          78      2      1
+ CASTEST MODIF elsa01b                      sellenet N.SELLENET         231      2      1
+ CASTEST MODIF elsa01c                      sellenet N.SELLENET         254      2      1
+ CASTEST MODIF elsa01d                      sellenet N.SELLENET         266      2      1
+ CASTEST MODIF epicu01b                     sellenet N.SELLENET         868      2      1
+ CASTEST MODIF fdll200a                     sellenet N.SELLENET         137      2      1
+ CASTEST MODIF fdlv111a                     sellenet N.SELLENET         269      2      1
+ CASTEST MODIF fdlv111b                     sellenet N.SELLENET         245      2      1
+ CASTEST MODIF fdnl100a                     sellenet N.SELLENET         463      2      1
+ CASTEST MODIF fdnv100a                     sellenet N.SELLENET         332      2      1
+ CASTEST MODIF feti007a                     sellenet N.SELLENET         293      2      1
+ CASTEST MODIF feti007b                     sellenet N.SELLENET         177      2      1
+ CASTEST MODIF forma01b                     sellenet N.SELLENET         262      2      1
+ CASTEST MODIF forma01c                     sellenet N.SELLENET         332      2      1
+ CASTEST MODIF forma03a                     sellenet N.SELLENET          84      2      1
+ CASTEST MODIF forma03b                     sellenet N.SELLENET         334      2      1
+ CASTEST MODIF forma05a                     sellenet N.SELLENET         334      2      1
+ CASTEST MODIF forma08a                     sellenet N.SELLENET         119      2      1
+ CASTEST MODIF forma08b                     sellenet N.SELLENET         511      2      1
+ CASTEST MODIF forma09a                     sellenet N.SELLENET         163      2      1
+ CASTEST MODIF forma09b                     sellenet N.SELLENET         375      2      1
+ CASTEST MODIF forma11a                     sellenet N.SELLENET         293      2      1
+ CASTEST MODIF forma11b                     sellenet N.SELLENET         186      2      1
+ CASTEST MODIF forma11d                     sellenet N.SELLENET         183      2      1
+ CASTEST MODIF forma12c                     sellenet N.SELLENET         774      2      1
+ CASTEST MODIF hpla310a                     sellenet N.SELLENET        1047      2      1
+ CASTEST MODIF hplp310b                     sellenet N.SELLENET         862      2      1
+ CASTEST MODIF hplv103a                     sellenet N.SELLENET         502      2      1
+ CASTEST MODIF hsls01b                      sellenet N.SELLENET         169      2      1
+ CASTEST MODIF hsna100b                     sellenet N.SELLENET         531      2      1
+ CASTEST MODIF hsna100c                     sellenet N.SELLENET         429      2      1
+ CASTEST MODIF hsna100d                     sellenet N.SELLENET         560      2      1
+ CASTEST MODIF hsna100e                     sellenet N.SELLENET         561      2      1
+ CASTEST MODIF hsna102e                     sellenet N.SELLENET         233      3      1
+ CASTEST MODIF hsnv102b                     sellenet N.SELLENET         441      2      1
+ CASTEST MODIF hsnv124f                     sellenet N.SELLENET         471      2      1
+ CASTEST MODIF hsnv125a                     sellenet N.SELLENET         497      2      1
+ CASTEST MODIF hsnv125c                     sellenet N.SELLENET         623      2      1
+ CASTEST MODIF hsnv125g                     sellenet N.SELLENET         505      2      1
+ CASTEST MODIF hsnv132a                     sellenet N.SELLENET         226      2      2
+ CASTEST MODIF hsnv132c                     sellenet N.SELLENET         195      2      1
+ CASTEST MODIF hsnv134a                     sellenet N.SELLENET         271      2      1
+ CASTEST MODIF hsnv135a                     sellenet N.SELLENET         226      2      1
+ CASTEST MODIF miss02a                      sellenet N.SELLENET         530      2      1
+ CASTEST MODIF miss04b                      sellenet N.SELLENET         471      3      1
+ CASTEST MODIF miss07a                      sellenet N.SELLENET         360      2      1
+ CASTEST MODIF miss09a                      sellenet N.SELLENET         850      2      1
+ CASTEST MODIF mtlp100b                     sellenet N.SELLENET         733      2      1
+ CASTEST MODIF mumps05a                     sellenet N.SELLENET         291      2      1
+ CASTEST MODIF mumps05b                     sellenet N.SELLENET         169      2      1
+ CASTEST MODIF perf001c                     sellenet N.SELLENET          67      2      2
+ CASTEST MODIF perf002b                     sellenet N.SELLENET          99      2      2
+ CASTEST MODIF perf002c                     sellenet N.SELLENET          99      2      2
+ CASTEST MODIF perf008e                     sellenet N.SELLENET         130      2      2
+ CASTEST MODIF plexu02a                     sellenet N.SELLENET         459      2      2
+ CASTEST MODIF rccm01a                      sellenet N.SELLENET         377      2      1
+ CASTEST MODIF rccm01b                      sellenet N.SELLENET         649      2      1
+ CASTEST MODIF rccm07a                      sellenet N.SELLENET         354      2      1
+ CASTEST MODIF rccm09b                      sellenet N.SELLENET         296      2      1
+ CASTEST MODIF rccm10a                      sellenet N.SELLENET         365      2      1
+ CASTEST MODIF rccm10b                      sellenet N.SELLENET         276      2      1
+ CASTEST MODIF rccm11a                      sellenet N.SELLENET         660      2      1
+ CASTEST MODIF sdld21c                      sellenet N.SELLENET         373      2      1
+ CASTEST MODIF sdld313c                     sellenet N.SELLENET         182      3      1
+ CASTEST MODIF sdll11a                      sellenet N.SELLENET         448      2      1
+ CASTEST MODIF sdll11b                      sellenet N.SELLENET         188      2      1
+ CASTEST MODIF sdll135c                     sellenet N.SELLENET         431      2      1
+ CASTEST MODIF sdll135d                     sellenet N.SELLENET         431      2      1
+ CASTEST MODIF sdll136a                     sellenet N.SELLENET         649      2      1
+ CASTEST MODIF sdll137b                     sellenet N.SELLENET         592      2      1
+ CASTEST MODIF sdll137c                     sellenet N.SELLENET         658      2      1
+ CASTEST MODIF sdll137d                     sellenet N.SELLENET         712      2      2
+ CASTEST MODIF sdll503a                     sellenet N.SELLENET         328      2      1
+ CASTEST MODIF sdll503b                     sellenet N.SELLENET         364      2      1
+ CASTEST MODIF sdll503c                     sellenet N.SELLENET         464      2      1
+ CASTEST MODIF sdll504a                     sellenet N.SELLENET         518      2      1
+ CASTEST MODIF sdll505a                     sellenet N.SELLENET         411      2      1
+ CASTEST MODIF sdll506a                     sellenet N.SELLENET         489      2      1
+ CASTEST MODIF sdls108a                     sellenet N.SELLENET        2424      2      1
+ CASTEST MODIF sdls112a                      andriam H.ANDRIAMBOLOLONA    431     13      1
+ CASTEST MODIF sdls113a                     sellenet N.SELLENET         418      2      1
+ CASTEST MODIF sdls114b                     sellenet N.SELLENET         318      2      1
+ CASTEST MODIF sdls117a                     sellenet N.SELLENET         210      2      1
+ CASTEST MODIF sdls118a                     sellenet N.SELLENET         440      2      1
+ CASTEST MODIF sdls139a                     sellenet N.SELLENET         634      2      1
+ CASTEST MODIF sdls300a                     sellenet N.SELLENET         654      2      1
+ CASTEST MODIF sdls501a                     sellenet N.SELLENET         244      2      1
+ CASTEST MODIF sdlv120a                     sellenet N.SELLENET         349      2      1
+ CASTEST MODIF sdlv120b                     sellenet N.SELLENET         234      2      1
+ CASTEST MODIF sdlv121a                     sellenet N.SELLENET         285      2      1
+ CASTEST MODIF sdlv123a                     sellenet N.SELLENET         245      2      1
+ CASTEST MODIF sdlv123b                     sellenet N.SELLENET         261      2      1
+ CASTEST MODIF sdlv124a                     sellenet N.SELLENET         559      2      1
+ CASTEST MODIF sdlv125a                     sellenet N.SELLENET         610      2      1
+ CASTEST MODIF sdlv301a                     sellenet N.SELLENET         157      2      1
+ CASTEST MODIF sdlv301b                     sellenet N.SELLENET         185      2      1
+ CASTEST MODIF sdlv302d                     sellenet N.SELLENET         395      2      1
+ CASTEST MODIF sdlv402a                     sellenet N.SELLENET         347      2      1
+ CASTEST MODIF sdnd102b                     sellenet N.SELLENET         469      2      1
+ CASTEST MODIF sdnd102d                     sellenet N.SELLENET         241      2      1
+ CASTEST MODIF sdnd120a                     sellenet N.SELLENET         277      2      1
+ CASTEST MODIF sdnl105c                     sellenet N.SELLENET         625      3      1
+ CASTEST MODIF sdnl105d                     sellenet N.SELLENET         561      2      1
+ CASTEST MODIF sdnl111e                     sellenet N.SELLENET         180      2      1
+ CASTEST MODIF sdnl111f                     sellenet N.SELLENET         212      2      1
+ CASTEST MODIF sdnl112b                     sellenet N.SELLENET         455      2      1
+ CASTEST MODIF sdnl120a                     sellenet N.SELLENET         536      2      1
+ CASTEST MODIF sdnl130a                     sellenet N.SELLENET         152      2      1
+ CASTEST MODIF sdns01b                      sellenet N.SELLENET         372      3      1
+ CASTEST MODIF sdns105a                     sellenet N.SELLENET         304      2      1
+ CASTEST MODIF sdns106a                     sfayolle S.FAYOLLE          274      2      1
+ CASTEST MODIF sdns106c                     sellenet N.SELLENET         426      2      1
+ CASTEST MODIF sdnv100a                     sellenet N.SELLENET         386      2      1
+ CASTEST MODIF sdnv100b                     sellenet N.SELLENET         283      2      1
+ CASTEST MODIF sdnv100c                     sellenet N.SELLENET         278      2      1
+ CASTEST MODIF sdnv100d                     sellenet N.SELLENET         369      2      1
+ CASTEST MODIF sdnv100e                     sellenet N.SELLENET         374      2      1
+ CASTEST MODIF sdnv100g                     sellenet N.SELLENET         257      2      1
+ CASTEST MODIF sdnv100h                     sellenet N.SELLENET         250      2      1
+ CASTEST MODIF sdnv100i                     sellenet N.SELLENET         373      2      1
+ CASTEST MODIF sdnv102a                     sellenet N.SELLENET         668      2      1
+ CASTEST MODIF sdnv103b                     sellenet N.SELLENET         404      2      1
+ CASTEST MODIF sdnv103c                     sellenet N.SELLENET         240      2      1
+ CASTEST MODIF sdnv103f                     sellenet N.SELLENET         267      2      1
+ CASTEST MODIF sdnv104b                     sellenet N.SELLENET         209      2      1
+ CASTEST MODIF sdnv104c                     sellenet N.SELLENET         248      2      1
+ CASTEST MODIF sdnv104d                     sellenet N.SELLENET         227      2      1
+ CASTEST MODIF sdnv104e                     sellenet N.SELLENET         230      2      1
+ CASTEST MODIF sdnv105c                     sellenet N.SELLENET         979      2      1
+ CASTEST MODIF sensd07a                     sellenet N.SELLENET         514      3      1
+ CASTEST MODIF sensd08a                     sellenet N.SELLENET         220      2      1
+ CASTEST MODIF sensd08b                     sellenet N.SELLENET         219      2      1
+ CASTEST MODIF sensd09a                     sellenet N.SELLENET         175      2      1
+ CASTEST MODIF sensd09b                     sellenet N.SELLENET         266      2      1
+ CASTEST MODIF sensd09c                     sellenet N.SELLENET         381      2      1
+ CASTEST MODIF sensd09d                     sellenet N.SELLENET         227      2      1
+ CASTEST MODIF sensd10a                     sellenet N.SELLENET         156      2      1
+ CASTEST MODIF sensd10b                     sellenet N.SELLENET         156      2      1
+ CASTEST MODIF sensd10c                     sellenet N.SELLENET         156      2      1
+ CASTEST MODIF sensd10d                     sellenet N.SELLENET         145      2      1
+ CASTEST MODIF sensm06a                     sellenet N.SELLENET         181      2      1
+ CASTEST MODIF sensm06b                     sellenet N.SELLENET         170      2      1
+ CASTEST MODIF sensm07a                     sellenet N.SELLENET         217      2      1
+ CASTEST MODIF sensm08a                     sellenet N.SELLENET         272      3      1
+ CASTEST MODIF sensm09a                     sellenet N.SELLENET         481      3      1
+ CASTEST MODIF sensm10a                     sellenet N.SELLENET         417      3      1
+ CASTEST MODIF sensm11a                     sellenet N.SELLENET         203      3      1
+ CASTEST MODIF shll101d                     sellenet N.SELLENET         377      2      1
+ CASTEST MODIF shll101e                     sellenet N.SELLENET         372      2      1
+ CASTEST MODIF shls200a                     sellenet N.SELLENET         563      3      1
+ CASTEST MODIF ssll105e                     sellenet N.SELLENET         154      2      1
+ CASTEST MODIF ssll106d                     sellenet N.SELLENET         594      2      1
+ CASTEST MODIF ssll107a                     sellenet N.SELLENET         216      2      1
+ CASTEST MODIF ssll116a                     sellenet N.SELLENET         245      2      1
+ CASTEST MODIF ssll116b                     sellenet N.SELLENET         252      2      1
+ CASTEST MODIF sslp100c                     sellenet N.SELLENET         227      3      1
+ CASTEST MODIF sslp100d                     sellenet N.SELLENET         429      3      1
+ CASTEST MODIF sslp104d                     sellenet N.SELLENET         250      2      1
+ CASTEST MODIF sslp105a                     sellenet N.SELLENET         532      2      1
+ CASTEST MODIF sslp201a                     sellenet N.SELLENET        1219      2      1
+ CASTEST MODIF sslp201b                     sellenet N.SELLENET        1215      2      1
+ CASTEST MODIF sslp313d                     sellenet N.SELLENET         210      2      1
+ CASTEST MODIF sslp313e                     sellenet N.SELLENET         234      2      1
+ CASTEST MODIF sslp315a                     sellenet N.SELLENET         161      2      2
+ CASTEST MODIF sslp315b                     sellenet N.SELLENET         163      2      2
+ CASTEST MODIF sslp316a                     sellenet N.SELLENET         211      2      1
+ CASTEST MODIF sslp316b                     sellenet N.SELLENET         179      2      1
+ CASTEST MODIF ssls119f                     sellenet N.SELLENET         101      2      1
+ CASTEST MODIF ssls124a                     sfayolle S.FAYOLLE          398     64     78
+ CASTEST MODIF ssls124b                     sfayolle S.FAYOLLE          341     47     61
+ CASTEST MODIF ssls124c                     sfayolle S.FAYOLLE          290     39     52
+ CASTEST MODIF ssls124d                     sfayolle S.FAYOLLE          289     40     53
+ CASTEST MODIF ssls124e                     sfayolle S.FAYOLLE          231     32     42
+ CASTEST MODIF ssls124f                     sfayolle S.FAYOLLE          289     59     72
+ CASTEST MODIF ssls124g                     sfayolle S.FAYOLLE          253     41     51
+ CASTEST MODIF ssls132a                     sellenet N.SELLENET         208      2      1
+ CASTEST MODIF ssls132b                     sellenet N.SELLENET         208      2      1
+ CASTEST MODIF ssls132c                     sellenet N.SELLENET         207      2      1
+ CASTEST MODIF ssls132d                     sellenet N.SELLENET         207      2      1
+ CASTEST MODIF ssls132e                     sellenet N.SELLENET         209      2      1
+ CASTEST MODIF ssls132f                     sellenet N.SELLENET         209      2      1
+ CASTEST MODIF sslv04p                      sellenet N.SELLENET         418      2      1
+ CASTEST MODIF sslv110f                     sellenet N.SELLENET         212      2      1
+ CASTEST MODIF sslv115a                     sellenet N.SELLENET         389      2      1
+ CASTEST MODIF sslv120a                     sellenet N.SELLENET         846      2      1
+ CASTEST MODIF sslv134a                     sellenet N.SELLENET         403      2      1
+ CASTEST MODIF sslv134c                     sellenet N.SELLENET         229      2      1
+ CASTEST MODIF sslv134d                     sellenet N.SELLENET        1329      2      1
+ CASTEST MODIF sslv134f                     sellenet N.SELLENET         323      2      1
+ CASTEST MODIF sslv134g                     sellenet N.SELLENET        1144      2      1
+ CASTEST MODIF sslv134h                     sellenet N.SELLENET         345      2      1
+ CASTEST MODIF sslv135a                     sellenet N.SELLENET        1291      2      1
+ CASTEST MODIF sslv135b                     sellenet N.SELLENET        1271      2      1
+ CASTEST MODIF sslv135f                     sellenet N.SELLENET         546      2      1
+ CASTEST MODIF sslv135g                     sellenet N.SELLENET         928      2      1
+ CASTEST MODIF sslv146a                     sellenet N.SELLENET         522      2      1
+ CASTEST MODIF sslv146b                     sellenet N.SELLENET         835      2      1
+ CASTEST MODIF sslv146c                     sellenet N.SELLENET         513      2      1
+ CASTEST MODIF sslv146d                     sellenet N.SELLENET         839      2      1
+ CASTEST MODIF sslv303a                    desroches X.DESROCHES        320      2      2
+ CASTEST MODIF sslv314a                     sellenet N.SELLENET         202      2      2
+ CASTEST MODIF sslv314b                     sellenet N.SELLENET         210      2      2
+ CASTEST MODIF sslv314c                     sellenet N.SELLENET         208      2      2
+ CASTEST MODIF sslv315a                     sellenet N.SELLENET         202      2      2
+ CASTEST MODIF sslv315b                     sellenet N.SELLENET         228      2      2
+ CASTEST MODIF sslv315c                     sellenet N.SELLENET         231      2      2
+ CASTEST MODIF ssna102a                     sellenet N.SELLENET         302      2      1
+ CASTEST MODIF ssna102d                     sellenet N.SELLENET         312      2      1
+ CASTEST MODIF ssna102e                     sellenet N.SELLENET         249      2      1
+ CASTEST MODIF ssna104a                     sellenet N.SELLENET         148      2      1
+ CASTEST MODIF ssna104b                     sellenet N.SELLENET         137      2      1
+ CASTEST MODIF ssna109a                     sellenet N.SELLENET         692      2      1
+ CASTEST MODIF ssna111b                     sellenet N.SELLENET         224      2      1
+ CASTEST MODIF ssna112a                     sellenet N.SELLENET         400      2      1
+ CASTEST MODIF ssna114a                     sellenet N.SELLENET         130      2      1
+ CASTEST MODIF ssna115a                     sellenet N.SELLENET         305      2      1
+ CASTEST MODIF ssna116a                     sellenet N.SELLENET         448      3      1
+ CASTEST MODIF ssna117a                     sellenet N.SELLENET         196      2      1
+ CASTEST MODIF ssna117c                     sellenet N.SELLENET         139      2      1
+ CASTEST MODIF ssna302a                     sellenet N.SELLENET         608      2      1
+ CASTEST MODIF ssna302b                     sellenet N.SELLENET         588      2      1
+ CASTEST MODIF ssnd102a                     sellenet N.SELLENET         440      2      1
+ CASTEST MODIF ssnd102b                     sellenet N.SELLENET         271      2      1
+ CASTEST MODIF ssnd104a                     sellenet N.SELLENET         383      2      1
+ CASTEST MODIF ssnd104b                     sellenet N.SELLENET         402      2      1
+ CASTEST MODIF ssnl106f                     sellenet N.SELLENET         377      2      1
+ CASTEST MODIF ssnl119a                     sellenet N.SELLENET         427      2      1
+ CASTEST MODIF ssnl129a                     sellenet N.SELLENET         367      2      1
+ CASTEST MODIF ssnl129b                     sellenet N.SELLENET         361      2      1
+ CASTEST MODIF ssnl129c                     sellenet N.SELLENET         359      2      1
+ CASTEST MODIF ssnl129d                     sellenet N.SELLENET         341      2      1
+ CASTEST MODIF ssnl129e                     sellenet N.SELLENET         340      2      1
+ CASTEST MODIF ssnl129f                     sellenet N.SELLENET         335      2      1
+ CASTEST MODIF ssnl132a                     sellenet N.SELLENET         915      3      1
+ CASTEST MODIF ssnl132b                     sellenet N.SELLENET         963      2      1
+ CASTEST MODIF ssnl133a                     sellenet N.SELLENET         274      2      1
+ CASTEST MODIF ssnl134a                     sellenet N.SELLENET         437      2      1
+ CASTEST MODIF ssnl135b                     sellenet N.SELLENET         738      2      2
+ CASTEST MODIF ssnl136a                     sellenet N.SELLENET         248      2      1
+ CASTEST MODIF ssnl136b                     sellenet N.SELLENET         228      2      1
+ CASTEST MODIF ssnl501a                     sellenet N.SELLENET         183      2      1
+ CASTEST MODIF ssnl501d                     sellenet N.SELLENET         184      2      1
+ CASTEST MODIF ssnl501e                     sellenet N.SELLENET         181      2      1
+ CASTEST MODIF ssnl502a                     sellenet N.SELLENET         390      2      1
+ CASTEST MODIF ssnl502c                     sellenet N.SELLENET         424      2      1
+ CASTEST MODIF ssnl502d                     sellenet N.SELLENET         542      2      1
+ CASTEST MODIF ssnl503a                     sellenet N.SELLENET         285      2      1
+ CASTEST MODIF ssnl503b                     sellenet N.SELLENET         288      2      1
+ CASTEST MODIF ssnl503c                     sellenet N.SELLENET         281      2      1
+ CASTEST MODIF ssnp103a                     sellenet N.SELLENET         178      2      1
+ CASTEST MODIF ssnp103b                     sellenet N.SELLENET         203      2      1
+ CASTEST MODIF ssnp104a                     sellenet N.SELLENET         201      2      1
+ CASTEST MODIF ssnp104b                     sellenet N.SELLENET         225      2      1
+ CASTEST MODIF ssnp105a                     sellenet N.SELLENET         360      2      1
+ CASTEST MODIF ssnp105b                     sellenet N.SELLENET         398      2      1
+ CASTEST MODIF ssnp106a                     sellenet N.SELLENET         256      2      1
+ CASTEST MODIF ssnp106b                     sellenet N.SELLENET         325      2      1
+ CASTEST MODIF ssnp110e                     sellenet N.SELLENET         809      2      1
+ CASTEST MODIF ssnp116a                     sellenet N.SELLENET         683      2      1
+ CASTEST MODIF ssnp116b                     sellenet N.SELLENET         483      2      1
+ CASTEST MODIF ssnp116c                     sellenet N.SELLENET         565      2      1
+ CASTEST MODIF ssnp116d                     sellenet N.SELLENET         392      2      1
+ CASTEST MODIF ssnp121a                     sellenet N.SELLENET         201      2      1
+ CASTEST MODIF ssnp121b                     sellenet N.SELLENET         164      2      1
+ CASTEST MODIF ssnp121c                     sellenet N.SELLENET         166      2      1
+ CASTEST MODIF ssnp121d                     sellenet N.SELLENET         245      2      1
+ CASTEST MODIF ssnp121e                     sellenet N.SELLENET         240      2      1
+ CASTEST MODIF ssnp121f                     sellenet N.SELLENET         239      2      1
+ CASTEST MODIF ssnp121g                     sellenet N.SELLENET         214      2      1
+ CASTEST MODIF ssnp121h                     sellenet N.SELLENET         204      2      1
+ CASTEST MODIF ssnp121i                     sellenet N.SELLENET         251      2      1
+ CASTEST MODIF ssnp121j                     sellenet N.SELLENET         240      2      1
+ CASTEST MODIF ssnp121k                     sellenet N.SELLENET         239      2      1
+ CASTEST MODIF ssnp121l                     sellenet N.SELLENET         172      2      1
+ CASTEST MODIF ssnp121m                     sellenet N.SELLENET         286      2      1
+ CASTEST MODIF ssnp121n                     sellenet N.SELLENET         308      2      1
+ CASTEST MODIF ssnp121o                     sellenet N.SELLENET         336      2      1
+ CASTEST MODIF ssnp122a                     sellenet N.SELLENET         305      2      1
+ CASTEST MODIF ssnp124d                     sellenet N.SELLENET         295      2      1
+ CASTEST MODIF ssnp126a                     sellenet N.SELLENET         388      2      1
+ CASTEST MODIF ssnp127b                     sellenet N.SELLENET         148      2      1
+ CASTEST MODIF ssnp128a                     sellenet N.SELLENET         897      2      1
+ CASTEST MODIF ssnp130a                     sellenet N.SELLENET         314      2      1
+ CASTEST MODIF ssnp130b                     sellenet N.SELLENET         303      2      1
+ CASTEST MODIF ssnp130c                     sellenet N.SELLENET         262      2      1
+ CASTEST MODIF ssnp130d                     sellenet N.SELLENET         282      2      1
+ CASTEST MODIF ssnp130e                     sellenet N.SELLENET         195      2      1
+ CASTEST MODIF ssnp132a                     sellenet N.SELLENET         204      2      1
+ CASTEST MODIF ssnp133b                     sellenet N.SELLENET         362      2      1
+ CASTEST MODIF ssnp135c                     sellenet N.SELLENET         291      2      1
+ CASTEST MODIF ssnp135d                     sellenet N.SELLENET         432      2      1
+ CASTEST MODIF ssnp135e                     sellenet N.SELLENET         560      2      1
+ CASTEST MODIF ssnp136a                     sellenet N.SELLENET         722      2      2
+ CASTEST MODIF ssnp311a                     sellenet N.SELLENET         510      2      1
+ CASTEST MODIF ssnp312a                     sellenet N.SELLENET         664      2      1
+ CASTEST MODIF ssnp312b                     sellenet N.SELLENET         613      2      1
+ CASTEST MODIF ssnp502c                     sellenet N.SELLENET         249      2      1
+ CASTEST MODIF ssnp503a                     sellenet N.SELLENET         176      2      2
+ CASTEST MODIF ssnp503c                     sellenet N.SELLENET         176      2      2
+ CASTEST MODIF ssnp503e                     sellenet N.SELLENET         177      3      3
+ CASTEST MODIF ssnp504a                     sellenet N.SELLENET         185      2      2
+ CASTEST MODIF ssnp504c                     sellenet N.SELLENET         184      2      2
+ CASTEST MODIF ssns101a                    desroches X.DESROCHES        335     21     21
+ CASTEST MODIF ssns101b                    desroches X.DESROCHES        246      5      5
+ CASTEST MODIF ssns101c                    desroches X.DESROCHES        296     17     17
+ CASTEST MODIF ssns101d                    desroches X.DESROCHES        294     30     30
+ CASTEST MODIF ssns101e                    desroches X.DESROCHES        294     48     48
+ CASTEST MODIF ssns101f                    desroches X.DESROCHES        294     47     47
+ CASTEST MODIF ssns101g                    desroches X.DESROCHES        293     32     32
+ CASTEST MODIF ssns102a                    desroches X.DESROCHES        325     20     20
+ CASTEST MODIF ssns102b                    desroches X.DESROCHES        312     10     10
+ CASTEST MODIF ssns106a                     sellenet N.SELLENET         745      2      1
+ CASTEST MODIF ssns106b                     sellenet N.SELLENET         734      2      1
+ CASTEST MODIF ssns106c                     sellenet N.SELLENET         830      2      1
+ CASTEST MODIF ssns106e                     sellenet N.SELLENET         465      2      1
+ CASTEST MODIF ssns106f                     sfayolle S.FAYOLLE          738      3      2
+ CASTEST MODIF ssns106g                     sellenet N.SELLENET         497      2      1
+ CASTEST MODIF ssns107a                     sellenet N.SELLENET         191      2      1
+ CASTEST MODIF ssns107b                     sellenet N.SELLENET         195      2      1
+ CASTEST MODIF ssns107c                     sellenet N.SELLENET         190      2      1
+ CASTEST MODIF ssns107d                     sellenet N.SELLENET         194      2      1
+ CASTEST MODIF ssns108a                     sellenet N.SELLENET         432      2      2
+ CASTEST MODIF ssns501a                     sellenet N.SELLENET         256      2      1
+ CASTEST MODIF ssns501b                     sellenet N.SELLENET         252      2      1
+ CASTEST MODIF ssnv101b                     sellenet N.SELLENET         157      2      2
+ CASTEST MODIF ssnv104i                     sellenet N.SELLENET         368      2      1
+ CASTEST MODIF ssnv104j                     sellenet N.SELLENET         372      2      1
+ CASTEST MODIF ssnv108a                     sellenet N.SELLENET         332      2      1
+ CASTEST MODIF ssnv108b                     sellenet N.SELLENET         177      2      1
+ CASTEST MODIF ssnv108c                     sellenet N.SELLENET         200      2      1
+ CASTEST MODIF ssnv108d                     sellenet N.SELLENET         193      2      1
+ CASTEST MODIF ssnv112a                     sellenet N.SELLENET         209      2      1
+ CASTEST MODIF ssnv113a                     sellenet N.SELLENET         205      2      1
+ CASTEST MODIF ssnv115a                     sellenet N.SELLENET         245      2      2
+ CASTEST MODIF ssnv118d                     sellenet N.SELLENET         322      2      2
+ CASTEST MODIF ssnv126a                     sellenet N.SELLENET         462      2      1
+ CASTEST MODIF ssnv126b                     sellenet N.SELLENET         327      2      1
+ CASTEST MODIF ssnv126c                     sellenet N.SELLENET         498      2      1
+ CASTEST MODIF ssnv126d                     sellenet N.SELLENET         390      2      1
+ CASTEST MODIF ssnv127h                     sellenet N.SELLENET         450      2      1
+ CASTEST MODIF ssnv128b                     sellenet N.SELLENET         432      3      1
+ CASTEST MODIF ssnv128c                     sellenet N.SELLENET         432      3      1
+ CASTEST MODIF ssnv128d                     sellenet N.SELLENET         438      3      1
+ CASTEST MODIF ssnv128e                     sellenet N.SELLENET         398      2      1
+ CASTEST MODIF ssnv128f                     sellenet N.SELLENET         414      2      1
+ CASTEST MODIF ssnv128g                     sellenet N.SELLENET         276      2      1
+ CASTEST MODIF ssnv128h                     sellenet N.SELLENET         394      2      1
+ CASTEST MODIF ssnv128i                     sellenet N.SELLENET         415      2      1
+ CASTEST MODIF ssnv128j                     sellenet N.SELLENET         395      2      1
+ CASTEST MODIF ssnv128l                     sellenet N.SELLENET         254      2      1
+ CASTEST MODIF ssnv128m                     sellenet N.SELLENET         296      2      1
+ CASTEST MODIF ssnv128n                     sellenet N.SELLENET         230      3      1
+ CASTEST MODIF ssnv128o                     sellenet N.SELLENET         264      3      1
+ CASTEST MODIF ssnv128p                     sellenet N.SELLENET         176      2      1
+ CASTEST MODIF ssnv128q                     sellenet N.SELLENET         214      2      1
+ CASTEST MODIF ssnv128r                     sellenet N.SELLENET         159      2      1
+ CASTEST MODIF ssnv128s                     sellenet N.SELLENET         201      2      1
+ CASTEST MODIF ssnv128t                     sellenet N.SELLENET         203      2      1
+ CASTEST MODIF ssnv128u                     sellenet N.SELLENET         226      2      1
+ CASTEST MODIF ssnv128v                     sellenet N.SELLENET         203      2      1
+ CASTEST MODIF ssnv129b                     sellenet N.SELLENET         216      2      1
+ CASTEST MODIF ssnv129d                     sellenet N.SELLENET         200      2      1
+ CASTEST MODIF ssnv129e                     sellenet N.SELLENET         209      2      1
+ CASTEST MODIF ssnv135a                     sellenet N.SELLENET        1748      2      1
+ CASTEST MODIF ssnv138a                     sellenet N.SELLENET         230      2      1
+ CASTEST MODIF ssnv138c                     sellenet N.SELLENET         203      2      1
+ CASTEST MODIF ssnv139a                     sellenet N.SELLENET         263      2      1
+ CASTEST MODIF ssnv139b                     sellenet N.SELLENET         267      2      1
+ CASTEST MODIF ssnv140a                     sellenet N.SELLENET         181      2      1
+ CASTEST MODIF ssnv140b                     sellenet N.SELLENET         174      2      1
+ CASTEST MODIF ssnv140c                     sellenet N.SELLENET         155      2      1
+ CASTEST MODIF ssnv141a                     sellenet N.SELLENET         185      2      1
+ CASTEST MODIF ssnv141b                     sellenet N.SELLENET         178      2      1
+ CASTEST MODIF ssnv144a                     sellenet N.SELLENET         967      2      1
+ CASTEST MODIF ssnv145a                     sellenet N.SELLENET         217      2      1
+ CASTEST MODIF ssnv145b                     sellenet N.SELLENET         185      2      1
+ CASTEST MODIF ssnv145c                     sellenet N.SELLENET         198      2      1
+ CASTEST MODIF ssnv156a                     sellenet N.SELLENET         343      2      1
+ CASTEST MODIF ssnv157a                     sellenet N.SELLENET         132      2      1
+ CASTEST MODIF ssnv157d                     sellenet N.SELLENET         138      2      1
+ CASTEST MODIF ssnv157e                     sellenet N.SELLENET         137      2      1
+ CASTEST MODIF ssnv157h                     sellenet N.SELLENET         140      3      1
+ CASTEST MODIF ssnv160c                     sellenet N.SELLENET         288      2      1
+ CASTEST MODIF ssnv160d                     sellenet N.SELLENET         344      2      1
+ CASTEST MODIF ssnv163a                     sellenet N.SELLENET         248      2      1
+ CASTEST MODIF ssnv163b                     sellenet N.SELLENET         222      2      1
+ CASTEST MODIF ssnv163c                     sellenet N.SELLENET         229      2      1
+ CASTEST MODIF ssnv164a                     sellenet N.SELLENET         573      2      1
+ CASTEST MODIF ssnv164b                     sellenet N.SELLENET         574      2      1
+ CASTEST MODIF ssnv169a                     sellenet N.SELLENET         245      2      1
+ CASTEST MODIF ssnv169b                     sellenet N.SELLENET         206      2      1
+ CASTEST MODIF ssnv169c                     sellenet N.SELLENET         219      2      1
+ CASTEST MODIF ssnv169f                     sellenet N.SELLENET         237      2      2
+ CASTEST MODIF ssnv171c                     sellenet N.SELLENET         421      2      1
+ CASTEST MODIF ssnv172a                     sellenet N.SELLENET        1129      2      2
+ CASTEST MODIF ssnv172b                     sellenet N.SELLENET         198      2      2
+ CASTEST MODIF ssnv173a                     sellenet N.SELLENET         241      2      1
+ CASTEST MODIF ssnv173b                     sellenet N.SELLENET         647      2      1
+ CASTEST MODIF ssnv173c                     sellenet N.SELLENET         169      2      1
+ CASTEST MODIF ssnv173d                     sellenet N.SELLENET         246      2      1
+ CASTEST MODIF ssnv173e                     sellenet N.SELLENET         649      2      1
+ CASTEST MODIF ssnv173f                     sellenet N.SELLENET         286      2      1
+ CASTEST MODIF ssnv173g                     sellenet N.SELLENET         214      2      1
+ CASTEST MODIF ssnv173h                     sellenet N.SELLENET         273      2      1
+ CASTEST MODIF ssnv173i                     sellenet N.SELLENET         240      2      1
+ CASTEST MODIF ssnv173j                     sellenet N.SELLENET         286      2      1
+ CASTEST MODIF ssnv174a                     sellenet N.SELLENET         280      2      1
+ CASTEST MODIF ssnv180a                     sellenet N.SELLENET         359      2      1
+ CASTEST MODIF ssnv181a                     sellenet N.SELLENET         205      2      1
+ CASTEST MODIF ssnv182a                     sellenet N.SELLENET         269      2      1
+ CASTEST MODIF ssnv182b                     sellenet N.SELLENET         289      2      1
+ CASTEST MODIF ssnv182c                     sellenet N.SELLENET         234      2      1
+ CASTEST MODIF ssnv182d                     sellenet N.SELLENET         231      2      1
+ CASTEST MODIF ssnv182e                     sellenet N.SELLENET         217      2      1
+ CASTEST MODIF ssnv182f                     sellenet N.SELLENET         224      2      1
+ CASTEST MODIF ssnv185b                     sellenet N.SELLENET         401      2      1
+ CASTEST MODIF ssnv185d                     sellenet N.SELLENET         304      2      1
+ CASTEST MODIF ssnv185e                     sellenet N.SELLENET         236      2      1
+ CASTEST MODIF ssnv185f                     sellenet N.SELLENET         253      2      1
+ CASTEST MODIF ssnv185g                     sellenet N.SELLENET         332      2      1
+ CASTEST MODIF ssnv185h                     sellenet N.SELLENET         297      2      1
+ CASTEST MODIF ssnv185i                     sellenet N.SELLENET         265      2      1
+ CASTEST MODIF ssnv185j                     sellenet N.SELLENET         253      2      1
+ CASTEST MODIF ssnv185k                     sellenet N.SELLENET         297      2      1
+ CASTEST MODIF ssnv185m                     sellenet N.SELLENET         284      2      1
+ CASTEST MODIF ssnv185n                     sellenet N.SELLENET         389      2      1
+ CASTEST MODIF ssnv185o                     sellenet N.SELLENET         212      2      1
+ CASTEST MODIF ssnv185p                     sellenet N.SELLENET         367      2      1
+ CASTEST MODIF ssnv186a                     sellenet N.SELLENET         201      2      1
+ CASTEST MODIF ssnv186b                     sellenet N.SELLENET         232      2      1
+ CASTEST MODIF ssnv186c                     sellenet N.SELLENET         203      2      1
+ CASTEST MODIF ssnv186d                     sellenet N.SELLENET         200      2      1
+ CASTEST MODIF ssnv186e                     sellenet N.SELLENET         195      2      1
+ CASTEST MODIF ssnv186f                     sellenet N.SELLENET         204      2      1
+ CASTEST MODIF ssnv186g                     sellenet N.SELLENET         212      2      1
+ CASTEST MODIF ssnv186h                     sellenet N.SELLENET         216      2      1
+ CASTEST MODIF ssnv187a                     sellenet N.SELLENET         254      2      1
+ CASTEST MODIF ssnv187b                     sellenet N.SELLENET         270      2      1
+ CASTEST MODIF ssnv189a                     sellenet N.SELLENET         139      2      1
+ CASTEST MODIF ssnv189c                     sellenet N.SELLENET         149      2      1
+ CASTEST MODIF ssnv191a                     sellenet N.SELLENET         784      2      1
+ CASTEST MODIF ssnv191c                     sellenet N.SELLENET        1126      2      1
+ CASTEST MODIF ssnv192a                     sellenet N.SELLENET         474      2      1
+ CASTEST MODIF ssnv194a                     sellenet N.SELLENET         218      2      1
+ CASTEST MODIF ssnv194b                     sellenet N.SELLENET         204      2      2
+ CASTEST MODIF ssnv195a                     sellenet N.SELLENET         394      2      1
+ CASTEST MODIF ssnv195b                     sellenet N.SELLENET         337      2      1
+ CASTEST MODIF ssnv195c                     sellenet N.SELLENET         481      2      1
+ CASTEST MODIF ssnv195d                     sellenet N.SELLENET         340      2      1
+ CASTEST MODIF ssnv197a                     sellenet N.SELLENET         480      2      1
+ CASTEST MODIF ssnv197d                     sellenet N.SELLENET         490      2      1
+ CASTEST MODIF ssnv198a                     sellenet N.SELLENET         283      2      1
+ CASTEST MODIF ssnv198b                     sellenet N.SELLENET         247      2      1
+ CASTEST MODIF ssnv199c                     sellenet N.SELLENET         344      2      1
+ CASTEST MODIF ssnv201a                     sellenet N.SELLENET         397      2      1
+ CASTEST MODIF ssnv202a                     sellenet N.SELLENET         334      2      1
+ CASTEST MODIF ssnv203a                     sellenet N.SELLENET         369      2      1
+ CASTEST MODIF ssnv204b                     sellenet N.SELLENET         351      2      1
+ CASTEST MODIF ssnv206a                     sellenet N.SELLENET         326      2      1
+ CASTEST MODIF ssnv208a                     foucault A.FOUCAULT         592      3      2
+ CASTEST MODIF ssnv209a                     sellenet N.SELLENET         230      2      1
+ CASTEST MODIF ssnv209e                     sellenet N.SELLENET         505      2      1
+ CASTEST MODIF ssnv209f                     sellenet N.SELLENET         260      2      1
+ CASTEST MODIF ssnv301a                     sellenet N.SELLENET         564      2      1
+ CASTEST MODIF ssnv301b                     sellenet N.SELLENET         580      2      1
+ CASTEST MODIF ssnv501a                     sellenet N.SELLENET         403      2      1
+ CASTEST MODIF ssnv503e                     sellenet N.SELLENET         563      2      1
+ CASTEST MODIF ssnv503f                     sellenet N.SELLENET         544      2      1
+ CASTEST MODIF ssnv503g                     sellenet N.SELLENET         563      2      1
+ CASTEST MODIF ssnv503i                     sellenet N.SELLENET         560      2      1
+ CASTEST MODIF ssnv504b                     sellenet N.SELLENET         268      2      1
+ CASTEST MODIF ssnv504e                     sellenet N.SELLENET         239      2      1
+ CASTEST MODIF ssnv504f                     sellenet N.SELLENET         283      2      1
+ CASTEST MODIF ssnv504h                     sellenet N.SELLENET         232      2      1
+ CASTEST MODIF ssnv504i                     sellenet N.SELLENET         212      2      1
+ CASTEST MODIF ssnv504j                     sellenet N.SELLENET         268      2      1
+ CASTEST MODIF ssnv505a                     sellenet N.SELLENET         225      2      1
+ CASTEST MODIF ssnv505b                     sellenet N.SELLENET         183      2      1
+ CASTEST MODIF ssnv505c                     sellenet N.SELLENET         185      2      1
+ CASTEST MODIF ssnv505d                     sellenet N.SELLENET         183      2      1
+ CASTEST MODIF ssnv505e                     sellenet N.SELLENET         185      2      1
+ CASTEST MODIF ssnv505g                     sellenet N.SELLENET         252      2      1
+ CASTEST MODIF ssnv505h                     sellenet N.SELLENET         464      2      1
+ CASTEST MODIF ssnv506c                     sellenet N.SELLENET         277      2      1
+ CASTEST MODIF ssnv506d                     sellenet N.SELLENET         261      2      1
+ CASTEST MODIF ssnv506e                     sellenet N.SELLENET         253      3      1
+ CASTEST MODIF ssnv506f                     sellenet N.SELLENET         285      2      1
+ CASTEST MODIF szlz110a                     sellenet N.SELLENET         886      2      1
+ CASTEST MODIF szlz111a                     sellenet N.SELLENET         203      2      1
+ CASTEST MODIF szlz111b                     sellenet N.SELLENET         203      2      1
+ CASTEST MODIF ttnl03a                      sellenet N.SELLENET         419      2      1
+ CASTEST MODIF ttnl04a                      sellenet N.SELLENET         366      2      1
+ CASTEST MODIF vocab01a                     sellenet N.SELLENET          87      2      1
+ CASTEST MODIF wdnp101a                     foucault A.FOUCAULT        1220     13     12
+ CASTEST MODIF wtna100a                     sellenet N.SELLENET         536      2      1
+ CASTEST MODIF wtna100b                     sellenet N.SELLENET         526      2      1
+ CASTEST MODIF wtna101b                     sellenet N.SELLENET         367      2      1
+ CASTEST MODIF wtna102a                     sellenet N.SELLENET         341      2      1
+ CASTEST MODIF wtna102b                     sellenet N.SELLENET         327      2      1
+ CASTEST MODIF wtna103a                     sellenet N.SELLENET         322      2      1
+ CASTEST MODIF wtna103b                     sellenet N.SELLENET         296      2      1
+ CASTEST MODIF wtna103c                     sellenet N.SELLENET         316      2      1
+ CASTEST MODIF wtna103d                     sellenet N.SELLENET         311      2      1
+ CASTEST MODIF wtna104a                     sellenet N.SELLENET         274      2      1
+ CASTEST MODIF wtna104b                     sellenet N.SELLENET         264      2      1
+ CASTEST MODIF wtna106a                     sellenet N.SELLENET         498      2      1
+ CASTEST MODIF wtna106b                     sellenet N.SELLENET         498      2      1
+ CASTEST MODIF wtna106c                     sellenet N.SELLENET         425      2      1
+ CASTEST MODIF wtna106d                     sellenet N.SELLENET         425      2      1
+ CASTEST MODIF wtna107a                     sellenet N.SELLENET         213      2      1
+ CASTEST MODIF wtna107b                     sellenet N.SELLENET         213      2      1
+ CASTEST MODIF wtna107c                     sellenet N.SELLENET         213      2      1
+ CASTEST MODIF wtna108a                     sellenet N.SELLENET         361      2      1
+ CASTEST MODIF wtna108b                     sellenet N.SELLENET         361      2      1
+ CASTEST MODIF wtna108c                     sellenet N.SELLENET         361      2      1
+ CASTEST MODIF wtna109a                     sellenet N.SELLENET         360      2      1
+ CASTEST MODIF wtna109b                     sellenet N.SELLENET         360      2      1
+ CASTEST MODIF wtnl100a                     sellenet N.SELLENET         566      2      1
+ CASTEST MODIF wtnl100b                     sellenet N.SELLENET         337      2      1
+ CASTEST MODIF wtnl100c                     sellenet N.SELLENET         605      2      1
+ CASTEST MODIF wtnl100d                     sellenet N.SELLENET         333      2      1
+ CASTEST MODIF wtnl101a                     sellenet N.SELLENET         225      2      1
+ CASTEST MODIF wtnl101b                     sellenet N.SELLENET         225      2      1
+ CASTEST MODIF wtnl102a                     sellenet N.SELLENET         216      2      1
+ CASTEST MODIF wtnl102b                     sellenet N.SELLENET         214      2      1
+ CASTEST MODIF wtnp100a                     sellenet N.SELLENET         362      3      1
+ CASTEST MODIF wtnp100b                     sellenet N.SELLENET         324      2      1
+ CASTEST MODIF wtnp100c                     sellenet N.SELLENET         363      2      1
+ CASTEST MODIF wtnp101a                     sellenet N.SELLENET         327      2      1
+ CASTEST MODIF wtnp101b                     sellenet N.SELLENET         329      2      1
+ CASTEST MODIF wtnp102a                     sellenet N.SELLENET         499      2      1
+ CASTEST MODIF wtnp102b                     sellenet N.SELLENET         357      2      1
+ CASTEST MODIF wtnp102c                     sellenet N.SELLENET         511      2      1
+ CASTEST MODIF wtnp102d                     sellenet N.SELLENET         511      2      1
+ CASTEST MODIF wtnp103a                     sellenet N.SELLENET         287      2      1
+ CASTEST MODIF wtnp104a                     sellenet N.SELLENET         288      2      1
+ CASTEST MODIF wtnp104b                     sellenet N.SELLENET         281      2      1
+ CASTEST MODIF wtnp105a                     sellenet N.SELLENET         271      2      1
+ CASTEST MODIF wtnp105b                     sellenet N.SELLENET         266      2      1
+ CASTEST MODIF wtnp106a                     sellenet N.SELLENET         272      2      1
+ CASTEST MODIF wtnp106b                     sellenet N.SELLENET         274      2      1
+ CASTEST MODIF wtnp107a                     sellenet N.SELLENET         362      2      1
+ CASTEST MODIF wtnp109a                     sellenet N.SELLENET         360      2      1
+ CASTEST MODIF wtnp110a                     sellenet N.SELLENET         188      2      1
+ CASTEST MODIF wtnp111a                     sellenet N.SELLENET         170      2      1
+ CASTEST MODIF wtnp111b                     sellenet N.SELLENET         176      2      1
+ CASTEST MODIF wtnp112a                     sellenet N.SELLENET         251      2      1
+ CASTEST MODIF wtnp112b                     sellenet N.SELLENET         253      2      1
+ CASTEST MODIF wtnp112c                     sellenet N.SELLENET         292      2      1
+ CASTEST MODIF wtnp112d                     sellenet N.SELLENET         237      2      1
+ CASTEST MODIF wtnp112e                     sellenet N.SELLENET         278      2      1
+ CASTEST MODIF wtnp112f                     sellenet N.SELLENET         287      2      1
+ CASTEST MODIF wtnp112g                     sellenet N.SELLENET         306      2      1
+ CASTEST MODIF wtnp112h                     sellenet N.SELLENET         276      2      1
+ CASTEST MODIF wtnp113a                     sellenet N.SELLENET         469      3      1
+ CASTEST MODIF wtnp113b                     sellenet N.SELLENET         487      3      1
+ CASTEST MODIF wtnp114a                     sellenet N.SELLENET         268      2      1
+ CASTEST MODIF wtnp115a                     sellenet N.SELLENET         275      2      1
+ CASTEST MODIF wtnp115b                     sellenet N.SELLENET         259      2      1
+ CASTEST MODIF wtnp118a                     sellenet N.SELLENET         296      2      1
+ CASTEST MODIF wtnp118b                     sellenet N.SELLENET         305      2      1
+ CASTEST MODIF wtnp118c                     sellenet N.SELLENET         310      2      1
+ CASTEST MODIF wtnv100a                     sellenet N.SELLENET         503      2      1
+ CASTEST MODIF wtnv100b                     sellenet N.SELLENET         650      2      1
+ CASTEST MODIF wtnv100c                     sellenet N.SELLENET         443      2      1
+ CASTEST MODIF wtnv101a                     sellenet N.SELLENET         585      2      1
+ CASTEST MODIF wtnv102a                     sellenet N.SELLENET         343      2      1
+ CASTEST MODIF wtnv102b                     sellenet N.SELLENET         359      2      1
+ CASTEST MODIF wtnv109a                     sellenet N.SELLENET         233      2      1
+ CASTEST MODIF wtnv109b                     sellenet N.SELLENET         201      2      1
+ CASTEST MODIF wtnv109c                     sellenet N.SELLENET         210      2      1
+ CASTEST MODIF wtnv109d                     sellenet N.SELLENET         264      2      1
+ CASTEST MODIF wtnv111a                     sellenet N.SELLENET         203      2      1
+ CASTEST MODIF wtnv111b                     sellenet N.SELLENET         186      2      1
+ CASTEST MODIF wtnv111c                     sellenet N.SELLENET         186      2      1
+ CASTEST MODIF wtnv112a                     sellenet N.SELLENET         439      2      1
+ CASTEST MODIF wtnv112b                     sellenet N.SELLENET         446      2      1
+ CASTEST MODIF wtnv112c                     sellenet N.SELLENET         435      2      1
+ CASTEST MODIF wtnv112d                     sellenet N.SELLENET         436      2      1
+ CASTEST MODIF wtnv112e                     sellenet N.SELLENET         490      2      1
+ CASTEST MODIF wtnv112f                     sellenet N.SELLENET         440      2      1
+ CASTEST MODIF wtnv113a                     sellenet N.SELLENET         293      2      1
+ CASTEST MODIF wtnv113b                     sellenet N.SELLENET         312      2      1
+ CASTEST MODIF wtnv113c                     sellenet N.SELLENET         307      2      1
+ CASTEST MODIF wtnv113d                     sellenet N.SELLENET         310      2      1
+ CASTEST MODIF wtnv113e                     sellenet N.SELLENET         289      2      1
+ CASTEST MODIF wtnv113f                     sellenet N.SELLENET         318      2      1
+ CASTEST MODIF wtnv113g                     sellenet N.SELLENET         302      2      1
+ CASTEST MODIF wtnv113h                     sellenet N.SELLENET         305      2      1
+ CASTEST MODIF wtnv113i                     sellenet N.SELLENET         292      2      1
+ CASTEST MODIF wtnv113j                     sellenet N.SELLENET         311      2      1
+ CASTEST MODIF wtnv113k                     sellenet N.SELLENET         292      2      1
+ CASTEST MODIF wtnv113l                     sellenet N.SELLENET         311      2      1
+ CASTEST MODIF wtnv114a                     sellenet N.SELLENET         268      2      1
+ CASTEST MODIF wtnv114b                     sellenet N.SELLENET         276      2      1
+ CASTEST MODIF wtnv114c                     sellenet N.SELLENET         267      2      1
+ CASTEST MODIF wtnv114d                     sellenet N.SELLENET         276      2      1
+ CASTEST MODIF wtnv114e                     sellenet N.SELLENET         299      2      1
+ CASTEST MODIF wtnv114f                     sellenet N.SELLENET         300      2      1
+ CASTEST MODIF wtnv121a                     sellenet N.SELLENET         422      2      1
+ CASTEST MODIF wtnv121b                     sellenet N.SELLENET         368      2      1
+ CASTEST MODIF wtnv122a                     sellenet N.SELLENET         442      2      1
+ CASTEST MODIF wtnv122b                     sellenet N.SELLENET         451      2      1
+ CASTEST MODIF wtnv122c                     sellenet N.SELLENET         451      2      1
+ CASTEST MODIF wtnv123a                     sellenet N.SELLENET         594      2      1
+ CASTEST MODIF wtnv123b                     sellenet N.SELLENET         468      2      1
+ CASTEST MODIF wtnv123c                     sellenet N.SELLENET         833      2      1
+ CASTEST MODIF wtnv123d                     sellenet N.SELLENET         597      2      1
+ CASTEST MODIF wtnv123e                     sellenet N.SELLENET         597      2      1
+ CASTEST MODIF wtnv124a                     sellenet N.SELLENET         557      2      1
+ CASTEST MODIF wtnv124b                     sellenet N.SELLENET         555      2      1
+ CASTEST MODIF wtnv125a                     sellenet N.SELLENET         486      2      1
+ CASTEST MODIF wtnv125b                     sellenet N.SELLENET         489      2      1
+ CASTEST MODIF wtnv126a                     sellenet N.SELLENET         852      2      1
+ CASTEST MODIF wtnv126b                     sellenet N.SELLENET         825      2      1
+ CASTEST MODIF wtnv126c                     sellenet N.SELLENET         829      2      1
+ CASTEST MODIF wtnv127a                     sellenet N.SELLENET         228      2      1
+ CASTEST MODIF wtnv127b                     sellenet N.SELLENET         226      2      1
+ CASTEST MODIF wtnv128a                     sellenet N.SELLENET         538      2      1
+ CASTEST MODIF wtnv129a                     sellenet N.SELLENET         538      2      1
+ CASTEST MODIF wtnv129b                     sellenet N.SELLENET         540      3      1
+ CASTEST MODIF wtnv130a                     sellenet N.SELLENET         274      2      1
+ CASTEST MODIF wtnv130b                     sellenet N.SELLENET         274      2      1
+ CASTEST MODIF wtnv130c                     sellenet N.SELLENET         288      2      1
+ CASTEST MODIF wtnv133a                     foucault A.FOUCAULT         626      3      2
+ CASTEST MODIF wtnv133b                     sellenet N.SELLENET         610      2      1
+ CASTEST MODIF wtnv134a                     foucault A.FOUCAULT         874      4      3
+ CASTEST MODIF wtnv135a                     sellenet N.SELLENET         347      2      2
+ CASTEST MODIF yyyy100a                     sellenet N.SELLENET         115      3      2
+ CASTEST MODIF yyyy100b                     sellenet N.SELLENET          93      2      1
+ CASTEST MODIF yyyy100f                     sellenet N.SELLENET          92      2      1
+ CASTEST MODIF yyyy100g                     sellenet N.SELLENET          92      2      1
+ CASTEST MODIF yyyy100i                     sellenet N.SELLENET          95      2      1
+ CASTEST MODIF yyyy100j                     sellenet N.SELLENET          96      2      1
+ CASTEST MODIF yyyy103a                     sellenet N.SELLENET         334      2      1
+ CASTEST MODIF yyyy103c                     sellenet N.SELLENET         285      2      1
+ CASTEST MODIF yyyy103d                     sellenet N.SELLENET         290      3      1
+ CASTEST MODIF yyyy104a                     sellenet N.SELLENET         169      2      1
+ CASTEST MODIF yyyy104c                     sellenet N.SELLENET         170      2      1
+ CASTEST MODIF yyyy104d                     sellenet N.SELLENET         191      2      1
+ CASTEST MODIF yyyy104g                     sellenet N.SELLENET         225      2      1
+ CASTEST MODIF yyyy104i                     sellenet N.SELLENET         186      2      1
+ CASTEST MODIF yyyy104j                     sellenet N.SELLENET         190      2      1
+ CASTEST MODIF yyyy104k                     sellenet N.SELLENET         224      2      1
+ CASTEST MODIF yyyy104o                     sellenet N.SELLENET         175      2      1
+ CASTEST MODIF yyyy104p                     sellenet N.SELLENET         172      2      1
+ CASTEST MODIF yyyy104q                     sellenet N.SELLENET         186      2      1
+ CASTEST MODIF yyyy106a                     sellenet N.SELLENET         658      2      1
+ CASTEST MODIF yyyy106b                     sellenet N.SELLENET         652      2      1
+ CASTEST MODIF yyyy110a                     sellenet N.SELLENET         195      2      1
+ CASTEST MODIF yyyy115a                     sellenet N.SELLENET        2688      2      1
+ CASTEST MODIF yyyy117a                     sellenet N.SELLENET         660      2      1
+ CASTEST MODIF yyyy118a                     sellenet N.SELLENET         221      2      1
+ CASTEST MODIF yyyy118b                     sellenet N.SELLENET         219      2      1
+ CASTEST MODIF yyyy118c                     sellenet N.SELLENET         208      2      1
+ CASTEST MODIF yyyy118d                     sellenet N.SELLENET         251      2      1
+ CASTEST MODIF zmat004a                     sellenet N.SELLENET         516      2      2
+ CASTEST MODIF zmat007a                     sellenet N.SELLENET         394      2      1
+ CASTEST MODIF zzzz100d                     sellenet N.SELLENET         422      2      2
+ CASTEST MODIF zzzz128b                     sellenet N.SELLENET          45      2      1
+ CASTEST MODIF zzzz136c                     sellenet N.SELLENET         377      2      1
+ CASTEST MODIF zzzz159d                     sellenet N.SELLENET         129      3      1
+ CASTEST MODIF zzzz159f                     sellenet N.SELLENET         177      2      1
+ CASTEST MODIF zzzz161a                     sellenet N.SELLENET         264      2      1
+ CASTEST MODIF zzzz162a                     sellenet N.SELLENET         644      2      1
+ CASTEST MODIF zzzz162b                     sellenet N.SELLENET         228      2      1
+ CASTEST MODIF zzzz167a                     sellenet N.SELLENET          77      2      1
+ CASTEST MODIF zzzz167b                     sellenet N.SELLENET         214      2      1
+ CASTEST MODIF zzzz167c                     sellenet N.SELLENET         131      2      1
+ CASTEST MODIF zzzz186a                     sellenet N.SELLENET          41      2      1
+ CASTEST MODIF zzzz189a                     sellenet N.SELLENET         296      2      1
+ CASTEST MODIF zzzz189b                     sellenet N.SELLENET         152      2      1
+ CASTEST MODIF zzzz200b                     sellenet N.SELLENET        1131      2      1
+ CASTEST MODIF zzzz200c                     sellenet N.SELLENET         468      2      1
+ CASTEST MODIF zzzz206a                     sellenet N.SELLENET          55      2      1
+ CASTEST MODIF zzzz213b                     sellenet N.SELLENET          92      2      1
+ CASTEST MODIF zzzz216a                     sellenet N.SELLENET         283      3      1
+ CASTEST MODIF zzzz219a                     sellenet N.SELLENET         134      2      1
+ CASTEST MODIF zzzz223a                     sellenet N.SELLENET         146      2      1
+ CASTEST MODIF zzzz228a                     sellenet N.SELLENET          95      2      1
+ CASTEST MODIF zzzz231a                     sellenet N.SELLENET         178      2      1
+ CASTEST MODIF zzzz233a                     sellenet N.SELLENET         102      2      1
+ CASTEST MODIF zzzz234a                     sellenet N.SELLENET         415      2      1
+ CASTEST MODIF zzzz234b                     sellenet N.SELLENET          82      2      1
+ CASTEST MODIF zzzz234c                     sellenet N.SELLENET          83      2      1
+ CASTEST MODIF zzzz234d                     sellenet N.SELLENET         216      2      1
+ CASTEST MODIF zzzz234e                     sellenet N.SELLENET         226      2      1
+ CASTEST MODIF zzzz237a                     sellenet N.SELLENET         270      2      1
+ CASTEST MODIF zzzz237b                     sellenet N.SELLENET         271      2      1
+CATALOGU MODIF typelem/gener_cmcoz1           desoza T.DESOZA            67      2      9
+CATALOGU MODIF typelem/gener_cmcoz2           desoza T.DESOZA           155      2      9
+ FORTRAN MODIF algeline/reajeu                desoza T.DESOZA            80      6     23
+ FORTRAN MODIF algorith/cfgeom                desoza T.DESOZA           113     11     13
+ FORTRAN MODIF algorith/hujact              foucault A.FOUCAULT         443     97     95
+ FORTRAN MODIF algorith/hujdp               foucault A.FOUCAULT         272     45     19
+ FORTRAN MODIF algorith/hujdrc              foucault A.FOUCAULT          75      9     37
+ FORTRAN MODIF algorith/hujiid              foucault A.FOUCAULT         863    160     52
+ FORTRAN MODIF algorith/hujjid              foucault A.FOUCAULT        1136    126     77
+ FORTRAN MODIF algorith/hujmid              foucault A.FOUCAULT         547    196     19
+ FORTRAN MODIF algorith/hujpot              foucault A.FOUCAULT         454     58     12
+ FORTRAN MODIF algorith/hujpre              foucault A.FOUCAULT         164     14     11
+ FORTRAN MODIF algorith/hujpxd              foucault A.FOUCAULT         110     16     11
+ FORTRAN MODIF algorith/hujres              foucault A.FOUCAULT         304     19     17
+ FORTRAN MODIF algorith/hujtid              foucault A.FOUCAULT         469     18     35
+ FORTRAN MODIF algorith/mminfp                desoza T.DESOZA           474      7      2
+ FORTRAN MODIF algorith/mmlige                desoza T.DESOZA           183     18     19
+ FORTRAN MODIF algorith/mmligr                desoza T.DESOZA           276     49     18
+ FORTRAN MODIF algorith/mmmres                desoza T.DESOZA           932     26     30
+ FORTRAN MODIF algorith/nmcofr                desoza T.DESOZA           174      6      6
+ FORTRAN MODIF algorith/nmcoun                desoza T.DESOZA           124      3      3
+ FORTRAN MODIF algorith/nmcoup              sfayolle S.FAYOLLE          206      2      2
+ FORTRAN MODIF algorith/nmhuj               foucault A.FOUCAULT         538     48     29
+ FORTRAN MODIF algorith/refe99               andriam H.ANDRIAMBOLOLONA    164     15      1
+ FORTRAN MODIF calculel/grmaim               meunier S.MEUNIER          140      5      2
+ FORTRAN MODIF elements/dxglrc              sfayolle S.FAYOLLE          449     10      7
+ FORTRAN MODIF elements/lgdmvm              sfayolle S.FAYOLLE          413     27     79
+ FORTRAN MODIF elements/maglrc              sfayolle S.FAYOLLE          215      9      8
+ FORTRAN MODIF elements/te0027               galenne E.GALENNE          576      6      4
+ FORTRAN MODIF elements/te0409              sfayolle S.FAYOLLE          363      9      6
+ FORTRAN MODIF elements/te0477             desroches X.DESROCHES        498      9      9
+ FORTRAN MODIF postrele/rc3201               galenne E.GALENNE          757     10     11
+ FORTRAN MODIF postrele/rc32ac               galenne E.GALENNE          531      8     10
+ FORTRAN MODIF postrele/rc32cm               galenne E.GALENNE          110      2      2
+ FORTRAN MODIF postrele/rc32f0               galenne E.GALENNE           65      2      2
+ FORTRAN MODIF postrele/rc32f1               galenne E.GALENNE          188      1      2
+ FORTRAN MODIF postrele/rc32f6               galenne E.GALENNE          118      1      2
+ FORTRAN MODIF postrele/rc32fp               galenne E.GALENNE          176      5      8
+ FORTRAN MODIF postrele/rc32fs               galenne E.GALENNE          125      4      7
+ FORTRAN MODIF postrele/rc32fu               galenne E.GALENNE          108      5      8
+ FORTRAN MODIF postrele/rc32ms               galenne E.GALENNE           61      2      3
+ FORTRAN MODIF postrele/rc32mu               galenne E.GALENNE          214      1      3
+ FORTRAN MODIF postrele/rc32pm               galenne E.GALENNE          148      4      4
+ FORTRAN MODIF postrele/rc32r0               galenne E.GALENNE          167      2      3
+ FORTRAN MODIF postrele/rc32r1               galenne E.GALENNE          251      3      3
+ FORTRAN MODIF postrele/rc32r8               galenne E.GALENNE           97      1      3
+ FORTRAN MODIF postrele/rc32rs               galenne E.GALENNE           54      1      3
+ FORTRAN MODIF postrele/rc32rt               galenne E.GALENNE           64      1      2
+ FORTRAN MODIF postrele/rc32s0               galenne E.GALENNE          246      4      5
+ FORTRAN MODIF postrele/rc32s2               galenne E.GALENNE           50      2      2
+ FORTRAN MODIF postrele/rc32sa               galenne E.GALENNE          131      2      2
+ FORTRAN MODIF postrele/rc32si               galenne E.GALENNE          505      4      4
+ FORTRAN MODIF postrele/rc32sn               galenne E.GALENNE          262     11     11
+ FORTRAN MODIF postrele/rc32sp               galenne E.GALENNE          305     10     10
+ FORTRAN MODIF postrele/rc32st               galenne E.GALENNE           62      3      6
+ FORTRAN MODIF postrele/rc32th               galenne E.GALENNE          297      5      5
+ FORTRAN MODIF postrele/rc36ac               galenne E.GALENNE          465      5      5
+ FORTRAN MODIF postrele/rc36ca               galenne E.GALENNE          193      2      2
+ FORTRAN MODIF postrele/rc36cm               galenne E.GALENNE          126      2      2
+ FORTRAN MODIF postrele/rc36f1               galenne E.GALENNE          215      1      2
+ FORTRAN MODIF postrele/rc36f4               galenne E.GALENNE          108      3      3
+ FORTRAN MODIF postrele/rc36f5               galenne E.GALENNE          103      3      3
+ FORTRAN MODIF postrele/rc36f6               galenne E.GALENNE          121      4      5
+ FORTRAN MODIF postrele/rc36fp               galenne E.GALENNE          214      4      5
+ FORTRAN MODIF postrele/rc36ma               galenne E.GALENNE          429      4      7
+ FORTRAN MODIF postrele/rc36th               galenne E.GALENNE          344      3      3
+ FORTRAN MODIF postrele/rcevfu               galenne E.GALENNE          199      3      4
+ FORTRAN MODIF postrele/rcevoa               galenne E.GALENNE          390      7     13
+ FORTRAN MODIF postrele/rcevod               galenne E.GALENNE          454      6      8
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :   10        2505      2505             +2505
+ MODIF :  802      277227      3214    2259      +955
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :  812      279732      5719    2259     +3460 

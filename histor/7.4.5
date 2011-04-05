@@ -1,0 +1,1186 @@
+
+
+-----------------------------------------------------------------------
+--- AUTEUR acbhhcd G.DEVESA   DATE  le 17/05/2005 a 18:38:15
+
+------------------------------------------------------------------------
+CORRECTION AL 2005-126
+   NB_JOURS_TRAV  : 2.5
+   INTERET_UTILISATEUR : NON
+   TITRE  "DYNA_TRAN_MODAL"
+   FONCTIONNALITE
+     Le problème apparaît quand on utilise DYNA_TRAN_MODAL avec ces 3
+     options simultanées : méthode de NEWMARK, amortissement modal réduit
+     et profil de stockage plein. En effet dans ce cas, on utilise l'
+     amortissement modal réduit à la place de l'amortissement généralisé.
+     Il manque donc en gros un facteur correspondant à une masse
+     généralisée.
+   DETAILS
+     On modifie en consequence la routine MDNEWM en réintroduisant le
+     facteur MASGEN(I) à la variable AMOGEN(I).
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI   DEPUIS : 4.1.1
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI   DEPUIS : 4.1.1
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+   DOC_V : V2.01.321
+       EXPL_ : modification de la modélisation SDLD321A
+   VALIDATION
+     Dans l'étude associée, on vérifie que le stockage plein permet de
+     retrouver les valeurs obtenues avec le stokage diagonal. On complète
+     en ce sens le test SDLD321A
+
+------------------------------------------------------------------------
+CORRECTION AL 2005-164
+   NB_JOURS_TRAV  : 3
+   INTERET_UTILISATEUR : NON
+   TITRE  "DYNA_TRAN_MODAL et base de RITZ"
+   FONCTIONNALITE
+     Dans ce cas, on a un plantage brutal dans le cas de numérotations
+     différentes ou bien d'un profil diagonal.
+   DETAILS
+     On modifie la routine MDTR74 en remplaçant l'appel à COPMOD par
+     celui à COPMO2 si la base est de type BASE_MODALE. Et si la base de
+     Ritz a un profil diagonal, on l'assimile à un MODE_MECA pour la phase
+     de résolution.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+   DOC_V : V5.02.105
+       EXPL_ : ajout de la modélisation SDNL105C
+   VALIDATION
+     Nouveau test SDNL105C qui remplace la sous-structuration classique du
+     test SDNL105B par des opérations d'assemblage de matrices
+     généralisées projetées sur des bases de Ritz comportant les modes
+     statiques de liaison entre sous-domaines. Il n'y a donc plus ici de
+     modèle généralisé, d'interface dynamique, ni de macro-élément
+     dynamique et plus non plus de Lagrange de liaison.
+
+------------------------------------------------------------------------
+CORRECTION AL 2004-460
+   NB_JOURS_TRAV  : 0.2
+   INTERET_UTILISATEUR : NON
+   TITRE  "MISS03A"
+   FONCTIONNALITE
+     On supprime les IMPR_COURBE et on réajuste le temps CPU à 2000 s
+     dans le .para
+
+   RESU_FAUX_VERSION_EXPLOITATION  :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     On relance le cas test
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhlv L.VIVAN   DATE  le 26/05/2005 a 09:59:21
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-152
+   NB_JOURS_TRAV  : 2
+   POUR_LE_COMPTE_DE   : E.GALENNE
+   INTERET_UTILISATEUR : OUI
+   TITRE : POST_RCCM - méthode UNITAIRE PM/PB et SN/SN*
+   FONCTIONNALITE
+     1-La méthode UNITAIRE de POST_RCCM permet de définir des tenseurs de
+       contraintes non signés (séisme).
+       Il y a un problème dans la prise en compte de ces tenseurs dans le
+       calcul de PM/PB, du SN et SN* :
+       - les combinaisons de signe sont faites (dans rc32st) sur les
+         composantes du tenseur de contraintes du séisme et non sur les
+         composantes du torseur des efforts généralisés.
+       - dans le fichier resu, on affiche la valeur du PM(seisme) et la
+         valeur du PM de chaque situation hors séisme. Il faudrait afficher
+         la combinaison des deux (qui, d'ailleurs, est calculé...)
+     2-Quand il y a un chargement de type seisme et plusieurs groupes de
+       situation, le calcul plante :
+       <JJALLS01> LONGUEUR DE SEGMENT INVALIDE >&&RC3201.NB_OCCURR     <
+
+   DETAIL
+     1/ corrections faites pour la combinaison du torseur des efforts
+        généralisés.
+        on stocke la combinaison du PM(seisme) et PM hors séisme.
+        Idem pour le SN et le SN*
+        routines modifiées: rc32pm.f, rc32sp.f, rc32sn.f, rc32se.f
+                            rc32st.f, rc32s0.f,
+     2/ on peut définir différents groupes avec ou sans seisme. Mais dans
+        tous les cas, il ne peut y avoir qu'un seul seisme par groupe.
+        routine modifiée: rc32si.f
+     3/ Quand il y a plusieurs groupes, on stockait mal les grandeurs
+        calculées pour le seisme. On avait des valeurs nulles dans la table
+        en sortie pour le numéro de l'occurence du seisme.
+        routine modifiée: rc3201.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage de la liste des cas tests validant POST_RCCM
+     modification des valeurs de non régression pour le PM/PB du rccm04a
+     (calcul avec seisme)
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-163
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : A.ASSIRE
+   INTERET_UTILISATEUR : NON
+   TITRE : IMPR_RESU / GMSH
+   FONCTIONNALITE
+     Aster imprime mal au format GMSH des valeurs qui sont tres faibles
+     (exposant inferieur a -99) : il fait sauter le E !
+   DETAIL
+     Dans les routines irgnal, irgnte, irgmec, irgme2 et irgmg1
+     on modifie le format d'écriture :
+       E15.8  ->  E15.7E3
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage des tests validant GMSH
+
+
+-----------------------------------------------------------------------
+--- AUTEUR durand C.DURAND   DATE  le 24/05/2005 a 09:38:42
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE superviseur
+   DETAILS
+      problème signalé sur le forum :
+      définition d'un module d'Young par :
+
+      matlop=DEFI_MATERIAU(ELAS=_F(E=87000000000,
+                           NU=0.3,),
+      la valeur de E n'est pas un entier (IntType) mais un entier long
+      (LongType). Ca pose problème à getmjm (routine spécifique à
+      defi_materiau) pour laquelle on avait oublié le cas LongType.
+      Dans tous les cas, la valeur est convertie en Float.
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION :
+      modification ssll100a
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-178
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : type 'entier' produit par defi_fichier non récupérable en poursuite
+   FONCTIONNALITE superviseur
+   DETAILS
+     En effet, le type produit par DEFI_FICHIER hérite de ASSD, est une
+     instance de classe et nécessite donc un traitement particulier dans
+     ops.py, au meme titre que 'CO'
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION :
+     étude jointe à la fiche
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-151
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : formule dans un include
+   FONCTIONNALITE superviseur
+   DETAILS
+      dans un fichier inclus, on déclarait une formule qui, dans son texte,
+      invoquait un paramètre défini également dans le fichier inclus.
+      Ensuite, on voulait évaluer la formule aussi dans le fichier inclus.
+
+    nu = 0.3
+    toto = FORMULE(NOM_PARA='EPSI',VALE='EPSI*nu');
+    a = toto(5)
+
+    Le pb survient lors de cette dernière évaluation. En effet, pour évaluer
+    "a", on exploitait le contexte du jdc, sans y agglomérer le contexte
+    courant de l'étape INCLUDE. "nu" n'était donc pas connu.
+    modification de N_FONCTION.py
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION :
+     modification zzzz100a : ajout d'un fichier inclus contenant et évaluant
+     une formule
+------------------------------------------------------------------------
+CORRECTION AL 2005-181
+   NB_JOURS_TRAV  : 0.3
+   INTERET_UTILISATEUR : NON
+   TITRE  "DEFI_BASE_MODALE et sdnl105c"
+   FONCTIONNALITE
+     Il y a arrêt brutal avec débordement de tableau sur la plateforme
+     linux dans la commande DEFI_BASE_MODALE.
+   DETAILS
+     Dans RITZ99,on détruisait indûment l'objet TEMPOR qui dans ce cas
+     n'existait pas car NBGL n'est pas supérieur à 1. On corrige donc le
+     test de destruction par rapport à NBGL. Merci Jean-Pierre.
+
+   RESU_FAUX_VERSION_EXPLOITATION  :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     On relance le cas test SDNL105C
+
+
+-----------------------------------------------------------------------
+--- AUTEUR lamarche S.LAMARCHE   DATE  le 23/05/2005 a 16:03:30
+
+----------------------------------------------------------------------------
+CORRECTION AL 2005-013
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE CONTACT METHODE CONTINUE
+   FONCTIONNALITE
+     Une erreur de programmation a été détectée dans le te0364 spcifique à la méthode continue.
+     Elle ne donne pas de résultat faux mais peut engendrer des difficultés numériques.
+   DETAILS
+            DO 303 I = 1,NDIM
+              DO 302 J = 1,NDIM
+                DO 301 K = 1,NDIM
+                  TT(1,1) = TAU1(K)*TAU1(K) + TT(1,1)
+                  TT(1,2) = TAU1(K)*TAU2(K) + TT(1,2)
+                  TT(2,1) = TAU2(K)*TAU1(K) + TT(2,1)
+                  TT(2,2) = TAU2(K)*TAU2(K) + TT(2,2)
+ 301           CONTINUE
+ 302        CONTINUE
+ 303     CONTINUE
+     On supprime les boucles en I et J qui induisent une erreur dans le calcul de TT.
+     Elles multiplient TT par 4 ou 9 suivant la dimension du problème,
+     ce qui revient à multiplier par le même facteur la constante COEF_REGU_CONT.
+     Le résultat ne dépend pas de cette constante, mais le fait de faire varier
+     au cours du calcul peut engendrer des difficultés numériques.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mabbas M.ABBAS   DATE  le 23/05/2005 a 13:39:46
+
+-----------------------------------------------------------------------
+CORRECTION AL 2004-462
+   NB_JOURS_TRAV  : 4
+   INTERET_UTILISATEUR : NON
+   TITRE  :  DIS_CONTACT - STAT_NON_LINE
+   FONCTIONNALITE
+     Ce calcul plante quand j'utilise DIS_CONTACT alors qu'il me donne un
+     résultat avec ELAS.
+     Y a t-il un problème avec DIS_CONTACT ?
+   DETAILS
+    Le floating point exception provient de la decoupe automatique
+du pas de temps. Contact et recherche lineaire sont incompatibles parce
+qu'ils travaillent dans deux "directions opposees". L'algo divise le pas
+de temps pour essayer de s'en sortir, mais, bien sur, il ne peut pas s'en
+sortir. Si bien qu'on arrive a un increment de temps tres petit qui fait
+planter l'integration de la loi de comportement VISC_IRRA_LOG.
+J'ai emis une fiche pour blinder la subdivision auto du pas de temps
+(EL 2004-264).
+Par ailleurs, je blinde nmvpir pour eviter le plantage sale.
+De plus, il y a une erreur dans l'utilisation de CALC_FONC_INTERP.
+Le Septen (Antoine Billerey. Aubelia Maurice)  a corrige.
+    Avec cette correction et en enlevant la recherche lineaire,
+ tout se passe bien jusqu'au
+ pas de temps 2.586180000E+07 ou l'on plante avec le message:
+ <STAT_NON_LINE> <RCFON3> ON DEBORDE A DROITE REDEFINISSEZ VOS NAPPES ALPHA
+     - MOMENT
+
+FORTRAN DEJA RESTITUEE EN 7.4.4 MAIS PAS D'HISTOR ASSOCIE
+
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Etude associee a la fiche
+
+-----------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.1
+   INTERET_UTILISATEUR : OUI
+   TITRE  :  CONTACT - Affichages
+   FONCTIONNALITE
+   DETAILS
+     Correction des affichages sales dans le cas de
+     l'option "APPARIEMENT='NON'"
+     FORTRAN DEJA RESTITUEE EN 7.4.4 MAIS PAS D'HISTOR ASSOCIE
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mcourtoi M.COURTOIS   DATE  le 26/05/2005 a 16:00:59
+
+----------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE : LIRE_FONCTION
+
+   1. Quand on voulait extraire la colonne N d'un bloc, on vérifiait que ce bloc
+      avait au moins N lignes !
+      Avec un bloc ayant plus de colonnes que de lignes, on plantait et
+      le message était assez mal formaté !
+
+   2. Il faut utiliser UniteAster pour lire dans autre chose que fort.UL
+
+   3. Ajout d'infos lors de la lecture :
+
+  Lecture des blocs du fichier '.../deplxyz.dat'
+   . Bloc  1 :  70001 lignes,      2 colonnes
+   . Bloc  2 :  70001 lignes,      2 colonnes
+   . Bloc  3 :  70001 lignes,      2 colonnes
+
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+   DETAILS
+      lire_fonction_ops.py : utilisation de UTMESS pour les messages d'erreurs,
+      modification des fonctions utilitaires :
+       - lire_blocs : retourne la liste des blocs du fichier (un bloc est une
+         liste de lignes),
+       - liste_simple : retourne une liste extraite d'un bloc,
+       - liste_double : retourne une liste du type (x1,y1,x2,y2,...) après avoir
+         extrait deux colonnes du fichier.
+
+   Améliorations des performances :
+    test_extend(N)
+        Etendre une liste
+        1. liste=liste+[elements]
+        2. liste.extend([elements])
+
+           N=1000   : "+"=0.058286 s / "extend"=0.001116 s / ratio=52.225806
+           N=10000  : "+"=1.707010 s / "extend"=0.010849 s / ratio=157.342629
+           N=100000 : "+"=595.084010 s / "extend"=0.406178 s / ratio=1465.081844
+
+    test_append(N)
+        Etendre une liste
+        1. liste.append(elements_i)...
+        2. liste.extend([elements])
+
+           N=100000  : "append"=0.226527 s / "extend"=0.167625 s / ratio=1.351390
+           N=1000000 : "append"=2.955301 s / "extend"=2.065572 s / ratio=1.430742
+
+    test_fichier(nf)
+        Parcourir les lignes d'un fichier
+        1. for line in f.readlines()
+        2. for line in f (python >=2.3)
+
+           len(fich)=4716222  : "readlines"=0.317499 s / "file"=0.123485 s / ratio=2.571157
+           len(fich)=99040662 : "readlines"=5.549305 s / "file"=2.632352 s / ratio=2.108117
+
+    test_vale(N)
+        Passer de [[0, 100], [1, 101], [2, 102], [3, 103], [4, 104]]
+                à [0, 100, 1, 101, 2, 102, 3, 103, 4, 104]
+        1. liste_vale=reduce(lambda x,y : x+y, laux)
+        2. for v in laux: liste_vale.extend(v)
+
+        N=10000   : "reduce"=1.513742 s / "extend"=0.007428 s / ratio=203.790531
+        N=100000  : "reduce"=560.3837 s / "extend"=0.096054 s / ratio=5834.039997
+        N=1000000 : "reduce"= ????    s / "extend"=0.879386 s / ratio=
+
+   Sur LIRE_FONCTION :
+      On construit la fonction du bloc 3 du fichier composé de 3 blocs de
+      70001 lignes chacun.
+      Temps total : AVANT  378 s    APRES   20 s
+
+   Remarque : un fichier issu d'un IMPR_FONCTION, format XMGRACE se relit sans
+              problème : fonction 3 au bloc 3.
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   FONCTIONNALITE
+      Traitement des fichiers/unités logiques dans les macros
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON  (le blabla dans une doc D python/macro)
+   VALIDATION
+   DETAILS
+   Plusieurs cas se présentent :
+   1. les fichiers sont internes à la macro (ne sont pas modifiés par d'autres
+      commandes Aster et temporaires) :
+      => ne pas utiliser le nommage fort.UL mais un nom temporaire (variant avec
+         date et heure par exemple) ; prendre soin de faire le ménage en sortant.
+
+   2. il y a un mot-clé UNITE dans le catalogue, il se peut que l'utilisateur
+      ait associé cette UNITE à un fichier autre que fort.UL
+      => utiliser la classe UniteAster pour obtenir le véritable nom de fichier.
+         Typiquement, on fait :
+            from Utilitai.UniteAster import UniteAster
+            UL = UniteAster()
+            nomfich=UL.Nom(UNITE)
+            if not os.path.isfile(nomfich):
+               UTMESS('F', nompro, "le fichier '%s' est introuvable" % nomfich)
+         Puis open/close...
+
+         Si on utilise d'autres commandes Aster pouvant demander une unité libre
+         (INFO_EXEC_ASTER ou une autre macro), il faut réserver cette UNITE :
+            UL.Etat(UNITE, 'R')
+
+         En sortant, on remet les unités dans leur état initial :
+            UL.EtatInit()
+         Rem : si l'UNITE est ouverte, EtatInit fait un nouveau DEFI_FICHIER
+               en mode APPEND (pour des fichiers binaires, cela n'a sans doute
+               pas de sens et donc ne pas utiliser EtatInit dans ces cas).
+
+   3. les fichiers sont temporaires (l'utilisateur ne les connait pas) mais
+      échangés avec d'autres commandes Aster :
+      => utiliser la classe UniteAster pour récupérer une unité libre (en la
+      réservant) et la libérer en sortie.
+         Typiquement, on fait :
+            from Utilitai.UniteAster import UniteAster
+            UL = UniteAster()
+            unite = UL.Libre()   # on peut préciser un nom de fichier si besoin
+            COMMANDE_ASTER(UNITE=unite, ...)
+            UL.EtatInit()
+
+
+   Fichiers Python dans lesquels on trouve 'fort.' :
+      defi_part_feti_ops.py      cas 1       serait plus joli
+      lire_fonction_ops.py       cas   2     fait
+      lire_inte_spec_ops.py      cas   2     fait, améliorations possibles
+      lire_table_ops.py          cas   2     fait, améliorations possibles
+      macr_adap_mail_ops.py      cas      3  émettre une EL (pas avant la STA !)
+      macr_ascouf_mail_ops.py    cas   2     émettre une EL (pas avant la STA !)
+      macr_aspic_mail_ops.py     cas   2     émettre une EL (pas avant la STA !)
+      macr_cabri_mail_ops.py     cas   2     émettre une EL (pas avant la STA !)
+      macr_lign_coupe_ops.py     cas   2     fait, cas 1 pour UNITE_MAILLAGE ?
+      macro_miss_3d_ops.py       cas   2     émettre une EL (pas avant la STA !)
+      reca_algo.py
+      reca_interp.py
+      recal.py
+      reca_message.py
+
+   Pour ASPIC/ASCOUF et CABRI, 2 unités en entrée, 1 en sortie + mot-clé FICHIER
+   non utilisé (à supprimer du catalogue).
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-183
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  :  Plusieurs tracés de courbes au format XMGRACE sur un meme fichier
+   FONCTIONNALITE
+    Problème :
+      Une alarme est émise pour prévenir au 2ème appel que l'on écrit dans un
+      fichier non vide. On obtient donc au final un fichier avec deux fois l'entete
+      décrivant les paramètres du graphique (bornes, symboles, couleurs...).
+      A l'ouverture, xmgrace "ignore" le premier entete mais conserve les données
+      des premières courbes.
+      On visualise donc les premières courbes avec les légendes, couleurs des
+      deuxièmes et donc pas de légendes pour les suivantes.
+    Correction :
+      Quand le fichier existe déjà (et non vide), on vérifie qu'il s'agit bien
+      d'un graphe xmgrace, et on cherche le numéro N de la dernière courbe.
+      On complète alors le fichier en numérotant les courbes à partir de N+1.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-190
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : IMPR_RESU et DEFI_FICHIER(FICHIER=...) : le fichier est absent
+   FONCTIONNALITE
+      Le problème apparait quand on met TYPE='LIBRE' dans DEFI_FICHIER !!!
+      Entre ULDEFI et ULOPEN, je ne trouve pas cela très clair, cela mériterait
+      un petit ménage pour éliminer les sources d'erreur...
+      Dans le cas TYPE='LIBRE', on passe par ULDEFI qui ne remplissait pas
+      le tableau NAMEFI qui permet de récupérer plus tard le nom du fichier.
+   DETAILS
+      Je modifie ULDEFI pour passer le plus possible par ULOPEN.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      Essai joint à la fiche.
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-176
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  :  ssll107d : TEST_TABLE incorrect en v7
+   FONCTIONNALITE
+      Un filtre dans TEST_TABLE est effectué sur le nom du maillage utilisé
+      par MACR_CARA_POUTRE or il s'agit d'un concept temporaire à la macro dont
+      le nom est du type '.90000004'.
+      En modifiant IMPR_TABLE/IMPR_FONCTION dans lesquelles je crée deux
+      concepts temporaires de plus, le nom du maillage est différent.
+      Je remplace par un filtre ENTITE='TOUT'.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   NON
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-192
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  :  Test zzzz175a cassé suite à la mise à jour 8.0.22
+   FONCTIONNALITE
+      DEFI_FICHIER associé au type 'LIBRE' ne remplissait pas correctement le
+      common des unités logiques : le nom de fichier n'était pas mis à jour.
+   DETAILS
+      Il faudrait vraiment fusionner ces deux routines car il ne manque que
+      le type à ULOPEN pour faire ou non l'ouverture du fichier.
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      zzzz175a + enchainements de
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-090
+   NB_JOURS_TRAV  : 2.
+   POUR_LE_COMPTE_DE : P.BADEL
+   INTERET_UTILISATEUR : NON
+   TITRE : stockage incorrect de la SD_INFO_CHARGE dans la SD EVOL_NOLI
+   FONCTIONNALITE :
+     en cas d'arret imprévu (iteration max, echecs loi de comportement,
+     temps CPU), la SD INFO_CHARGE - qui permet de faire des calculs
+     en post-traitement CALC_ELEM, CALC_NO sans préciser le chargement
+     utilisé pour faire le calcul - n'etait pas toujours bien stockee.
+     Cela interdisait de faire des CALC_ELEM, CALC_NO par la suite.
+     On corrige ce point.
+   DETAILS :
+     avant le travail de menage de fond décrit précédemment, le bug
+     venait d'une erreur bete de nommage de variable : un LISCHA  a la
+     place d'un LISCH2
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : test perso (il faut s'arreter sur un probleme)
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-063
+   NB_JOURS_TRAV  : 1.
+   POUR_LE_COMPTE_DE : P.BADEL
+   INTERET_UTILISATEUR : NON
+   TITRE : prise en compte de REAC_ITER_ELAS
+   FONCTIONNALITE :
+     le REAC_ITER_ELAS fourni par l'utilisateur n'etait pas utilisé,
+     a cause d'un bug : erreur dans nmmatr sur l'indice de tableau PARMET :
+      on prenait pour REAC_ITER_ELAS la valeur entière de PAS_MINI_ELAS...
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      sur wtnl103b.comm
+
+
+-----------------------------------------------------------------------
+--- AUTEUR nicolas O.NICOLAS   DATE  le 19/05/2005 a 11:55:29
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : DEFI_MODELE_GENE et IMPR_CO (AL2005-108 en NEW8)
+   FONCTIONNALITE : DEFI_MODELE_GENE
+   DETAILS
+     Les collections crees dans la routine arg126 sont du type 'CONTIG'
+     'CONSTANT' mais il n'y avait pas d'appel a JECROC d'ou l'impossibilite
+     pour JEEXIN de recuperer le contenu de la collection
+     Je rajoute la boucle suivante dans arg126 :
+      DO 300 I=1,NBSST
+        CALL JECROC(JEXNUM(NOMMCL,I))
+        CALL JECROC(JEXNUM(ROTSST,I))
+        CALL JECROC(JEXNUM(TRASST,I))
+ 300  CONTINUE
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Par IMPR_CO dans cas test
+
+
+-----------------------------------------------------------------------
+--- AUTEUR romeo R.FERNANDES   DATE  le 30/05/2005 a 16:21:15
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-182
+   NB_JOURS_TRAV  : 1.0
+   INTERET_UTILISATEUR : NON
+   TITRE  :  Maillage WTNL100A
+   FONCTIONNALITE
+     Cas-tests de consolidation Terzaghi 2D QUAD8.
+   DETAILS
+     Le maillage de ce cas-test est une colonne discretisee en 16 elements.
+     La maille M16 se trouve curieusement inversee! Cf Jacobien.
+     Une demande d'evolution doit etre emise pour que MACR_INFO_MAIL
+     traite cette anomalie.
+     Dans le cadre de cette correction d'anomalie on se contente donc
+     de corriger le maillage.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     wtnl100a
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-130
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  : Plantage wtnp100a, wtnp100b, wtnp102a, wtnp102b sous linux
+   FONCTIONNALITE
+     Cas-tests avec redécoupage dès la première itération du premier
+     pas de temps, et critere ARRET='NON'.
+   DETAILS
+     Probleme d'initialisation de la variable ITEMAX dans la routine nmconv.
+     Sous linux l'initialisation est differente de .FALSE. et comme le critere
+     ARRET a pour parametre 'NON', la convergence est forcee alors qu'aucun
+     calcul n'a ete fait.
+     Le critere ARRET='NON' n'a pas d'interet dans ces cas-tests. On enleve
+     ce parametre des fichiers de commande. On fait de meme pour les
+     cas-tests suivants :
+       wtna100a  wtnp106a  wtnp115a  wtnv118a  wtnp109a  wtnv102a  wtnv118b
+       wtnv125a  wtnp111a  wtnv102b  wtnv118c
+     routine modifiee : nmconv
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     wtnp100a, wtnp100b, wtnp102a, wtnp102b
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-042
+   NB_JOURS_TRAV  : 2.0
+   INTERET_UTILISATEUR : NON
+   TITRE  : Plantage wtnv122b sous linux
+   FONCTIONNALITE
+     Cas-test 3D traitant le cas particulier du point critique
+     (cf docs V7.31.122 et R7.01.14).
+   DETAILS
+     Il s'agit d'un probleme de precision lie au cas particulier du point critique.
+     On propose comme correction d'ajouter un code retour a la routine nmccam
+     (CAM_CLAY) qui permet de controler un redecoupage en cas de non convergence.
+     On en profite pour ajouter des codes retours dans la routine pour controler
+     le calcul lie a la presence de fonctions exponentielle.
+     routines modifiees : calcme, nmccam, nmcomp
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     wtnv122b modifiee : on ajoute le redecoupage
+     ensemble des routines CAM_CLAY et BARCELONE de la base aster sour linux
+     et sous unix.
+
+---------------------------------------------------------------------------------------
+RESTITUTION HORS AREX
+   Correspond a la fiche : AL 2004-433
+   NB_JOURS_TRAV  : 1.0
+   INTERET_UTILISATEUR : NON
+   TITRE  :  Cas-test wtnl102a non conforme a la doc V
+   FONCTIONNALITE
+     Cas-test mono-dimensionnel de convection forcee avec solutions analytiques.
+     On s'interesse au regime permanent
+   DETAILS
+     L'initialisation du fichier de commande n'est pas conforme a la doc V.
+     On initialise en effet la temperature au lieu de la pression d'eau.
+     On modifie le fichier de commande.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     wtnl102a
+
+---------------------------------------------------------------------------------------
+CORRECTION AL 2004-276
+   NB_JOURS_TRAV  : 2.
+   POUR LE COMPTE DE : S. GRANET
+   INTERET_UTILISATEUR : NON
+   TITRE  Probleme dans la modélisation 3D_THVD
+   FONCTIONNALITE
+     Il y a une erreure dans le catalogue gener_me3g33.cata qui intervient
+     lors de l'initialisation des contraintes (il y a un H21 en trop). On modifie
+     le catalogue. Pour valider cette modélisation on rend un cas test à solution analytique (wtnv127a).
+     On en profite également pour générer ce meme cas test analytique mais pour D_PLAN_THV
+     (wtnp115a qui correspond au wtnp100a de la V6)
+     catalogue modifié :
+       gener_me3g33.cata
+     cas-tests ajouté :
+       wtnp115a, wtnv127a
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : OUI
+      DOC_V : V7.31.127
+         EXPL_ : Doc V : désaturation d'un milieu poreux sans air sur cellule unitaire(modélisation 3D_THV)
+      DOC_V : V7.32.115
+         EXPL_ : Doc V : désaturation d'un milieu poreux sans air sur cellule unitaire(modélisation D_PLAN_THV)
+   VALIDATION
+     Passage de wtnv127a
+
+---------------------------------------------------------------------------------------
+CORRECTION AL 2005-107
+   NB_JOURS_TRAV  : 6.
+   INTERET_UTILISATEUR : OUI
+   POUR LE COMPTE DE : J. EL-GHARIB
+   TITRE  CORRECTION DANS la loi de Barcelone
+   FONCTIONNALITE  DEFI_MATERIAU STAT_NON_LINE-BARCELONE
+   A la restitution du 29/11/2004, une erreur de signe s'est glissée
+   dans la correction de la contrainte de Bishop en fonction de la contrainte
+   de Barcelone et inversement. Les valeurs de référence analytiques des cas
+   tests wtnv124a, wtnv126a et wtnv126b ont été modifiées par mégarde.
+   D'autre part on a remarqué qu'il y a une variable qui était mal initialisée
+   c'est PCRMP1.
+   Dans cette restitution on fait les modifications dans le fortran nmbarc.f
+   On profite de la correction de la fiche  AL 2005-107  pour mettre dans le fortran
+   des conditions sur les exponentielles ce qui permet le redécoupage du pas
+   de temps si jamais elles explosent .
+   On profite aussi pour changer la définition de la cinquième variable interne en
+   mettant la valeur de la déformation plastique (non cumulée) au lieu de la valeur
+   de la cohésion -kcpc
+   On change les cas test wtnv123a,b, wtnv124a
+   parce que le chargement et les données sont très élevées par rapport
+   à ce qu'on rencontre dans la réalité et ça induit à des valeurs physiques
+   fausses au niveau de la porosité.
+   Les données matériaux du cas test wtnv126a, wtnv126b ne changent pas
+   mais on change les intialisations de PRE1 et les valeurs dans SIGINIT.
+   DETAILS
+     nmbarc.f est modifié
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI DEPUIS : 7.4.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI DEPUIS : 7.4.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_R : R7.01.17-A
+     DOC_V : V7.31.124-A
+     DOC_V : V7.31.123-A
+   VALIDATION
+     wtnv124 wtnv123 et wtnv126
+
+
+-----------------------------------------------------------------------
+--- AUTEUR smichel S.MICHEL-PONNELLE   DATE  le 30/05/2005 a 11:41:12
+
+----------------------------------------------------------------------------------
+CORRECTION AL 2005-168
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE ssnv169a couplage BETON_UMLV_FP /  ENDO_ISOT_BETON
+   FONCTIONNALITE
+     Suite à la correction de l'AL2004-431, le test plantait pour cause de matrice
+     non factorisable sur Linux
+   DETAILS
+     Le problème venait du fait que le terme de retrait n'était pas calculé dans
+     le cas RIGI_MECA_TANG. On calcule donc le terme EPSRM quand OPTION=RIGI_MECA_TANG
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage test
+
+----------------------------------------------------------------------------------
+CORRECTION AL 2005-119
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE comportement JOINT_BA
+   FONCTIONNALITE
+     Lors d'une étude avec la loi de comportement, le calcul peut planter pour
+     cause de memory fault. Ceci est dû au fait que dans la routine lcjoba.f,
+     les variables internes sont mises à jour quelque soit l'option et donc
+     même si on est dans le cas RIGI_MECA_TANG.
+   DETAILS
+     On (re)met la mise à jour des variables internes dans la condition IF (RESI)
+     Important :  cette restitution solde également l'AL2005-105.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     etude en cours
+
+
+-----------------------------------------------------------------------
+--- AUTEUR vabhhts J.PELLET   DATE  le 16/05/2005 a 14:10:32
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-144
+   NB_JOURS_TRAV : 0.3
+   INTERET_UTILISATEUR : NON
+   TITRE "affe_char_cine + contact méthode continue => écrasement"
+   FONCTIONNALITE
+     L'utilisation de chargements cinématiques avec des conditions de contact
+     provoquait un écrasement mémoire.
+   DETAILS
+     Dans VTCMBL, lorsque l'on combine l'objet .DESC des cham_no, il arrive
+     parfois que cet objet soit de longueur variable.
+     Liste des fichiers modifiés:
+       vtcmbl.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-146
+   NB_JOURS_TRAV : 0.1
+   INTERET_UTILISATEUR : NON
+   TITRE  "Ménage dans la programmation de nume_ddl"
+   FONCTIONNALITE
+     Les routines  numecn.f et ca2mam.f ne détruisaient pas les
+     objets de travail NU//'.ADNE' et NU//'.ADLI'
+     Ce qui pouvait parfois empêcher de rappeler ces routines :
+     message : "objet .ADNE existe déjà"
+   DETAILS
+     Comme expliqué par E. Lorentz, je détruis ces 2 objets dans les
+     2 routines incriminées.
+     Liste des fichiers modifiés:
+       ca2mam.f  numecn.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-153
+   NB_JOURS_TRAV : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  "routine resyme.f imprudente"
+   FONCTIONNALITE
+     La routine resyme.f ne vérifiait pas qu'elle symétrisait bien toutes les matrices
+     élémentaires. Elle le fait maintenant.
+   DETAILS
+     l'option SYME_MxNS_R avait été oubliée dans les catalogues suivants.
+     Je la rajoute.
+       gener_me3dg_3.cata
+       gener_mecpg2.cata
+       gener_medpg2.cata
+       gener_thax_2.cata
+       gener_thaxd2.cata
+       medptr6.cata
+       thaxtr6.cata
+     Liste des fichiers modifiés:
+       resyme.f
+       gener_me3dg_3.cata  gener_mecpg2.cata   gener_medpg2.cata   gener_thax_2.cata
+       gener_thaxd2.cata   medptr6.cata        thaxtr6.cata
+
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON  (l'erreur pouvait seulement conduire
+                                              à une mauvaise convergence)
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-123
+   NB_JOURS_TRAV : 3
+   INTERET_UTILISATEUR : OUI
+   TITRE  "routine ATASMO peu performante => contact frottement aussi"
+   FONCTIONNALITE
+   Le contact/frottement (methode : pénalisation ou lagrangien) nécessite de calculer
+   une matrice AT*A où A est une matrice rectangulaire (p lignes, neq colonnes).
+   Chaque ligne de A représente une condition de contact/frottement (liaison entre ddls).
+   La routine qui calculait le produit AT*A en stockage Morse (méthode MULT_FRONT) était
+   très mal programmée :
+     - elle mettait en mémoire toute la matrice A (ce qui peut être très volumineux si
+       le contact/frottement concerne beaucoup de noeuds => p grand)
+     - elle générait une matrice AT*A artificiellement grosse (parfois 20 fois trop grosse !).
+   J'ai réécrit entièrement cette routine (en m'inspirant de ce qui est fait pour l'assemblage
+   des matrices élémentaires).
+   Après réécriture, j'ai observé les résultats suivants :
+    -------------------------------------------------------------------------------
+    ssnv128i / U3M= ... (SOLVEUR MULT_FRONT) :
+
+    Remarque : les modifs ne changent pas du tout la convergence les tableaux imprimés sont
+               rigoureusement identiques
+
+    Mémoire minimale :
+          avant : > 150 Mo
+          après : <  64 Mo
+
+    Taille des objets :                 avant       après       après/avant
+          objets de travail            951000         793         0,08%
+          matrice ATA résultat         187000        8293         4,4%
+
+    Temps CPU :
+       *256 Mo :
+        avant :
+           * STAT_NON_LINE    :     124.75 :      26.60 :     151.35 *  (mise à jour 8.00.13)
+           * STAT_NON_LINE    :     106.43 :      15.98 :     122.42 *
+           * STAT_NON_LINE    :     104.67 :      15.98 :     120.65 *
+        après :
+           * STAT_NON_LINE    :      81.07 :      11.73 :      92.80 *
+           * STAT_NON_LINE    :      91.42 :      14.92 :     106.33 *
+           * STAT_NON_LINE    :      84.88 :      13.13 :      98.02 *
+
+      *128 Mo :
+        avant : -> <F> manque de mémoire
+        après :
+           * STAT_NON_LINE    :      83.45 :       9.38 :      92.83 *
+           * STAT_NON_LINE    :      82.65 :       9.67 :      92.32 *
+
+      *64 Mo :
+        avant : -> <F> manque de mémoire
+        après :
+           * STAT_NON_LINE    :      84.53 :      14.50 :      99.03 *
+           * STAT_NON_LINE    :      84.93 :      14.07 :      99.00 *
+    ------------------------------------------------------------------------
+   DETAILS
+     Liste des fichiers modifiés:
+       ata000.f  atasmo.f  copich.f  copis2.f  copisd.f  detrs2.f
+       detrsd.f  jedup1.f  moinip.f  moinsr.f
+
+   RESU_FAUX_VERSION_EXPLOITATION  :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI (l'amélioration de performance est bonne à prendre)
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+REALISATION EL 2005-072
+   NB_JOURS_TRAV : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE  'assemblage en mode "cumul" dans une matr_asse existante'
+   FONCTIONNALITE
+     Dans la fiche, j'avais demandé la résorption de la possibilité de "cumul"
+     de matr_elem dans une matr_asse existante. Je pensais que personne ne s'en servait ...
+     Je m'étais trompé : cette possibilité ('CUMU') est utilisée dans la routine ASCOMA
+     pour traiter le supplément de rigidité du aux forces suiveuses.
+     On ne peut donc pas résorber 'CUMU' simplement aujourd'hui.
+     Pour résoudre quand même le problème révélé par Chokri Zamalli
+     (dyna_non_line + contact='CONTINU'), je me contente donc de réallouer systématiquement
+     la matr_asse résultat si on n'utilise pas 'CUMU'.
+   DETAILS
+     Liste des fichiers modifiés:
+       asmatr.f  assmam.f  assmat.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI (c'est nécessaire pour DYNA_NON_LINE+CONTACT='CONTINU')
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+RESTITUTION HORS AREX   (H1)
+ (en réalité : correction de l' AL 2005-128 qui a déjà été soldée par erreur)
+   NB_JOURS_TRAV : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE  "Bug AFFE_CHAR_MECA/DDL_IMPO si sous-structures statiques"
+   FONCTIONNALITE
+     le mot clé DDL_IMPO de AFFE_CHAR_MECA était bogué dans le cas suivant :
+      - le modèle contient un (ou plusieurs) macro-élément statique (MACR_ELEM_STAT).
+      - ce macro-élément possède des conditions aux limites sur des noeuds exterieurs
+     La plupart du temps, cela se traduisait par une erreur fatale.
+     Resultats faux :
+     ----------------
+     Je pense qu'il y avait un risque de résultats faux dans le cas LIAISON='ENCASTRE'
+   DETAILS
+     routine caddli.f :
+     le nombre d'entiers codés (NBEC) de la grandeur DEPL_R était obtenu par la division
+     de la longueur de l'objets .PRNM par le nombre de noeuds physiques du maillage (NM).
+     Malheureusement, l'objet .PRNM est dimensionné à NBEC*(NM+NL) où NL est le nombre de
+     noeuds de Lagrange des macro-éléments statiques.
+     Donc dès que NL /= 0 , NBEC était faux.
+     Liste des fichiers modifiés:
+       caddli.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI   DEPUIS : 7.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT sdnl105c                      acbhhcd G.DEVESA           630    630      0
+ CASTEST AJOUT wtnp115a                        romeo R.FERNANDES        276    276      0
+ CASTEST AJOUT wtnv127a                        romeo R.FERNANDES        230    230      0
+ CASTEST MODIF miss03a                       acbhhcd G.DEVESA           861     11    414
+ CASTEST MODIF rccm04a                       cibhhlv L.VIVAN            360      7      7
+ CASTEST MODIF sdld321a                      acbhhcd G.DEVESA           450    117      4
+ CASTEST MODIF ssll100a                       durand C.DURAND           418      4      2
+ CASTEST MODIF ssll107d                     mcourtoi M.COURTOIS         206     49     49
+ CASTEST MODIF ssls108a                      cibhhlv L.VIVAN            186      5      5
+ CASTEST MODIF ssls108b                      cibhhlv L.VIVAN            196      3      3
+ CASTEST MODIF ssna113a                     mcourtoi M.COURTOIS         331      1      1
+ CASTEST MODIF wtna100a                        romeo R.FERNANDES        523      1      2
+ CASTEST MODIF wtnl100a                        romeo R.FERNANDES        466      1      1
+ CASTEST MODIF wtnl102a                        romeo R.FERNANDES        199      2     18
+ CASTEST MODIF wtnp100a                        romeo R.FERNANDES        306      1      2
+ CASTEST MODIF wtnp100b                        romeo R.FERNANDES        318      1      2
+ CASTEST MODIF wtnp102a                        romeo R.FERNANDES        346      1      2
+ CASTEST MODIF wtnp102b                        romeo R.FERNANDES        351      1      2
+ CASTEST MODIF wtnp106a                        romeo R.FERNANDES        263      1      2
+ CASTEST MODIF wtnp109a                        romeo R.FERNANDES        142      1      2
+ CASTEST MODIF wtnp111a                        romeo R.FERNANDES        152      1      2
+ CASTEST MODIF wtnv102a                        romeo R.FERNANDES        343      1      2
+ CASTEST MODIF wtnv102b                        romeo R.FERNANDES        353      1      2
+ CASTEST MODIF wtnv118a                        romeo R.FERNANDES        311      2      3
+ CASTEST MODIF wtnv118b                        romeo R.FERNANDES        310      2      3
+ CASTEST MODIF wtnv118c                        romeo R.FERNANDES        287      2      3
+ CASTEST MODIF wtnv122b                        romeo R.FERNANDES        450      3      1
+ CASTEST MODIF wtnv123a                        romeo R.FERNANDES        456     71     60
+ CASTEST MODIF wtnv123b                        romeo R.FERNANDES        467     80     67
+ CASTEST MODIF wtnv123c                        romeo R.FERNANDES        838    193     96
+ CASTEST MODIF wtnv124a                        romeo R.FERNANDES        554     36     34
+ CASTEST MODIF wtnv125a                        romeo R.FERNANDES        480      1      2
+ CASTEST MODIF wtnv126a                        romeo R.FERNANDES        846     64      9
+ CASTEST MODIF wtnv126b                        romeo R.FERNANDES        816     62     20
+ CASTEST MODIF zzzz100a                       durand C.DURAND          1790      6      5
+CATALOGU MODIF typelem/gener_me3dg_3         vabhhts J.PELLET           362      3      1
+CATALOGU MODIF typelem/gener_me3g33            romeo R.FERNANDES        112      3      3
+CATALOGU MODIF typelem/gener_mecpg2          vabhhts J.PELLET           363      3      1
+CATALOGU MODIF typelem/gener_medpg2          vabhhts J.PELLET           365      3      1
+CATALOGU MODIF typelem/gener_thax_2          vabhhts J.PELLET           217      2      1
+CATALOGU MODIF typelem/gener_thaxd2          vabhhts J.PELLET           243      2      1
+CATALOGU MODIF typelem/medptr6               vabhhts J.PELLET           540      2      1
+CATALOGU MODIF typelem/thaxtr6               vabhhts J.PELLET           209      2      1
+ FORTRAN AJOUT jeveux/jedup1                 vabhhts J.PELLET            29     29      0
+ FORTRAN AJOUT postrele/rc32s0               cibhhlv L.VIVAN            154    154      0
+ FORTRAN AJOUT utilitai/copis2               vabhhts J.PELLET            25     25      0
+ FORTRAN AJOUT utilitai/detrs2               vabhhts J.PELLET            25     25      0
+ FORTRAN MODIF algeline/vtcmbl               vabhhts J.PELLET           383      3      1
+ FORTRAN MODIF algorith/arg126               nicolas O.NICOLAS          407      6      1
+ FORTRAN MODIF algorith/ca2mam               vabhhts J.PELLET           101      6      3
+ FORTRAN MODIF algorith/calcme                 romeo R.FERNANDES        861      3      3
+ FORTRAN MODIF algorith/hmliga                 romeo R.FERNANDES        456      3      2
+ FORTRAN MODIF algorith/hmlvag                 romeo R.FERNANDES        534      3      2
+ FORTRAN MODIF algorith/lcjoba               smichel S.MICHEL-PONNELLE    369      3      3
+ FORTRAN MODIF algorith/lcumfp               smichel S.MICHEL-PONNELLE    542      4      1
+ FORTRAN MODIF algorith/mdnewm               acbhhcd G.DEVESA           341      7      4
+ FORTRAN MODIF algorith/mdtr74               acbhhcd G.DEVESA           704     12      2
+ FORTRAN MODIF algorith/nmbarc                 romeo R.FERNANDES       1255    263     29
+ FORTRAN MODIF algorith/nmccam                 romeo R.FERNANDES        831    139      4
+ FORTRAN MODIF algorith/nmcomp                 romeo R.FERNANDES        673      2      2
+ FORTRAN MODIF algorith/nmconv                 romeo R.FERNANDES        420      2      1
+ FORTRAN MODIF algorith/nmmatr              mcourtoi M.COURTOIS         438      2      2
+ FORTRAN MODIF algorith/numecn               vabhhts J.PELLET            99      8      2
+ FORTRAN MODIF algorith/op0070              mcourtoi M.COURTOIS         830      2      2
+ FORTRAN MODIF algorith/ritz99                durand C.DURAND           219      5      4
+ FORTRAN MODIF assembla/asmatr               vabhhts J.PELLET           240      3      1
+ FORTRAN MODIF assembla/assmam               vabhhts J.PELLET           912     16     15
+ FORTRAN MODIF assembla/assmat               vabhhts J.PELLET           689     12     14
+ FORTRAN MODIF assembla/moinip               vabhhts J.PELLET            71      4      4
+ FORTRAN MODIF assembla/moinsr               vabhhts J.PELLET           199      3      2
+ FORTRAN MODIF assembla/resyme               vabhhts J.PELLET           155     15      1
+ FORTRAN MODIF elements/te0364              lamarche S.LAMARCHE         860      1      5
+ FORTRAN MODIF modelisa/ata000               vabhhts J.PELLET           102      2      2
+ FORTRAN MODIF modelisa/atasmo               vabhhts J.PELLET           302    200    252
+ FORTRAN MODIF modelisa/caddli               vabhhts J.PELLET           352     11      9
+ FORTRAN MODIF postrele/rc3201               cibhhlv L.VIVAN            579     18      7
+ FORTRAN MODIF postrele/rc32pm               cibhhlv L.VIVAN            148     11     29
+ FORTRAN MODIF postrele/rc32se               cibhhlv L.VIVAN             41      3    139
+ FORTRAN MODIF postrele/rc32si               cibhhlv L.VIVAN            253     13     18
+ FORTRAN MODIF postrele/rc32sn               cibhhlv L.VIVAN            223     51     47
+ FORTRAN MODIF postrele/rc32sp               cibhhlv L.VIVAN            287     48     36
+ FORTRAN MODIF postrele/rc32st               cibhhlv L.VIVAN             77     37     94
+ FORTRAN MODIF prepost/irgme2                cibhhlv L.VIVAN            126      2      2
+ FORTRAN MODIF prepost/irgmec                cibhhlv L.VIVAN            121      2      2
+ FORTRAN MODIF prepost/irgmg1                cibhhlv L.VIVAN            107      2      2
+ FORTRAN MODIF prepost/irgnal                cibhhlv L.VIVAN            137      2      2
+ FORTRAN MODIF prepost/irgnte                cibhhlv L.VIVAN            136      2      2
+ FORTRAN MODIF utilitai/copich               vabhhts J.PELLET           140     24     94
+ FORTRAN MODIF utilitai/copisd               vabhhts J.PELLET           310    187    368
+ FORTRAN MODIF utilitai/detrsd               vabhhts J.PELLET           457     41     81
+ FORTRAN MODIF utilitai/uldefi              mcourtoi M.COURTOIS         157     14     48
+ FORTRAN MODIF utilitai/ulopen              mcourtoi M.COURTOIS         234      7      9
+  PYTHON MODIF Build/B_ETAPE                  durand C.DURAND           702      2      2
+  PYTHON MODIF Cata/ops                       durand C.DURAND           438      7      3
+  PYTHON MODIF Macro/lire_fonction_ops      mcourtoi M.COURTOIS         268    139    125
+  PYTHON MODIF Macro/lire_inte_spec_ops     mcourtoi M.COURTOIS         125     11      8
+  PYTHON MODIF Macro/lire_table_ops         mcourtoi M.COURTOIS         177     12      8
+  PYTHON MODIF Macro/macr_lign_coupe_ops    mcourtoi M.COURTOIS         175      5      3
+  PYTHON MODIF Noyau/N_FONCTION               durand C.DURAND            83      4      2
+  PYTHON MODIF Utilitai/Graph               mcourtoi M.COURTOIS        1151    118     36
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    7        1369      1369             +1369
+ MODIF :   93       36783      2254    2377      -123
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :  100       38152      3623    2377     +1246 

@@ -1,0 +1,383 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR kham         KHAM MARC              DATE 08/03/2007 - 19:08:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010402 DU 2006-12-20 12:21:22
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   METHODE='CONTINUE'
+FONCTIONNALITE
+   Après vérification, la projection hors-zone ne fonctionnait 
+   que dans le cas de surfaces de contact 1D (seg2 et seg3): 
+   certainement un développement introduit pour un besoin 
+   spécifique (je pense notamment à sagrappe, donc mea culpa 
+   puisque j'en étais le commanditaire).
+   
+   Je complète donc le test de projection hors zone pour 
+   surface 2d (quad et tria).
+   
+   2 routines sont impactées:
+   
+   - majust: où on teste la projection hors zone
+   - mappar: où, pour les noeuds esclaves projetés hors zone,
+             on met un flag pour dire à mmmbca de ne pas les
+             traiter
+   
+   Il n'y a pas de cas-test testant la projection hors-zone. 
+   Peut-être doit-on en inventer un...
+   
+   Pas d'impact documentaire.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : v8
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : v9
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 08/03/2007 - 19:08:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010463 DU 2007-01-19 17:03:06
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   Correction du bug de l'an 2000 ;-)
+FONCTIONNALITE
+   En juillet 1999, M. X a anticipé le passage à l'an 2000 en codant l'année dans versio.f
+   sur 4 caractères : 99 ==> 1999.
+   La date passe donc d'un CHARACTER*8 à un CHARACTER*16... sauf que dans iniast.c, on laisse
+   "char vdate[9];" (8+1 pour le marqueur \0).
+   
+   Il faut donc mettre dans iniast.c :
+      char vdate[17];
+   
+   Le compilateur gcc 4.1.2 de la distribution Ubuntu 6.10 (edgy) active la SSP : Stack
+   Smashing Protection. On plante alors à la première exécution (compilation du catalogue
+   d'éléments) avec un message "stack smashing detected".
+   Pour info :
+   - options de compilation : -f[no-]stack-protector
+   - explication : http://www.debian-administration.org/tag/ssp
+   
+   D'après cette doc, je comprends que c'était sans conséquence puisque les variables
+   écrasées sont calculées juste après le CALL VERSIO.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   installation sur Ubuntu edgy
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE J.P.          DATE 08/03/2007 - 19:08:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010504 DU 2007-02-05 15:41:35
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   TAILLE TROP FAIBLE DU REPERTOIRE DE                                                       
+Taille trop faible du rxc3xa9pertoire de travail
+FONCTIONNALITE
+   Le problème ne se produit que lorsqu'on effectue une poursuite avec une base HDF. Le
+   nombre d'enregistrements n'était pas recalculé en fonction de la taille maximum de fichier.
+   
+   Dans la routine JELIHD, les instructions 275 et 276 ont été remontées en 274 et 275 et
+   l'affectation ligne 284 supprimée.
+   
+      273	C
+      274	      NBENRG(IC) = MIN ( LFIC/(LONGBL(IC)*LOIS) , NBLMAX(IC) )
+      275	      NBEX   = NBLMAX(IC)/NBENRG(IC)+1
+      276	      IF ( LCRA ) THEN
+      277	       LONIND = NBEX*(NBENRG(IC)/512+1)*512 * LOIS
+      278	       CALL JJALLS (LONIND,'V','I',LOIS,Z,INDEF,IADRS,KINDEF(IC))
+      279	       KAT(17) = KINDEF(IC)
+      280	       JINDEF(IC) = IADRS
+      281	       CALL JJECRS (KAT(17),IC,17,0,'E',IMARQ(JMARQ(IC)+2*17-1))
+      282	      ELSE
+      283	        JINDEF(IC) = 1
+      284	      ENDIF
+   
+   Après correction, l'étude associée tourne jusqu'au bout et construit glob.1 et glob.2
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie avec la fiche
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT S.             DATE 08/03/2007 - 19:08:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010543 DU 2007-02-15 16:56:51
+TYPE anomalie concernant Code_Aster (VERSION )
+TITRE
+   ornorm.f : message peu clair
+FONCTIONNALITE
+   Lors de l'affectation de pression sur des mailles de bords avec AFFE_CHAR_MECA, par défaut
+   VERI_NORM = 'OUI', et on passe dans routine ornorm.f qui vérifie l'orientation des
+   mailles de bord.
+   Lorsque les groupes de mailles fournies par l'utilisation sont disjoints, on emet le
+   message d'erreur suivant :
+   '1 seul connexe' (MODELISA5_99)
+   
+   on le remplace par : 
+   ' impossibilité de vérifier l'orientation des mailles de bord : on trouve des groupes de
+   mailles disjoints dans la liste de mailles de bords fournie.
+    vérifier que les groupes de mailles de bord définis forment un ensemble connexe.'
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude FUITE_GV
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR andriambololona ANDRIAMBOLOLONA H.     DATE 08/03/2007 - 19:08:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010413 DU 2006-12-22 15:41:11
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   DYNA_LINE_TRAN
+FONCTIONNALITE
+   Constat :
+   Le calcul se plante sur une étude de sensibilité avec un 
+   modèle contenant à la fois des éléments POU_D_E et des 
+   éléments DIS_TR.
+   
+   Cette étude fait apparaître deux anomalies.
+   Première anomalie : on ne récupère pas le champ matériau 
+   dérivé de la poutre lors de la dérivation par rapport aux 
+   caractéristiques des éléments discrets ; on ne récupère 
+   pas non plus, les caractéristiques élémentaires dérivées 
+   des éléments discrets lors de la dérivation par rapport au 
+   champ matériau de la poutre. D'où plantage lors du calcul 
+   des matrices élémentaires.
+   La routine vechde.f a été modifiée pour la résolution de 
+   cette première anomalie.
+   
+   La deuxième anomalie concerne les séquences de commandes 
+   générées par le superviseur en mode PAR_LOT=OUI. Si 
+   l'utilisateur demande une dérivation par rapport au champ 
+   matériau de la poutre, les caractéristiques élémentaires 
+   des éléments discrets ne sont pas dérivées dans 
+   l'opérateur AFFE_CARA_ELEM. D'un autre côté, si 
+   l'utilisateur demande la dérivation par rapport aux 
+   caractéristiques des éléments discrets, on dérive en même 
+   temps les caractéristiques de la poutre, en annulant la 
+   section de la poutre. Cela provoque une erreur fatale lors 
+   de l'affectation des caractéristiques élémentaires.
+   Une solution de contournement consiste à écrire 
+   manuellement le fichier de commandes pour le calcul des 
+   dérivées, et l'exécuter ensuite en mode PAR_LOT=NON. Cela 
+   nécessite néanmoins la vigilance de l'utilisateur.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   les cas tests sensd* et cas test perso
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE E.             DATE 08/03/2007 - 19:08:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010581 DU 2007-02-26 12:52:34
+TYPE anomalie concernant Code_Aster (VERSION 8.5)
+TITRE
+   DEFI_FOND_FISS:  message d'erreur peu clair
+FONCTIONNALITE
+   Une évolution de DEFI_FOND_FISS avait été réalisée en 8.3.20, mais les messages d'erreur
+   associés n'avaient pas été restitués ! On rajoute donc les messages dans elements5.py :
+   <ELEMENTS5_12> 
+    Le noeud %(k1)s du fond de fissure n est rattaché à aucune maille surfacique 
+    de la lèvre supérieure : vérifier les groupes de mailles.
+   
+   <ELEMENTS5_13> 
+    Le noeud %(k1)s du fond de fissure n est rattaché à aucune maille surfacique 
+    de la lèvre inférieure : vérifier les groupes de mailles.
+   
+   On en profite également pour créer le message suivant :
+   <ELEMENTS5_14> 
+    Les noeuds %(k1)s de FOND_INF et %(k2)s de FOND_SUP ne sont pas en vis à vis. 
+   
+   et on passe le critère de vérification d'une précision absolue (égale à 1 !!) à une
+   précision relative (distance < 10% de la longueur des arretes du fond).
+   
+   Je fais également le ménage dans le catalogue de la commande : remplacement de
+   GROUP_MA_ORIG par GROUP_NO_EXTR dans les mots clé facteurs FOND_SUP et FOND_INF.
+   Ca m'a permis de voir que le mot clé GROUP_NO_ORIG n'était pas correctement pris en compte
+   (plantage sur erreur jeveux) --> correction dans fonfis.f
+   
+   Validation : sslv134g
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv134g
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010582 DU 2007-02-26 13:53:58
+TYPE anomalie concernant Code_Aster (VERSION 8.5)
+TITRE
+   CALC_THETA : mot clxc3xa9 FOND_FISS obligatoire en 3D
+FONCTIONNALITE
+   Modification du catalogue de CALC_THETA : dans le cas 3D, le mot clé FOND_FISS est
+   obligatoire.
+   Remarque : la doc indiquait déjà cette obligation.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010583 DU 2007-02-26 14:14:37
+TYPE anomalie concernant Code_Aster (VERSION 8.5)
+TITRE
+   CALC_G : blindage de la condition R_INF < R_SUP
+FONCTIONNALITE
+   Samuel a remarqué à juste raison qu'il n'y avait pas de vérification que le rayon RSUP
+   était strictement supérieur à RINF dans la définition des couronnes d'intégration thêta
+   (CALC_G et CALC_THETA), ce qui pouvait conduire à des erreurs numériques (rinf=rsup) voire
+   même à des résultats faux (G<0 si rsup<rinf).
+   On ajoute donc une vérification dans les routines gverig, gveri2, gver2d et gveri3.
+   
+   Le message d'erreur est le suivant :
+   !-----------------------------------------------------------------------------------!
+   ! <F> <ELEMENTS5_11>                                                                !
+   !                                                                                   !
+   !                                                                                   !
+   !  Le rayon R_SUP (ou R_SUP_FO) doit obligatoirement être supérieur au rayon R_INF  !
+   !  (resp. R_INF_FO).                                                                !
+   !                                                                                   !
+   !                                                                                   !
+   ! Cette erreur est fatale. Le code s'arrete.                                        !
+   !-----------------------------------------------------------------------------------!
+   
+   On en profite pour rajouter une valeur par défaut (=1) pour le module dans le cas où
+   R_SUP_FO et R_INF_FO sont définis pour l'option calc_g_glob (jusqu'à présent : erreur avec
+   message peu explicite).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test perso
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010396 DU 2006-12-18 18:14:34
+TYPE anomalie concernant Code_Aster (VERSION 8.4)
+TITRE
+   CALC_G et les charges cinxc3xa9matiques
+FONCTIONNALITE
+   Problème : erreur dans CALC_G (erreur CALCULEL3_43 : "les charges sont de type different")
+   si il y a une charge cinématique dans la liste des chargements renseignée sous le mot clé
+   EXCIT.
+   
+   Correction : dans medom1, on supprime la vérification sur le type de charge (pour
+   l'opérateur CALC_G). En effet, une charge cinématique sera simplement ignorée dans la
+   suite du calcul et il n'est donc pas nécessaire de lui affecter un traitement spécifique
+   (routine gcharg : traitement uniquement des charges volumiques, surfaciques ou thermiques).
+   
+   Remarque : dans le cas où on ne renseignait pas EXCIT, les éventuelles charges
+   cinématiques étaient déjà ignorées (pas de vérification sur le type des charges).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test perso
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR devesa       DEVESA G.              DATE 08/03/2007 - 19:08:09
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010493 DU 2007-02-01 14:53:56
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+   NEW9.0.7, le cas test miss06a termine NOOK (B)
+FONCTIONNALITE
+   Dois-je comprendre que la modif issue de la fiche 9590 
+   (raffinement de la discrétisation spectrale par 
+   SPEC AUTO) réalisée sur l'alphaserver a été depuis restituée sur la Bull aussi ?
+   
+   Enfi, je ne comprends pas la question "décalage entre l'exécutable actuel et ses sources" ?
+   
+   J'ose espérer qu'à la restitition de la fiche, ce décalage disparaît !
+   Affecter ceci  au lot T11, projet OMERSI.
+   
+   Merci (bis), 
+   FV
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.10.125
+VALIDATION
+   test MISS06A
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF miss06a                       salmona L.SALMONA          637     74     20
+CATALOPY MODIF commande/calc_theta           salmona L.SALMONA           65      2      2
+CATALOPY MODIF commande/defi_fond_fiss       salmona L.SALMONA          100      5      5
+       C MODIF utilitai/iniast               salmona L.SALMONA           59      3      3
+ FORTRAN MODIF algorith/gveri3               salmona L.SALMONA          179     10      1
+ FORTRAN MODIF algorith/mappar               salmona L.SALMONA          337      6     18
+ FORTRAN MODIF algorith/vechde               salmona L.SALMONA          586      5      8
+ FORTRAN MODIF calculel/medom1               salmona L.SALMONA          212      8      5
+ FORTRAN MODIF elements/fonfis               salmona L.SALMONA          471     36     38
+ FORTRAN MODIF elements/gver2d               salmona L.SALMONA          210      4      1
+ FORTRAN MODIF elements/gveri2               salmona L.SALMONA          197     12      3
+ FORTRAN MODIF elements/gverif               salmona L.SALMONA          893     24     15
+ FORTRAN MODIF elements/gverig               salmona L.SALMONA          329     21      4
+ FORTRAN MODIF elements/majust               salmona L.SALMONA           97     18      2
+ FORTRAN MODIF jeveux/jelihd                 salmona L.SALMONA          579      3      2
+  PYTHON MODIF Messages/elements4            salmona L.SALMONA          329     55      1
+  PYTHON MODIF Messages/modelisa5            salmona L.SALMONA          413      3      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   17        5693       289     130      +159
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   17        5693       289     130      +159 

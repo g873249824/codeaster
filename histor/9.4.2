@@ -1,0 +1,770 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 22/12/2008 - 13:45:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013005 DU 2008-12-22 08:14:50
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug Numeric ou Python sur Calibre 5 + gfortran
+FONCTIONNALITE
+   Bug Numeric ou Python sur x86_64 :
+   
+   >>> import Numeric
+   >>> x=Numeric.arange(10.)
+   >>> x[5:]
+   zeros((0,), 'd')
+   
+   Ailleurs, on a :
+   >>> import Numeric
+   >>> x=Numeric.arange(10.)
+   >>> x[5:]
+   array([ 5.,  6.,  7.,  8.,  9.])
+   
+   On peut corriger en faisant :
+   >>> x[5:10]
+   array([ 5.,  6.,  7.,  8.,  9.])
+   
+   
+   Je propose de modifier les quelques fichiers qui font ce type d'opération :
+   - post_dyna_alea_ops.py
+   - post_k1_k2_k3_ops.py
+   - t_fonction.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout Calibre 5
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013006 DU 2008-12-22 08:50:17
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bugs reveles sous Calibre4/Calibre5
+FONCTIONNALITE
+   En passant des astouts suite à des ré-installations complètes de la 9.4.0 sur Calibre4 et
+   Calibre 5, plusieurs anomalies ont été révélées :
+   
+   - simu_point_mat_ops.py :
+   Il faut faire le DEFI_FICHIER/ASSOCIER après l'open/close sinon le fichier apparait vide
+   dans LIRE_MAILLAGE.
+   
+   - stanley.py :
+   La dernière modif pour la sensibilité doit être protégéé par un "if sensi".
+   
+   - erreur à l'appel de METIS quand le chemin d'installation est un peu long : il y a une
+   limite à 80 caractères.
+   Modif de aplext.c, preml1.f, fetskp.f : on passe à 256 caractères
+   
+   - astermodule.c, aster_depend.h : type pour les longueurs des chaines de caractères.
+   Sans trouver d'explication claire :  Dans les routines, on utilise le type int. Dans le
+   passage d'argument, on utilise le type STRING_SIZE défini à "unsigned int" aussi bien en
+   32 bits qu'en 64 bits.
+   Cette modif semble fonctionner sur les différentes machines testées.
+   
+   - problème avec des WRITE/FORMAT avec gfortran : certains sont de vraies erreurs (on
+   essaie d'imprimer un entier avec un format de réel ou l'inverse), d'autres sont des
+   doubles boucles implicites.
+   Routines : surfc1, liimpr
+   
+   - dans meca01, lors du calcul d'un estimateur d'erreur, on affiche la valeur de
+   l'instant... sans la récupérer. Il suffit d'ajouter un RSADPA pour que la valeur affichée
+   soit initialisée et correcte.
+   
+   - mecalm : TYPES et IRET5 ne sont pas initialisées si le mot-clé TYPE_ESTI n'est pas
+   renseigné.
+   
+   - mmdonf : on fait CALL ELRFDF(..., IBID, IBID). Or les deux variables correspondantes
+   NDIM et NNO sont en sortie. Quand on compile avec l'option -fPIC, et quand on fait NDIM=2,
+   NNO=4 on modifie la même zone mémoire (donc NDIM=4). On accroche un CALL ASSERT en fin de
+   routine car NDIM*NNO n'a pas la valeur attendue. Il faut utiliser deux variables bidon.
+   
+   - variables non initialisées dans sleelt (PRE_IDEAS).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout Calibre 4/5
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR moulin       MOULIN Stéphane        DATE 22/12/2008 - 13:45:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012509 DU 2008-09-19 16:32:16
+TYPE aide utilisation concernant Code_Aster (VERSION 7.0)
+TITRE
+   GLRC DM + PMF : pb de convergence sous poids propre
+FONCTIONNALITE
+   Bonjour,
+   Avant fermeture de la fiche, un rappel des conclusions : 
+   1- le fichier de commande a été passé en Version 9
+   2- pas de bug constaté dans les PMF.
+   3- la prise en main par le Septen de l'étude SMART08 en version 9 "optimisée" par 
+   Damijan a été réalisée
+   4- un travail sur la modélisation des liaisons en GC est à faire : ce thème doit etre 
+   traité dans OMARISI qui débute en 2009.
+   
+   Par ailleurs, des points d'avancement réguliers sont prévus entre AMA et Septen sur les 
+   calculs SMART2008 Phase 1B (dealine 15 Janvier.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 22/12/2008 - 12:57:30
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012877 DU 2008-11-21 14:09:41
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   LIRE_RESU / MED xc3xa0 blinder
+FONCTIONNALITE
+   Problème :
+   ==========
+   Lorsque l'on fait LIRE_RESU / MED pour lire une sd_resultat qui n'est pas cohérente
+   (maillages différents du point de vue type de mailles) avec le modèle fourni (erreur
+   d'utilisation), on obtient le message peu clair : 
+   
+   "Condition non respectée"
+   lrcame.f :
+      ligne 559 : CALL ASSERT 
+   
+   Analyse :
+   =========
+   Dans lrcame.f, avant la ligne 559, on vérifie que le nombre de type de maille présent dans
+   le fichier med lu correspond à celui du maillage fourni dans le modèle.
+   
+   Si ce n'est pas le cas on s'arrête avec une erreur fatale.
+   
+   Correction :
+   ============
+   Dans le cas où le nombre de type de maille est différent, on émet le message suivant :
+   
+      !------------------------------------------------------------------------------!
+      ! <EXCEPTION> <MED_58>                                                         !
+      !                                                                              !
+      !                                                                              !
+      !   -> Le nombre de type de maille présent dans le fichier MED est             !
+      !       différent du nombre de type de maille présent dans le maillage fourni. !
+      !   -> Risque & Conseil :                                                      !
+      !      Le modèle sur lequel le résultat a été créé n'est pas le même           !
+      !       que le modèle fourni.                                                  !
+      !      Vérifiez le maillage de votre modèle !                                  !
+      !                                                                              !
+      !                                                                              !
+      !                                                                              !
+      !                                                                              !
+      !------------------------------------------------------------------------------!
+   
+   Impact :
+   ========
+   lrcame.f
+   med.py
+   
+   Remarque : pour reproduire la bonne situation, j'ai fait "varier" le modèle fourni dans
+   LIRE_RESU. On fait peu de vérification sur le modèle fourni et souvent on plante salement.
+   La fiche 12953 propose de blinder tous les cas pour s'arrêter proprement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Test perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012890 DU 2008-11-26 08:24:54
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   LIRE_RESU (format MED)
+FONCTIONNALITE
+   Problème :
+   ==========
+   En faisant LIRE_RESU / MED pour le champ EPME_ELNO_DEPL, on s'arrête avec le message 
+      !------------------------------------!
+      ! <EXCEPTION> <UTILITAI2_94>         !
+      !                                    !
+      !                                    !
+      !  champ non prevu :  EPME_ELNO_DEPL !
+      !                                    !
+      !                                    !
+      !                                    !
+      !                                    !
+      !------------------------------------!
+   
+   Analyse :
+   =========
+   Dans op0150.f chaque champ possible est indiqué explicitement, on fourni ainsi le nom de
+   la grandeur et la localisation du champ. Pour les champ aux points de Gauss, on fournit en
+   plus le nom de l'option (de calcul.f) et un mode local.
+   
+   Correction :
+   ============
+   On ajoute les lignes nécessaires pour permettre le champ EPME_ELNO_DEPL.
+   
+   Impact :
+   ========
+   op0150.f
+   
+   Remarque : On imagine facilement qu'une autre anomalie sera émise dès qu'on voudra lire un
+   autre champ non autorisé. A terme, on propose d'émettre une fiche pour compléter ou
+   développer un catalogue contenant toutes ces informations (nécessaire aussi à Stanley).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Etude fournie
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013003 DU 2008-12-19 15:43:19
+TYPE express concernant Code_Aster (VERSION 9.4)
+TITRE
+   Petits bugs
+FONCTIONNALITE
+   On corrige trois choses :
+   * dans reslo2.f : dimensionnement des champs in dans l'appel à CALCUL (2 à la place de 3)
+   * dans erglme.f : suppression d'un TBIMPR de développement devenu inutile.
+   * dans gener_meaxs2.cata : la composante TAILLE des modes locaux EERREUR  et EERRENO a été
+   oubliée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Test perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 22/12/2008 - 15:55:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012876 DU 2008-11-21 13:34:32
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Troncature de rxc3xa9els ou complexes vers entiers et vice-versa
+FONCTIONNALITE
+   Anomalies
+   =========
+   
+   L'outil FTNCHEK permet suite à l'analyse syntaxique de fichiers fortran de répérer
+   quelques erreurs de programmations. Sur les 6000 et quelques routines F77 de Code_Aster,
+   on corrige quelques erreurs en plus de celles déjà signalées dans la fiche 12845.
+   
+   Détails
+   =======
+   
+   * connor.f : formulation 'CONNORS' dans CALC_FLUI_STRU 
+   ==> lignes 251,254,402 et 405 on fait un quotient entres deux entiers, le résultat est
+   donc entier. Alors que ce que l'on cherche à calculer (le pas) est réel selon la
+   documentation.
+   
+   * sh1rig.f, sh2rig.f : éléments SHB
+   ==> deux indices de boucles sont déclarés réels (à cause de IMPLICIT REAL*8)
+   
+   * utites.f : TEST_*
+   ==> le quotient du test relatif pour des valeurs entières est calculé en entier à cause de
+   l'ordre des opérations.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012891 DU 2008-11-26 10:02:33
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   X-FEM + CONTACT (pas de contact sur les levres)
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   On ne peut pas faire de X-FEM avec du contact discret (METHODE!='XFEM' &&
+   METHODE!='CONTINUE') en même temps dans un calcul : on plante à la fin du premier pas de
+   temps sur l'erreur :
+   
+   Objet JEVEUX inexistant dans les bases ouvertes : >&&OP0070.RESOC.VALE.CNSV<
+   
+   Analyse
+   =======
+   
+   L'objet inexistant est le champ simple pour préparer la SD résultat VALE_CONT. Il n'a pas
+   été créé. L'erreur se situe dans cfmxr0.f qui est censée créer ce champ pour le contact
+   discret.
+   On veut tester si on est en méthode de contact 'XFEM' pour sortir immédiatement (dans ce
+   cas le champ est créé autre part) et on teste si on est en 'XFEM' tout court.
+   
+   Note
+   ====
+   
+   Ce cas ('XFEM'+'CONTACT_DISCRET') n'est pas testé dans la base.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sur le calcul fourni
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012920 DU 2008-12-01 15:27:28
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Contact - Projection
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Mickaël s'est aperçu que le critère d'arrêt de l'algorithme de Newton pour la projection
+   noeud-maille des méthodes de contact n'est pas correct.
+   
+   Détails
+   =======
+   
+   On teste :
+   
+   Delta_x             Delta_x
+   ------- au lieu de ---------
+     x^2                  x
+   
+   Le critère est donc (en général) plus fort que de rigueur (x est la norme du vecteur
+   position paramétrique qui est <= 1 pour tous les éléments sauf le quadrangle).
+   
+   Correction
+   ==========
+   
+   Dans mmnewt.f.
+   
+   Astout
+   ======
+   
+   Un astout contact donne ceci :
+   
+   ssna102a             NOOK_TEST_RESU        11.33        0.68       12.01       12.49
+   --------  ---------  ----------------  ---------   ---------   ---------   ---------
+        205    204          1              22853.54      770.81    23624.35    24422.31
+   
+   Deux tests de non régression sont NOOK au delà de la 10ème décimale : on ajuste les valeurs.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout contact
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012943 DU 2008-12-05 12:25:53
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   ASTOUT en mode debug sur Bull
+FONCTIONNALITE
+   Anomalies
+   =========
+   
+   On a réalisé un astout en mode debug sur la machine Bull (versions 9.3.23/24/25). Les
+   tests suivants s'arrêtent en erreur :
+   
+   wtna105a ARRET_ANORMAL
+   wtnv134a NOOK_TEST_RESU
+   ssnp503f ERREUR_<F>
+   hsnv128a ERREUR_<F>
+   
+   Détails
+   =======
+   
+   Les tests ssnp503f et hsnv128a sont corrigés :
+   
+   * ssnp503f : X-FEM grands glissements.
+   Dans l'appariement on choisit (parmi plusieurs projections) la maille avec laquelle on
+   apparie un point de contact, le choix se fait suivant un critère de distance. Dès qu'une
+   maille est choisie comme étant la meilleure du point de vue du critère, on calcule les
+   deux vecteurs tangents au point de projection. Or ces deux vecteurs ne sont pas
+   initialisés et on calcule leur norme au premier passage (sans avoir sélectionné la maille
+   courante).
+   ==> Conséquences : sans (plantage en FPE sur Bull).
+   
+   * hsnv128a : métallurgie.
+   Dans le calcul des options non linéaires pour le comportement à écrouissage cinématique
+   (nzcifw.f), la plasticité de transformation n'est pas initialisée (à zéro) en prédiction.
+   Or celle-ci sert quand même dans les calculs intermédiaires de la matrice élémentaire
+   (RIGI_MECA_TANG).
+   
+   Remarques : 
+   - bug aussi présent pour le Zircaloy dont la routine pour le même comportement est dédiée
+   (nzcizi.f) et pour lequel aucun test n'existait en 9.3 ! (À vérifier en 9.4)
+   - bug introduit en 9.0.26 (corrections de bugs et remise au propre de la routine) et
+   reporté en 8.4.6 !
+   
+   ==> Conséquences : pas de résultats faux mais une matrice tangente en prédiction fausse
+   (avec des valeurs non initialisées qui provoquaient sur Bull des FPE).
+   
+   
+   Pour les deux tests encore cassés : fiches 13007(wtna105a) et 13008(wtnv134a)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnp503f,hsnv128a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012601 DU 2008-10-08 08:54:51
+TYPE aide utilisation concernant Code_Aster (VERSION 8.7)
+TITRE
+   Interpxc3xa9nxc3xa9tration pour quelques noeuds de surfaces avec contact
+FONCTIONNALITE
+   AOM
+   ===
+   
+   Interpénétrations constatées avec des surfaces QUAD8 (s'appuyant sur des HEXA20).
+   
+   * Les surfaces QUAD8 présentent une pathologie lorsque elles sont utilisées en contact.
+   Celle-ci est inhérente à leurs fonctions de forme, et peut entraîner des résultats faux.
+   C'est pourquoi pour éviter cela, les noeuds milieux des QUAD8 sont exclus du contact et on
+   les lie aux noeuds sommets (cela revient en quelque sorte à rigidifier la maille).
+   ==> ce que l'on conseille en général c'est de transformer les HEXA20 en HEXA27 (commande
+   CREA_MAILLAGE/HEXA20_27) afin d'obtenir des surfaces de contact QUAD9 qui permettent de
+   décrire correctement le contact aux noeuds milieux.
+   
+   * Lorsque l'on utilise un appariement 'NODAL' dans le contact, il faut bien veiller dans
+   ce cas à ce que les maillages des faces de la fissure restent compatibles (ici cela semble
+   bon).
+   ==> dans le doute, il vaut mieux conserver l'option par défaut 'MAIT_ESCL'.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   fichiers joints
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012812 DU 2008-11-13 17:17:54
+TYPE aide utilisation concernant Code_Aster (VERSION 7.0)
+TITRE
+   convergence stat_non_line
+FONCTIONNALITE
+   AOM
+   ===
+   
+   Quelques observations sur cette étude :
+   
+   * L'intégration du comportement en grandes déformations 'SIMO_MIEHE' a été revue en
+   version 9. Il ne doit plus y avoir d'échec possible dans l'intégration pour un écrouissage
+   isotrope (linéaire ou courbe de traction). J'ai donc fait l'étude en version 9, elle
+   échoue encore (mais en allant un peu plus loin).
+   Il subsiste en effet une vérification sur la géométrie des mailles EF (on teste leur
+   jacobien). Or si l'évolution de la géométrie au cours de l'algorithme de Newton conduit à
+   une maille complètement distordue, on va tomber sur cette erreur. Ici c'est
+   vraisemblablement le contact qui en étant mal vérifié envoie dans les choux (cf. image
+   jointe).
+   
+   * On ne peut en effet pas utiliser les méthodes discrètes dans cette étude. On a vu ces
+   derniers temps, la difficulté pour les problèmes en grandes déformations avec LdC non
+   linéaire à satisfaire le critère de convergence géométrique. Ici on est obligé d'utiliser
+   REAC_GEOM='CONTROLE' et NB_REAC_GEOM=2, ce qui conduit à faire des erreurs qui
+   s'accumulent (on compte des dizaines de % d'écart entre deux configurations convergées
+   dans un même pas de temps et on a une alarme pour le signaler).
+   
+   * La méthode 'CONTINUE' de contact semble mieux fonctionner mais a aussi une difficulté à
+   satisfaire le critère géométrique (ITER_GEOM_MAXI a beau avoir été poussé à 10).
+   On voit clairement que la non vérification du critère entraîne des interpénétrations (cf
+   image jointe), celles-ci produisent des mailles distordues d'où l'échec dans l'intégration
+   de la LdC.
+   
+   Récapitulatif sur les instants de calcul atteints (c'est à dire convergés) :
+   
+   ______________________________________________________
+   Vers | Contact  | Instant                             |
+   _____|__________|_____________________________________|
+   STA8 | Discret  | INSTANT DE CALCUL :  1.500000000E-01|
+   STA9 | Discret  | INSTANT DE CALCUL :  2.166666667E-01|
+   STA9 | Continue | INSTANT DE CALCUL :  3.000000000E-01|
+   _____|__________|_____________________________________|
+   
+   Ci-joint un fichier de commandes modifié pour tourner en 9 avec la méthode 'CONTINUE'.
+   
+   Analyse
+   =======
+   
+   La non convergence du critère géométrique (méthode discrète comme continue) s'explique ici
+   par le maillage car le bloc n'est pas assez discrétisé pour épouser la forme du boulon
+   (presque rigide).
+   
+   Je m'interroge sur :
+   "Pour comparaison le calcul a été lancé avec le solveur Adina, specialisé dans les grandes
+   deformations, et les contraintes excessives ont disparu moyennant une adaptation de maillage"
+   ==> Comme le maillage est issu d'un processus d'adaptation, ce n'est pas le maillage
+   initial. Est-ce que Adina est capable de mener le calcul de bout en bout à partir de ce
+   maillage ?
+   
+   Pour mener le calcul au bout en vérifiant le critère géométrique, il faut :
+   * utiliser plus d'éléments au niveau du contact et en particulier autour du congé du boulon.
+   * éventuellement utiliser des éléments quadratiques (attention pour les HEXA20, il faut
+   les passer en HEXA27 avec les méthodes discrètes).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 22/12/2008 - 14:57:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012991 DU 2008-12-17 12:56:52
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Pression fonction pour les ?ments tuyaux
+FONCTIONNALITE
+   Les éléments tuyaux savent gérer une pression interne constante mais pas variable : "le
+   calcul de l'option :  CHAR_MECA_PRES_F n'est possible pour aucun des types d'éléments du
+   LIGREL."
+   
+   Or c'est typiquement nécessaire pour représenter la pression hydrostatique dans les
+   conduites (rho.g.h), fonction de l'altitude.
+   
+   La doc U de AFFE_CHAR_MECA (paragraphe 4.34.1) laisse entendre que c'est possible : donc
+   on complète catalogues et texxxx concerné.
+   
+   Validation par SSNL503A qui emploie déjà une force_tuyau/pression scalaire qu'on coupe en
+   deux : moitié scalaire, moitié fonction constante.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnl503a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 22/12/2008 - 13:53:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012947 DU 2008-12-05 15:17:50
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   En NEW 9.4.0, le cas-test wdnp101a est NOOK sur Rocks.
+FONCTIONNALITE
+   Probleme releve:
+   ----------------
+   TEST_RESU NOOK sur le calcul du MAX(SPEC_ISO).
+   
+   Anomalie detectee:
+   -----------------
+   Non initialisation du vecteur P(K) pour le mecanisme 
+   isotrope monotone suite a la fiche 11399 dans la routine 
+   hujjid.f.
+   
+   Correction proposee:
+   --------------------
+   Initialisation a la ligne 170 du vecteur P(K) a la trace 
+   de SIGMA: P(K) = I1F = (SIGF(1)+SIGF(2)+SIGF(3))
+   
+   
+   Validation:
+   -----------
+   Cas-test wdnp101a OK sur ROCKS.
+   
+   Remarques:
+   ---------
+   1)Une sensibilite sur ce cas-test est constate lors de 
+   l'activation du mode DEBUG JEVEUX sur la machine ROCKS 
+   apres compiltation du source en nodebug.
+   Pour corriger ce point, il est necessaire d'apporter des 
+   modifications sur plusieurs routines du modele de Hujeux 
+   dont voici la liste:
+   hujact, hujdp, hujdrc, hujiid, hujjid, hujmid, hujpot, 
+   hujpre, hujpxd, hujres, hujtid, nmhuj.
+   
+   2)L'echec constate avec valgrind suite au test realise 
+   par M.Courtois etait lie a la version de valgrind 
+   installee sur la machine ROCKS - l'erreur fatale se 
+   produisait lors de l'utilisation d'une routine LAPACK 
+   (DGESV). La nouvelle version de valgrind recuperee par J-
+   P Lefebvre ne releve plus cette erreur.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.3.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   CAS-TEST WDNP101A
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 22/12/2008 - 13:44:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012980 DU 2008-12-12 07:40:55
+TYPE express concernant Code_Aster (VERSION 9.5)
+TITRE
+   VISCOCHAB : parametres materiaux par defaut
+FONCTIONNALITE
+   PROBLÈME :
+   ----------
+   
+   A l'heure actuelle, il n'existe aucune valeur par défaut des paramètres matériaux de la
+   loi de comportement VISCOCHAB.
+   
+   
+   SOLUTION :
+   ----------
+   
+   On définit certaines valeurs par défaut :
+   par défaut, il n'y a pas de restauration, pas de terme de Burlet et l'écoulement est
+   proportionnel à une puissance de F (critère de plasticité).
+   
+   On a notamment essayé d'harmoniser les valeurs par défaut pour les paramètres communs à
+   plusieurs loi (CIN1_CHAB, MEMO....)
+   
+   Sur les 25 paramètres (+2 paramètres élastiques) de la loi, 15 deviennent facultatifs. Il
+   en reste 10 (+2 élastiques) obligatoires.
+   
+   paramètres par défaut:
+   MU = 0
+   A_R = 1
+   A_I = 1
+   A_K = 0
+   ALP = 0
+   ETA = 1/2
+   D1 = 1
+   D2 = 1
+   M_R = 1
+   G_R = 0
+   M_1 = 1
+   M_2 = 1
+   G_X1 = 0
+   G_X2 = 0
+   QR_0 = 0
+   
+   impact : defi_materiau.capy + comp002i.comm + ssnd105b
+   
+   doc : defi_materiau U4.43.01 + doc R de viscochab R5.03.12
+   
+   Validation : comp002i, ssnd105b : on utilise les valeurs par défaut.
+   Vérification sur tous les tests VISCOCHAB.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.12, U4.43.01
+VALIDATION
+   comp002i, ssnd105b
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF comp002i                        proix J-M.PROIX          314     40     33
+ CASTEST MODIF hsnv125d                        proix J-M.PROIX          475      3      2
+ CASTEST MODIF ssna102a                       desoza T.DESOZA           301      5      5
+ CASTEST MODIF ssnd105b                        proix J-M.PROIX          516      3     14
+ CASTEST MODIF ssnl503a                       durand C.DURAND           284    215    208
+ CASTEST MODIF ssnv118a                        proix J-M.PROIX          221      2      1
+ CASTEST MODIF ssnv118b                        proix J-M.PROIX          376      2      1
+ CASTEST MODIF ssnv118c                        proix J-M.PROIX          189      2      1
+ CASTEST MODIF ssnv118d                        proix J-M.PROIX          322      2     31
+ CASTEST MODIF wdnp101a                     foucault A.FOUCAULT        1219      1      1
+CATALOGU MODIF options/char_meca_pres_f       durand C.DURAND            45      2      1
+CATALOGU MODIF typelem/gener_meaxs2           delmas J.DELMAS           522      7      7
+CATALOGU MODIF typelem/met3seg3               durand C.DURAND           274      5      1
+CATALOPY MODIF commande/defi_materiau          proix J-M.PROIX         2879     17     17
+CATALOPY MODIF commun/c_comp_incr              proix J-M.PROIX          260      2      2
+       C MODIF supervis/astermodule         courtois M.COURTOIS        4163     59     57
+       C MODIF utilitai/aplext              courtois M.COURTOIS         199      2      2
+ FORTRAN MODIF algeline/connor                desoza T.DESOZA           445     11     11
+ FORTRAN MODIF algeline/preml1              courtois M.COURTOIS         379     10     10
+ FORTRAN MODIF algorith/cfmxr0                desoza T.DESOZA           216      4      4
+ FORTRAN MODIF algorith/hujjid              foucault A.FOUCAULT        1087      2      2
+ FORTRAN MODIF algorith/mmdonf              courtois M.COURTOIS          92      3      3
+ FORTRAN MODIF algorith/mmnewt                desoza T.DESOZA           263      2      2
+ FORTRAN MODIF algorith/nzcifw                desoza T.DESOZA           736      4      1
+ FORTRAN MODIF algorith/nzcizi                desoza T.DESOZA           712      4      1
+ FORTRAN MODIF algorith/xappar                desoza T.DESOZA           293      4      2
+ FORTRAN MODIF calculel/erglme                delmas J.DELMAS           235      1      3
+ FORTRAN MODIF calculel/meca01              courtois M.COURTOIS         728     11      2
+ FORTRAN MODIF calculel/mecalm              courtois M.COURTOIS        2473      3      1
+ FORTRAN MODIF calculel/reslo2                delmas J.DELMAS           197      2      2
+ FORTRAN MODIF elements/sh1rig                desoza T.DESOZA           315      4      4
+ FORTRAN MODIF elements/sh2rig                desoza T.DESOZA           318      4      4
+ FORTRAN MODIF elements/te0583                durand C.DURAND           506     19      2
+ FORTRAN MODIF modelisa/surfc1              courtois M.COURTOIS         170      2      2
+ FORTRAN MODIF prepost/lrcame                 delmas J.DELMAS           622     12     11
+ FORTRAN MODIF stbtrias/sleelt              courtois M.COURTOIS         275      3      2
+ FORTRAN MODIF utilitai/fetskp              courtois M.COURTOIS         496      3      4
+ FORTRAN MODIF utilitai/liimpr              courtois M.COURTOIS         150      7      3
+ FORTRAN MODIF utilitai/op0150                delmas J.DELMAS          1117     12     10
+ FORTRAN MODIF utilitai/utites                desoza T.DESOZA           265      3      3
+  PYTHON MODIF Macro/post_dyna_alea_ops     courtois M.COURTOIS         432      4      3
+  PYTHON MODIF Macro/post_k1_k2_k3_ops      courtois M.COURTOIS        1276     10      7
+  PYTHON MODIF Macro/simu_point_mat_ops     courtois M.COURTOIS         582      4      4
+  PYTHON MODIF Messages/med                   delmas J.DELMAS           499     10      1
+  PYTHON MODIF Stanley/stanley              courtois M.COURTOIS        3178      5      5
+  PYTHON MODIF Utilitai/t_fonction          courtois M.COURTOIS         718     12     10
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   46       31334       544     503       +41
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   46       31334       544     503       +41 

@@ -1,0 +1,1043 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR angles       ANGLES Jean            DATE 16/11/2009 - 16:47:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014092 DU 2009-10-23 12:37:19
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Floating point error dans CALC_FATIGUE
+FONCTIONNALITE
+   Dans le mot clef facteur "FATIGUE" Jean-Michel S. a utilisé l'opérande "WOHLER" au lieu de
+   l'opérande "MANSON_COFFIN" : 
+   
+                      FATIGUE=_F(WOHLER=WOHLEDFP,
+                                   E_REFE=179000.0E6,),
+                      CISA_PLAN_CRIT =_F( CRITERE          = 'FATESOCI_MODI_AV',
+   #                                              FATSOC_A         = 0.00578,
+                                                  FATSOC_A         = 5.78E-9,
+                                                COEF_CISA_TRAC   = 1.73,          
+   					     ),
+   
+   Cela explique l'arrêt fatal sur une "Erreur numérique (floating point exception)"
+   Le calcul se déroule bien quand on utilise le bon opérande :
+   
+                      FATIGUE=_F(
+                                  MANSON_COFFIN = WOHLEDFP,
+                                ),
+   
+   Attention le nom "WOHLEDFP" est mal choisi parcequ'il laisse supposer que c'est une courbe
+   de fatigue (contrainte - Nb de cycles) alors qu'il s'agit d'une courbe de fatigue
+   (déformation - Nb de cycles)
+   
+   L'arrêt du calcul est fait dans le fortran de la commande CALC_FATIGUE.
+   
+   J'ai modifié les routines :
+   avdowh.f pour les critères de fatigue : MATAKE_MODI_AV
+                                           DANG_VAN_MODI_AV
+                                           FATESOCI_MODI_AV
+   
+   dtauno.f et deltau.f pour les critères de fatigue :  MATAKE_MODI_AC
+                                                        DANG_VAN_MODI_AC
+   
+   J'ai de plus ajouté les messages d'erreur 89 et 90 dans le fichier fatigue1.py (version
+   NEW10).
+   En version NEW9 il s'agit des messages d'erreur 79 et 80.
+   
+   Typiquement les 2 messages indiquent :
+   
+   message 89 en version NEW10, message 79 en version NEW9 :
+   
+   !---------------------------------------------------------------------------------------------------!
+      ! <EXCEPTION> <FATIGUE1_89>                                                           
+                !
+      !                                                                                     
+                !
+      !  Dans la commande DEFI_MATERIAU, l'opérande WOHLER du mot clé facteur FATIGUE       
+                !
+      !  est incompatible avec le critère FATESOCI_MODI_AV requis dans le mot clé facteur
+   CISA_PLAN_CRIT. !
+      !                                                                                     
+                ! 
+   !---------------------------------------------------------------------------------------------------!
+   
+   
+   message 90 en version NEW10, message 80 en version NEW9 :
+     
+   !--------------------------------------------------------------------------------------------------!
+      ! <EXCEPTION> <FATIGUE1_90>                                                           
+               !
+      !                                                                                     
+               !
+      !  Dans la commande DEFI_MATERIAU, l'opérande MANSON_COFFIN du mot clé facteur FATIGUE
+             !                                                                              
+         
+      !   est incompatible avec le critère MATAKE_MODI_AV requis dans le mot clé facteur
+   CISA_PLAN_CRIT. !
+      !                                                                                     
+               ! 
+   !--------------------------------------------------------------------------------------------------!
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SSLV135A SSLV135B SSLV135C SSLV135D SSLV135E
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014020 DU 2009-10-12 09:24:30
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   CALC_FATIGUE et PROJECTION
+FONCTIONNALITE
+   Il ne s'agit pas d'un problème de saisie, l'utilisateur n'est pas en cause.
+   
+   Une fois que l'historique du cisaillement TAU est dans le plan (U,V) on considère 4 cas :
+   
+    1/ le cas général où la projection sur un ou deux axes ne comporte pas difficultés
+   numériques ;
+   
+    2/ 3 cas particuliers pour lesquels la projection sur un ou deux axes pose des difficultés.
+   
+   Ces 3 cas particuliers sont :
+      a/ les points dans le plan (U,V) sont alignés verticalement ;
+      b/ les points dans le plan (U,V) sont alignés horizontalement ;
+      c/ les points dans le plan (U,V) sont très très proches les uns des autres.
+   
+   Pour ces trois cas la projection sur un ou deux axes n'a pas de sens et/ou est
+   numériquement impossible.
+   
+   Les tests qui permettent de détecter ces cas particuliers ont été modifiés :
+    1/ dans le test d'appartenance aux 4 secteurs, un test "strictement supérieur" a été
+       remplacé par un test "supérieur ou égal" (routine projax.f) ;
+    2/ la valeur seuil qui distingue le cas général des cas particuliers a été modifiée
+       (routine avenca.f).
+   
+   Validation : le calcul qui posait problème a été repassé avec succès.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SSLV135a SSLV135b SSLV135c SSLV135d SSLV135e SSLV135f
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013687 DU 2009-08-07 07:37:02
+TYPE aide utilisation concernant Code_Aster (VERSION 7.0)
+TITRE
+   Erreur dans CALC_FATIGUE - Dang Van et Matake
+FONCTIONNALITE
+   En ce qui concerne le problème où avec une courbe de fatigue plus pénalisante on trouve un
+   dommage moins important qu'avec une courbe de fatigue moins pénalisante ; j'ai refais les
+   calculs  avec le critère de Matake. Je ne constate pas ce problème comme on peut le voir
+   dans le fichier .pdf attaché à ce message.
+   
+   Pour ce qui est du second problème : "la visualisation des résultats Dang van et Matake
+   montre des "bandes" d'isovaleurs qui ne sont pas en rapport avec les données".
+   Je n'ai rien remarqué de particulier dans le déroulement du post-traitement avec CALC_FATIGUE.
+   Il est possible que le dommage que l'on voit résulte du tenseur de contrainte dans la
+   mesure où le piquage est soumis à des efforts moyens autres que ceux résultant du
+   chargement thermique.
+   
+   Quelques pistes :
+    * refaire un calcul dont le chargement serait uniquement thermique et ensuite repasser les
+      critères de fatigue ;
+    * refaire un calcul dont le chargement serait uniquement thermique avec une modélisation
+      élastique et ensuite repasser les critères de fatigue ;
+    * utiliser les critères de fatigue adaptés aux chargements périodiques (même si ce n'est
+   pas le
+      cas ici).
+   
+   Il n'y a pas de modification de fortran pour cette fiche.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Pas de validation particulixc3xa8re
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 16/11/2009 - 16:16:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013977 DU 2009-10-05 10:55:35
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   En NEW9.5.5, les cas-tests wtnp116a et wtnp116b s'arretent en erreur_<F> sur Bull.
+FONCTIONNALITE
+   Problème :
+   ========
+   En NEW9.5.5, les cas-tests wtnp116a et wtnp116b s'arretent en erreur_<F> sur Bull.
+   
+   Analyse :
+   =======
+   Le plantage se produit dans la commande TEST_RESU. La valeur (composante de
+   ERRE_NOEU_ELEM) que l'on compare avec la valeur de référence est NaN (la fiche issue14044
+   est émise pour que l'on ne plante plus salement et que TEST_RESU montre que c'est un NaN).
+   
+   Le champ ERRE_NOEU_ELEM est calculé à partir de ERRE_ELEM_SIGM et c'est dans cette option
+   que sont produit les NaN.
+   
+   On arrive à remonter jusqu'à la routine erhms2.f appelée par te0497.f (estimateur d'erreur
+   pour la THM).
+   
+   Plusieurs choses étranges :
+   - Des NaN se promènent d'option en option sans que le code plante ;
+   - On fait des opérations avec les NaN sans que le code plante.
+   
+   Par ailleurs, Valgrind avec l'option --track-origins=yes permet de montrer que c'est bien
+   dans cette routine que la variable est utilisée.
+   
+   Le bug vient du fait que l'on traite dans cette routine deux cas de modélisation possible.
+   On fait DMXFIN(I) = THETA * DMXP(I) + TA1 * DMXM(I). Or dans un cas, TA1=0 et DMXM(I)
+   n'est pas initialisé. Dans notre test et dans une certaine configuration DMXFIN(I)
+   finissait par valoir NaN
+   
+   Correction :
+   ==========
+   On différencie bien les deux cas de figure pour le calcul de DMXFIN(I) :
+   Cas 1 : DMXFIN(I) = THETA * DMXP(I) + TA1 * DMXM(I)
+   Cas 2 : DMXFIN(I) = THETA * DMXP(I)
+   
+   De plus,
+   - Dans calnor.f un tableau était dimensionné à NPG, argument d'entrée de la routine, alors
+   que cet argument n'est pas toujours passé. Pour corriger, on dimensionne le tableau au
+   maximum (3).
+   - Dans te0497 une impression INFO=2 n'est pas bien placée, on déplace.
+   
+   Impacts :
+   =======
+   te0497.f
+   erhms2.f
+   calnor.f
+   
+   (JD+TdS+SM)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste test ERRE_ELEM_SIGM
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 18/11/2009 - 10:37:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013303 DU 2009-04-10 06:55:30
+TYPE anomalie concernant Code_Aster (VERSION 9.6)
+TITRE
+   Erreur si parrallxc3xa9lisme distribue_SD
+FONCTIONNALITE
+   L'étude de l'utilisateur plantait dans DEFI_PART_FETI avec un message peu clair.
+   Il s'agissait d'une erreur d'utilisation mais pour laquelle on n'aiguillait pas trop
+   l'utilsiateur.
+   
+   En fait, la commande DEFI_PART_FETI a deux usages distincts suivant l'utilisation des
+   mots-clés MAILLAGE ou MODELE (l'un excluant l'autre dans le catalogue) :
+   
+   - Si on utilise le mot-clé MAILLAGE alors le maillage est simplement partitionné (ajout de
+   groupes de mailles définissant les sous-domaines). On ne peut pas faire de calcul FETI par
+   la suite.
+   
+   - Si on utilise le mot-clé MODELE alors le partitionnement du modèle utilise les
+   informations du modèle pour partitionner le maillage, ainsi que les informations sur les
+   charges (on a besoin des mailles tardives). Dans ce cas, la sd_feti est générée en plus du
+   partitionnement et est utilisée dans la commande STAT_NON_LINE en conjonction avec le
+   solveur FETI.
+   Le mot-clé EXCIT est donc obligatoire dans cas de figure, ce qui n'était pas précisé dans
+   le catalogue.
+   
+   On règle le problème est ajoutant une règle PRESENT / PRESENT imposant la présence
+   simultanée de MODELE et EXCIT.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : u4.23.05
+VALIDATION
+   astout "defi_part_feti"
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014165 DU 2009-11-10 14:57:32
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   mot-cle CODE_RETOUR_MAXI de EXEC_LOGICIEL
+FONCTIONNALITE
+   Le mot-clé CODE_RETOUR_MAXI de EXEC_LOGICIEL permet de définir un code retour maxi au dela
+   duquel on interrompt l'execution Aster.
+   Il peut prendre la valeur -1 et dans ce cas on désactive la vérification du code retour,
+   mais ca ne marchait pas.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   plexu01a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 18/11/2009 - 10:37:26
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014145 DU 2009-11-06 09:32:51
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW9.5.10, le cas-test ssnv172a s'arrete en erreur_<F> sur Calibre 4.
+FONCTIONNALITE
+   Le test SSNV172A ne convergeait pas sur Calibre4 en NEW9. Plus précisément, pour l'un des
+   STAT_NON_LINE (test de ECOU_VISC2) les contraintes et variables internes valaient NaN dès
+   le début (dès l'appel à FULL_MECA). Cela se passait bien si on n'utilisait pas la matrice
+   tangente.
+   
+   L'erreur était due à 2 variables non initialisées dans LCMMJA : DALPH2 et DALPHR.
+   Celles-ci n'étaient utilisées que pour le calcul de la matrice tangente, et uniquement
+   dans le cas de ECOU_VISC2. On remplace donc DALPH2 et DALPHR. par DALPHA, effectivement
+   calculée à partir de DGAMMR
+   
+   Il n'y avait pas de risque de résultat faux (ceux-ci étaient soit corrects - la matrice
+   tangente n'étant pas exacte, mais cela convergeait quand meme - sur les machines où DALPH2
+   et DALPHR étaient remplacées par 0, soit NaN sur la calibre4.
+   
+   Au passage, on remplace dans LCMMVX le test (modifié en 10.0.18) :
+               IF (DP.GT.0.D0) THEN
+                  SEUIL=1.D0
+               ELSE
+                  SEUIL = 0.D0
+               ENDIF
+   par :
+               IF (DP.GT.0.D0) THEN
+                  SEUIL=1.D0
+                  GOTO 9999
+               ENDIF
+   en effet on est dans une boucle sur les systèmes de glissement et on cherche si le critère
+   est dépassé pour au moins un système de glissement. Il faut donc sortir de la boucle dès
+   le critère franchi.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv172 + tous les tests MONOCRISTAL
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 18/11/2009 - 10:37:26
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014120 DU 2009-10-29 15:09:52
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Affichage de l'alarme sur le forcage de REAC_ITER=1
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En méthode 'CONTINUE' de contact, la réactualisation de la matrice tangente est nécessaire
+   à chaque itération, elle est donc forcée et ce quel que soit le choix de l'utilisateur
+   (c'est à dire quel que soit la valeur de REAC_ITER).
+   Or le message censé en avertir ce dernier n'est pas affiché.
+   
+   Correction
+   ==========
+   
+   Dans la routine chargée de forcer la réactualisation, dans le cas où MATRICE='TANGENTE' on
+   forçait directement la réactualisation sans message. Seul le cas MATRICE 'ELASTIQUE'
+   pouvait déclencher le message.
+   Je corrige et je retouche le message censé s'afficher.
+   
+   Impact : nmchrm.f
+            ssnv505[fh].comm, ssnv506f.comm (pour éviter l'apparition de nouvelles alarmes)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout mxc3xa9thode continue
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014182 DU 2009-11-13 15:13:09
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Corrections methode continue (integration 'GAUSS' et redecoupage)
+FONCTIONNALITE
+   Express
+   =======
+   
+   Les fiches 13207 et 13737 ne pouvant être restituées (la conjonction des 2 casse un test),
+   j'émets cette fiche express pour corriger une partie des anomalies détectées.
+   
+   Correction
+   ==========
+   
+   1. Il y a tout d'abord une erreur qui empêche d'utiliser le schéma d'intégration 'GAUSS'
+   de la méthode 'CONTINUE' pour des éléments de bord SEG3.
+   La correction s'effectue dans mmelin.f
+   
+   2. Par ailleurs lors de la fiche 13474, où l'on permettait vraiment le redécoupage en
+   méthode 'CONTINUE', j'ai mal placé un bout de code, ce qui fait que le redécoupage ne
+   marchait qu'avec INTEGRATION = 'NOEUD'.
+   La correction se situe dans mmmres.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout contact
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014082 DU 2009-10-22 08:03:37
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW10.0.22, le cas-test sdll136a s'arrete en erreur_<F> sur Calibre5.
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En NEW10.0.22, le cas-test sdll136a s'arrete en erreur_<F> sur Calibre5 :
+   
+      !-------------------------------------------------------------!
+      ! <F> <ALGORITH6_52>                                          !
+      !                                                             !
+      !                                                             !
+      !  itérations cycliques :                                     !
+      !  changement de configuration ou variation trop importante   !
+      !  du deplacement physique à l'issue de la dernière itération !
+      !  Conseil: diminuez le pas de temps                          !
+      !                                                             !
+      !                                                             !
+      !                                                             !
+      ! Cette erreur est fatale. Le code s'arrete.                  !
+      !-------------------------------------------------------------!
+   
+   Correction
+   ==========
+   
+   Ce test semble instable, depuis le début de la version 10, cela fait la 4ème fois qu'il casse.
+   Une expertise "informatique" ne permet pas de détecter de bug franc. On corrige néanmoins
+   quelques variables non initialisées dans mdrecf.f (qui ne corrigent pas l'erreur).
+   
+   Pour faire passer le test, on adopte la même démarche que précédemment : on diminue le pas
+   de temps du calcul transitoire.
+   On passe à 1.0E-5s.
+   
+   Le test passe alors sur toutes les plate-formes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdll136a multiplateformes
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014114 DU 2009-10-28 12:16:46
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Plantage de Stanley
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   '''
+   Stanley ne fonctionne plus sur la BULL (NEW9 et NEW10).
+   
+   Le message d'erreur n'est pas hyper clair :
+       # 
+   ------------------------------------------------------------------------------------------
+       #  COMMANDE NO :  0002            CONCEPT DE TYPE :
+       #  -------------                  -----------------
+      STANLEY();
+   
+   Lecture du fichier d'environnement : /home01/assire/.stanley/local.stn
+   *** glibc detected *** double free or corruption (!prev): 0x6000000002eec390 ***
+   Aborted (core dumped)
+   '''
+   
+   Correction
+   ==========
+   
+   Ce double "free" qui apparaît suite à mes corrections sur astermodule.c en 10.0.17
+   (essentiellement pour compléter les paires malloc/free), est du en fait à une erreur de
+   programmation antérieure. À un endroit dans le code, on fait :
+   
+     2581	         for (i=0; i<nbcmp; i++) {
+     2582	            nom = &(liscmp[i*8]);
+     2583	            lo = 8; while (nom[lo-1] == ' ')  lo--;
+     2584	            PyList_Append(liste,PyString_FromStringAndSize(nom,lo));
+     2585	         }
+   
+   Le problème se situe à la ligne 2582. On met dans le pointeur "nom" l'adresse du
+   (i*8+1)ème caractère de la chaîne "liscmp". On perd donc l'emplacement de l'adresse
+   mémoire pointée par "nom"
+   Plus loin, j'ai rajouté un :
+   
+     2592	     free(liscmp);
+   
+   On libère donc l'espace de la chaîne temporaire "liscmp". À la fin de la routine, on fait
+   par ailleurs :
+   
+     2655	   free(nom);
+   
+   Forcément dans ce cas on ne libère pas l'objet initial de pointeur "nom" (qu'on ne connaît
+   plus) mais l'objet "liscmp" qui a déjà été effacé !
+   
+   Il faut laisser le free et plutôt changer la programmation de manière à ne pas perdre
+   l'objet "nom". Il suffit de créer un pointeur "cmp".
+   
+   --------------------------
+   Impact : astermodule.c
+   NB jours : 1.0 (AA+JD+TDS)
+   
+   À faire en V9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   stanley
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 18/11/2009 - 10:37:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014155 DU 2009-11-09 13:49:50
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   blindage ARCH_ETAT_INIT pour la thermique
+FONCTIONNALITE
+   Je ne sais pas résoudre proprement la fiche 13969 "Ther_non_line : archivage état initial"
+   pour l'échéance la stabilisation 9.6.
+   
+   Voici le problème signalé par Renaud Bargellini :
+   Le fonctionnement ARCH_ETAT_INIT pose problème. Dans le cas où on ne le renseigne pas :
+   les pas à archiver sont tous bien stockés et, en plus, systématiquement, également le pas
+   initial (quil soit calculé ou imposé, de numéro d'ordre 0). Dans le cas où on le
+   renseigne, on a un écrasement entre l'instant initial et le numéro d'ordre 1.
+   
+   On se contente donc ici de blinder en supprimant ARCH_ETAT_INIT des catalogues de
+   THER_LINEAIRE et THER_NON_LINE.
+   
+   La fiche 13969 est réattribuée à Mickael Abbas.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.54.02 U4.54.01
+VALIDATION
+   astout sur tous tests de thermique
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013452 DU 2009-05-25 12:37:35
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   EQUI_ELGA_SIGM non admis par MACR_LIGN_COUPE
+FONCTIONNALITE
+   La doc est effectivement mensongère (honte ...) : on ne traite pas les champs ELEM,
+   puisque PROJ_CHAMP ne les traite pas et que MACR_LIGN_COUPE repose sur PROJ_CHAMP.
+   
+   Je teste donc dans la macro si la chaine 'ELGA' est en seconde position sur le nom du type
+   de champ (EQUI_ELGA_SIGM ici), et j'émets alors le message :
+   
+   18: _("""%(k1)s est un type de champ aux éléments, non traité par PROJ_CHAMP, donc par
+   MACR_LIGN_COUPE
+   Conseil : pour un champ aux points de Gauss, veuillez passer par un champ ELNO
+   """),
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.81.13
+VALIDATION
+   test perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 18/11/2009 - 10:37:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014171 DU 2009-11-13 08:40:13
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   Variable non initialisee ssnv195 b
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Dans le cadre de la validation d'aster, valgrind a détecté une variable non initialisée
+   dans te0533 à la ligne 145. C'est la variable CSTAFR qui vient de la position 7 du tableau
+   local 'PDONCO' lui même issue de 'CONTX_R'.
+   
+   
+   Solution :
+   ----------
+   
+   Cela provient du remplissage de la sd RESOCO.XFCO dans cazocx.f
+   
+   on va cherche le mot-clé COEF_STAB_FROT (getvr8) meme s'il n'est pas présent.
+   il n'y a pas de valeur par défaut car la valeur par défaut ne fonctionne que dans le bloc
+   frot+xfem de c_contact.capy.
+   Or il n'y a pas de frottement dans ce cas test.
+   
+   
+   Cela est dû à une mauvaise écriture de la routine cazocx.f
+   Dans le cas contact coninue classique (routine cazocc) on ne remplit COEF_STAB_FROT que si
+   le frottement est défini.
+   il faudrait faire pareil dans cazocx.f
+   
+   j'en profite pour introduite le logical LFROT dans cazocx.f
+   et ne remplir ITER_FROT_MAXI, COEF_REGU_FROT, COEF_STAB_FROT et COEF_PENA_FROT que si
+   LFROT est vrai
+   car tous ces paramètres n'étaient alors par initialisés
+   
+   impact : cazocx.f
+   
+   à faire aussi en V9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv195d
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR laverne      LAVERNE Jérôme         DATE 18/11/2009 - 10:37:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014011 DU 2009-10-09 13:27:08
+TYPE anomalie concernant Code_Aster (VERSION 9.6)
+TITRE
+   Modelisation JOINT 3D : "Erreur de programmation"
+FONCTIONNALITE
+   L'erreur provient du fait qu'on cherche à symétriser la matrice tangente (mot clé 
+   SNL/SOLVEUR/SYME='OUI') alors que l'option n'est pas développée.
+   Pour les lois CZM la matrice est toujours symétrique il n'est donc pas pertinent d'utiliser 
+   cette option.
+   
+   - Pour blinder le modèle et pour anticiper des dvpts futurs on introduit l'option de 
+   symétrisation SYME_MDNS_R dans les catalogues 2D et 3D.
+   - Par ailleurs on constate qu'en 3D on stocke la matrice entiere dans PMATUNS,
+   ceci n'etant pas nécessaire, on effectue un stockage symétrique dans PMATUUR.
+   - D'autres dvpt seront nécessaires pour utiliser des matrices non 
+     symétriques avec les éléments de joint (joint de plot des barrages) 
+     cela sera réalisé dans la fiche 14116.
+   
+   MODIFS : 
+     nmfi3d.f           (stockage de la matrice en symétrique)
+     te0206.f           (appel de PMATUUR au lieu de PMATUNS dans le JEVECH)
+     gener_mf3d_3.cata  (ajout de l'option SYME_MDNS_R et de PMATUNS dans les arg des options NL)   
+     gener_mf2fi2.cata  (idem)
+   
+   VALIDATION : passage de tous les tests des EJ avec ou sans l'option SNL/SOLVEUR/SYME='OUI', 
+                sur toutes les plateformes en NEW9 et NEW10
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests sur les EJ
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 18/11/2009 - 10:37:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014154 DU 2009-11-09 12:33:48
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   LIRE_MAILLAGE/FORMAT=MED : troncature des noms de groupes
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   Lorsque deux groupes sont tronqués à 8 caractères et que la troncature donne le même nom
+   (LIASON_5M, LIASON_5S donnent LIASON_5), les éléments sont fusionnés dans un unique groupe.
+   Voir issue13940.
+   
+   Il me semblait que le code s'arrêtait en erreur dans ce cas.
+   """
+   
+   
+   Solution :
+   ----------
+   A la fin de la relecture des groupes, on les passe tous en revue et on regarde plus
+   précisément ceux dont le nom court (nom aster à 8 caractères) et le nom long (nom lu dans
+   le fichier MED) différent. Pour cela, on cherche parmis les autres groupes si un autre
+   portant le même nom court porte un nom long différent du premier. Si c'est le cas, on
+   s'arrête en erreur F avec le message suivant :
+   """
+      -> Les groupes 'LIASON_4M' et 'LIASON_4S'
+         ont les mêmes huit premiers caractères, leur nom court est
+         donc 'LIASON_4'.
+         Comme il n'est pas légitime dans le cas général que deux
+         groupes aux noms initialement différents soient fusionnés,
+         le calcul s'arrête.
+      -> Conseil :
+         Dans le cas où certains des noms de groupes de votre maillage
+         sont trop longs, modifiez les pour qu'ils ne dépassent pas
+         les 8 caractères.
+   """
+   
+   
+   Sources impactés :
+   --------------------
+   lrmmf1 et lrmmf3.
+   Ajout de med2.py
+   
+   
+   Validation :
+   ------------
+   Liste restreinte + ssnp131b.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Liste restreinte + ssnp131b
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR torkhani     TORKHANI Mohamed       DATE 18/11/2009 - 10:37:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013370 DU 2009-05-04 13:46:53
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Formulation de l'usure
+FONCTIONNALITE
+   TITRE
+      Formulation de l'usure
+   FONCTIONNALITE
+      P. Massin a remarque que, pour calculer la matrice tangente associee a  
+      l'usure, on prend en compte les increments de deplacement au cours des 
+      iterations de Newton. Ces increments n'ont pas physiquement de sens au cours 
+      des iterations (en effet seule compte la somme des iteres). Dans la version 
+      implementee, l'usure est la somme des usures associees a ces increments. 
+      Il s'agit d'une erreur de programmation. La variation d'usure au cours d'un
+      pas de temps devrait etre estimee a partir de l'increment de deplacement 
+      depuis le debut de pas de temps. 
+      L'impact est limité au calcul de la matrice tangente et du second membre. Les 
+      resultats sont tres impactes par cette correction car il s'agit d'un cas-test 
+      avec de faibles usures (ssnv128). 
+      Dans les fichiers de commande, les resultats ('NON_REGRESSION') sont modifies 
+      en consequence.
+      Les routines impactees sont :
+      majusu.f,
+      te0364.f.
+   IMPACT_DOCUMENTAIRE : 
+      DocV du cas-test SSNV128
+   VALIDATION
+      SSNV128s, SSNV128t, SSNV128u
+   NB_JOURS_TRAV  : 1.0
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.04.128
+VALIDATION
+   cas-test
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014166 DU 2009-11-10 15:28:35
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Mise au carre de la gyroscopie et des cas-tests machines tournantes dans Code_Aster
+FONCTIONNALITE
+   CONTEXTE
+      Restitution d'un travail d'equipe (T. BARANGER, , X. RAUD, E. BOEYRE, M. TORKHANI) portant
+      sur la mise au carre du chantier amortissement gyroscopique dans code_Aster.
+   FONCTIONNALITE
+      Depuis la NEW10.0.13, les calculs de machines tournantes dans Aster sont faits avec des
+      rotors qui tournent a l'envers. Cette hypothese n'a aucune influence sur les calculs 
+      modaux. Cependant, les calculs harmoniques, transitoires et de sens de precession (pour 
+      le diagramme de Campbell par exemple) sont fortement impactes. La mise en donnee des 
+      differents cas-tests modelisant des rotors a ete faite de façon a rester coherent avec 
+      cette convention portant sur le sens de rotation. 
+      Comme cette inversion du sens de rotation n'est pas naturelle et peut preter a confusion,  
+      on preconise de definir le sens positif suivant l'axe du rotor comme etant le sens usuel 
+      de rotation (sens trigo). Desormais, l'axe de rotation est donc forcement positif suivant 
+      l'axe du rotor si, bien entendu, les vitesses de rotation sont positives. On apporte donc 
+      les legeres modifications aux fichiers correspondant :
+      te0009.f,
+      pogyro.f.
+      On propose conjointement de mettre au carre les cas-tests machines tournantes dans aster 
+      pour les rendre coherents avec la nouvelle convention (rotors tournant dans le sens positif).
+      
+   IMPACT_DOCUMENTAIRE : 
+      DOC R5.05.07 : Matrice gyroscopique des poutes droites et des disques
+      DOC V2.02.126 : Reponse transitoire d'une poutre en rotation avec 3 disques soumise a la gyroscopie
+      DOC U4.61.01 : CALC_MATR_ELEM
+      DOC U2.???? (non encore parue) : Amortissement gyroscopique dans Code_Aster
+   
+   VALIDATION
+      SHLL102a, SDLL124a, SDLL125a, SDLL126a, SDLL126b, SDLL126c
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.05.07, V2.02.126, U4.61.01
+VALIDATION
+   cas-tests
+NB_JOURS_TRAV  : 10.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR wadier       WADIER Yves            DATE 18/11/2009 - 10:37:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013887 DU 2009-09-16 16:48:09
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   POST_GP
+FONCTIONNALITE
+   Objectif:
+   ---------
+   Le calcul de Gp est fait correctement et le 
+   paramètre est "normalisé" soit en divisant par R en axi 
+   soit en divisant par l'épaisseur d'une tranche en 3D.
+   
+   Quand on passe au calcul de K-Gp, à partir de Gp, via la 
+   formule d'Irwin il ne faut pas re-normaliser une seconde 
+   fois. 
+   
+   L'erreur était là, et il suffit donc de retirer ce "R" dans 
+   la formule d'Irwin pour la corriger. 
+   
+   En 2D comme R = 1 le résultat était correct. 
+   
+   Par contre il faudra aussi corriger la doc U au niveau du 
+   mot clé RAYON_AXIS.
+   
+   Modifications:
+   --------------
+   Les modifications réalisées dans la macro post_gp sont les suivantes:
+   "
+   540,544d539
+   <       if is_2D:
+   <          dict_constantes['R'] = self['RAYON_AXIS']
+   <       else:
+   <          dict_constantes['R'] = ep_tranche
+   <
+   556,557c551
+   <             tab.fromfunction(new_para, fKj, ('G', 'YOUNG', 'NU'),
+   <                            { 'R' : self['RAYON_AXIS'] })
+   ---
+   >             tab.fromfunction(new_para, fKj, ('G', 'YOUNG', 'NU'))
+   799c793
+   < def fKj(G, YOUNG, NU, R=1):
+   ---
+   > def fKj(G, YOUNG, NU):
+   801d794
+   <       R n'intervient pas en 3D
+   803c796
+   <    Kj=(abs(G / R * YOUNG / (1.0 - NU**2)))**0.5
+   ---
+   >    Kj=(abs(G * YOUNG / (1.0 - NU**2)))**0.5
+   "
+   Validation :
+   -----------
+   Un test dans le cas-test ssnp131b est ajouté pour vérifier la valeur de KGPmax.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.17
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.3.17
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnp131b
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 18/11/2009 - 10:37:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014172 DU 2009-11-13 09:02:23
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW9.5.11, 10 cas-tests de contact sont en echec avec une erreur CONTACT2_2 sur Bull.
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En 9.5.11, suite à une erreur de report en V9, de nombreux tests de contact ont été cassés.
+   
+   Correction
+   ==========
+   
+   La correction porte sur la routine chmano.f. On avait par inadvertance isolé un bout de
+   code essentiel.
+   
+   Remarque : même problème pour les fiches 14173,14174,14175.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout contact v9
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 17/11/2009 - 16:18:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014127 DU 2009-11-02 16:22:26
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Arret anormal de ssns106c sur Rocks en V9
+FONCTIONNALITE
+   Problématique :
+   ~~~~~~~~~~~~~~~
+   
+   Le problème vient du calcul de l'erreur relative entre les données des deux simulations.
+   
+   En effet, on calcul (Dy-Dyg)/Dy ou Dy est le déplacement suivant y d'un point.
+   La position de ce point est pilotée par les CL. Cette position est un cycle triangulaire
+   autour de 0.
+   
+   Or en Dy = 0, la mesure de l'erreur relative n'a plus de sens. Le calcul ne plante que
+   extrêmement rarement car d'un point de vue numérique, on ne vérifie pas Dy = 0 mais plutôt
+   Dy = 1e-20.
+   
+   En gros, on devrait planter tout le temps et c'est une chance de ne pas planter.
+   
+   Solution :
+   ~~~~~~~~~~
+   
+   On filtre la table pour enlever les lignes ou Dy = 0.
+   Cette opération est effectuée sur l'ensemble des cas tests ssns106
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssns106
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF shll102a                      macocco K.MACOCCO          416      3      3
+ CASTEST MODIF sslv135a                       angles J.ANGLES          1291      1      1
+ CASTEST MODIF sslv135b                       angles J.ANGLES          1271      1      1
+ CASTEST MODIF sslv135c                       angles J.ANGLES           788      1      1
+ CASTEST MODIF sslv135d                       angles J.ANGLES           780      1      1
+ CASTEST MODIF sslv135e                       angles J.ANGLES           841      1      1
+ CASTEST MODIF sslv135f                       angles J.ANGLES           546      1      1
+ CASTEST MODIF sslv135g                       angles J.ANGLES           928      1      1
+ CASTEST MODIF ssnp131b                      macocco K.MACOCCO          378     11      1
+ CASTEST MODIF ssns106a                     sfayolle S.FAYOLLE          973     21      5
+ CASTEST MODIF ssns106b                     sfayolle S.FAYOLLE         1447    136    112
+ CASTEST MODIF ssns106c                     sfayolle S.FAYOLLE         1566     41      9
+ CASTEST MODIF ssns106d                     sfayolle S.FAYOLLE          447     35      7
+ CASTEST MODIF ssns106e                     sfayolle S.FAYOLLE          565     58     26
+ CASTEST MODIF ssns106f                     sfayolle S.FAYOLLE          737      1      1
+ CASTEST MODIF ssns106g                     sfayolle S.FAYOLLE          493      1      1
+ CASTEST MODIF ssnv128s                      macocco K.MACOCCO          201      9      9
+ CASTEST MODIF ssnv128t                      macocco K.MACOCCO          203     11     11
+ CASTEST MODIF ssnv128u                      macocco K.MACOCCO          226     10     10
+ CASTEST MODIF ssnv182d                      macocco K.MACOCCO          231      2      2
+ CASTEST MODIF ssnv182f                      macocco K.MACOCCO          224      2      2
+ CASTEST MODIF ssnv186b                      macocco K.MACOCCO          233      2      1
+ CASTEST MODIF ssnv186h                      macocco K.MACOCCO          217      2      1
+ CASTEST MODIF ssnv195b                      macocco K.MACOCCO          338      2      1
+ CASTEST MODIF ssnv505f                      macocco K.MACOCCO          288      3      3
+ CASTEST MODIF ssnv505h                      macocco K.MACOCCO          464      4      4
+ CASTEST MODIF ssnv506f                      macocco K.MACOCCO          284      2      3
+CATALOGU MODIF typelem/gener_mf2fi2          macocco K.MACOCCO          142     10      7
+CATALOGU MODIF typelem/gener_mf3d_3          macocco K.MACOCCO          147      9      7
+CATALOPY MODIF commande/defi_part_feti       macocco K.MACOCCO           64      4      3
+CATALOPY MODIF commande/ther_lineaire        macocco K.MACOCCO          127      2      4
+CATALOPY MODIF commande/ther_non_line        macocco K.MACOCCO          169      2      4
+       C MODIF supervis/astermodule          macocco K.MACOCCO         4174      5      5
+ FORTRAN AJOUT algorith/ntcrar               macocco K.MACOCCO          259    259      0
+ FORTRAN MODIF algorith/chmano               macocco K.MACOCCO          267      4      3
+ FORTRAN MODIF algorith/lcmmja               macocco K.MACOCCO          284      6      6
+ FORTRAN MODIF algorith/lcmmvx               macocco K.MACOCCO          122      3      7
+ FORTRAN MODIF algorith/majusu               macocco K.MACOCCO          411      3      3
+ FORTRAN MODIF algorith/mdrecf               macocco K.MACOCCO          230     21     15
+ FORTRAN MODIF algorith/mmelin               macocco K.MACOCCO          128      2      2
+ FORTRAN MODIF algorith/mmmres               macocco K.MACOCCO          949     15     15
+ FORTRAN MODIF algorith/nmchrm               macocco K.MACOCCO          231      1      4
+ FORTRAN MODIF algorith/nmfi3d               macocco K.MACOCCO          142      5     11
+ FORTRAN MODIF algorith/tiinit               macocco K.MACOCCO          110      2      2
+ FORTRAN MODIF elements/erhms2                delmas J.DELMAS           479      8      5
+ FORTRAN MODIF elements/ptgy01               macocco K.MACOCCO          175     17     17
+ FORTRAN MODIF elements/te0009               macocco K.MACOCCO          104      2      2
+ FORTRAN MODIF elements/te0206               macocco K.MACOCCO          102      7      5
+ FORTRAN MODIF elements/te0364               macocco K.MACOCCO          413      2      2
+ FORTRAN MODIF elements/te0497                delmas J.DELMAS           673      8      7
+ FORTRAN MODIF modelisa/cazocx               macocco K.MACOCCO          247     23      8
+ FORTRAN MODIF modelisa/lrmmf1               macocco K.MACOCCO          209     29      4
+ FORTRAN MODIF modelisa/lrmmf3               macocco K.MACOCCO          452     33      7
+ FORTRAN MODIF prepost/avdowh                 angles J.ANGLES           135      9      5
+ FORTRAN MODIF prepost/avenca                 angles J.ANGLES           164      5      5
+ FORTRAN MODIF prepost/deltau                 angles J.ANGLES           668      6      4
+ FORTRAN MODIF prepost/dtauno                 angles J.ANGLES           677      6      4
+ FORTRAN MODIF prepost/projax                 angles J.ANGLES           339     10      4
+ FORTRAN MODIF utilitai/calnor                delmas J.DELMAS           366      8      8
+  PYTHON AJOUT Messages/med2                 macocco K.MACOCCO           38     38      0
+  PYTHON MODIF Macro/calc_europlexus_ops     macocco K.MACOCCO         2545      3      2
+  PYTHON MODIF Macro/exec_logiciel_ops       macocco K.MACOCCO          190      2      1
+  PYTHON MODIF Macro/macr_lign_coupe_ops     macocco K.MACOCCO          958      5      1
+  PYTHON MODIF Macro/post_gp_ops             macocco K.MACOCCO          932      4     11
+  PYTHON MODIF Messages/fatigue1              angles J.ANGLES           312     15      1
+  PYTHON MODIF Messages/mecanonline5         macocco K.MACOCCO          208      1      1
+  PYTHON MODIF Messages/post0                macocco K.MACOCCO          105      7      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         297       297              +297
+ MODIF :   65       34526       667     423      +244
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   67       34823       964     423      +541 

@@ -1,0 +1,599 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 03/10/2007 - 13:22:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010110 DU 2006-10-05 06:56:16
+TYPE evolution concernant Code_Aster (VERSION 8.3)
+TITRE
+   MN10 - CONTACT - Fonctions de forme incorrectes
+FONCTIONNALITE
+   Il s'agit de modifier la routine CFRELI qui donne les relations linéaires entre le 
+   noeuds esclaves et les noeuds de la maille maitre appariée.
+   
+   Dans un premier temps, nous modifions la routine pour afin d'utiliser les fonctions 
+   de forme standards d'Aster (et donc les routines utilitaires associées). En effet, le 
+   contact discret utilise une méthode de projection particulière avec ses propres 
+   fonctions de forme (le repère paramétrique des mailles de contact n'est pas le meme 
+   que celui des mailles de référence standard d'Aster).
+   
+   Pour le SEG:
+   KSIR(1)   = DEUX*KSI(1) - UN
+   Ou KSIR est la coordonnee parametrique de l'élement de reference Aster standard et 
+   KSI, la coordonnee parametrique de l'élement de reference utilise dans le contact 
+   discret. Il s'agit donc juste d'une simple translation de l'origine du repere 
+   parametrique.
+   La modif fonctionne très bien sur les cas-tests de la base
+   
+   Pour les TRIA:
+   Les reperes sont les mêmes ! Pas de modifs, sauf que, désormais, les TRIA6 et TRIA7 
+   utilisent les fonctions de formes QUADRATIQUES et non LINEAIRES.
+   La modif fonctionne très bien sur les cas-tests de la base
+   
+   Pour les QUAD:
+   C'est la partie la plus compliquee. En effet, le contact discret decoupe la maille 
+   quadrangulaires en quatre triangles.
+   On a donc deux séries  de quatre transformations.
+   
+   Quatre cas-tests "cassés":
+   
+   *** ssnv129c (TRIA7): variation d'une référence analytique. Le déplacement est 
+   modifié car on prend en compte la courbure de l'élément dans les fonctions de forme.
+   NOOK DZ           RELA     7.865 % VALE:-3.6962691905254D-01
+            N37      TOLE     2.000 % REFE:-3.4267500000000D-01
+   Par contre la contrainte est meilleure:
+    OK  SIYY         RELA     2.311 % VALE: 7.8248608738110D+09
+            N37      TOLE     5.000 % REFE: 7.6481000000000D+09
+   Les valeurs de non-régression changent également mais en mieux: la contrainte est 
+   bien la meme sur tous les noeuds, comme prévu par la théorie.
+   
+   REFERENCE: NON_REGRESSION   VERSION: 8.3.21          
+   NOOK SIYY         RELA    14.117 % VALE:-2.7396347529566D+09
+            N1       TOLE  1.00E-05 % REFE:-2.4007275975594D+09
+    ---- RESULTAT:  RESU     NUME_ORDRE:   1 NOM_CHAM: SIGM_NOEU_COQU                                       
+   REFERENCE: NON_REGRESSION   VERSION: 8.3.21          
+   NOOK SIYY         RELA   112.516 % VALE: 2.7396347529566D+09
+            N67      TOLE  1.00E-05 % REFE: 1.2891421428655D+09
+    ---- RESULTAT:  RESU     NUME_ORDRE:   1 NOM_CHAM: SIGM_NOEU_COQU                                       
+   REFERENCE: NON_REGRESSION   VERSION: 8.3.21          
+   NOOK SIYY         RELA    14.117 % VALE:-2.7396347529566D+09
+            N2       TOLE  1.00E-05 % REFE:-2.4007275975593D+09
+    ---- RESULTAT:  RESU     NUME_ORDRE:   1 NOM_CHAM: SIGM_NOEU_COQU                                       
+   REFERENCE: NON_REGRESSION   VERSION: 8.3.21          
+   NOOK SIYY         RELA   112.516 % VALE: 2.7396347529566D+09
+            N68      TOLE  1.00E-05 % REFE: 1.2891421428654D+09
+   
+   ** ssnv504f : très légère variation d'une réf. analytique.
+   REFERENCE: ANALYTIQUE      
+   NOOK DY           RELA    -1.045 % VALE: 5.5296153053928D+01
+            N969     TOLE     1.030 % REFE: 5.5880000000000D+01
+   Les autres ne bougent pas ou s'améliorent très légèrement.
+   
+   *** ssnv167b (QUAD8): grosse variation (attendue)
+   Il y a cependant un problème que l'on va investiguer. 
+   
+   On attend (d'après doc):
+   PROJECTION = LINEAIRE
+     Liaisons lineaires entre noeuds sommets et noeuds milieux+fonctions de forme 
+   lineaires du QUAD4
+   PROJECTION = QUADRATIQUE
+     Pas de liaisons linéaires + fonctions de forme quadratiques "modifiées"
+   
+   Or, on a:
+   PROJECTION = LINEAIRE
+     Liaisons lineaires entre noeuds sommets et noeuds milieux+fonctions de forme 
+   quadratiques complètes du QUAD8 (pathologiques)
+   PROJECTION = QUADRATIQUE
+     Liaisons lineaires entre noeuds sommets et noeuds milieux+fonctions de forme 
+   quadratiques complètes du QUAD8 (pathologiques)
+   
+   On devrait donc avoir les mêmes valeurs (fausses mais c'était prévue). On enquête
+   
+   *** ssnv167c (QUAD9): grosse variation (attendue)
+   On corrige (enfin !) ce cas-test qui avait des tests analytiques à 80% d'erreur.
+   Exemple:
+   
+    ---- RESULTAT:  SOL      NUME_ORDRE:   1 NOM_CHAM: DEPL                                                 
+   REFERENCE: ANALYTIQUE      
+    OK  DZ           RELA -1.94E-13 % VALE:-1.0000000000000D-01
+            N1       TOLE    80.000 % REFE:-1.0000000000000D-01
+       
+   Pour les réactions nodales, les valeurs analytiques étaient fausses ! Les nouvelles 
+   sont correctes et la somme fait bien 4E4 (équilibre, identique au cas avec QUAD4)
+    
+    ---- RESULTAT:  SOL      NUME_ORDRE:   1 NOM_CHAM: REAC_NODA                                            
+   REFERENCE: ANALYTIQUE      
+    OK  DZ           RELA   -88.889 % VALE: 1.1111111111111D+03
+            N1       TOLE    99.000 % REFE: 1.0000000000000D+04
+   
+   NB: la fiche 9896 permettra aussi de prendre en compte la courbure des éléments 
+   quadratiques lors de la projection et nous permettra de simplifier considérablement 
+   la programmation en utilisant les fonctions de forme STANDARDS dans tout le processus 
+   (et donc le processus de passage maille de contact -> maille Aster ne sera plus 
+   nécessaire)
+   NB2: la méthode continue a une pathologie ressemblante car on y utilise des fonctions 
+   de formes et des mailles de référence différentes des mailles standards d'Aster.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste contact
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 03/10/2007 - 13:22:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011160 DU 2007-08-03 08:46:52
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   NEW8.5.2, les cas test zmat001a,zmat001b et zmat001c s'arrete en ERREUR_<F> (BC)
+FONCTIONNALITE
+   C'est effectivement la modification dans affich.f qui n'a pas été reportée en version 8.
+   Il suffit de reprendre affich.f disponible aujourd'hui en version 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zmat001*
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011165 DU 2007-08-09 13:06:37
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   NEW8.5.2, le test ssnv182b s'arrete par manque de MEMOIRE (R)
+FONCTIONNALITE
+   La fiche 10274 aurait du résoudre le probleme. Malheureusement lors de la restitution de
+   cette fiche en 8.5.2, il y a eu un raté et le parametre mem_aster 50 a rajouter ne l'a pas
+   été. 
+   
+   Cette fiche a pour but de rappeler lors de la prochaine mise à jour de la 8 de restituer
+   le .para correct
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv182b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 03/10/2007 - 13:22:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011206 DU 2007-09-05 15:41:29
+TYPE express concernant Code_Aster (VERSION 9.4)
+TITRE
+   AFFE_CHAR_MECA + FACE_IMPO + SANS_GROUP_MA + DNOR
+FONCTIONNALITE
+   La SUBROUTINE CAFACI fait les appels suivant
+   |   CALL WKVECT('&&CAFACI.NOEU_NOM','V V K8',NBNO1,JLINO)
+   |   KNDIFF(8,ZK8(JLINO1),NBNO1,ZK8(JLINO2),NBNO2,ZK8(JLINO),NBNO)
+   
+   dans KNDIFF(LONG, LK1,L1, LK2,L2, LK3,L3) il y a la déclaration suivante :
+   |      CHARACTER*(*)    LK1(L1), LK2(L2), LK3(L3)
+   ou L3 est un argument IN et OUT.
+   Ca plante avec le message : CALCUL2_76 
+   |          erreur pgmeur: lk3 pas assez grand.
+   
+   Le problème est que NBNO n'est pas initialisé dans CAFACI, il faut faire la correction
+   suivante :
+   |   CALL WKVECT('&&CAFACI.NOEU_NOM','V V K8',NBNO1,JLINO)
+   |   NBNO = NBNO1
+   |   KNDIFF(8,ZK8(JLINO1),NBNO1,ZK8(JLINO2),NBNO2,ZK8(JLINO),NBNO)
+   
+   J'ai validé sur mon étude, ca passe.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Passage xc3xa9tude
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 03/10/2007 - 13:22:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011225 DU 2007-09-10 06:56:02
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+   EFFE_FOND dans ASPIC/ASCOUF
+FONCTIONNALITE
+   Problème
+   Un bug a été corrigé sur la prise en compte de l'effet de fond dans ASCOUF (fiche 11178).
+   Contrairement à ce qui avait été indiqué dans la fiche précédente, la même erreur existe
+   aussi sur ASPIC. On corrige en conséquence macr_aspic_calc_ops.py.
+   La correction de ces bugs montre également un défaut de validation d'ASPIC et ASCOUF.
+   
+   Validation
+   On compète donc deux cas test existant (ascou09a et aspic02a) en faisant un calcul sans
+   effet de fond et un test de non régression sur G global. 
+   Dans le cas du coude fissuré, il y a un facteur 2 entre G avec ou sans effet de fond (le G
+   avec effet de fond étant inférieur, le chargement global correspondant à une fermeture de
+   la fissure).
+   Dans le cas du piquage, le G global sans effet de fond est inférieur de 25% au G avec
+   effet de fond.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ascou09, aspic02
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 03/10/2007 - 13:22:53
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011035 DU 2007-07-02 16:47:04
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   U2MESG orphelins
+FONCTIONNALITE
+   Problème :
+   -----------
+   En version 8, on a trouvé 6 messages sans texte python :
+   
+   ('algeline', 6)
+   ('calculel', 8)
+   ('modelisa2', 88)
+   ('modelisa8', 41)
+   ('modelisa8', 42)
+   ('utilitai5', 91)
+   
+   Correction (en NEW8)
+   ---------------------
+   Les textes python sont rajoutés (sauf pour CALCULEL_8 qui est remplacé par DVP_1).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 03/10/2007 - 13:22:53
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011072 DU 2007-07-11 10:45:27
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   Arret en FPE dans CALC_FONCTION/SPEC_OSCI
+FONCTIONNALITE
+   Anomalie
+   --------
+   Aster s'arrete salement dans CALC_FONCTION/SPEC_OSCI lorsqu'on lui fournit une liste de
+   fréquence contenant des frequences <= 0.
+   
+   Correction
+   ----------
+   Ajout d'un message d'arret (<S>) dans calc_fonction_ops.py pour signaler que les
+   frequences doivent etre strictement positives.
+    
+   Validation
+   ----------
+   Passage du cas-test sdns01a apres avoir modifie la LIST_FREQ de CALC_FONCTION/SPEC_OSCI
+   (en faisant commencer le liste de frequences par 0) afin de faire declancher l'emission du
+   message d'arret prevu pour cet effet.
+   
+   Documentation
+   -------------
+   Enrichissement de la doc U4.32.04 (CALC_FONCTION) pour preciser que les frequences doivent
+   etre toutes strictement positives.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.32.04
+VALIDATION
+   sdns01a modifixc3xa9
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011243 DU 2007-09-13 12:57:13
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   LIRE_RESU champs ELNO et INST
+FONCTIONNALITE
+   Aster plantait dans LIRE_RESU lorsque qu'on lui fournissait
+   un champ elno et des instants.
+   
+   Correction
+   ----------
+   Cette anomalie fait suite à une réutilisation maladroite d'une variable locale:
+   - Routine : LRCAME
+   - variable: IAUX
+   Cette variable est utilisée pour définir le numéro du type de maille (L431). Cette meme
+   variable était aussi utilisée en amont dans une boucle relative aux instants: L373
+   Nous avons corrigé ce problème en changeant le nom de la variable
+   locale dans la boucle 222 (IAUX --> IAUX2).
+   
+   Validation
+   ----------
+   - Passage d'une liste de cas-tests contenant LIRE_RESU et LIRE_CHAMP
+   au format MED.
+   - Passage de l'étude fournie
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 03/10/2007 - 13:22:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011265 DU 2007-09-20 08:10:00
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Problxc3xa8me de POURSUITE
+FONCTIONNALITE
+   Il s'agit d'un écrasement mémoire dans la routine JEINIF. Lors du redimensionnement des
+   objets sytèmes lorsque le paramètre nmax_base est passé sur la ligne de commande, on
+   utilisait une adresse mémoire invalide (objet sytème non encore créé). Cela n'avait pas de
+   conséquence sur la validité des calculs, si cette étape de création s'exécutait  la
+   relecture du contenu de la base s'effectuant alors normalement.
+   Cette fonctionnalité avait été introduite en version 8.2.14.
+   J'en profite pour remplacer un certain nombre de messages d'erreur <F> par des appels à la
+   routine ASSERT.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sur la base associxc3xa9e xc3xa0 l'xc3xa9tude
+NB_JOURS_TRAV  : 0.75
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR kham         KHAM Marc              DATE 03/10/2007 - 13:22:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011229 DU 2007-09-10 10:44:18
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   correction formulation vitesse contact continu
+FONCTIONNALITE
+   On corrige une erreur dans la programmation de la formulation en vitesse du contact
+   continu dans mmmbca:
+   En effet, dans cette routine, il y avait une evaluation erronée du champ de vitesse, car
+   on faisait
+   v+ = u+ - u0 (et non v+ = u+ - u- comme il faudrait).
+   
+   Pour permettre éventuellement une vraie résolution en vitesse, on récupère et traite
+   directement le champ de vitesse VITPLU dans MMMBCA et dans les TE0364 et TE0365,
+   au lieu de le reconstruire à partir des déplacements.
+   
+   L'intéret est double:
+   * on prépare ainsi le terrain pour une véritable résolution en vitesse;
+   * on n'a plus à se préoccuper du schéma d'intégration utilisé (theta-schéma ou newmark)
+   pour reconstruire le champ de vitesse, puisqu'on l'a directement. Par là même, il n'y a +
+   de raison de limiter la formulation vitesse à un theta-schéma, et on pourrait dorénavant
+   très bien l'associer à un schéma de Newmark....
+   
+   RESTITUTION
+   -----------
+   
+   En NEW8 et NEW9.
+   En NEW8, on se contente de corriger l'erreur de calcul de la vitesse:
+   on fait V+ = U+ - U- dans mmmbca, au lieu de V+ = U+ - U0
+   (voir fichiers joints)
+   
+   Validation
+   ----------
+   
+   Pour l'instant, SDNV100E
+   Mais on envisage d'autres cas-tests plus pertinent, comme par exemple le pendant de SDNV105C
+   (balancement du bloc).
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas-test
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 02/10/2007 - 13:03:02
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011025 DU 2007-06-28 05:34:43
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   POST_RELEVE_T calcule mal les moyennes si la ligne d?sse de la  mati?
+FONCTIONNALITE
+   Puisque aucun fichier n'est lié à la fiche, on regénère les fichiers qui ont abouti à
+   émettre l'anomalie.
+    
+   Apres analyse de l'anomalie, le probleme vient que le chemin sort du domaine.
+   Lors des calculs de moyenne  1/L * Somme(...)  la longueur L pris en compte est la
+   longueur totale du chemin. Il faut prendre la longueur du chemin qui est dans le domaine. 
+   
+   Routine à modifier : rvpstm.f 
+   Pour chaque composante calculée, il faut recalculer la longueur du chemin qui se situe
+   dans le domaine.
+   
+   Validation: forma08b
+   lors du traitement de la fiche 10837, on a amélioré la macro MACR_LIGN_COUPE pour éliminer
+   les noeuds qui se situent hors du domaine. 
+   On ajoute dans le cas test les commandes suivantes:
+   
+   #  COOR_ORIG=(3.6,  3.79753766804580E+00, 3.12868934704165E-02) : N5802,
+   #  COOR_EXTR=(3.6,  3.802462332,         -3.12868934704165E-02) : COORD HORS DOMAINE,
+   MAILB=LIRE_MAILLAGE( UNITE=23 );
+   
+   MOBARRE=AFFE_MODELE(MAILLAGE=MAILB,
+                       AFFE=_F(PHENOMENE='MECANIQUE',
+                               MAILLE=('SE1','SE2'),
+                               MODELISATION='BARRE'),  );
+   
+   PJBARRE = PROJ_CHAMP( TYPE_CHAM='NOEU',
+                         DISTANCE_MAX=3.1383638757482347E-05,
+                         METHODE='ELEM',
+                         RESULTAT=RESU,
+                         NOM_CHAM='DEPL',
+                         MODELE_1=MODMECA,
+                         MODELE_2=MOBARRE,
+                         );
+   
+   TABDEP3=POST_RELEVE_T(ACTION=_F(GROUP_NO='TOTO',
+                               TOUT_CMP='OUI',
+                               INTITULE='lbarre',
+                               NOM_CHAM='DEPL',
+                               RESULTAT=PJBARRE,
+                               OPERATION='EXTRACTION'), );
+   
+   TABDEP2=POST_RELEVE_T(ACTION=_F(GROUP_NO='TOTO',
+                               TOUT_CMP='OUI',
+                               INTITULE='lbarre',
+                               NOM_CHAM='DEPL',
+                               RESULTAT=PJBARRE,
+                               OPERATION='MOYENNE'), );
+   
+   C'est l'équivalent des 2 commandes MACR_LIGN_COUPE, concepts résultat TME2 et TTM2.
+   
+   Faut-il supprimer ces 2 commandes MACR_LIGN_COUPE qui émettent des Alarmes ?
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.81.21
+VALIDATION
+   forma08b
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011253 DU 2007-09-14 09:46:56
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   POST_RELEVE_T ne traite pas les composantes de VARI_ELNO_ELGA
+FONCTIONNALITE
+   orrection:
+   dans la routine rvtec0.f ajout du traitement des champs de variables internes (vecteur de
+   travail XNOVAR)
+   
+   Validation:
+   ajout des commandes suivantes dans le test hsnv124a
+   Vlff = POST_RELEVE_T (ACTION=_F(INTITULE = 'CUBE',
+                                   GROUP_NO = 'CUBE',
+                                   RESULTAT = U, INST = 1.,
+                                   NOM_CHAM = 'VARI_ELNO_ELGA',
+                                   NOM_CMP = ('V1','V2'),
+                                   OPERATION = 'EXTRACTION',
+                                   MOYE_NOEUD = 'NON'))
+   
+   TEST_TABLE( TABLE=Vlff,
+               FILTRE=_F( NOM_PARA='NOEUD',VALE_K='NO1' ),
+               NOM_PARA='V1',
+               VALE=2.10962E-03   )
+   TEST_TABLE( TABLE=Vlff,
+               FILTRE=_F( NOM_PARA='NOEUD',VALE_K='NO1' ),
+               NOM_PARA='V2',
+               VALE=1.00000E+00   )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hsnv124a
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ascou09a                      salmona L.SALMONA          342     40      1
+ CASTEST MODIF aspic02a                      salmona L.SALMONA          218     46      1
+ CASTEST MODIF forma08b                        vivan L.VIVAN            446     66      1
+ CASTEST MODIF hsnv124a                        vivan L.VIVAN            493     46     53
+ CASTEST MODIF ssnv182b                      salmona L.SALMONA          272      1      1
+ FORTRAN MODIF algeline/chcoma               salmona L.SALMONA          171      3      3
+ FORTRAN MODIF algeline/chcomb               salmona L.SALMONA          129      2      2
+ FORTRAN MODIF algeline/diagav               salmona L.SALMONA          150      2      2
+ FORTRAN MODIF algeline/vtgpld               salmona L.SALMONA          158      2      2
+ FORTRAN MODIF algorith/ascova               salmona L.SALMONA          213      2      2
+ FORTRAN MODIF algorith/mmmbca               salmona L.SALMONA          306     10     10
+ FORTRAN MODIF algorith/nmtble               salmona L.SALMONA          205      2      2
+ FORTRAN MODIF algorith/op0120               salmona L.SALMONA          218      2      2
+ FORTRAN MODIF algorith/speph0               salmona L.SALMONA          375      3      3
+ FORTRAN MODIF algorith/xconli               salmona L.SALMONA          243      2      2
+ FORTRAN MODIF algorith/xmmbca               salmona L.SALMONA          165      2      2
+ FORTRAN MODIF algorith/xreacl               salmona L.SALMONA          116      2      2
+ FORTRAN MODIF assembla/nudeeq               salmona L.SALMONA          207      2      2
+ FORTRAN MODIF calculel/alchml               salmona L.SALMONA          349      2      2
+ FORTRAN MODIF calculel/calcul               salmona L.SALMONA          404      2      2
+ FORTRAN MODIF calculel/carces               salmona L.SALMONA          259      2      2
+ FORTRAN MODIF calculel/celces               salmona L.SALMONA          375      3      3
+ FORTRAN MODIF calculel/cescel               salmona L.SALMONA          539      2      2
+ FORTRAN MODIF calculel/cescre               salmona L.SALMONA          278      2      2
+ FORTRAN MODIF calculel/cnocns               salmona L.SALMONA          216      2      2
+ FORTRAN MODIF calculel/jeundf               salmona L.SALMONA          148      2      2
+ FORTRAN MODIF calculel/mecact               salmona L.SALMONA          162      2      2
+ FORTRAN MODIF calculel/pj2dfb               salmona L.SALMONA          200      2      2
+ FORTRAN MODIF calculel/pj3dfb               salmona L.SALMONA          296      2      2
+ FORTRAN MODIF cataelem/lecojb               salmona L.SALMONA          177      2      2
+ FORTRAN MODIF elements/te0068               salmona L.SALMONA          121      2      2
+ FORTRAN MODIF jeveux/jeinif                 salmona L.SALMONA          615     22     21
+ FORTRAN MODIF modelisa/cafaci               salmona L.SALMONA          476      2      1
+ FORTRAN MODIF modelisa/calirc               salmona L.SALMONA          536      2      2
+ FORTRAN MODIF modelisa/calyrc               salmona L.SALMONA          613      2      2
+ FORTRAN MODIF modelisa/op0145               salmona L.SALMONA          354      2      2
+ FORTRAN MODIF modelisa/op0148               salmona L.SALMONA          319      2      2
+ FORTRAN MODIF modelisa/specep               salmona L.SALMONA          409      2      2
+ FORTRAN MODIF modelisa/specff               salmona L.SALMONA          460      2      2
+ FORTRAN MODIF postrele/rvaffe                 vivan L.VIVAN            271      2      2
+ FORTRAN MODIF postrele/rvpstm                 vivan L.VIVAN            307     42     61
+ FORTRAN MODIF postrele/rvtec0                 vivan L.VIVAN            403     68     18
+ FORTRAN MODIF prepost/lrcame                salmona L.SALMONA          633      7      7
+ FORTRAN MODIF prepost/op0151                salmona L.SALMONA          368      2      2
+ FORTRAN MODIF prepost/op0170                salmona L.SALMONA          150      2      2
+ FORTRAN MODIF soustruc/ssriu1               salmona L.SALMONA          346      2      2
+ FORTRAN MODIF supervis/affich               salmona L.SALMONA           44     12      5
+ FORTRAN MODIF utilitai/pecapo               salmona L.SALMONA          393      2      2
+  PYTHON MODIF Macro/calc_fonction_ops       salmona L.SALMONA          410      3      1
+  PYTHON MODIF Macro/macr_aspic_calc_ops     salmona L.SALMONA          797      2      2
+  PYTHON MODIF Messages/postrele               vivan L.VIVAN            319     13      1
+  PYTHON MODIF Messages/utilitai5            salmona L.SALMONA          287      9      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   52       16461       464     260      +204
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   52       16461       464     260      +204 

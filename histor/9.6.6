@@ -1,0 +1,761 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 05/05/2010 - 08:51:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012964 DU 2008-12-09 08:50:36
+TYPE evolution concernant Code_Aster (VERSION 7.0)
+TITRE
+   CTC2 - CONTACT / Indicateur contact flottant calcule par la methode continue
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   The-Hiep a été surpris de constater qu'un même calcul de contact avec 2 méthodes
+   différentes donnaient un indicateur de contact dans VALE_CONT différent :
+   * le calcul en méthode 'CONTRAINTE' donne un indicateur égal à 2
+   * le calcul en méthode 'CONTINUE' donne un indicateur égal à 1
+   
+   Détails
+   =======
+   
+   Il y avait un double "bug" pouvant doublement induire en erreur les utilisateurs. Tout
+   d'abord la doc U4 était fausse et indiquait à tort que CONT=1 signifie un contact
+   glissant, tandis que CONT=2 signifie un contact adhérent.
+   C'est l'inverse ! Cela a déjà été corrige dans la doc V9 et V10.
+   
+   Dans le code, on écrivait par ailleurs mal le champ VALE_CONT en méthode continue sans
+   frottement. En effet dans ce cas, il n'y a que 2 états possibles : 
+   * pas de contact, CONT=0
+   * il y a contact, celui-ci est nécessairement glissant, CONT=2
+   Or on laissait dans ce cas CONT=1. Ce qui pouvait laisser à penser que l'on faisait un
+   calcul de frottement, ce qui n'était pas le cas.
+   
+   Dans le cas contact ET frottement, tout était bon.
+   
+   Impact : mmmres.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.44.11
+VALIDATION
+   visuelle
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 05/05/2010 - 08:51:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014722 DU 2010-03-04 09:15:46
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW10.1.13, le cas test ssnl127a s'arrete en <S>_Error sur Calibre 4 et Calibre 5
+FONCTIONNALITE
+   La variable LDCCVG (code retour intégration loi de comportement) n'est pas initialisée
+   dans NMFCOR.
+   Le code a l'impression de ne pas avoir pu intégrer la loi de comportement, alors qu'en
+   fait, il ne l'a même pas intégré !
+   
+   Je modifie le cas-test pour supprimer l'alarme MECANONLINE5_46
+   
+      ! <A> <MECANONLINE5_46>                                                   !
+      !                                                                         !
+      ! -> La définition des paramètres RHO_MIN et RHO_EXCL est contradictoire. !
+      !      On choisit de prendre RHO_MIN à RHO_EXCL.                          !
+      !   -> Risque & Conseil :                                                 !
+      !      RHO_MIN ne doit pas etre compris entre -RHO_EXCL et RHO_EXCL       !
+   
+   A faire en v9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnl127a
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 05/05/2010 - 08:51:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014828 DU 2010-03-19 17:52:14
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MACRO_MATR_ASSE + RIGI_MECA + RIGI_GEOM = bug
+FONCTIONNALITE
+   Problème :
+   ----------
+   Si on essaye de calculer la matrice de 'RIGI_GEOM' avec MACRO_MATR_ASSE, on est
+   généralement arreté par le message suivant :
+                                                                                            
+                                           
+      Etape : MACRO_MATR_ASSE    ligne : 72    fichier : 'fort.1'
+         Etape : CALC_MATR_ELEM    ligne : 106    fichier :
+   './Python/Macro/macro_matr_asse_ops.py'
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ! Mots cles inconnus :CHAM_MATER !
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         Fin Etape : CALC_MATR_ELEM
+      Fin Etape : MACRO_MATR_ASSE
+                                                                                            
+                                           
+   Analyse :
+   ---------
+   Le problème vient du fait que la macro MACRO_MATR_ASSE appelle systématiquement
+   CALC_MATR_ELEM avec le mot clé CHAM_MATER (s'il est fourni dans la macro), alors que la
+   commande CALC_MATR_ELEM interdit ce mot clé pour l'option 'RIGI_GEOM'.
+                                                                                            
+                                           
+   Correction :
+   ------------
+   On modifie macro_matr_asse_ops.py pour ne pas fournir CHAM_MATER dans ce cas.
+                                                                                            
+                                           
+                                           
+   NEW9 :
+   ------
+   la correction de macro_matr_asse_ops.py peut etre reportée en NEW9 :
+   <     if CHAM_MATER != None: motscles['CHAM_MATER']  =CHAM_MATER
+   ---
+   >     if CHAM_MATER != None and option != 'RIGI_GEOM' : motscles['CHAM_MATER']  =CHAM_MATER
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  14828
+     macro_matr_asse_ops.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014878 DU 2010-03-30 14:57:05
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   EXTR_RESU ne detruit pas suffisamment.
+FONCTIONNALITE
+   Problème:
+   ---------
+   Suite à une discussion avec A. Dahl (AOM 14759), je me suis demandé si EXTR_RESU/ARCHIVAGE
+   faisait bien son travaiL.
+   La réponse est non !
+                                                                                            
+                                                             
+   Dans le fichier de commande ci-dessous (simplification du test zzzz137a), on crée un
+   evol_noli avec 9 pas de temps (avec 3 "poursuites").
+                                                                                            
+                                                             
+   On utilise ensuite EXTR_RESU pour ne conserver que l'un des pas de temps (ce que fait Anna).
+                                                                                            
+                                                             
+   Si on regarde les objets JEVEUX existants dans le concept evol_noli suite à cette cure
+   d'amaigrissement (EXTR_RESU), on s'aperçoit que tous les objets inutiles n'ont pas été
+   détruits :
+     * il reste les concepts "EXCIT" référencés (comme paramètres) par les numéros d'ordre
+   détruits
+     * il reste les concepts "PROF_CHNO" référencés dans les cham_no détruits
+                                                                                            
+                                                             
+   Il faudrait donc que le ménage soit plus vigoureux.
+                                                                                            
+                                                             
+   Correction :
+   ------------
+   J'ai développé un nouvel utilitaire : CALL RSMENA(RESULT)
+   qui fait le ménage (destruction des objets inutiles) dans une sd_resultat.
+   J'appelle cette nouvelle routine dans extrs1.f
+                                                                                            
+                                                             
+   Impact documentaire :
+   ---------------------
+   Citer rsmena.f dans D6.00.01
+                                                                                            
+                                                             
+   NEW9 :
+   ------
+    * routine rsmena.f à ajouter
+    * routine extrs1.f à modifier légèrement :
+      Il faut ajouter à la toute fin de la routine :
+                                                                                            
+                                                             
+    C     IL FAUT ENCORE DETRUIRE LES SCORIES INUTILES :
+          CALL RSMENA(NOMSDR)
+                                                                                            
+                                                             
+    
+   
+   Liste des fichiers impactés par la correction de la fiche:  14878
+     extrs1.f  rsmena.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : D6.00.01
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.6
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014879 DU 2010-03-30 15:08:12
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   EXTR_RESU se plante si CHAM_EXCLU + reuse
+FONCTIONNALITE
+   Problème :
+   ----------
+   Si on utilise EXTR_RESU/ARCHIVAGE + CHAM_EXCLU, on se plante salement si on est en "reuse".
+                                                                                            
+                           
+   Correction :
+   ------------
+   Le problème venait de la routine extrs1.f : on ne remettait pas à " " le nom des champs
+   correspondant aux nume_ordre non archivés.
+   J'en profite pour me mettre responsable de cette routine et la "relooker" un peu.
+                                                                                            
+                           
+   NEW9 :
+   ------
+   On peut reporter la modif de extrs1.f en NEW9 car cette routine est identique en 9 et 10
+                                                                                            
+                           
+   Validation :
+   ------------
+   J'ajoute à la fin du test zzzz223a un petit bloc dans lequel on fait :
+                                                                                            
+                           
+   U3=EXTR_RESU(          RESULTAT=U2, ARCHIVAGE=_F(NUME_ORDRE = (5,7), CHAM_EXCLU =
+   ('SIEF_NOEU_ELGA') ))
+   U2=EXTR_RESU(reuse=U2, RESULTAT=U2, ARCHIVAGE=_F(NUME_ORDRE = (5,7), CHAM_EXCLU =
+   ('SIEF_NOEU_ELGA') ))
+                                                                                            
+                           
+   J'ai vérifié (à l'oeil) que U2 et U3 contiennent bien ce qui est attendu : nume_ordre
+   conservés, valeurs des champs, abscence des champs exclus, valeurs des paramètres.
+   On vérifie par TEST_FICHIER que le contenu de U2 et U3 ne bouge pas dans le temps.
+   Remarque :
+   Ce test valide également la correction de 14878 (destrcution des prof_chno et 'EXCIT')
+                                                                                            
+                           
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  14879
+     extrs1.f  rsmena.f
+     zzzz223a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz223a
+NB_JOURS_TRAV  : 0.7
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014919 DU 2010-04-08 07:56:56
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   un bug dans la routine XFEM xddlim.f
+FONCTIONNALITE
+   Problème :
+   -----------
+   Il y a 2 problèmes dans la routine xddlim.f :
+    
+   1) on utilise la routine JEDETR(CH1,CH2,CH3) alors que CH1, CH2 et CH3 sont des cham_no_s.
+   Il faut utliser DETRSD('CHAM_NO_S',CH1) sinon, on ne détruit rien !
+    
+   2) plus grave : le call JEDETR(CNXINV) est appelé systématiquement alors que la chaine
+   CNXINV n'est pas toujours initialisée. Du coup, si on n'a pas de chance et que CNXINV
+   contient le nom d'un objet jeveux (dans mon cas 'MAILLAG1.DIME') et bien on est "marron".
+                                                                                            
+                           
+   Solution :
+   ----------
+   1) je remplace les JEDETR par des DETRSD
+   2) j'initialise systématiquement la chaine CNXINV
+                                                                                            
+                           
+   NEW9 :
+   ------
+   Ces 2 corrections sont sans doute à corriger en NEW9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso (hsnv132c)
+NB_JOURS_TRAV  : 0.4
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 05/05/2010 - 08:51:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014931 DU 2010-04-12 07:05:01
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Correction de bug dans la loi ENDO_ORTH_BETON
+FONCTIONNALITE
+   L'objet de cette fiche est corriger divers erreurs de programmation dans la loi
+   ENDO_ORTH_BETON. En quelques mots, ces erreurs sont :
+   - mauvais calcul de RTEMP dans LCEOB1.F -> Floating Point Exception
+   - mauvaise reconstruction de BINTER dans LCEOBL.F -> Resultats Faux (relativement) 
+   - cohérence entre les tests pour le blocage de l'endommagement (1-TOLB) et la valeur
+   maximale de l'endommagement (1-TOLB/2). La correction de ce point casse le cas-test
+   SSNV177A, dont une des valeurs de référence (non-régression) soit être changée -> Absence
+   de Convergence dans l'algorithme de Newton
+   - homogénéisation de la valeur de TOLB (1e-2 pour toutes les sources) -> pas de problème
+   particulier mis en évidence 
+   - rajout de test pour borner l'endommagement de compression à 1-TOLB (auparavant, pouvait
+   prendre toutes les valeurs comprises etre 1-TOLB et 1) -> pas de problème particulier mis
+   en évidence
+   - initialisation d'une variable à 0 non effectuée pouvant entrainer des NaN dans MEOBLi.F
+   et MEOBGi.F -> Floating Point Exception / Matrice non inversible pivot nul 
+   - erreur dans la doc R de la loi à corriger 
+   
+   D'autre part, les routines LCEOB1.F et MEOBL1.F ne sont actuellement pas couvertes par les
+   tests.
+   
+   Pour mettre en évidence tous ces problèmes et les corriger, j'ai constitué un cas-test qui
+   permet d'aller progressivement dans toutes les sources de la loi ENDO_ORTH_BETON en
+   modélisation locale. Je propose de le restituer sous le nom SSNV217A.
+   
+   
+   Impact :
+   
+   a) Fortran (15)
+   LCEOBL.F
+   LCEOBG.F
+   LCEOBB.F
+   LCEOB1.F
+   LCEOB2.F
+   LCEOB3.F
+   MEOBL1.F
+   MEOBL2.F
+   MEOBL3.F
+   MEOBG1.F
+   MEOBG2.F
+   MEOBG3.F
+   SIGEOB.F
+   
+   b) Cas-tests 
+   SSNV177A : valeur de référence à modifier
+   SSNV217A : nouveau cas-test
+   
+   c) Documentation
+   modification de la doc R7.01.09 (loi ENDO_ORTH_BETON)
+   modification de la doc V6.04.177 (valeur de référence à modifier dans le cas-test SSNV177A)
+   ajout de la doc V6.04.217 (liée au cas-test que je rajoute)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R7.01.09, V6.04.177, V6.04.217
+VALIDATION
+   tout test utilisant ENDO_ORTH_BETON
+NB_JOURS_TRAV  : 12.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR bottoni      BOTTONI Marina         DATE 05/05/2010 - 08:51:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014933 DU 2010-04-12 12:39:54
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   Anomalie des routines de couplage Aster-Ecrevisse
+FONCTIONNALITE
+   On propose plusieurs corrections de la macro-commande MACR_ECREVISSE et de ses "sous
+   commandes". 
+   1- Problème à la translation du maillage : si on translate la structure, on n'obtient pas
+   les mêmes résultats
+   Ceci est dû au fait que les chargements provenant d'Ecrevisse pour Aster  était définie en
+   fonction de l'abscisse curviligne et donc démarrait toujours à x=0/y=0.
+   Le problème a été resolu en fournissant le chargement en fonction des vraies coordonnées.
+   Du coup, on en a profité pour permettre toutes les orientations de fissures (et plus
+   seulement horizontale ou verticale).
+   On restitue pour cela une nouvelle modélisation pour le test zzzz218, dans lequel on teste
+   l'invariance des résultats en translation et en rotation : du coup il doit être en
+   PAR_LOT='NON' pour permettre l'extraction d'une table (CODE_RETOUR=4 !)
+   Remarque : on avait laissé dans les sources la possibilité de ne modéliser qu'une seule
+   lèvre de fissure (l'autre était fixe, et par défaut un des axes x - y). Ceci n'étant pas
+   compatible avec la position quelconque de la fissure, on supprime cette possibilité
+   (accord du client, B. Masson)
+   
+   2. On a remarqué que parfois il y avait un décalage entre la discrétisation Aster et la
+   discrétisation Ecrevisse (1 point de plus) qui pouvait entraîner de petites variation de
+   température (2-3 degrés). Désormais on ne prend plus en compte le dernier point fourni par
+   Ecrevisse. Cela entraîne une petite modification des valeurs de référence pour les tests
+   zzzz218a et zzzz218b.
+   
+   3. Le catalogues INFO de :  MACR_ECREVISSE, CALC_ECREVISSE, MACR_ECRE_CALC a été modifié
+   pour que INFO puisse être choisi entre 1 et 2 (avant il y avait aussi l'option 3).
+   
+   4. Les "print" dans la macro ont été substitués par des UTMESS.
+   
+   5. On a ajouté la possibilité de faire les calculs aussi avec la nouvelle version
+   d'Ecrevisse (3.1.2), qui devient la version par défaut. On peut choisir entre la 3.1.1 et
+   la 3.1.2) : mot-clé VERSION dans le catalogues de : MACR_ECREVISSE, CALC_ECREVISSE,
+   MACR_ECRE_CALC. On a laissé quand même le mot-clé LOGICIEL (chemin de l'executable
+   Ecrevisse écrit un dur). Si LOGICIEL est fourni, on néglige VERSION.
+   
+   6. On a modifié le traitement du mot-clé TORTUOSITE, qui augmente la longueur de la
+   fissure donnée à calculer à Ecrevisse du facteur 1/tort. Les abscisses des cotes sont
+   données de façon proportionnel en le multiplient aussi pour le facteur 1/tort.
+   
+   7. DEFI_CONTACT : rendue obligatoire
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.5 (fissure ne dxc3xa9marrant pas xc3xa0 x=0 ou y=0) + tortuositxc3xa9 < 1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.5 (fissure ne dxc3xa9marrant pas xc3xa0 x=0 ou y=0) + tortuositxc3xa9 < 1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.03.41, V1.01.218
+VALIDATION
+   vxc3xa9rification indxc3xa9pendance solution par translation et rotation
+NB_JOURS_TRAV  : 30.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 05/05/2010 - 08:51:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014937 DU 2010-04-14 12:14:16
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Probleme observation
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   '''
+   Lors d'un calcul (en THM, modélisation D_PLAN_HH2SUDA) conbstitué de plusieurs
+   STAT_NON_LINE avec OBSERVATION, on a un soucis lors du post-traitement de ces
+   observations. En effet, jusqu'à un temps t=10 ans, tous les pas de temps sont bien
+   représentés, mais ensuite seul un pas de temps arbitraire est traité; On a bien vérifié
+   que le calcul avait été fait correctement. On suspecte donc un problème dans l'observation.
+   '''
+   
+   Correction
+   ==========
+   
+   On arrive à reproduire le problème sur un cas plus simple, SSNV104E. C'est un test qui
+   fait déjà de l'observation, on coupe l'unique STAT_NON_LINE en 2 : la table n'est alors
+   plus complète (il manque des morceaux dans le second STNL).
+   
+   Le problème vient de la présence de ETAT_INIT/EVOL_NOLI ou bien de INCREMENT/INST_INIT, ce
+   qui se produit au moins dans le cas de reprises de calcul. En effet dans ce cas, la liste
+   fournie aux utilitaires d'observation est bien tronquée pour commencer à partir de
+   INST_INIT : il n'y a donc aucun décalage à opérer.
+   Pourtant c'est ce que l'on faisait dans l'observation, conséquence : dans le second STNL
+   on sautait autant d'instants que ceux déjà calculés.
+   
+   La correction consiste à toujours initialiser à 0 le décalage dans la liste d'instants.
+   
+   À faire en V9
+   
+   Impact : diinit.f  dyobse.f  nmcrli.f  nmcrob.f  pminit.f  tiinit.f
+   
+   Validation
+   ==========
+   
+   On modifie SDLS115B pour tester la table d'observation d'un STNL coupé en 2.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout obs
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR jaubert      JAUBERT André         DATE 05/05/2010 - 08:51:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014939 DU 2010-04-14 14:56:53
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Arret fatal sur test ssnp110d
+FONCTIONNALITE
+   La dernière restitution de Maximilien Siavelis a révélé un problème
+   dans la routine xnmpl2 au niveau de:
+           DO 135 M=1,3
+             SIGN(M) = SIGM(M,KPG)
+    135    CONTINUE
+           DO 145 M=4,6
+             SIGN(M) = SIGM(M,KPG)*RAC2
+    145    CONTINUE
+   alors que SIGM est déclaré en SIGM(4,NPG)
+   Il faut donc faire un VECINI sur les 6 variables de SIGN
+   et ensuite écrire:        
+   DO 135 M=1,3
+             SIGN(M) = SIGM(M,KPG)
+    135    CONTINUE        
+             SIGN(4) = SIGM(4,KPG)*RAC2
+   Maximilien a apporté les corrections et cela marche désormais.
+   Merci à lui.
+   M'attribuer la fiche. La correction de bug sera apportée dans les
+   deux prochaines semaines.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnp110d
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 05/05/2010 - 08:51:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014976 DU 2010-04-20 14:43:45
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Composante GLI de VALE_CONT en formulation continue
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Lors du stage sur le benchmark NAFEMS, on s'est aperçu que la composante du champ
+   VALE_CONT donnant le glissement est non nulle en des endroits où il n'y a pas contact.
+   
+   Correction
+   ==========
+   
+   Cela ne se produisait qu'en formulation 'CONTINUE'. On calculait systématiquement le
+   glissement sans se soucier du statut de contact.
+   Il faut initialiser à 0 ce champ pour les points non contactants.
+   
+   Impact : mmmres.f
+   À faire en V9.
+   
+   Conséquence sur les résultats
+   =============================
+   
+   On obtenait des valeurs fausses (au lieu de 0) sur les noeuds qui n'étaient pourtant pas
+   en contact. De même lorsqu'il n'y avait pas de frottement, le glissement était aussi non nul.
+   Cela pouvait porter à confusion.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test perso
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014979 DU 2010-04-20 16:25:36
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Detection de la dimension des surfaces de contact
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Dans un calcul 2D réalisé lors du stage benchmark NAFEMS. On a par erreur déclaré comme
+   surface maître un groupe de mailles massives (et non de bord).
+   
+   Le calcul se passe sans problème et donne forcément des résultats inattendus !
+   
+   Correction
+   ==========
+   
+   On écrit une nouvelle routine CFBORD. Celle-ci parcourt toutes les mailles de contact est
+   vérifie que dim(maille) < dim(problème). Si ce n'est pas le cas, on émet un message
+   d'alarme : 
+   
+   !---------------------------------------------------------------------------------------------------------------------------!
+   !.<F>.<CONTACT2_11>.........................................................................................................!
+   !...........................................................................................................................!
+   !.Au.moins.une.des.mailles.de.contact.que.vous.avez.définies.est.de.dimension.3,.or.la.dimension.de.votre.problème.est.:.3..!
+   !.Cette.maille.n'est.donc.pas.une.maille.de.bord..Il.doit.y.avoir.une.erreur.dans.votre.mise.en.données.....................!
+   !...........................................................................................................................!
+   !.Conseil.:.................................................................................................................!
+   !.Vérifiez.votre.AFFE_MODELE.et.le.type.de.vos.mailles.dans.la.définition.des.surfaces.de.contact...........................!
+   !...........................................................................................................................!
+   !...........................................................................................................................!
+   !.Cette.erreur.est.fatale..Le.code.s'arrete.................................................................................!
+   !---------------------------------------------------------------------------------------------------------------------------!
+   
+   Impact : limaco.f, dimmai.f, cfbord.f
+   À faire en V9.
+   
+   On modifie la routine DIMMAI pour compléter les types de maille reconnus.
+   
+   Résultats faux
+   ==============
+   
+   En 3D, le fait d'entrer une maille volumique à la place d'une maille de peau n'était pas
+   dangereux car on finit toujours par tomber dans un ASSERT.
+   
+   En 2D, si l'on utilise la formulation continue, on ne craint rien non plus, car on
+   n'arrive pas à construire l'élément de contact et on plante en ASSERT.
+   
+   En 2D, si l'on utilise la formulation discrète, on peut avoir des résultats faux mais :
+   - si c'est la surface maître qui est massive, on va observer un contact bizarre qui
+   devrait mettre la puce à l'oreille.
+   - si c'est la surface esclave qui est massive, on risque d'avoir des interpénétrations,
+   que l'on doit pouvoir observer visuellement.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout contact continu + discret
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014978 DU 2010-04-20 16:15:48
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Condition unilatxc3xa9rale et MECA_STATIQUE
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Un utilisateur du SEPTEN s'est aperçu qu'une condition unilatérale imposée à
+   l'aide de l'opérateur AFFE_CHAR_MECA/LIAISON_UNILATER n'était pas prise en compte lors
+   d'un calcul MECA_STATIQUE.
+   Pour Christophe : canal de remontée == téléphone.
+   
+   Correction
+   ==========
+   
+   C'est normal car seul le solveur non-linéaire permet de résoudre des problèmes avec
+   conditions unilatérales ... mais néanmoins, il faut absolument blinder ce cas. C'est à
+   dire détecter dans MECA_STATIQUE l'utilisation d'une telle charge et les interdire.
+   
+   En V9, on détecte en plus des charges de type CONTACT les charges de type
+   LIAISON_UNILATER. On en profite pour améliorer le message d'erreur et donner le nom de la
+   charge fautive.
+   
+   En V10, on supprime la vérification dans MECA_STATIQUE car il n'est plus possible de se
+   tromper. Le superviseur arrête l'utilisateur à cause d'une erreur de syntaxe (typage des SD).
+   
+   Documentation
+   =============
+   
+   Dans la doc U4.44.11, on précise en V9 seulement que les charges de type LIAISON_UNILATER
+   ne sont utilisables qu'avec STAT_NON_LINE ou DYNA_NON_LINE.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.44.11
+VALIDATION
+   test joint
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 05/05/2010 - 08:51:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014984 DU 2010-04-21 11:58:57
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Gestion du pas de temps avec DYNA_TRAN_MODAL
+FONCTIONNALITE
+   Un utilisateur a remarqué qu'avec la méthode en temps NEWMARK DYNA_TRAN_MODAL fait sa tête
+   de mule et ne respecte pas les instructions du fichier de commande. 
+   
+   En effet, l'opérateur, quelle que soit la méthode d'intégration en temps, se base sur les
+   fréquences de la base modale pour préconiser un pas de temps maximal (pour la méthode de
+   NEWMARK 10 fois plus petit que la plus petite pulsation propre du système). Pour une
+   méthode implicite c'est un principe de précaution très pessimiste. C'est pourquoi, pour
+   cette méthode, la programmation était imaginée pour résumer la vérification à une simple
+   alarme et pour laisser l'utilisateur responsable de son choix.
+   
+   Malheureusement une erreur de programmation a inversé la logique prévue et impose
+   systématiquement le pas de temps calculé par DYNA_TRAN_MODAL en ignorant celui entré par
+   l'utilisateur (sauf si celui ci est encore plus petit, ce qui est peu probable !).
+   
+   Je rétablis le fonctionnement qui était prévu à l'origine et qui est décrit dans la doc,
+   c'est-à-dire qu'on prend toujours le pas de temps donné par l'utilisateur et on l'avertit
+   s'il ne respecte pas le critère (plutôt strict) de l'opérateur.
+   
+   Le risque de résultats faux est négligeable puisque l'on prenait systématiquement un pas
+   de temps plus petit que nécessaire. En revanche ce pouvait être une gêne pour
+   l'utilisateur qui se pouvait se retrouver avec un échantillonnage  exagérément fin de la
+   réponse.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdld04a + astout sur DYNA_TRAN_MODAL
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT zzzz218c                      macocco K.MACOCCO          383    383      0
+ CASTEST MODIF ssnv104e                      macocco K.MACOCCO          465     11     11
+ CASTEST MODIF ssnv177a                      macocco K.MACOCCO          255      2      2
+ CASTEST MODIF zzzz218a                      macocco K.MACOCCO          347    218    242
+ CASTEST MODIF zzzz218b                      macocco K.MACOCCO          367    213    205
+CATALOPY MODIF commande/calc_ecrevisse       macocco K.MACOCCO          174     11     10
+CATALOPY MODIF commande/macr_ecre_calc       macocco K.MACOCCO          182      8      6
+CATALOPY MODIF commande/macr_ecrevisse       macocco K.MACOCCO          284     17     15
+ FORTRAN AJOUT modelisa/cfbord               macocco K.MACOCCO          103    103      0
+ FORTRAN AJOUT prepost/rsmena                macocco K.MACOCCO          178    178      0
+ FORTRAN MODIF algorith/cfdisi               macocco K.MACOCCO          174      4      1
+ FORTRAN MODIF algorith/diinit               macocco K.MACOCCO          107      5      6
+ FORTRAN MODIF algorith/dyobse               macocco K.MACOCCO          164      5      6
+ FORTRAN MODIF algorith/lceob1               macocco K.MACOCCO          372     18     17
+ FORTRAN MODIF algorith/lceob2               macocco K.MACOCCO          520     22     22
+ FORTRAN MODIF algorith/lceob3               macocco K.MACOCCO          475     14     14
+ FORTRAN MODIF algorith/lceobb               macocco K.MACOCCO          519     63     50
+ FORTRAN MODIF algorith/lceobg               macocco K.MACOCCO         1171     81     65
+ FORTRAN MODIF algorith/lceobl               macocco K.MACOCCO         1037     79     82
+ FORTRAN MODIF algorith/mdptem               macocco K.MACOCCO          194      3      2
+ FORTRAN MODIF algorith/meobg1               macocco K.MACOCCO          303     23     28
+ FORTRAN MODIF algorith/meobg2               macocco K.MACOCCO          385     23     27
+ FORTRAN MODIF algorith/meobg3               macocco K.MACOCCO          336     21     27
+ FORTRAN MODIF algorith/meobl1               macocco K.MACOCCO          293     22     31
+ FORTRAN MODIF algorith/meobl2               macocco K.MACOCCO          387     21     27
+ FORTRAN MODIF algorith/meobl3               macocco K.MACOCCO          371     21     30
+ FORTRAN MODIF algorith/mmmres               macocco K.MACOCCO          943     25     31
+ FORTRAN MODIF algorith/nmcrli               macocco K.MACOCCO          291      3      6
+ FORTRAN MODIF algorith/nmcrob               macocco K.MACOCCO          112      5      7
+ FORTRAN MODIF algorith/nmfcor               macocco K.MACOCCO          205     10     10
+ FORTRAN MODIF algorith/op0046               macocco K.MACOCCO          264      6      4
+ FORTRAN MODIF algorith/sigeob               macocco K.MACOCCO          183     27     30
+ FORTRAN MODIF algorith/tiinit               macocco K.MACOCCO          109      5      6
+ FORTRAN MODIF algorith/xnmpl2               macocco K.MACOCCO          370      6      9
+ FORTRAN MODIF modelisa/limaco               macocco K.MACOCCO          200      5      1
+ FORTRAN MODIF modelisa/xddlim               macocco K.MACOCCO          229      4      6
+ FORTRAN MODIF prepost/extrs1                macocco K.MACOCCO          184    114    113
+  PYTHON MODIF Macro/calc_ecrevisse_ops      macocco K.MACOCCO         1101    594    292
+  PYTHON MODIF Macro/macr_ecre_calc_ops      macocco K.MACOCCO          577    101    162
+  PYTHON MODIF Macro/macr_ecrevisse_ops      macocco K.MACOCCO          718     50     43
+  PYTHON MODIF Macro/macro_matr_asse_ops     macocco K.MACOCCO          129      2      2
+  PYTHON MODIF Messages/algorith9            macocco K.MACOCCO          302      4      2
+  PYTHON MODIF Messages/contact2             macocco K.MACOCCO           47      9      1
+  PYTHON MODIF Messages/ecrevisse0           macocco K.MACOCCO          203     62      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    3         664       664              +664
+ MODIF :   41       15049      1937    1656      +281
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   44       15713      2601    1656      +945 

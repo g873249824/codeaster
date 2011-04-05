@@ -1,0 +1,382 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 24/11/2009 - 18:42:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014204 DU 2009-11-19 09:33:37
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW9.5.12, le cas-test sdnd102b s'arrete en erreur_<F> sur Rocks.
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En NEW9.5.12, le cas-test sdnd102b s'arrete en erreur_<F> sur Rocks en FPE.
+   
+   Analyse
+   =======
+   
+   Après une analyse Valgrind (par JD), on se rend compte d'un problème dans LOBS. Valgrind
+   dénonce un accès à une valeur non initialisée dans un vecteur JEVEUX.
+   C'est un peu plus compliqué : 
+   
+       69	C
+       70	C --- ACCES DE LA SD
+       71	C
+       72	      LISOBS = SDOBSE(1:14)//'.LIST' 
+       73	      INFOBS = SDOBSE(1:14)//'.INFO'       
+       74	      CALL JEVEUO(LISOBS,'L',JOBSE)
+       75	      CALL JEVEUO(INFOBS,'E',JOBSI) 
+       76	      CALL JEVEUO(LISINS(1:19)//'.VALE','L',JINST)
+       77	C
+       78	C --- INITIALISATIONS
+       79	C             
+       80	      LOBSER = 0
+       81	      NBOBSE = ZI(JOBSI+1-1)
+       82	      NUOBSE = ZI(JOBSI+3-1)
+       83	      NUINS0 = ZI(JOBSI+4-1)
+       84	C
+       85	C --- CHOIX DE L'OBSERVATION
+       86	C
+       87	      IF (NBOBSE.NE.0) THEN         
+       88	        IF ((INSTAP+R8PREM( )).GE.ZR(JINST+NUINS0+1)) THEN
+       89	          NUINS0 = NUINS0 + 1
+       90	          IF (ZI(JOBSE-1+NUINS0+1).EQ.1) THEN
+       91	            LOBSER = 1
+       92	            NUOBSE = NUOBSE + 1            
+       93	          ENDIF
+       94	        ENDIF
+       95	      ENDIF
+       96	C
+   
+   
+   Le problème se situe à la ligne 88 de LOBS (version V9 ci-dessus) comme le détecte Valgrind.
+   
+   En fait c'est une lecture invalide dont il s'agit mais cela doit juste être la faute à pas
+   de chance si Valgrind voit une valeur non initialisée (peut être que c'est celle d'un
+   autre objet qui est directement à la suite de celui qui nous intéresse).
+   
+   Cette lecture invalide ne se produit qu'au dernier instant de calcul mais fondamentalement
+   c'est la démarche qui n'est pas bonne (il faut à mon avis revoir SUIVI_DDL et OBSERVATION
+   à commencer par la séparation nette des 2 surtout côté programmation).
+   
+   Donc le problème est que on passe dans LOBS aussi bien si on est en SUIVI_DLL ou
+   OBSERVATION or on ne devrait théoriquement y passer que en OBSERVATION (car en SUIVI_DDL
+   il n'y a pas à savoir si tel ou tel instant est à suivre, tous le sont).
+   Comme on y passe en SUIVI_DDL, on va incrémenter indûment NUINS0 au début du 1er pas de
+   temps, il y aura donc un décalage de 1 avec les instants théoriquement observés.
+   
+   Or par un coup de chance (?) NMOBSV est placé dans OP0070 juste après l'incrémentation du
+   numéro d'instant ce qui fait que l'on rattrape cette erreur .... jusqu'au dernier instant
+   où la ça bugge car on va taper dans le N+1ème instant de la liste d'instants qui en compte N !
+   Selon la valeur de ce réel on peut même aller taper encore plus loin (en avançant de 1),
+   c'est certainement ce qui se passe pour le plantage en FPE, bref c'est très "état de la
+   mémoire" dépendant.
+   
+   La solution la plus simple est la suivante : 
+   * l'appel à LOBS par un IF(.NOT.LSUIVI)
+   * l'appel à NMOBSV est déplacé dans OP0070 avant l'incrémentation du numéro d'instant 
+   
+   Validation
+   ==========
+   
+   Un astout V9 sur les tests faisant de l'observation ressort OK.
+   
+   Conclusion
+   ==========
+   
+   Il y a des résultats faux (au sens où la table produite par l'observation est fausse) :
+   les instants sont décalés de 1 (le tableau commence à NUME_ORDRE=2 mais il s'agit bien du
+   1er instant !) et le dernier instant peut ne pas être stocké.
+   
+   Illustration sur SDND102B :
+   
+   --avant--
+   #ASTER  9.05.12 CONCEPT TAB_OBS CALCULE LE 19/11/2009 A 03:49:29 DE TYPE         
+   #TABLE_SDASTER                                                                   
+   #FILTRE -> NOM_PARA: INST             CRIT_COMP: EQ   VALE: 0.01
+    NUME_ORDRE   INST         NOM_CHAM         NOM_CMP  NOEUD    VALE        
+              10  1.00000E-02 DEPL_ABSOLU      DX       NO1      -1.35727E-04
+              10  1.00000E-02 VITE_ABSOLU      DX       NO1      -1.34379E-02
+              10  1.00000E-02 VITE_ABSOLU      DX       NO1      -1.34379E-02
+   
+   --apres--
+   #ASTER  9.05.12 CONCEPT TAB_OBS CALCULE LE 24/11/2009 A 17:30:39 DE TYPE         
+   #TABLE_SDASTER                                                                   
+   #FILTRE -> NOM_PARA: INST             CRIT_COMP: EQ   VALE: 0.01
+    NUME_ORDRE   INST         NOM_CHAM         NOM_CMP  NOEUD    VALE        
+              10  1.00000E-02 DEPL_ABSOLU      DX       NO1      -1.48888E-04
+              10  1.00000E-02 VITE_ABSOLU      DX       NO1      -1.28759E-02
+              10  1.00000E-02 VITE_ABSOLU      DX       NO1      -1.28759E-02
+   
+   
+   Remarques
+   =========
+   
+   En V10, on a corrigé quelque chose dans LOBS (après avoir remarqué qu'il manquait un
+   instant dans la table). Pour moi la correction est fausse, elle ne corrige pas le
+   problème. Une correction similaire à celle faite en V9 doit pouvoir s'appliquer.
+   
+   Valgrind signale d'autres variables non initialisées dans NDLECT. J'émets une fiche séparée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astout observation V9
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 24/11/2009 - 17:45:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014151 DU 2009-11-06 15:49:10
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Probleme CALC_FORC_AJOU et CALC_MATR_AJOU
+FONCTIONNALITE
+   Après quelques analyses, je crois que ce n'est pas très grave que cette 
+   chaîne de caractères MODEL ne soit pas initialisée : on teste par rapport à 
+   quelques valeurs : '2D', 'AX' ou '3D'. Si MODEL ne vaut aucune de ces 
+   valeurs on a un comportement par "défaut". Ce serait pas de chance de 
+   tomber par hasard sur une des trois valeurs ci-dessus !
+   
+   Si l'on reprend la logique d'OP0152 (CALC_MATR_AJOU) dans OP0199, alors sur 
+   le cas-test fdlv112a, MODEL devrait valoir '3D' et là on passe dans des 
+   branches particulières de MAT152 et le cas-test devient NOOK.
+   
+   En mettant MODEL = '  ', alors tous les cas-tests qui utilisent OP0199 (au 
+   travers de MACRO_MATR_AJOU qui appelle CALC_FORC_AJOU, car aucun test ne 
+   fait directement du CALC_FORC_AJOU) sont OK (testé sur Calibre 5 et Bull).
+   
+   Routine impactée : OP0199
+   
+   Report en version 9 : immédiat car la routine est inchangée.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 6.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   fdlv101a, fdlv102a, fdlv106a, fdlv108a, fdlv109a, fdlv112a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 24/11/2009 - 17:45:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014177 DU 2009-11-13 12:19:19
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW9.5.11, le cas-test plexu01a est en echec sur Bull.
+FONCTIONNALITE
+   Suite à une restitution il y a deux semaines dans affe_cara_elem, ce test s'est
+   malencontreusement retrouvé cassé en v9. 
+   L'explication est que deux vecteurs de la SD cara_elem se sont retrouvés sur dimensionnés
+   et donc non remplis completement, ce qui plantait lorsqu'on l'on tentait d'y accéder
+   depuis la python dans la macro-commande calc_europlexus.
+   La correction est de retailler les deux vecteurs à la fin de la routine acearp.f
+   
+   A faire en v9 uniquement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   plexu01a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 24/11/2009 - 17:45:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014206 DU 2009-11-19 10:28:30
+TYPE express concernant Code_Aster (VERSION 9.5)
+TITRE
+   Oubli de report de la fiche 14181 en NEW9
+FONCTIONNALITE
+   Problème :
+   ========
+   On a oublié de reporter la fiche 14181 en NEW9 (variable non initialisée qui cassait
+   ssna117a en NEW10).
+   
+   Correction :
+   ==========
+   On fait le report.
+   
+   Impact :
+   ======
+   lcjpla.f
+   
+   Le source est en pièce jointe.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage test
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014197 DU 2009-11-18 15:42:34
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Write(6,*) dans CALC_ELEM en NEW9
+FONCTIONNALITE
+   Problème :
+   ========
+   En NEW9, dans la routine dkqcod.f on trouve des impressions parasites (write(6,*))
+   
+   Correction :
+   ==========
+   On supprime les write(6,*).
+   
+   Impact :
+   ======
+   dkqcod.f
+   
+   Le source est en pièce jointe.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   affichage
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 24/11/2009 - 17:45:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014208 DU 2009-11-19 16:12:45
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   utilisation de formules pour definir les materiaux en thermique
+FONCTIONNALITE
+   Signalement dans un post sur le forum (merci Aster libre) :
+   Non convergence d'un problème de thermique non linéaire où on avait défini les paramètres
+   non-linéaires matériau (conductivité et enthalpie) via des formules.
+   
+   Ce cas n'a jamais été prévu. En effet, dans les texxxx de thermique, on a souvent besoin
+   de la fonction et de sa dérivée. Ainsi, plutôt qu'utiliser fointe.f, on appelle rcfode.f
+   qui fait la même chose mais renvoie f' en plus de f. SAUF QUE f' est proprement calculée
+   (facile pour une fonction linéaire par morceaux) et que le cas f=formule qui demanderait
+   une évaluation par différences finies. Non seulement ce n'est pas fait, mais le cas
+   Formule (fonction interprétée) n'est funestement pas blindé dans RCFODE.f.
+   
+   Donc risque de résultats faux - mais dans la pratique, le calcul a le bon goût de ne pas
+   converger avec des valeurs non intialisées de paramètres matériaux.
+   
+   On émet désormais le message d'erreur suivant :
+     ->  En thermique, les fonctions définissant le matériau (enthalpie,
+         capacité calorifique, conductivité) doivent obligatoirement être
+         décrites par des fonctions tabulées et non des formules.
+         En effet, on a besoin d'évaluer la dérivée de ces fonctions. Elle
+         peut être plus facilement et précisément obtenue pour une fonction
+         linéaire par morceaux que pour
+         une expression 'formule'.
+     -> Conseil:
+         Tabulez votre formule, à une finesse de discrétisation d'abcisse
+         (TEMP) à votre convenance, par la commande CALC_FONC_INTERP
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.43.01
+VALIDATION
+   cas test modifixc3xa9
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 24/11/2009 - 17:45:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014162 DU 2009-11-10 12:56:49
+TYPE anomalie concernant Code_Aster (VERSION 10.2)
+TITRE
+   FAUX : CALC_G : option CALC_K_G et SYME : K2 et K3 non nuls !
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Dans l'opérateur CALC_G, option CALC_K_G avec SYME_CHAR='SYME' en 3D, on devrait avoir K2
+   = K3 = 0.
+   Or les résultats obtenus pour K2 et K3 sont très différents de 0 !
+   De plus, le Girwin est totalement faux, ainsi que l'angle BETA de bifurcation (normalement
+   beta =0)
+   
+   Le cas test sslv311a permet de mettre en évidence le bug.
+   On y voit clairement que les K2 et les K3 ne sont pas du tout nuls.
+   
+   
+   Solution :
+   ----------
+   
+   La prise en compte de la symétrie est fausse (cf. cakg3d.f) : on multiplie K1, K2, K3, G
+   par 2.
+   Alors qu'il faut multiplier par 2 les K1 et G, et mettre à 0 les K2 et K3.
+   Mais cela pose un pb pour la mise à jour de Girwin. A ce niveau, on ne peut plus le
+   corriger. Il faut le faire avant le calcul de Girwin. Et c'est d'ailleurs ce qui est fait
+   pour le 2D : on corrige correctement les K1, K2, G1 et G2 avant le calcul de Girwin par
+   G1^2 + G2^2 (cf. meficg.f). Du coup, il n'y a pas d'erreur en 2d.
+   
+   On fait donc pareil pour le 3D : correction des G, G1, G2, G3, K1, K2, K3 juste après la
+   sommation des termes élémentaires. Cela permet en sortie d'avoir un Girwin et un Beta corrects
+   
+   Je rajoute un test sur K2 et K3 dans le cas test sslv311a (pour vérifier l'égalité avec 0)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv311a, sslp101b
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sslp101b                      macocco K.MACOCCO          402     15     13
+ CASTEST MODIF sslv311a                      macocco K.MACOCCO          455     34      1
+ FORTRAN MODIF algorith/cakg3d               macocco K.MACOCCO          434     17     11
+ FORTRAN MODIF algorith/dyobar                desoza T.DESOZA           531      4      1
+ FORTRAN MODIF algorith/lcjpla               macocco K.MACOCCO           74     15      9
+ FORTRAN MODIF algorith/op0070                desoza T.DESOZA           554      8      7
+ FORTRAN MODIF algorith/op0199               macocco K.MACOCCO          220      3      1
+ FORTRAN MODIF elements/dkqcod               macocco K.MACOCCO          159      1      5
+ FORTRAN MODIF elements/gkmet1               macocco K.MACOCCO          133      2      2
+ FORTRAN MODIF elements/gkmet3               macocco K.MACOCCO          237      4      4
+ FORTRAN MODIF modelisa/acearp               macocco K.MACOCCO          541      4      1
+ FORTRAN MODIF modelisa/rcfode               macocco K.MACOCCO          157      3      1
+  PYTHON MODIF Messages/modelisa6            macocco K.MACOCCO          359     11      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   13        4256       121      57       +64
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   13        4256       121      57       +64 

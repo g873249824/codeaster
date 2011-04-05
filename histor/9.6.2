@@ -1,0 +1,884 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 03/02/2010 - 08:26:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014401 DU 2010-01-11 13:00:48
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   macr_ecrevisse et tortuosié
+FONCTIONNALITE
+   Le mot-clé TORTUOSITE a été intégré dans CALC_ECREVISSE mais n'est pas disponible dans
+   MACR_ECREVISSE.
+   
+   Pour mémoire, CALC_ECREVISSE est la macro qui fait le chaine Aster-Ecrevisse pour un pas
+   de temps, MACR_ECREVISSE est la macro qui encapsule la chaine de calcul THER_LINEAIRE -
+   STAT_NON_LINE - CALC_ECREVISSE dans la boucle en temps.
+   
+   On remonte le mot-clé TORTUOSITE dans la macro MACR_ECREVISSE.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.03.41
+VALIDATION
+   zzzz218a et zzzz218b
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 03/02/2010 - 08:26:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014417 DU 2010-01-14 08:46:27
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Liste complète en debug
+FONCTIONNALITE
+   Problème :
+   ----------
+   Certains cas test de la liste complète plante en floating point exception en debug avec la
+   surcharge d'envima.c (cf fiche 14044). Voici les routines coupables :
+   - calsig (ssnv171c, ssnv172a et sslv120a),
+   - te0299 (ssnp138b, sslp313a et ascou18b),
+   - te0205 (sslv110c),
+   - rcvarc (hsnv100i et h),
+   - te0331 (cente01a),
+   - nmplru (ssnp102a, sslp313f et sslp108c).
+   
+   
+   Analyse :
+   ---------
+   Ces plantages sont causés par une mauvaise utilisation de RCVARC. Les routines
+   utilisatrices ne testent pas le code retour. Or lorsque le code retour de RCVARC est
+   différent de 0, cette routine renvoit un NaN.
+   
+   De même RCVARC ne vérifie pas toujours les valeurs qu'elle manipule. Il arrive qu'elle ait
+   à réaliser des opérations sur des NaN.
+   
+   
+   Solution :
+   ----------
+   En accord avec les responsables des routines, je rajoute des tests sur le code retour de
+   RCVARC.
+   
+   Pour RCVARC, je rajoute un test IISNAN sur les valeurs manipulées. Si on trouve un NaN, on
+   sort de RCVARC avec un code retour 1.
+   
+   
+   Validation :
+   ------------
+   Liste restreinte en debug sur Bull avec la surcharge d'envima.c (nouveau NaN).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Liste restreinte en debug
+NB_JOURS_TRAV  : 3.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 03/02/2010 - 08:26:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014304 DU 2009-12-15 09:40:09
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Cas-tests ssna111+ssnv187
+FONCTIONNALITE
+   ssna111: En faisant la doc V du cas-test SSNA111A, je me suis aperçu que des valeurs
+   tagguées en
+   "non-regression" devraient être "analytiques" puisqu'il s'agit du déplacement du poinçon,
+   supposé rigide.
+   
+   ssnv187abc: Modification des valeurs analytiques pour SIGNORINI
+   
+   A faire en v9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssna111,ssnv187
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR bodel        BODEL Charles          DATE 03/02/2010 - 08:26:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014368 DU 2010-01-05 13:59:08
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   CALC_ESSAI nettoyage du code
+FONCTIONNALITE
+   Cette fiche est associee au livrable LOT1-1.1C du projet SICOMORE, et a pour but
+   d'ameliorer le fonctionnement de l'interface graphique de l'operateur CALC_ESSAI.
+   Les modifications suivantes ont ete realisees : 
+    - creation de deux classes Meidee pour le traitement des concepts dyna_harmo et mode_meca
+    - modification de la classe mode_meca pour prendre en compte le chantier de fusion des sd
+   mode_meca et base_modale.
+    - possibilite d'afficher les mode statiques et dynamiques dans les tableaux de selection
+   des modes. Les modes statiques sont reperes par leur NOM_CMP
+    - adaptation de toutes les routines Meidee aux nouvelles classes
+   
+   Par ailleurs on a effectue des ameliorations sensibles de l'IHM : 
+    - homogeneisation des IHM des differents onglets,
+    - possibilite des scroller les onglets si ceux-ci sont trop grands.
+   
+   Probleme rencontre : les onglets IFS presentent des problemes de validation qui n'ont pas
+   ete regles avec les developpements realises en 2009. On propose provisoirement de
+   supprimer tout ce qui touche a l'IFS dans cette restitution : 
+    - cas-test sdls139b supprime, sdls139a modifie,
+    - suppression de meidee_fludela.py et meidee_calcul_fludela.py
+   Les sources restent disponibles en version 9. Les developpements realises en 2009
+   resteront geres par T61 en attendant une remise a plat des methodes.
+   
+   NB : les resultats IFS etant consideres faux depuis la version 9.3, on reporte la
+   suppression en version NEW9.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.90.01
+VALIDATION
+   sdls139a, sdlv125a, sdll137b, sdll137c
+NB_JOURS_TRAV  : 40.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 03/02/2010 - 08:26:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014212 DU 2009-11-20 14:03:42
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   charges dans concept de type mult_elas
+FONCTIONNALITE
+   Problème :
+   ----------
+   La commande MACRO_MULT_ELAS ne stocke pas dans la sd_resultat produite le nom des charges
+   utilisées pour le calcul. L'utilisateur obtiendra alors certains résultats faux avec les
+   commandes CALC_ELEM et CALC_NO s'il ne renseigne pas le mot clé EXCIT de ces commandes.
+                                                                                            
+                                                                                     
+                                                                                            
+                                                                                     
+   Problèmes annexes découverts en traitant cette fiche :
+   ------------------------------------------------------
+   1) CHAR_CINE_GLOBAL et CHAR_CINE sont non testés.
+      Leur type est erroné (char_meca).
+      Le texte de la macro de traite pas les charges cinématiques : on n'utilise pas la
+   commande CALC_CHAR_CINE !
+      (=> fiche 14391)
+                                                                                            
+                                                                                     
+   2) Si derrière le mot clé MACRO_ELAS_MULT/CAS_CHARGE/CHARGE, on ne met pas une liste de
+   charges (mais une seule charge), celle-ci n'est pas recopiée dans le mot clé EXCIT de
+   CALC_ELEM et CALC_NO => résultats potentiellement faux. (=> fiche 14400)
+                                                                                            
+                                                                                     
+   3) Si on utilise MACRO_ELAS_MULT/CAS_CHARGE/OPTION='SIGM_NOEU_DEPL' (par exemple), la
+   macro s'arrete avec une erreur de syntaxe dans la commande générée CALC_NO car le mot cle
+   MODELE est fourni alors qu'il n'est permis que pour FORC_NODA et REAC_NODA. (=> fiche 14406)
+                                                                                            
+                                                                                     
+   4) Si on utilise comme CHAR_MECA_GLOBAL des chargements de Dirichlet non-homogènes,
+   ceux-ci ne sont pas pris en compte dans les différents cas de charge.
+      (=> fiche 14392)
+                                                                                            
+                                                                                     
+                                                                                            
+                                                                                     
+   Corrections :
+   -------------
+                                                                                            
+                                                                                     
+   NEW10 :
+   -------
+                                                                                            
+                                                                                     
+   * fiche 14212 :
+       1) On ajoute le mot clé CHARGE dans la commande CREA_RESU (sous le mot clé facteur
+   AFFE et seulement pour les concepts de type MULT_ELAS et FOURIER_ELAS).
+          Dans la routine crtype.f, on crée une sd_info_charge avec la liste des charges
+   fournies et la fonction multiplicatrice unitaire.
+          On stocke le nom de cette sd comme paramètre dans la sd_resultat produite.
+       2) Dans MACRO_ELAS_MULT :
+          On transmet à CREA_RESU la liste des charges pour qu'elles soient stockées dans la
+   sd_resultat (mots clé CHAR_MECA et CHAR_MECA_GLOBAL)
+          On ajoute (dans CALC_VECT_ELEM) la liste des charges de CHAR_MECA_GLOBAL. Sinon, il
+   y a incohérence entre le calcul du chargement fait dans CALC_VECT_ELEM et ce qui est fait
+   dans CALC_NO / REAC_NODA.
+          => au passage, on corrige 14392
+          On supprime l'ajout du mot clé EXCIT dans les commandes CALC_ELEM et CALC_NO
+   puisque maintenant le nom des charges est stocké dans la sd_resultat
+                                                                                            
+                                                                                     
+   * fiche 14391 :
+       On résorbe les mots clés CHAR_CINE et CHAR_CINE_GLOBAL. Visiblement personne n'a
+   essayé de s'en servir.
+                                                                                            
+                                                                                     
+   * fiche 14400 :
+       Si l'argument des mots clés CHAR_MECA et CHAR_MECA_GLOBAL n'est pas un tuple, on en
+   fait un tuple.
+                                                                                            
+                                                                                     
+   * fiche 14406 :
+       Le mots clé MODELE n'est plus transmis aux commandes CALC_ELEM et CALC_NO. C'est
+   inutile puisqu'il est toujours stocké dans la sd_resultat.
+                                                                                            
+                                                                                     
+   * fiche 14392 :
+       Déjà corrigé par 14212 car on stocke maintenant les CHAR_MECA_GLOBAL dans la
+   sd_resultat et on les transmet à CALC_VECT_ELEM
+                                                                                            
+                                                                                     
+                                                                                            
+                                                                                     
+   Validation :
+   ------------
+   1) Je modifie le test ssll14a pour qu'il teste la configuration :
+     MACRO_ELAS_MULT(...)
+     CALC_NO(REAC_NODA,...)
+   2) Passage de tous les tests MACRO_ELAS_MULT.
+                                                                                            
+                                                                                     
+                                                                                            
+                                                                                     
+   Corrections à reporter en NEW9 :
+   --------------------------------
+   * fiche 14212 :
+       On ne peut pas ajouter le mot clé CHARGE dans la commande CREA_RESU car ce serait une
+   évolution.
+       L'utilisateur qui souhaite faire un CALC_ELEM ou un CALC_NO en post-traitement de son
+   calcul MACRO_ELAS_MULT doit donc renseigner le mot clé EXCIT.
+       => on modifie le fortran de ces commandes pour vérifier qu'il fournit ces mots clés.
+                                                                                            
+                                                                                     
+   * fiche 14391 :
+       On résorbe les mots clés CHAR_CINE et CHAR_CINE_GLOBAL (idem NEW10)
+                                                                                            
+                                                                                     
+   * fiche 14400 :
+       Si l'argument des mots clés CHAR_MECA et CHAR_MECA_GLOBAL n'est pas un tuple, on en
+   fait un tuple.
+                                                                                            
+                                                                                     
+   * fiche 14406 :
+       Le mots clé MODELE n'est plus transmis aux commandes CALC_ELEM et CALC_NO.  (idem NEW10)
+                                                                                            
+                                                                                     
+   * fiche 14392 :
+       On transmet les CHAR_MECA_GLOBAL à CALC_VECT_ELEM
+                                                                                            
+                                                                                     
+   Les fichiers nécessaires à la correction de ces fiches en NEW9 sont fournis dans le
+   fichier joint (new9.tar.gz )
+                                                                                            
+                                                                                     
+                                                                                            
+                                                                                     
+   Resultats FAUX :
+   ----------------
+   L'usage de la commande MACRO_ELAS_MULT a pu entrainer des résultats faux (depuis toujours)
+   dans les conditions suivantes :
+     1) OPTION = 'REAC_NODA' :
+        - si le mot clé CHAR_MECA de MACRO_ELAS_MULT n'était pas une liste (1 seule charge)
+        - ou si on calculait 'REAC_NODA' en post-traitement dans CALC_NO sans fournir le mot
+   clé EXCIT.
+        Remarques :
+          * Le caractère "faux" du résultat se voit dès qu'il existe des chargements répartis
+   car les noeuds qui ne sont pas soumis à des contraintes cinématiques ont alors une
+   "réaction" non nulle, ce qui est anormal.
+          * Sur les noeuds où les réactions sont non nulles (noeuds contraints
+   cinématiquement), l'erreur ne concerne que la contribution des chargements répartis qui
+   sont faibles si les éléments sont petits (discrétisation suffisamment fine).
+                                                                                            
+                                                                                     
+     2) OPTION = 'EFGE_XXXX_YYYY' + modélisations de poutre :
+        Les efforts calculés ne tenaient pas compte de la correction due aux efforts répartis.
+        Remarque : Là encore, cette correction est d'autant plus petite que les éléments de
+   poutre sont "petits". L'erreur n'est importante que lorsque l'on maille de longues poutres
+   avec peu d'éléments.
+                                                                                            
+                                                                                     
+   Résumé :
+   Les résultats faux concerne principalement les discrétisations grossières de type "poutre"
+   (peu d'éléments). Les quantités potentiellement fausses sont les efforts et les réactions
+   d'appui.
+                                                                                            
+                                                                                     
+                                                                                            
+                                                                                     
+   Impact documentaire :
+   ----------------------
+   U4.44.12 : CREA_RESU : décrire le mot clé CHARGE sous AFFE  (NEW10)
+   U4.51.02 : MACRO_ELAS_MULT : supprimer les mots clés CHAR_CINE et CHAR_CINE_GLOBAL  (NEW10
+   et NEW9)
+   U4.51.02 : MACRO_ELAS_MULT : dire que les CHAR_CINE_GLOBAL sont ajoutées à tous les cas de
+   charge (pour Dirichlet non nul)  (NEW10 et NEW9)
+                                                                                            
+                                                                                     
+                                                                                            
+                                                                                     
+   Liste des fichiers impactés par la correction de la fiche:  14212
+     ascova.f  crtype.f  rssepa.f
+     macro_elas_mult_ops.py
+     crea_resu.capy        macro_elas_mult.capy
+     ssll14a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 6.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 6.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.44.12
+VALIDATION
+   ssll14a
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 03/02/2010 - 08:26:53
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014407 DU 2010-01-12 09:09:26
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   En NEW 9.6.1 le cas-test comp002e s'arrete en CPU_LIMIT sur Bull
+FONCTIONNALITE
+   Objectif:
+   --------
+   Augmenter le temps d'execution dans le fichier .para de 3 cas-tests afin d'éviter qu'ils
+   s'arretent par manque de temps en version 9.
+   
+   comp002e 130s --> 200s
+   yyyy104p 150s --> 200s
+   ssnp102a  60s --> 100s
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   aucune
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 03/02/2010 - 08:26:53
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014391 DU 2010-01-08 10:32:32
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MACRO_ELAS_MULT et charges cinxc3xa9matiques : xc3xa7a ne peut pas marcher
+FONCTIONNALITE
+   Problème:
+   --------
+   La syntaxe de la commande MACRO_ELAS_MULT (ainsi que sa doc U) prévoit de traiter les
+   charges cinématiques avec les 2 mots clés CHAR_CINE et CHAR_CINE_GLOBAL.
+   
+   Malheureusement :
+   1) Il n'y a aucun test utilisant ces mots clés
+   2) Dans le catalogue de la commande, ces mots clés attendent des concepts de type
+   char_meca (au lieu de char_cine_meca)
+   3) Même si on corrige le catalogue, ça ne risque pas de marcher car on voit que le texte
+   de la macro ne fait rien de particulier pour ces charges, en particulier, la macro
+   n'appelle pas la commande CALC_CHAR_CINE qui est pourtant obligatoire !
+   
+   La réalité est donc que MACRO_ELAS_MULT est incapable d'utiliser les charges cinématiques.
+   Mais comme personne ne s'en est plaint, ce n'est peut-être pas une fonctionnalité
+   essentielle !
+   Je propose qu'on la résorbe.
+   
+   
+   Correction:
+   -----------
+   Cette fonctionnalité à été résorbée dans le cadre de la fiche 14212.
+                                                                                            
+                           
+   NEW9 :
+   ------
+   La correction a été fournie dans le fichierjoint à la fiche 14212 (new9.tar.gz )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014392 DU 2010-01-08 12:30:31
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MACRO_ELAS_MULT + CHAR_MECA_GLOBAL non homogxc3xa8ne
+FONCTIONNALITE
+   Problème :
+   ----------
+   Si on modifie le test ssll14a (déplacements imposés non nuls) :
+   
+   BLOQU=AFFE_CHAR_MECA(  MODELE=MODELE,DDL_IMPO=(
+                _F(  TOUT = 'OUI',          DZ = 1.),
+                _F(  GROUP_NO = ( 'A',  'B', ),  DX = 2.,   DY = 3.))   )  
+   
+   Le test reste OK ce qui n'est pas normal !
+   
+   Correction:
+   -----------
+   Cette fiche a déjà été corrigée dans le cadre de la fiche 14212.
+                                                                                            
+                           
+   NEW9 :
+   ------
+   La correction a été fournie dans le fichier joint à la fiche 14212 (new9.tar.gz )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014400 DU 2010-01-11 12:12:04
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MACRO_ELAS_MULT : rxc3xa9sultats faux pour certaines options de post-traitement
+FONCTIONNALITE
+   Problème :
+   ----------
+   Je me suis aperçu que la programmation de MACRO_ELAS_MULT était incorrecte. On trouve à
+   plusieurs endroits des séquences comme :
+                                                                                            
+                      
+              if   m['CHAR_MECA'] :
+                 for chargt in m['CHAR_MECA']   : motscles['EXCIT'].append(_F(CHARGE=chargt))
+                                                                                            
+                           
+   Malheureusement, si les mots clés CHAR_MECA et CHAR_MECA_CINE sont suivis d'une seule
+   charge, l'itération "for chargt in m['CHAR_MECA']" ne donne aucune charge car
+   m['CHAR_MECA'] n'est pas un tuple.
+   
+   Du coup, les charges ne sont pas transmises aux commande CALC_ELEM et CALC_NO, ce qui
+   entraine des résultats faux dans certains cas.
+   
+   Correction:
+   -----------
+   Cette fiche a déjà été corrigée dans le cadre de la fiche 14212.
+                                                                                            
+                           
+   NEW9 :
+   ------
+   La correction a été fournie dans le fichierjoint à la fiche 14212 (new9.tar.gz )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014406 DU 2010-01-12 08:49:51
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MACRO_ELAS_MULT + SIGM_NOEU_DEPL => plantage
+FONCTIONNALITE
+   Problème :
+   ----------
+   Si on utilise MACRO_ELAS_MULT + OPTION='SIGM_NOEU_DEPL', on est arrêté par la macro dans
+   la commande CREA_RESU pour une erreur de syntaxe.
+   La raison en est que la macro fournit systématiquement le mot clé MODELE à CALC_NO, alors
+   que CALC_NO n'autorise ce mot clé que pour les options : 'REAC_NODA' et 'FORC_NODA'
+   
+   Correction:
+   -----------
+   Cette fiche a déjà été corrigée dans le cadre de la fiche 14212.
+                                                                                            
+                           
+   NEW9 :
+   ------
+   La correction a été fournie dans le fichierjoint à la fiche 14212 (new9.tar.gz )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014428 DU 2010-01-14 16:44:39
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   MACR_ECLA_PG - test faux de liste non vide
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans le fichier joint, il y a un problème dans le concept U2C issu de MACR_ECLA_PG. On
+   s'attend à ce que la commande ne fournisse un résultat qu'à l'instant 0 mais elle fournit
+   un résultat à tous les instants.
+                                                                                            
+                                        
+   Diagnostic :
+   ------------
+   Ceci provient d'un test faux à la ligne 62 de macr_ecla_pg_ops.py. Il faut remplacer :
+   if   INST          : motscles['INST']           =INST
+   par
+   if   INST != None  : motscles['INST']           =INST
+                                                                                            
+                                        
+   Correction :
+   ------------
+   On fait ce que Sébastien suggère. En effet, INST contient l'argument du mot clé INST de
+   MACR_ECLA_PG.
+   Si l'utilisateur a tapé INST=(0.,), cet arguement est un tuple et le test "if INST" est
+   "vrai" et tout va bien. Mais si l'utilisateur tape INST=0., INST est un float qui vaut 0.
+   Le test if 0. est "faux" et le mot clé n'est pas transmis à CREA_RESU.
+                                                                                            
+                                        
+   On fait la meme correction pour le mot clé NUME_ORDRE.
+                                                                                            
+                                        
+   Par ailleurs, la ligne suivante était en double dans la macro. Je supprime la 2ème :
+       if   TOUT_ORDRE         : motscles['TOUT_ORDRE']     =TOUT_ORDRE
+                                                                                            
+                                        
+   Validation :
+   ------------
+   Le test fourni dans la fiche est OK.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  14428
+     macr_ecla_pg_ops.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014457 DU 2010-01-19 10:37:07
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   CALC_VECT_ELEM : rxc3xa9sultat faux si plusieurs charges + AFFE_VARC/TEMP
+FONCTIONNALITE
+   Problème :
+   ----------
+   Je viens de m'apercevoir d'un bug bien ennuyeux dans la routine me2mme.f (CALC_VECT_ELEM) :
+   Si l'utilisateur a fourni une liste de charges mécaniques et qu'un champ de température
+   est affecté au champ de matériau (AFFE_VARC / NOM_VARC='TEMP'), alors le chargement de
+   dilatation thermique est calculé plusieurs fois (et accumulé). D'où des résultats faux.
+                                                                                            
+                                                          
+   Correction :
+   ------------
+   dans la routine me2mme.f :
+   Il faut déplacer le bloc traitant le chargement de dilatation en dehors de la boucle sur
+   les charges.
+                                                                                            
+                                                          
+   Validation :
+   ------------
+   Le test hslv304a redevient OK
+   
+   Résultats faux :
+   ----------------
+   Dans la commande CALC_VECT_ELEM, si le champ de matériaux dépend de la température
+   (AFFE_MATERIAU / AFFE_VARC / NOM_VARC='TEMP') et si on utilise plusieurs charges
+   (CHARGE=(char1,char2,char3)), le chargement de dilatation thermique est pris en compte
+   plusieurs fois (3 fois ici).
+   
+   Liste des fichiers impactés par la correction de la fiche:  14457
+     me2mme.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.15
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.15
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hslv304a
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014458 DU 2010-01-19 12:06:16
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   bug dans assvec.f si mxc3xa9lange charge de type VECT_ASSE et charge ordinaire
+FONCTIONNALITE
+   Problème:
+   ---------
+   Si on tente d'assembler un vect_elem provenant de 2 charges : 1 ordinaire et 1 de type
+   VECT_ASSE, la commande ASSE_VECTEUR s'arrête butalement avec le message :
+      !-----------------------------------------------------------------------------------!
+      ! <F> <JEVEUX_26>                                                                   !
+      !                                                                                   !
+      !      Objet JEVEUX inexistant dans les bases ouvertes : >XX1     .VE001     .NOLI< !
+      !      l'objet n'a pas été créé ou il a été détruit                                 !
+      !-----------------------------------------------------------------------------------!
+                                                                                            
+                           
+   Correction :
+   -------------
+   Il y avait deux petites erreurs dans les routines dismme.f et assvec.f
+   Je corrige ces 2 routines.
+                                                                                            
+                           
+   Validation : essai perso
+                                                                                            
+                           
+   NEW9 : je pense que la correction est facile à reporter en NEW9
+                                                                                            
+                           
+                                                                                            
+                           
+   Liste des fichiers impactés par la correction de la fiche:  14458
+     assvec.f  dismme.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014459 DU 2010-01-20 14:26:38
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   CALC_FATIGUE + xc3xa9lxc3xa9ment discret => plantage
+FONCTIONNALITE
+   Problème :
+   -----------
+   Suite à un message sur le forum : http://www.code-aster.org/forum2/viewtopic.php?id=13560 ,
+   C. Durand a modifié le test sslv135a pour ajouter un élément discret dans le modèle.
+   On se plante alors dans la commande :
+      FATI_NL=CALC_FATIGUE(TYPE_CHARGE='PERIODIQUE',
+                          CRITERE='MATAKE_MODI_AC', ...
+                                                                                            
+                           
+   Analyse :
+   ---------
+   Le problème survient dans la routine deltau.f lorsque l'on essaye de traiter l'élément
+   discret.
+   Comme ce type d'élément n'est pas prévu pour la fatigue (il ne déclare pas le paramètre
+   PFACY_R dans son catalogue), il est normal que l'on soit arreté par le "CALL ASSERT".
+                                                                                            
+                           
+   Il est facile de corriger ce bug en "sautant" les mailles inappropriées dans la routine
+   deltau.f
+   C'est ce que je fais comme rapide correction.
+                                                                                            
+                           
+   Mais la vraie solution serait de tenir compte du mot clé GROUP_MA dans la routine paqmai.f
+   : il parait en effet inutile de traiter dans paqmai.f toutes les mailles du modèle alors
+   que l'utilisateur n'a demandé le calcul de fatigue que sur un GROUP_MA.
+   Cette évolution ferait aussi gagner du temps à l'utilisateur.
+   Qu'en pense Jean Anglès ?
+                                                                                            
+                           
+   Correction :
+   ------------
+   Je modifie légèrement la routine deltau.f
+                                                                                            
+                           
+   Validation :
+   ------------
+   L'étude jointe va jusqu'au bout.
+                                                                                            
+                           
+    
+   Liste des fichiers impactés par la correction de la fiche:  14459
+     deltau.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude jointe
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 03/02/2010 - 08:26:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014491 DU 2010-01-25 07:01:54
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW10.1.7, le cas-test ssnp113a s'arrete en erreur_<F> sur Bull.
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   En NEW10.1.7, le cas-test ssnp113a s'arrete en erreur_<F> sur Bull.
+   """
+   
+   
+   Analyse :
+   ---------
+   Le plantage a lieu dans CALC_ELEM lorsqu'on essaye de lui faire calculer l'option
+   VARI_ELNO_ELGA.
+   
+   En réalité, ce problème provient du modèle de Mazars qui rempli une variable interne
+   (température maximale atteinte par le matériau) avec un NaN. Et c'est ce NaN qui se
+   propage et fait planter CALC_ELEM. Ce problème ne se produit que lorsqu'il n'y a pas de
+   température dans le modèle considéré.
+   
+   
+   Solution :
+   ----------
+   Je corrige le fichier LCMAZA pour que lorsqu'il n'y a pas de température, on fixe la
+   température maximale atteinte par le matériau à 0.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnp113a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014492 DU 2010-01-25 07:03:31
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW10.1.7, le cas-test ssnv183a et zmat003a s'arrete en erreur_<F> sur Bull.
+FONCTIONNALITE
+   Problèmes :
+   ----------
+   """
+   En NEW10.1.7, le cas-test ssnv183a s'arrete en erreur_<F> sur Bull.
+   """
+   et
+   """
+   En NEW10.1.7, le cas-test zmat003a s'arrete en erreur_<F> sur Bull.
+   """
+   
+   
+   Analyse :
+   ---------
+   Pour ssnv183a, le plantage a lieu dans RKDVEC et pour zmat003a, il a lieu dans NMZMAT. Ils
+   sont la conséquence du fait qu'on ne test pas le code retour de RCVARC.
+   
+   
+   Solution :
+   ----------
+   Modification de RKDVEC et NMZMAT.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv183a et zmat003a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 03/02/2010 - 08:26:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014224 DU 2009-11-24 13:05:47
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Logique PREMIE faux lorsque redxc3xa9coupage au premier instant
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Si pour un calcul en méthode continue, le 1er pas de temps échoue et que l'on redécoupe,
+   alors si on a utilisé des mot-clés tels que CONTACT_INIT, SEUIL_INIT ou COMPLIANCE alors
+   le redécoupage risque de ne jamais aboutir ou bien ne pas correspondre à ce que l'on
+   attend (pas de contact initial par exemple).
+   
+   Correction
+   ==========
+   
+   Ce problème provient du fait que les initialisations pour CONTACT_INIT, SEUIL_INIT et
+   COMPLIANCE sont faites sur la base d'un logique que l'on appelle PREMIE et que l'on
+   récupère à l'aide de l'utilitaire DIBCLE.
+   Or PREMIE repère tel que dit dans DIBCLE "le vrai premier instant", après redécoupage, il
+   n'est donc plus actif.
+   
+   Afin de retrouver un comportement correct, il faut décider sur la base du numéro d'instant
+   qui vaut 1 au premier instant même après redécoupage du premier instant.
+   
+   Impact : nmible.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF comp002e                      macocco K.MACOCCO          213      2      1
+ CASTEST MODIF sdls139a                      macocco K.MACOCCO          634     78     78
+ CASTEST MODIF ssna111a                      macocco K.MACOCCO          236     24      3
+ CASTEST MODIF ssna111b                      macocco K.MACOCCO          242     19      1
+ CASTEST MODIF ssnp102a                      macocco K.MACOCCO          493      2      1
+ CASTEST MODIF ssnv187a                      macocco K.MACOCCO          254      3      3
+ CASTEST MODIF ssnv187b                      macocco K.MACOCCO          270      3      3
+ CASTEST MODIF ssnv187c                      macocco K.MACOCCO          269      3      3
+ CASTEST MODIF yyyy104p                      macocco K.MACOCCO          172      2      2
+ CASTEST MODIF zzzz218a                      macocco K.MACOCCO          371      2      1
+ CASTEST SUPPR sdls139b.comm                 macocco K.MACOCCO          425      0    425
+CATALOPY MODIF commande/calc_essai           macocco K.MACOCCO          128      2     31
+CATALOPY MODIF commande/macr_ecrevisse       macocco K.MACOCCO          282      3      1
+CATALOPY MODIF commande/macro_elas_mult      macocco K.MACOCCO           83      3      5
+ FORTRAN MODIF algorith/calsig               macocco K.MACOCCO          113      2      2
+ FORTRAN MODIF algorith/cfinit               macocco K.MACOCCO          215     15      4
+ FORTRAN MODIF algorith/crsvmu               macocco K.MACOCCO          328      2      2
+ FORTRAN MODIF algorith/lcmaza               macocco K.MACOCCO          610      2      2
+ FORTRAN MODIF algorith/nmnpas               macocco K.MACOCCO          182      2      2
+ FORTRAN MODIF algorith/nmplru               macocco K.MACOCCO          197      5      1
+ FORTRAN MODIF algorith/nmzmat               macocco K.MACOCCO          186      4      1
+ FORTRAN MODIF algorith/rkdvec               macocco K.MACOCCO          203     10      9
+ FORTRAN MODIF assembla/assvec               macocco K.MACOCCO          946      3     64
+ FORTRAN MODIF calculel/me2mme               macocco K.MACOCCO          609     33     30
+ FORTRAN MODIF elements/te0205               macocco K.MACOCCO          618      4      1
+ FORTRAN MODIF elements/te0299               macocco K.MACOCCO          350      2      1
+ FORTRAN MODIF elements/te0331               macocco K.MACOCCO          397      4      2
+ FORTRAN MODIF prepost/deltau                macocco K.MACOCCO          673      7      2
+ FORTRAN MODIF prepost/fgtahe                macocco K.MACOCCO          113      2      2
+ FORTRAN MODIF utilitai/dismme               macocco K.MACOCCO          117      4      2
+ FORTRAN MODIF utilitai/rslesd               macocco K.MACOCCO          385      9      1
+  PYTHON MODIF Macro/calc_essai_ops          macocco K.MACOCCO          230      2     46
+  PYTHON MODIF Macro/macr_ecla_pg_ops        macocco K.MACOCCO           70      3      4
+  PYTHON MODIF Macro/macro_elas_mult_ops     macocco K.MACOCCO          270     17     24
+  PYTHON MODIF Meidee/meidee_test            macocco K.MACOCCO          347    120    124
+  PYTHON MODIF Messages/calculel6            macocco K.MACOCCO          361     10      1
+  PYTHON MODIF Messages/sdveri               macocco K.MACOCCO           73      1      5
+  PYTHON MODIF Messages/supervis             macocco K.MACOCCO          401      1     52
+  PYTHON MODIF Messages/table0               macocco K.MACOCCO           80      1      9
+  PYTHON MODIF Messages/test0                macocco K.MACOCCO           76      1      8
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   39       11797       412     534      -122
+ SUPPR :    1         425               425      -425
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   40       12222       412     959      -547 

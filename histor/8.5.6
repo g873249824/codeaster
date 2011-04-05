@@ -1,0 +1,618 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 08/11/2007 - 14:25:42
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011318 DU 2007-10-03 08:48:47
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Cas test zzzz221a en NEW9
+FONCTIONNALITE
+   Test ajouté dans le cadre de la fiche 10912 : 
+   
+   # TITRE CALCUL THERMO HYDRATATION ET SECHAGE BETON EN 2 LEVEES (2D AXIS)                 
+            
+   Ce test montre comment réaliser avec Code_Aster un calcul de thermo-hydratation en
+   simulant la dépose de 2 levées de béton.
+   Le problème est de fabriquer l'état initial de la pousuite du calcul en assemblant 2
+   champs : un état déjà calculé sur la 1ère levée et un état "vierge" sur la 2eme levée.
+   
+   Je ne modifie pas la liste d'instants mais je fais caler les nume_inst_fin dessus.
+   Ajustement des test_resu en conséquence.
+   
+   La fiche 11157 blindera la gestion des instants dans les algos de thermique.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz221a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 08/11/2007 - 14:25:42
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011302 DU 2007-10-01 11:55:32
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   AFFE_CHAR_CINE_F incapable de traiter les fonctions (ou formules) de plus d'1 paramxc3xa8tre.
+FONCTIONNALITE
+   Problème :
+   ----------
+   En regardant le source actuel de calvci.f, on voit bien que les fonctions acceptées dans
+   AFFE_CHAR_CINE_F ne peuvent être que des fonctions d'une seule variable (alors que l'on a
+   le droit a priori aux 4 paramètres INST, X, Y  et Z).
+   
+   Solution :
+   -----------
+   Cette AL sera corrigée en NEW9 avec la fiche 11294.
+   
+   NEW8 :
+   ------
+   Il faut reporter en NEW8 une partie des évolutions de la routine calvci.f :
+   
+   Avant :
+                 NOMF = ZK8(ICVALF-1+NIMP)                    
+                 IF (NOMF.NE.NOMFA) THEN                      
+                   NPROL(1:8) = NOMF                          
+                   CALL JEVEUO(NPROL,'L',IPROL)               
+                   NOMP = ZK16(IPROL+2)                       
+                   NOMFA = NOMF                               
+                 ENDIF                                        
+                 IF ( NOMP.EQ.'INST') THEN                    
+                   VALP = INST                                
+                 ELSE IF (NOMP.EQ.'X') THEN                   
+                   VALP = ZR(ICOOR+3*(NI-1))                  
+                 ELSE IF (NOMP.EQ.'Y') THEN                   
+                   VALP = ZR(ICOOR+3*(NI-1)+1)                
+                 ELSE IF (NOMP.EQ.'Z') THEN                   
+                   VALP = ZR(ICOOR+3*(NI-1)+2)                
+                 ELSE IF (NOMP.EQ.'TOUTPARA') THEN            
+                    VALP = 0.D0                                
+                 ELSE                                         
+                   CALL ASSERT(.FALSE.)                       
+                 ENDIF                                        
+                 CALL FOINTE('F ',NOMF,1,NOMP,VALP,RES,IER)                   
+   
+   Après :
+               NOMF = ZK8(JAFCV-1+NIMP)                   
+               NOMP(1)='INST'                             
+               NOMP(2)='X'                                
+               NOMP(3)='Y'                                
+               NOMP(4)='Z'                                
+               VALP(1)=INST                               
+               VALP(2)=ZR(ICOOR+3*(NI-1)+0)               
+               VALP(3)=ZR(ICOOR+3*(NI-1)+1)               
+               VALP(4)=ZR(ICOOR+3*(NI-1)+2)               
+               CALL FOINTE('F ',NOMF,4,NOMP,VALP,RES,IER)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 08/11/2007 - 14:25:42
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011277 DU 2007-09-24 15:13:24
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   BCC24 dans modxc3xa8le BZ (version 8 d'Aster uniquement)
+FONCTIONNALITE
+   Les évolutions permettant l'utilisation de la famille de systèmes de glissement BCC24 avec
+   le POLYCRISTAL homogénéisé (BZ ou BETA) ont été faites en 9.0.20, mais pas en version 8.
+   
+   Du coup l'utilisation de POLYCRISTAL et BCC24 en version 8 peut conduire à des résultats
+   faux : on ne tient pas compte de la matrice d'interaction entre systèmes de glissement.
+   
+   En conséquence, j'empêche cette utilisation, en version 8, avec le message suivant :
+   
+   Incompatibilité entre POLYCRISTAL et BCC24 dans la version 8.
+   Utilisez la version 9 de Code_Aster.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.3.11
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   aucune
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 08/11/2007 - 14:25:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011285 DU 2007-09-26 08:41:17
+TYPE evolution concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   POST_ELEM et poutres multi-fibres
+FONCTIONNALITE
+   Objectif
+    Possibilité de calculer l'option MASS_INER avec des éléments POU_D_EM
+    
+   Développement
+    -> fortran: 
+       - pemain: ajout des paramètres PCOMPOR, PFIBRES
+       - te0038: Calcul de la masse, centre de gravité, inertie en tenant compte des
+   caractéristiques des fibres et des matériaux
+    -> catalogue : 
+       - gener_mepmf1 ajout de l'option MASS_INER 
+       - mass_iner : ajout des paramètres PCOMPOR, PFIBRES
+    
+   Validation
+     - nouveau cas-test ssll104b
+   
+   Remarque:
+   le cas-test ssll104b a été créé à partir du cas-test ssll104a (POU_D_TGM). Le calcul des
+   fréquences et les test_resu si rapportant ont été mis en commentaires. Les écarts observés
+   sont importants et nécessite des investigations complémentaires.
+   
+   Documentation
+     Doc V3.01.104 : description de la nouvelle modélisation ssll104b
+   
+   
+   Pour la version 8, ajouter l'option MASS_INER dans le catalogue avec -1
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.01.104
+VALIDATION
+   nouveau cas-test ssll104b
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 08/11/2007 - 14:25:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011324 DU 2007-10-04 15:34:43
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   entete des fichiers mess et resu suivant versions
+FONCTIONNALITE
+   Il faut modifier la routine Fortran prente.f pour afficher les intitulés suivants :
+   
+   STA7         -> VERSION D'EXPLOITATION
+   
+   OLD8 et STA8 -> VERSION D'EXPLOITATION
+   
+   NEW8         -> VERSION CORRECTIVE x.xx.xx AVANT MISE EN EXPLOITATION
+   
+   OLD9 et STA9 -> VERSION DE DEVELOPPEMENT STABILISEE
+   
+   NEW9         -> VERSION DE DEVELOPPEMENT
+   
+   Ceci est réalisé en s'appuyant sur le contenu de la routine versio.f, la variable logique
+   EXPLOI doit
+   être modifiée dans la version NEW8 pour être affectée à .TRUE. Une modification du source
+   de cette routine doit 
+   être effectuée par l'administrateur avant la maj.
+   
+   Les scripts de l'AGLA versio.csh et versio_sta.csh sont d'ores et déjà mis à jour pour
+   prendre en 
+   compte cette évolution.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sur test adlv100a avec surcharge
+NB_JOURS_TRAV  : 0.25
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011326 DU 2007-10-04 16:39:43
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Temps maximum passe sur la ligne de commande Aster
+FONCTIONNALITE
+   On utilise en effet un "int" dans uttlim.c pour relire la valeur qui est stockée sur une
+   chaine de caractères. La solution est donc de passer à un "long long" et de relire avec le
+   format %Ld. 
+   
+    extern char g_tpmax[];
+   
+   #include <string.h>
+   #include <stdio.h>
+   
+   #include <sys/time.h>
+   #include <sys/resource.h>
+   #include <float.h>
+   #include <limits.h>
+   
+   #include "aster.h"
+   
+   void DEFP(UTTLIM, uttlim, double *t_lim)
+   {
+      long long itpm;
+      double tmax;
+   #ifdef _USE_RLIMIT
+      struct rlimit rlp;
+   #endif
+      tmax = ((double) LONG_MAX)/2;
+      if (strlen(g_tpmax) > 0) {
+         sscanf(g_tpmax,"%Ld",&itpm);
+         *t_lim = (double)itpm;
+      }
+      else {
+   #ifdef _USE_RLIMIT
+         getrlimit(RLIMIT_CPU,&rlp);
+         *t_lim = (double)rlp.rlim_max;
+   #else
+         *t_lim = tmax;
+   #endif
+      }
+      if (*t_lim > tmax) {
+         *t_lim = tmax;
+      }
+   }
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sur l'exemple fourni
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 08/11/2007 - 14:25:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011384 DU 2007-10-22 07:09:01
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   permettre le redecoupage du pas de temps dans VISCOCHAB
+FONCTIONNALITE
+   Je restitue le travail de Jean, qui consiste à modifier la routine cvmcvg.f (test de la
+   convergence du comportement VISCOCHAB) :
+   
+   - avant, si des problèmes de convergence étainet détectés, on s'arrétait.
+   
+   - maintenant, on transmet un code-retour à redece.f qui permet, suivant les options de
+   l'utilisateur, soit un redécoupage local, soit un redécoupage global.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   hsnv125d
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 08/11/2007 - 14:25:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011372 DU 2007-10-18 14:23:47
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   STAT_NON_LINE (DYNA_NON_LINE) : problxc3xa8me de stockage des modes de flambement en poursuite
+FONCTIONNALITE
+   Effectivement, il y avait un bug.
+   Dans nmop45, on va chercher à stocker le vecteur MODE_FLAMB avec le numéro 
+   d'ordre NUMINS venant d'op0070. Or ce numéro d'ordre correspond au numéro 
+   d'ordre pendant l'appel courant à STAT_NON_LINE (DYNA_NON_LINE). Donc cet entier 
+   repart de 0 à chaque nouvel appel à STAT_NON_LINE ou DYNA_NON_LINE.
+   Dans le cas d'une poursuite où l'on veut compléter une EVOL_NOLI existante, 
+   alors NUMINS ne correspond plus au numéro d'ordre.
+   Le vrai numéro d'ordre, on l'a dans la routine nmop45, c'est NUMARC :
+         CALL JEVEUO(PARTPS // '.DIIR','L',JINFO)
+         NUMARC = NINT(ZR(JINFO))-1
+   qui est déjà utilisé par ailleurs (pour le stockage de la valeur propre en 
+   particulier, qui a donc toujours été OK, même en poursuite).
+   
+   Donc je rectifie en remplaçant NUMINS par NUMARC dans nmop45. Je retire NUMINS 
+   de cette routine car cette variable ne sert plus.
+   On doit donc modifier la routine appelante nmflam car NUMINS passait comme 
+   argument à nmop45.
+   
+   Il y avait un risque de résultat faux car lors de la poursuite, on venait 
+   écraser les anciens modes de flambages (puisqu'on repartait d'un numéro d'ordre 
+   nul).
+   
+   Sources impactés : nmop45.f et nmflam.f.
+   
+   Pour valider, je modifie le cas-test ssnl126b pour qu'il fasse de la poursuite 
+   et je teste aussi le mode de flambage avant et après la poursuite.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.1.17
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.1.17
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnl126b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 08/11/2007 - 14:25:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011339 DU 2007-10-10 08:23:45
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Mauvais affichage dans MULT_FRONT quand INFO=2
+FONCTIONNALITE
+   Problème
+   --------
+   
+   En réalisant un calcul avec MULT_FRONT et INFO=2 (fiche 11283), Jean-Luc Fléjou a été
+   surpris de constater que le temps annoncé pour la factorisation numérique avait doublé
+   entre deux pas de temps pourtant quasiment identiques.
+   
+   Il se trouve que c'est le compteur dans MULFR8 qui n'est jamais réinitialisé conduisant à
+   un cumul des temps de factorisation.
+   
+   Solution
+   --------
+   
+   Insérer l'instruction d'initialisation juste avant le début du compteur :
+   
+   CALL UTTCPU(7,'INIT',6,TEMPS)
+   
+   ==> Correction dans MULFR8 et MLFC16 (routine pour matrices complexes)
+   
+   Validation
+   ----------
+   
+   ssnv166b : on vérifie que le temps affiché n'augmente pas à chaque pas de temps
+   
+   * Avant :
+     FACTORISATION DE LA MATRICE.TEMPS CPU   50.3800000000000
+     + TEMPS CPU SYSTEME    1.49000000000000
+     FACTORISATION DE LA MATRICE.TEMPS CPU   100.480000000000
+     + TEMPS CPU SYSTEME    2.92000000000000
+     FACTORISATION DE LA MATRICE.TEMPS CPU   156.360000000000
+     + TEMPS CPU SYSTEME    4.72000000000000
+   
+   * Après :
+     FACTORISATION DE LA MATRICE.TEMPS CPU   49.4100000000000
+     + TEMPS CPU SYSTEME    1.35000000000000
+     FACTORISATION DE LA MATRICE.TEMPS CPU   49.4200000000000
+     + TEMPS CPU SYSTEME    1.37000000000000
+     FACTORISATION DE LA MATRICE.TEMPS CPU   52.4600000000000
+     + TEMPS CPU SYSTEME    1.45000000000000
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv166b
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 08/11/2007 - 14:25:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011355 DU 2007-10-12 14:22:32
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   usage de variables non initialisxc3xa9es (test zzzz162a)
+FONCTIONNALITE
+   Problème :
+   ----------
+   On a identifié 3 routines qui utilisaient parfois une variable non initialisée.
+                                                                                            
+                           
+   Solution :
+   -----------
+   nmisot.f : déjà corrigé dans le cadre de la fiche 10878
+   op0035.f : on initialise KETAT='?' au début de op0035.f
+   nmdorc.f : on initialise ITDEBO=1 au début de nmdorc.f
+                                                                                            
+                           
+   A reporter en NEW8:
+   -------------------
+   nmisot.f : le problème n'existe pas.
+   nmdorc.f : le problème n'existe pas
+                                                                                            
+                           
+   op0035.f :
+   56a57
+   >       KETAT='?'
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011363 DU 2007-10-16 13:09:46
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   AXIS_FOURIER et MACRO_ELAS_MULT
+FONCTIONNALITE
+   Problèmes :
+   -----------
+   PB1) La commande MACRO_ELAS_MULT s'arrete avec un message pas clair du tout dans
+        la commande ASSE_VECTEUR (ASSEMBLA_45).
+        Il s'agit d'une erreur d'utilisation.
+                                                                                            
+                           
+   PB2) Quand on corrige le fichier de commandes de l'utilisateur, on est arreté par un bug
+   de la macro.
+                                                                                            
+                           
+   
+   Solutions:
+   ----------
+                                                                                            
+                           
+   PB1) On améliore le message ASSEMBLA_45 (en version 9) en lui ajoutant une rubrique
+   "conseils" qui devrait aider l'utilisateur à corriger son erreur :
+                                                                                            
+                           
+                                                                                            
+                           
+      !---------------------------------------------------------------------------------!
+      ! <F> <ASSEMBLA_45>                                                               !
+      !                                                                                 !
+      !                                                                                 !
+      ! Erreur Programmeur ou utilisateur :                                             !
+      ! -----------------------------------                                             !
+      !  Le sd_ligrel    : DAccg   .CHME.LIGRE  référencé par le noeud supplém. : 1     !
+      !  de la maille : 1  du sd_resuelem  : .9000064.VE001  du sd_vect_elem : .9000064 !
+      !  n'est pas présent  dans le sd_nume_ddl : _9000061                              !
+      !                                                                                 !
+      ! Risques & conseils :                                                            !
+      ! --------------------                                                            !
+      !  Si vous utilisez la commande MACRO_ELAS_MULT :                                 !
+      !    Si DAccg est une charge contenant des conditions aux limites dualisées       !
+      ! (DDL_IMPO, ...),                                                                !
+      !    Etes-vous sur d'avoir indiqué cette charge derrière le mot clé               !
+      ! CHAR_MECA_GLOBAL ?                                                              !
+      !    En effet, il faut indiquer TOUTES les charges dualisées derrière             !
+      ! CHAR_MECA_GLOBAL.                                                               !
+      !                                                                                 !
+      !  Si vous utilisez directement la commande ASSE_VECTEUR :                        !
+      !    Si DAccg est une charge contenant des conditions aux limites dualisées       !
+      ! (DDL_IMPO, ...),                                                                !
+      !    Etes-vous sur d'avoir indiqué cette charge derrière le mot clé CHARGE        !
+      !    de la commande CALC_MATR_ELEM/OPTION='RIGI_MECA' ?                           !
+      !                                                                                 !
+      !                                                                                 !
+      !                                                                                 !
+      ! Cette erreur est fatale. Le code s'arrete.                                      !
+      !---------------------------------------------------------------------------------!
+                                                                                            
+                           
+                                                                                            
+                           
+   PB2) Christophe Durand a corrigé macro_elas_mult_ops.py pour tenir compte du fait que les
+   2 mots clés CHAR_XXX_GLOBAL peuvent accepter des listes de charges alors que le mot clé
+   EXCIT/CHARGE n'accepte qu'une charge.
+                                                                                            
+                           
+                                                                                            
+                           
+   Validation:
+   -----------
+   Passage de l'étude jointe : elle est allée jusqu'au bout.
+                                                                                            
+                           
+                                                                                            
+                           
+   NEW8:
+   -----
+   Il faut reporter la correction de macro_elas_mult_ops.py :
+                                                                                            
+                           
+   240,241c240,243
+   <            if   CHAR_MECA_GLOBAL:           
+   motscles['EXCIT'].append(_F(CHARGE=CHAR_MECA_GLOBAL))
+   <            elif CHAR_CINE_GLOBAL:           
+   motscles['EXCIT'].append(_F(CHARGE=CHAR_CINE_GLOBAL))
+   ---
+   >            if   CHAR_MECA_GLOBAL:
+   >               for chargt in CHAR_MECA_GLOBAL : motscles['EXCIT'].append(_F(CHARGE=chargt))
+   >            elif CHAR_CINE_GLOBAL:
+   >               for chargt in CHAR_CINE_GLOBAL : motscles['EXCIT'].append(_F(CHARGE=chargt))
+   262,263c264,267
+   <            if   CHAR_MECA_GLOBAL:           
+   motscles['EXCIT'].append(_F(CHARGE=CHAR_MECA_GLOBAL))
+   <            elif CHAR_CINE_GLOBAL:           
+   motscles['EXCIT'].append(_F(CHARGE=CHAR_CINE_GLOBAL))
+   ---
+   >            if   CHAR_MECA_GLOBAL:
+   >               for chargt in CHAR_MECA_GLOBAL : motscles['EXCIT'].append(_F(CHARGE=chargt))
+   >            elif CHAR_CINE_GLOBAL:
+   >               for chargt in CHAR_CINE_GLOBAL : motscles['EXCIT'].append(_F(CHARGE=chargt))
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 08/11/2007 - 14:25:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011396 DU 2007-10-24 14:38:38
+TYPE express concernant Code_Aster (VERSION 4.x)
+TITRE
+   elements 2D discrets: erreur dans le calcul de la masse et des inerties
+FONCTIONNALITE
+   En tentant de corriger la fiche 10451 (masses unitaires dans NORM_MODE), je suis tombé sur
+   une bogue dans le calcul de la masse et des inerties (POST_ELEM/MASS_INER) des éléments 2D
+   discrets (2D_DIS_T).
+   
+   En fait dans la TE0045 (calcul de la masse et des termes d'inertie des éléments discrets),
+   lors de l'extension du 3D vers le 2D, on a fait un copier/coller malheureux qui ne tenait
+   pas compte d'un decalage d'indices differents entre 2D et 3D.
+   
+   La bogue menait à un plantage sur la machine centrale mais sur ma machine elle donnait des
+   résultats faux quant au calcul par POST_ELEM du centre de gravité et donc, par
+   conséquence, des inerties. Toutefois, elle ne concerne que les éléments discrets en 2D,
+   qui sont d'usage relativement rare.
+   
+   J'ajoute un test sur la valeur de la masse et la position du centre de gravité des
+   éléments 2D discrets dans sdld02e.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 4.3.5
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdld02e
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdld02e                       salmona L.SALMONA          670    612    288
+ CASTEST MODIF ssnl126b                      salmona L.SALMONA          176     61      4
+ CASTEST MODIF zzzz221a                      salmona L.SALMONA          297     88     54
+CATALOGU MODIF typelem/gener_mepmf1          salmona L.SALMONA          192      3      1
+       C MODIF utilitai/uttlim               salmona L.SALMONA           57      3      3
+ FORTRAN MODIF algeline/mlfc16               salmona L.SALMONA          355      2      1
+ FORTRAN MODIF algeline/mulfr8               salmona L.SALMONA          367      2      1
+ FORTRAN MODIF algeline/nmop45               salmona L.SALMONA          480      7     10
+ FORTRAN MODIF algorith/cvmcvg               salmona L.SALMONA          311      7     20
+ FORTRAN MODIF algorith/lcmmap               salmona L.SALMONA          494      7      1
+ FORTRAN MODIF algorith/nmflam               salmona L.SALMONA          205      2      2
+ FORTRAN MODIF algorith/nmisot               salmona L.SALMONA          523      3      1
+ FORTRAN MODIF calculel/calvci               salmona L.SALMONA          183     15     28
+ FORTRAN MODIF elements/te0045               salmona L.SALMONA          288      5      5
+ FORTRAN MODIF supervis/prente               salmona L.SALMONA           91      7      4
+ FORTRAN MODIF utilitai/op0035               salmona L.SALMONA          128      2      1
+  PYTHON MODIF Macro/macro_elas_mult_ops     salmona L.SALMONA          277      9      5
+  PYTHON MODIF Messages/algorith11           salmona L.SALMONA          355      6      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   18        5449       841     430      +411
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   18        5449       841     430      +411 

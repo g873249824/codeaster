@@ -1,0 +1,836 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 02/01/2011 - 04:40:30
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016149 DU 2011-01-05 09:19:25
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    VMIS_ASYM_LINE (Modelisation BARRE) prise en compte de la variation de la temperature, incorrecte
+FONCTIONNALITE
+   Cette fiche est émise dans le cadre des travaux en cours (fiche 15625 " Vérification de la
+   bonne
+   prise en compte de la variation de la température dans les lois de comportement dans
+   Code_Aster").
+   
+   Problème
+   - le comportement VMIS_ASYM_LINE pour la modélisation BARRE ne prend pas en compte
+   correctement la
+   variation des propriétés élastiques (E ) avec la température
+   
+   Solution : on interdit que E dépende de la température dans le comportement
+   VMIS_ASYM_LINE, en attendant de le résorber (car il ne doit pas ête beaucoup utilisé, à
+   vérifier). 
+   
+   En effet ce comportement a été introduit en 1999 (5.3.5) pour modéliser un comportement
+   uniaxial asymétrique d'éléments de barre spécifique à l'étude des tuyauteries enterrees
+   (CIG).Le comportement est du type Von Mises a écrouissage isotrope linéaire (en pratique
+   l'ecrouissage est nul), avec des limites d'elasticite differentes en traction et en
+   compression. Dans les 3 tests ssnl112f, ssnl112l, ssnl116a, les paramètres matériau sont
+   constants.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 5.3.5
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 5.3.5
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnl112f
+DEJA RESTITUE DANS : 10.3.5
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016176 DU 2011-01-10 12:06:49
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Message Mecanonline2_93 non dxc3xa9clenchxc3xa9
+FONCTIONNALITE
+   Dans le cadre de la couverture de code, la routine NMVCMX n'est pas appelée.
+   Celle-ci servait à émettre une alarme dans le cas où les variables de commande initiales
+   induisaient des contraintes non nulles. Et il y a un rapport direct avec  la fiche 15963.
+   
+   Correction :
+   ===========
+   Ca y est, on retrouve l'alarme : quand les variables de commandes initiales induisent des
+   contraintes non nulle, on obtient à nouveau l'alarme ci-dessous (dans forma09b, prévu pour
+   cela).
+   
+   On avait perdu cette vérification depuis la version 9, à cause d'un mauvais appel à 
+   NMCVEC dans NMINVC:
+   
+   C --- CREATION DU VECT_ELEM POUR FORCE DE REFERENCE LIEE 
+   C --- AUX VAR. COMMANDES EN T-
+   C
+   c      CALL NMCVEC('AJOU','CNVCF1',' ',.TRUE.,.FALSE.,   ==> donc pas d'assemblage !
+         CALL NMCVEC('AJOU','CNVCF1',' ',.TRUE.,.TRUE.,
+        &            NBVECT,LTYPVE,LOPTVE,LCALVE,LASSVE) 
+   
+   Du coup on avait  NBVECT=0 et l'appel à NMVCMX se faisait seulement si (NBVECT>0)
+   
+   apres correction cela marche. 
+    Instant de calcul:  1.100000000000e+01 
+    
+   ---------------------------------------------------------------------
+   |   ITERATIONS   |     RESIDU     |     RESIDU     |     OPTION     |
+   |     NEWTON     |     RELATIF    |     ABSOLU     |   ASSEMBLAGE   |
+   |                | RESI_GLOB_RELA | RESI_GLOB_MAXI |                |
+   ---------------------------------------------------------------------
+      
+      !------------------------------------------------------------------------------!
+      ! <A> <MECANONLINE2_97>                                                        !
+      !                                                                              !
+      ! -> Les variables de commandes initiales induisent des contraintes            !
+      !      incompatibles :                                                         !
+      !      l'état initial (avant le premier instant de calcul) est tel que         !
+      !      les variables de commande (température, hydratation, séchage...)        !
+      !      conduisent à des contraintes non équilibrées.                           !
+      !                                                                              !
+      !   -> Indications supplémentaires : pour la variable de commande :  TEMP      !
+      !      et la composante :  TEMP                                                !
+      !      Valeur maximum de abs( TEMP - TEMP_REF) : 100.000000 sur la maille : M1 !
+      !      Valeur minimum de abs( TEMP - TEMP_REF) : 100.000000 sur la maille : M1 !
+      !                                                                              !
+      !   -> Risque & Conseil :  dans le cas d'une résolution incrémentale,          !
+      !      on ne considère que la variation des variables de commande entre        !
+      !      l'instant précédent et l'instant actuel.                                !
+      !      On  ne prend donc pas en compte d'éventuelles contraintes incompatibles !
+      !      dues à ces variables de commande initiales.                             !
+      !      Pour tenir compte de ces contraintes vous pouvez :                      !
+      !      - partir d'un instant fictif antérieur où toutes les variables de       !
+      !        commande sont nulles ou égales aux valeurs de référence               !
+      !      - choisir des valeurs de référence adaptées                             !
+      !      Pour plus d'informations, voir la documentation de STAT_NON_LINE        !
+      !      (U4.51.03) mot-clé EXCIT, et le test FORMA09 (V7.20.101).               !
+      !                                                                              !
+      !                                                                              !
+      ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette               !
+      ! alarme, vous pouvez obtenir des résultats inattendus !                       !
+      !------------------------------------------------------------------------------!
+      
+   |     0          | 1.96506E-15    | 1.00435E-11    |TANGENTE        |
+   ---------------------------------------------------------------------
+   
+   Par contre pour la fiche 15963, je suppose que l'alarme devrait maintenant être émise,
+   mais c'est à vérifier.
+   Comme l'étude en référence est un peu touffue, si quelqu'un veut vérifier...
+   
+   On valide la correction par forma09b, qui a maintenant 1 alarme au lieu de 0 !
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    forma09b
+DEJA RESTITUE DANS : 10.3.9
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 02/01/2011 - 04:40:31
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016068 DU 2010-12-15 15:23:40
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Plantage CREA_CHAMP - erreur JEVEUX
+FONCTIONNALITE
+   Problème :
+   ----------
+   L'utilisateur se plante dans CREA_CHAMP avec un message très peu clair (routine celces.f)
+                                                                                            
+                                                                             
+   Analyse :
+   ---------
+   Le problème vient d'un mauvais usage de la commande DETRUIRE.
+                                                                                            
+                                                                             
+   L'utilisateur fait (au milieu de beaucoup d'autres commandes )
+                                                                                            
+                                                                             
+   1  UB= STAT_NON_LINE(MODELE=MOB, INST=8.64E4, ...)
+   2  DETRUIRE(MOB)
+   3  MOB=AFFE_MODELE( avec moins de mailles)
+   4  SG_NE = CREA_CHAMP(RESULTAT  =  UB, NOM_CHAM  = 'SIEF_ELGA', INST =  8.64E4,);
+                                                                                            
+                                                                             
+   Puis il essaye de se servir de SG_NE pour calculer SG_IN et il se plante !
+                                                                                            
+                                                                             
+   Le problème vient du fait que le champ SG_NE contient une référence au LIGREL ayant servi
+   à son calcul (le ligrel du modèle MOB).
+   Au moment du calcul de SG_NE (dans l'étape 1 STAT_NON_LINE), ce ligrel avait 8 GRELS
+                                                                                            
+                                                                             
+   Puis on a recréé MOB avec moins de GRELS (7).
+   le champ SG_NE devient incohérent.
+                                                                                            
+                                                                             
+   Conclusion :
+   ------------
+   Il faut etre EXTREMEMENT vigilant avec la commande DETRUIRE (et encore plus lorsque l'on
+   reconstruit un objet avec le meme nom).
+   Par exemple, quand on a fait :
+     UB= STAT_NON_LINE(MODELE=MOB, INST=8.64E4, ...)
+   Si on détruit le modele MOB, il faut etre conscient que tous les cham_elem de UB
+   deviennent inutilisables puisqu'ils se réfèrent à MOB.
+                                                                                            
+                                                                             
+                                                                                            
+                                                                             
+   Pour aider les utilisateurs négligents, on émet un message dans la routine celces.f :
+                                                                                            
+                                                                             
+   !---------------------------------------------------------------------------------!
+   !.<EXCEPTION>.<CALCULEL_19>.......................................................!
+   !.................................................................................!
+   !.Erreur.:........................................................................!
+   !..Le.cham_elem.SG_NE.est.incohérent.:............................................!
+   !....Il.possède.8.GREL............................................................!
+   !....Il.a.été.calculé.avec.le.LIGREL.MODELB...MODELE.qui.possède.7.GREL...........!
+   !.................................................................................!
+   !.Risques.&.Conseils.:............................................................!
+   !..Il.peut.s'agir.d'une.erreur.de.programmation...................................!
+   !..Mais.ce.problème.peut.aussi.se.produire.si.le.LIGREL.a.été.entre.temps.détruit.!
+   !..et.recréé.sous.le.meme.nom.....................................................!
+   !---------------------------------------------------------------------------------!
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  16068
+     celces.f
+     calculel.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude jointe
+DEJA RESTITUE DANS : 10.3.3
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR meunier      MEUNIER Sébastien     DATE 02/01/2011 - 04:40:31
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016038 DU 2010-12-08 17:04:10
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Blinder PROJ_CHAMP
+FONCTIONNALITE
+   Problème :
+   ----------
+   Sur une étude d'adaptations de maillage en THM (stage T. Hebrail), on tombe dans
+   PROJ_CHAMP sur une erreur développeur.
+   
+     ! Erreur de programmation : condition non respectée.    !
+   
+   Le problème vient ici du fait qu'on cherche à projeter un champ DEPL, défini sur un maillage
+   MAIL1, et on renseigne comme modèle de départ un modèle MODELE défini sur un autre maillage
+   MAIL2, différent de MAIL1.
+   
+   Solution :
+   ----------
+   On blinde et on explique l'origine de son erreur à l'utilisateur. On améliore le message
+   d'erreur existant CALCULEL4_59 :
+   
+   Erreur utilisateur :                                                                     
+                    
+   
+   Les maillages associés aux concepts DEPL et MODELE sont différents :
+   MAIL1 et MAIL2.
+   
+   Impact :
+   --------
+   op0166.f et calculel4.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    petit test joint
+DEJA RESTITUE DANS : 10.3.3
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016036 DU 2010-12-08 14:31:14
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Blindage CREA_CHAMP - opxc3xa9ration 'DISC'
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Dans l'étude jointe (adaptation de maillages en THM, stage de T. Hebrail), on est arrêté
+   dans CREA_CHAMP par le message d'erreur :
+      !-------------------------------------------------------!
+      ! <EXCEPTION> <DVP_1>                                   !
+      !                                                       !
+      ! Erreur de programmation : condition non respectée.    !
+      ! Il y a probablement une erreur dans la programmation. !
+      ! Veuillez contacter votre assistance technique.        !
+      !-------------------------------------------------------!
+   
+   Diagnostic :
+   ------------
+   
+   Le problème vient du fait que le champ de variables internes aux points de Gauss (VARI)
+   est  défini sur un maillage HOMA et que le modèle MODELE donné en entrée de CREA_CHAMP
+   s'appuie sur le maillage MAILLAGE.
+   
+   Solution :
+   ----------
+   
+   On aide l'utilisateur en lui indiquant son erreur par le message :
+   
+   Erreur utilisateur :
+   
+   Les maillages associés aux concepts VARI et MODELE sont différents : HOMA et MAILLAGE.
+   
+   Impact :
+   --------
+   
+   calculel4.py   chpchd.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test joint
+DEJA RESTITUE DANS : 10.3.3
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 02/01/2011 - 04:40:31
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016180 DU 2011-01-10 17:53:26
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Contact - Couverture de code
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   La couverture de code consécutive à la stabilisation de la version 10.3 a montré
+   concernant le contact :
+   - qu'une routine n'était plus appelée. Il s'agit de VTGAXP qui est devenue une branche
+   morte et que l'on supprime donc.
+   - que les routines CUIMP1/CUDISD ne sont pas appelées par les tests. C'est normal car
+   elles ne sont activées qu'en INFO=2 (Débogage). On les déplace donc dans le répertoire debug.
+   - que la routine MMCPOU devenue entre temps APCPOU n'était pas appelée. C'est sur ce
+   dernier point que se concentre cette fiche.
+   
+   Cas de la routine APCPOU
+   ------------------------
+   
+   APCPOU permet de construire le repère local (tangentes et normale) aux noeuds maîtres et
+   esclaves des surfaces de contact pour les poutres. Le repère local aux noeuds ne sert que
+   lorsque l'on fait :
+   - du lissage
+   - que l'on sélectionne une normale autre que 'MAIT' c'est à dire 'ESCL' ou bien
+   'MAIT_ESCL' (moyenne des maîtres et des esclaves)
+   
+   Le repère local des poutres étant construit grâce à l'aide de l'utilisateur (donnée de la
+   seconde tangente via VECT_Y), le lissage comme la normale 'MAIT_ESCL' n'est pas possible
+   avec les éléments de poutre. En pratique cela signifie que le repère local n'est construit
+   que lorsque la normale servant à l'écriture des conditions de contact est la normale 'ESCL'.
+   
+   Si on fait ainsi dans le test SSNV505H on voit que le test se plante en FPE (erreur
+   numérique).
+   
+   Analyse & Correction
+   --------------------
+   
+   Actuellement le calcul du repère local des poutres pour la surface esclave est mal
+   programmé. On ne calcule en particulier pas la 1ère tangente (celle suivant l'axe de la
+   poutre) ce qui rend impossible toute détermination de la normale.
+   On corrige en 3 étapes :
+   1. On appelle le Newton de projection pour déterminer la 1ère tangente
+   2. On fait le produit vectoriel TAU2^TAU1 pour obtenir la normale intérieure
+   3. Dans le calcul proprement dit des normales esclaves (normales aux noeuds), on fait bien
+   en sorte que le second vecteur tangent est bien redéfini à la valeur de VECT_Y. En effet
+   les tangentes sont reconstruites à partir de la normale et rien n'implique que l'on
+   retrouve TAU2=VECT_Y.
+   
+   Validation
+   ----------
+   
+   Dans SSNV505H, on rajoute un calcul avec la normale 'ESCL'. On teste par de la
+   non-régression (j'ai vérifié visuellement que la solution était cohérente). La
+   non-régression est justifiée par le fait que la réponse de la structure est différente
+   suivant le choix de la normale (c'est connu sur ce test, un des seuls pour la validation
+   du contact entre poutres).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout contact
+DEJA RESTITUE DANS : 10.3.7
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 02/01/2011 - 04:40:31
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015288 DU 2010-07-01 15:02:57
+TYPE evolution concernant Code_Aster (VERSION )
+TMA : DeltaCad
+TITRE
+    QUA03 Couverture de code POST_RELEVE_T
+FONCTIONNALITE
+   On regroupe les deux fiches suivantes
+    - 15288 : QUA03: Couverture de code POST_RELEVE_T :
+               - extraction sur un maillage à cotés courbes
+               - repère 'UTILISATEUR'
+               - calcul du TRESCA moyen
+    - 15289 : QUA03: Couverture de code AFFE_CHAR_MECA
+               - LIAISON_GROUP 'DNOR'
+   
+   Le test de LIAISON_GROUP 'DNOR' a fait apparaitre un bug dans CALIAG que l'on 
+   corrige (en V9 aussi).
+   
+   On ajoute une nouvelle modélisation au cas-test ZZZZ136D, qui reprend les 
+   besoins de validation des 2 commandes. 
+   
+   Dans ce cas-test on modélise une structure 2D (voir figure ci-jointe) 
+   
+   => Conditions
+     - Coté AD : encastrement
+     - Coté BC : pression imposée et déplacement suivant y nul
+     - Coté EF : on impose une liaison du type
+        AFFE_CHAR_MECA(LIAISON_GROUP=_F( DDL_1='DNOR',...),...)
+   
+   => Post-traitement POST_RELEVE_T
+     - Extraction d'une containte sur le coté courbe AB 
+     - Calcule dans le repère utilisateur sur le coté EF du déplacement
+     - Calcul du TRESCA moyen
+        a) CALC_ELEM calcule EQUI_ELNO_SIGM sur la structure
+        b) POST_RELEVE_T ( OPERATION="MOYENNE" sur la composante TRESCA 
+   du champ EQUI_ELNO_SIGM"
+      
+   => Vérification des résultats 
+   mise en place de TEST_RESU de non-regression sur les calculs 
+   effectués par POST_RELEVE_T
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.136 V3.03.126
+VALIDATION
+    ZZZZ136D SSLS126A
+DEJA RESTITUE DANS : 10.3.7
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 02/01/2011 - 04:40:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016247 DU 2011-01-21 08:44:51
+TYPE express concernant Code_Aster (VERSION 10.3)
+TITRE
+    DEFI_GEOM_FIBRE : en INFO=2 indications fausses
+FONCTIONNALITE
+   Lorsque l'on fait un DEFI_GEOM_FIBRE/INFO=2, des indications sur les fibres sont affichées
+   dans le fichier message.
+   Lorsqu'il y a plusieurs SECTION de fibres les indications sont fausses, le numéro de fibre
+   est mis à zéro entre les groupes, c'est pas bien ==> correction. Il y avait donc plusieurs
+   fibres qui avaient 1e même numéro, et seulement lors de l'affichage.
+   Je profite de l'occasion pour également afficher le nom de la maille et leur type pour
+   aider l'utilisateur à s'y retrouver, les TRIA3 sont classés avant les QUAD4 (classement
+   interne à Aster).
+   
+   Maintenant on a l'affichage suivant :
+   DETAIL~DES~FIBRES~SURFACIQUES~DU~GROUPE~"BETON~~~"
+   NUMF~~MAILLE~~~~TYPE~~~~~~~~Y~~~~~~~~~~~~~Z~~~~~~~~~~~~SURF
+   ~~~1~~M25~~~~~~~TRIA3~~~7.83071E-01~~-3.83983E-01~~~3.43315E-04
+   ~~~2~~M26~~~~~~~TRIA3~~~7.76045E-01~~-3.94457E-01~~~3.32571E-04
+   ~~~3~~M27~~~~~~~TRIA3~~-7.76057E-01~~-3.94454E-01~~~3.32772E-04
+   ....~~........~~.....~~............~~............~~............
+   ~218~~M242~~~~~~TRIA3~~-7.83083E-01~~-3.83980E-01~~~3.42662E-04
+   ~219~~M243~~~~~~QUAD4~~-7.90539E-01~~-3.48750E-01~~~5.88060E-04
+   ~220~~M244~~~~~~QUAD4~~-7.56986E-01~~-3.82898E-01~~~4.27215E-04
+   ....~~........~~.....~~............~~............~~............
+   1344~~M1368~~~~~QUAD4~~-1.42982E-01~~~3.61064E-03~~~6.69826E-04
+   
+   DETAIL~DES~FIBRES~SURFACIQUES~DU~GROUPE~"ACIER~~~"
+   NUMF~~MAILLE~~~~TYPE~~~~~~~~Y~~~~~~~~~~~~~Z~~~~~~~~~~~~SURF
+   1345~~M1~~~~~~~~QUAD4~~-7.70000E-01~~~3.23820E-01~~~8.04248E-04
+   1346~~M2~~~~~~~~QUAD4~~-7.70000E-01~~~3.52180E-01~~~8.04248E-04
+   ....~~........~~.....~~............~~............~~............
+   1368~~M24~~~~~~~QUAD4~~~7.70000E-01~~-3.57500E-01~~~4.90874E-04
+   
+   DETAIL~DES~FIBRES~PONCTUELLES~DU~GROUPE~"TITI~~~~"
+   NUMF~~~~~~~Y~~~~~~~~~~~~~Z~~~~~~~~~~~~SURF
+   1369~~~0.00000E+00~~~0.00000E+00~~~3.14159E+00
+   1370~~-1.00000E+00~~-4.00000E+00~~~1.25664E+01
+   1371~~~2.00000E+00~~~8.00000E+00~~~5.02655E+01
+   
+   DETAIL~DES~FIBRES~PONCTUELLES~DU~GROUPE~"TOTO~~~~"
+   NUMF~~~~~~~Y~~~~~~~~~~~~~Z~~~~~~~~~~~~SURF
+   1372~~~1.00000E-01~~~1.00000E-01~~~3.80133E+00
+   1373~~-1.10000E+00~~-4.00000E+00~~~1.32025E+01
+   1374~~~2.10000E+00~~-8.10000E+00~~~5.67450E+01
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cas test perso
+DEJA RESTITUE DANS : 10.3.9
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR corus        CORUS Mathieu          DATE 02/01/2011 - 04:40:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016001 DU 2010-12-01 14:04:58
+TYPE anomalie concernant Code_Aster (VERSION 10.4)
+TITRE
+    anomalies dans la construction d'un squelette
+FONCTIONNALITE
+   Probleme :
+   ----------
+   
+   La séance des TP sur la sous-structuration dynamique (formation Aster-
+   Dyn) a permis de mettre en évidence quelques anomalie lors de la 
+   construction d'un squelette de visualisation.
+   - Si l'utilisateur essaye de construire ce squelette avec des sous-
+   structures en mettant TOUT='OUI' dans le mot clé facteur SOUS_STRUC (ça 
+   fait penser que toutes les sous_structures présentes dans le modele_gene 
+   vont être considérées), l'étude plante.
+   - Si il essaie de mettre les noms de sous-structures (NOM='toto') sans 
+   rien d'autre, l'étude plante aussi. Il faut ajouter un GROUPE_MA pour 
+   que ça passe.
+   Aucun des mots clé simples derrière SOUS_STRUC (NOM, TOUT, MAILLE, 
+   GROUPE_MA) sont facultatifs et aucune règle dans le catalogue n'est 
+   définie donc l'utilisateur est libre de mettre ce qu'il veut. Dans les 
+   sources on assure pas une sortie "propre" avec un message d'erreur 
+   compréhensible.
+   Il faudra donc faire un peu de ménage dans le catalogue et les sources.
+   
+   Solution :
+   ----------
+   
+   La partie du catalogue pour le mot clef facteur SOUS STRUCT n'etait pas coherente avec le
+   reste. On corrige donc le catalogue en imposant, comme pour les cas equivalent :
+   - que le mot cle NOM soit obligatoire
+   - une regle UN_PARMI pour les mots cles TOUT, MAILLE, GROUPE_MA
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : u4.24.01
+VALIDATION
+    Aucune
+DEJA RESTITUE DANS : 10.3.9
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 02/01/2011 - 04:40:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016313 DU 2011-01-28 10:24:10
+TYPE anomalie concernant Code_Aster (VERSION 9.7)
+TITRE
+    [AFFE_CARA_ELEM] - Caractéristiques de cisaillement des poutres
+FONCTIONNALITE
+   Le fait de ne pas pouvoir donner de coefficient de cisaillement inférieur à 1, a été
+   réalisé en version 10.2.20 du 15/10/2010, et en version 9.7.6 du 13/11/2010.
+   Théoriquement ce coefficient doit soit être nul (pas d'effet du cisaillement, donc on
+   utilise un modèle de poutre de type Euler), soit supérieur à 1 (poutre de type
+   Timoshenko). Les docs Aster et la fiche 015547 donnent plus d'explications.
+   
+   Sauf qu'avec Aster on ne peut pas tout modéliser, il faut parfois ruser!!) et notamment
+   une dalle avec une retombée. Cette poutre-dalle est calculée comme une poutre avec une
+   section en Té. L'aire cisaillée est la retombée plus l'épaisseur de la dalle.
+   Cette structure est modélisée dans Code_Aster par une dalle et une poutre dont les noeuds
+   sont confondus avec ceux de la dalle (il n'y a pas actuellement d'autre solution avec les
+   éléments de structure).
+   L'aire de la poutre est seulement celle de la retombée pour ne pas compter la matière 2
+   fois. Dans ce cas on a donc une aire cisaillée > à l'aire de la poutre et donc un
+   coefficient <1.
+   
+   Je propose de lever l'erreur <F> et d'émettre une <A> seulement en version 9.
+   Impact :
+   affpou ligne 111 : mette A au lieu de F : CALL U2MESG('A','MODELISA_23', ...)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    aucune
+NB_JOURS_TRAV  : 0.25
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 02/01/2011 - 04:40:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016218 DU 2011-01-17 07:06:35
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.8.1, le cas-test perf004c s'arrete par manque de temps CPU sur Bull.
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   En NEW9.8.1, le cas-test perf004c s'arrete par manque de temps CPU sur Bull.
+   """
+   
+   
+   Solution :
+   ----------
+   On augmente le .para en le passant à 4000 secondes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perf004c
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016201 DU 2011-01-14 08:34:36
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.8.1, le cas-test perf005c s'arrete par  manque de mxc3xa9moire sur Aster4.
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   En NEW9.8.1, le cas-test perf005c s'arrete par  manque de mémoire sur Aster4.
+   """
+   
+   
+   Solution :
+   ----------
+   On rajoute de la mémoire en passant le .para à 2000 Mo.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perf005c
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 02/01/2011 - 04:40:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016235 DU 2011-01-20 08:22:28
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    MODI_MAILLAGE / DEFORME : vxc3xa9rification de la cohxc3xa9rence du champ de dxc3xa9placement
+FONCTIONNALITE
+   Problème :
+   ----------
+   Un utilisateur du forum fait à peu près ceci :
+                                                                                            
+                           
+   FEM=AFFE_MODELE(MAILLAGE=Mesh_1,
+                   AFFE=_F(TOUT='OUI', PHENOMENE='MECANIQUE', MODELISATION='D_PLAN',),);
+                                                                                            
+                           
+   Solution=STAT_NON_LINE(MODELE=FEM,
+                          CHAM_MATER=Material,
+                          ...)
+                                                                                            
+                           
+   Disp_Fld=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+                       OPERATION='EXTR',
+                       RESULTAT=Solution,
+                       NOM_CHAM='DEPL',
+                       NUME_ORDRE=Final_Step, );
+                                                                                            
+                           
+   Mesh_2=MODI_MAILLAGE(reuse =Mesh_2,
+                        MAILLAGE=Mesh_2,
+                        DEFORME=_F(OPTION='TRAN',
+                                   DEPL=Disp_Fld,),)
+                                                                                            
+                           
+   Le maillage (Mesh_2) translaté est faux car il est translaté par un champ de déplacement
+   Disp_Fld  qui s'appuie sur le maillage Mesh_1 dont la numérotation est différente de celle
+   de Mesh_2.
+                                                                                            
+                           
+                                                                                            
+                           
+   Analyse :
+   ------------
+   Dans MODI_MAILLAGE / DEFORME, on a oublié de vérifier que le maillage associé au champ
+   servant à la translation est le meme que le maillage a déformer.
+                                                                                            
+                           
+                                                                                            
+                           
+   Correction :
+   ------------
+   On "blinde" le code et on émet maintenant le message d'erreur fatale :
+                                                                                            
+                           
+   !----------------------------------------------------------------------------------!
+   !.<F>.<CALCULEL5_1>................................................................!
+   !..................................................................................!
+   !.Erreur.utilisateur.dans.MODI_MAILLAGE./.DEFORME.:................................!
+   !...Le.fichier.de.déplacement.fournit.est.associé.au.maillage.:.Mesh_1.............!
+   !...Alors.que.le.maillage.à.déformer.est.:.Mesh_2..................................!
+   !..................................................................................!
+   !...Il.faut.que.ces.2.maillages.soient.les.memes...................................!
+   !..................................................................................!
+   !.Conseils.:.......................................................................!
+   !...Pour.créer.un.champ.de.déplacement.adapté.au.maillage.Mesh_2,.on.peut.utiliser.!
+   !...la.commande.PROJ_CHAMP.........................................................!
+   !----------------------------------------------------------------------------------!
+    
+   
+   Resultats faux :
+   ----------------
+   Je ne coche pas la case "resultats faux" car il s'agit d'une erreur d'utilisation ... 
+   Mais on pourrait discuter, car la doc ne précise pas que le champ de translation doit être
+   associé au maillage que l'on veut déformer. C'est évident pour un programmeur, mais est-ce
+   évident pour tout le monde ?
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude jointe
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 02/01/2011 - 04:40:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016268 DU 2011-01-24 10:23:18
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    bug dans DEFI_LIST_REEL
+FONCTIONNALITE
+   Problème
+   ========
+   
+   L'utilisateur fait : 
+   linstS = DEFI_LIST_REEL( DEBUT=0.0, INTERVALLE=( _F(JUSQU_A = 1.0, 
+   PAS= 2.0,),),)
+   
+   => L'alarme ALGORITH13_82 est émise, puis écrasement plus loin.
+   
+   
+   Correction
+   ==========
+   
+   On vérifie le PAS dans op0024. Dans le cas présent, on est 
+   maintenant arrêté avec :
+   
+   !-----------------------------------------------------------------
+   --------!
+   ! <EXCEPTION> <ALGORITH9_15> . . . . . . . . . . . . . . . . . . . 
+   . . . .!
+   ! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   . . . . !
+   ! Le pas (2.000000) est plus grand que l'intervalle [0.000000, 
+   1.000000]. !
+   !-----------------------------------------------------------------
+   --------!
+   
+   
+   On vérifie à la tolérance de 1.e-3, soit avec :
+   
+   linstS = DEFI_LIST_REEL( DEBUT=0.0, INTERVALLE=( _F(JUSQU_A = 1.0, 
+   PAS= 1.0001,),),)
+   
+   L'erreur n'est pas relevée, la liste construite est [0.0, 1.0].
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test joint
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 02/01/2011 - 11:22:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016220 DU 2011-01-17 11:35:06
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.8.1, le yyyy118d s'arrete en erreur fatale sur Aster4.
+FONCTIONNALITE
+   Il s'agit d'un test qui utilise PETSc mais qui se trouve dans la liste séquentielle. Je le
+   déplace dans la bonne liste.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage du test
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT zzzz136d                      macocco K.MACOCCO          107    107      0
+ CASTEST MODIF perf004c                      macocco K.MACOCCO           89      3      3
+ CASTEST MODIF perf005c                      macocco K.MACOCCO          110      2      2
+ CASTEST MODIF ssnv505h                      macocco K.MACOCCO          477     47     34
+ CASTEST MODIF tpna01a                       macocco K.MACOCCO          249      2      2
+ CASTEST MODIF yyyy118d                      tardieu N.TARDIEU          249      6      8
+ FORTRAN MODIF algorith/cfcaln               macocco K.MACOCCO          264     25      6
+ FORTRAN MODIF algorith/nmasym               macocco K.MACOCCO          138      5      5
+ FORTRAN MODIF algorith/nminvc               macocco K.MACOCCO          133      3      3
+ FORTRAN MODIF algorith/op0154               macocco K.MACOCCO          281     11      5
+ FORTRAN MODIF algorith/op0166               macocco K.MACOCCO          270     15      4
+ FORTRAN MODIF calculel/celces               macocco K.MACOCCO          392     15      4
+ FORTRAN MODIF calculel/chpchd               macocco K.MACOCCO          262     14      8
+ FORTRAN MODIF modelisa/affpou               macocco K.MACOCCO          163      3      3
+ FORTRAN MODIF modelisa/caliag               macocco K.MACOCCO          477      4      6
+ FORTRAN MODIF modelisa/op0119               macocco K.MACOCCO          294     28     20
+  PYTHON MODIF Messages/algorith8            macocco K.MACOCCO          270      6      2
+  PYTHON MODIF Messages/algorith9            tardieu N.TARDIEU          294      2      6
+  PYTHON MODIF Messages/calculel             macocco K.MACOCCO          336     14      2
+  PYTHON MODIF Messages/calculel4            macocco K.MACOCCO          354      8      2
+  PYTHON MODIF Messages/calculel5            macocco K.MACOCCO          352     14      2
+  PYTHON MODIF Messages/prepost6             tardieu N.TARDIEU          159      2      6
+  PYTHON MODIF Messages/utilitai5            tardieu N.TARDIEU          287      2     15
+  PYTHON MODIF Messages/utilitai7            tardieu N.TARDIEU           85      2      9
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         107       107              +107
+ MODIF :   23        5985       233     157       +76
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   24        6092       340     157      +183 

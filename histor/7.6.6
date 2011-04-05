@@ -1,0 +1,753 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE E.             DATE 24/05/2006 - 16:14:26
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009281 DU 2005-12-19 16:04:26
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TMA : CS
+TITRE
+   POST_RCCM et prolongement des fonctions
+FONCTIONNALITE
+   1/ Definition du DOMMAGE
+   en effet, la composante DOMMAGE n'est pas definie, il faut prevoir une mise a jour doc.
+   Sa definition est la suivante (identique en v7 et en v8):
+   - si TYPE_RESU = 'DETAILS', alors DOMMAGE = NB_OCCUR/NADM pour chacune des combinaisons
+   d'instant. NADM est calcule a partir de SALT et de la courbe de fatigue.
+   - si TYPE_RESU = 'VALE_MAX', seule la valeur maximale de chacun des parametres
+   (SALT,NADM,
+   DOMMAGE) est affichee. Il n'y a donc pas de correspondance directe entre ces
+   parametres: le dommage max correspond bien au SALT max affiche, mais pas au NADM max (au
+   contraire meme).
+   
+   2/ Calcul du DOMMAGE
+   Incoherence entre v7 et v8. En v8, DOMMAGE_CUMU est calcule conformement a l'annexe
+   ZH210
+   du RCC-M par combinaison des sous-cycles. En v7 on se contente d'une simple somme des
+   termes croises.
+   On corrige donc en v7 2 anomalies :
+   - prise en compte de l'instant courant (combinaison avec lui-meme)
+   - le calcul du dommage cummule se fait par elimination de ligne colonne.
+   
+   Suite a ces corrections, les resultats seront identiques a ceux de la version 8 -->
+   correction de TEST_RESU dans le rccm01a
+   
+   3/ Courbe de fatigue
+   On peut avoir un dommage non nul pour une amplitude de contrainte nulle si on prolonge la
+   courbe de Wohler lineairement a gauche. C'est vrai que ce n'est pas tres physique, mais
+   c'est conservatif (cela revient a ne pas considerer de limite d'endurance).
+   Si on ne veut pas se trouver dans ce cas, il faut adapter la courbe de fatigue en
+   indiquant des nombres de cycles admissibles tres grand pour un petit SALT. On pourrait
+   rajouter une remarque dans la doc U (cf. aussi doc V de rccm07).
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rccm01a et cie
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 24/05/2006 - 16:14:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009762 DU 2006-05-15 10:57:35
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   tests feti001b, feti002b, feti003d,feti004b et feti005b en version NEW8.2.20 sous linux
+Calibre 3
+FONCTIONNALITE
+   La variable IRET n'etait pas initilise (a 0) dans la routine preres.f pour
+   le solveur FETI.
+   
+   Fort heureusement, il fallait que cette variable vaille 1 pour provoquer un
+   plantage, ce qui arrive statistiquement assez peu souvent !
+   
+   La routine preres.f est maintenant corrigee.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   feti001b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND C.              DATE 24/05/2006 - 16:14:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009778 DU 2006-05-18 13:24:53
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   rccm02a et rccm03a sur machine Bull
+FONCTIONNALITE
+   Plantage ARRET_ANORMAL sur tests rccm02a et rccm03a.
+   
+   Le pb vient de la variable non initialisee K8B dans rc36ca.f, transmise a carces.f . On
+   y
+   fait un EXISD qui plante dans ce cas. J'envoie donc ' ' en argument.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   tests rccm02a rccm03a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR romeo        FERNANDES R.           DATE 24/05/2006 - 16:14:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009742 DU 2006-05-10 13:38:19
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   Comportement Drucker-Prager en modelisation non locale (GRAD_EPSI)
+FONCTIONNALITE
+   Cette erreur n'apparaissait pas dans les autres lois de
+   comportement non locales car celles-ci ne font pas
+   appel aux champs de contraintes a l'instant moins mais aux
+   champs de deformations.
+   
+   Le test actuel de la base astest est un biaxial en contraintes
+   principales sans cisaillement avec une seule maille. Le but
+   de la validation etait informatique. Les conditions particulieres
+   de ce test font que les resultats sont toujours OK apres
+   corrections.
+   
+   RF
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2.7
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astest + perso
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 24/05/2006 - 16:14:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009592 DU 2006-03-23 18:04:05
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TITRE
+   Utilisation des datg dans aspic/ascouf
+FONCTIONNALITE
+   Quand le repertoire d'installation est long, par exemple : /local/utilisateur/aster, le
+   chemin d'acces aux fichiers datg peut faire plus de 70 caracteres (avec le nom du
+   fichier).
+   Dans GIBI, on ne peut pas faire "opti donn '...';" avec un chemin de plus de 72
+   caracteres, les tests aspic/ascouf plantent alors.
+   
+   La solution consiste a inclure le contenu du fichier datg dans le .dgib construit au lieu
+   de faire "opti donn".
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   35 tests aspic_mail, ascouf_mail, calc_eolienne
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009499 DU 2006-02-27 14:06:59
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   bug TEST_FICHIER : erreur de format d'ecriture
+FONCTIONNALITE
+   On modifie la maniere d'arrondir les reels.
+   Avant, on utilisait un format '%X.Yg', maintenant :
+   
+   
+   x       = 1.2345078901234e-6
+   nbch    = 4
+   epsilon = 1.e-12
+   
+   
+   1. suppression de la partie inferieure a 1.e-12
+   1234507.89012  * 10^0  >>>  1234507.89012 arrondi a 1234508
+   ===> 1.234508e-06
+   
+   2. recuperation de l'exposant
+   ===> -6
+   
+   3. arrondi avec 6 chiffres (N+2)
+   1.234508e-06  * 10^11  >>>  123450.8 arrondi a 123451
+   ===> 123451  * 10^-11
+   
+   4. arrondi avec 5 chiffres (N+1)
+   1.23451e-06  * 10^10  >>>  12345.1 arrondi a 12345
+   ===> 12345  * 10^-10
+   
+   5. arrondi avec 4 chiffres (N)
+   1.2345e-06  * 10^9  >>>  1234.5 arrondi a 1234
+   ===> 1234  * 10^-9
+   
+   RESU : 1234E-9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.92.04
+VALIDATION
+   11 tests utilisant TEST_FICHIER
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009773 DU 2006-05-16 21:32:47
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   PRE_GIBI sur des fichiers issus de versions recentes de Gibi
+FONCTIONNALITE
+   On sait lire les fichiers Gibi issus des versions 98,
+   2000 avec un niveau de versions des fichiers inferieur
+   ou egal a 10.
+   Si le fichier est plus recent (niveau 13 pour gibi 2003,
+   niveau 16 pour gibi 2005), on est cense emettre une
+   alarme et tenter la lecture puisque le format du
+   maillage change tres peu souvent.
+   On emet bien l'alarme mais a cause d'un ELSE mal place,
+   on n'appelle pas les bonnes routines !
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   fichier gibi simple produit par les versions 2000 et 2005
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009497 DU 2006-02-24 18:49:41
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TMA : DeltaCad
+TITRE
+   IMPR_RESU format MED : noms de groupe vides
+FONCTIONNALITE
+   La lecture de ce maillage avec LIRE_RESU a permis de deceler le probleme.
+   En effet, on constate dans le descriptif des familles que l'on a bien lu le bon nombre de
+   groupes pour chacune d'elles :
+   ****************************************
+   *   RANG DE  *       NOMBRE DE         *
+   * LA FAMILLE *  GROUPES   * ATTRIBUTS  *
+   ****************************************
+   *        1   *        2   *        0   *
+   *        2   *        2   *        0   *
+   *        3   *        1   *        0   *
+   *        4   *        1   *        0   *
+   *        5   *        0   *        0   *
+   *        6   *        1   *        0   *
+   *        7   *        1   *        0   *
+   ****************************************
+   Mais dans la description de chaque famille, le second groupe est toujours mis a blanc !
+   Ce
+   qui est faux. Exemple, ici on devrait avoir les 2 groupes ALLDKT et EXT2EL, ce qui est
+   confime quand on fait un dump du fichier MED.
+   **************************************************
+   *   FAMILLE : FAM_-4_ALLDKT_EXT2EL               *
+   *   NUMERO  :       -4                           *
+   **************************************************
+   *   AUCUN ATTRIBUT N'A ETE DEFINI.               *
+   **************************************************
+   *   GROUPE(S) CORRESPONDANT(S) A CES MAILLES :   *
+   *          ALLDKT                                *
+   *                                                *
+   **************************************************
+   
+   Correction de l'anomalie :
+   On a retenu la solution du verrou dans LIRE_MAILLAGE : si un nom de groupe est vide, on
+   sort en erreur <F> avec le message :
+   <F> <LIRE_MAILLAGE> <LRMMF3> LE NOM DE GROUPE NUMERO a DE LA FAMILLE
+   
+   
+   a  EST VIDE.
+   
+   
+   
+   Source impacte : lrmmf3.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009582 DU 2006-03-22 13:34:04
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TMA : DeltaCad
+TITRE
+   IMPR_RESU FORMAT MED champ ELGA
+FONCTIONNALITE
+   Anomalie:
+   Lorsque laon imprime un CHAM_GD elga au format MED, le code se plante sur un objet
+   inexistant :MODELE//a.MAILLEa. Cet arret anormal est du a laabsence du modele
+   lorsque laon
+   ne dispose pas daune SD Resultat ; en effet, dans ce cas, le modele est fixe a a
+   a
+   dans la routine irchme.f.
+   
+   Correction de laanomalie :
+   La solution retenue consiste a verifier la presence de laobjet MODELE//a.MAILLEa
+   pour un
+   champ elga. Cette verification a ete introduite en amont dans la routine irchme.f.
+   Si cet objet est manquant, on emet un arret anormal et on demande a lautilisateur de
+   renseigner le modele.
+   Le message est le suivant :
+   <F> <IMPR_RESU> <IRCHME> L OBJET >        .MAILLE<  N EXISTE PAS.
+   
+   VEUILLEZ RENSEIGNER LE MODELE.
+   
+   Daautre part, au lieu de recuperer le modele par un GETVID dans irchme, on le fait
+   passer
+   depuis sa routine appelante, irch19.f.
+   
+   Sources modifies : irch19.f, irchme.f.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009627 DU 2006-03-30 15:02:18
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TMA : DeltaCad
+TITRE
+   IMPR_RESU format MED : evol_char
+FONCTIONNALITE
+   Laimpression daun resultat de type evol_char au format MED pose probleme a Aster :
+   <F> <ASTER  8. 2.12 15/03/2006 >
+   <F> <IMPR_RESU> <RSADPA> VARIABLE INCONNUE:
+   VARIABLE :  >MODELE          < POUR LE TYPE :  >EVOL_CHAR       <
+   Laanomalie est liee a laabsence du MODELE dans la SD Resultat de type evol_char.
+   Actuellement, pour laimpression daun resultat, on recupere systematiquement le
+   modele. Or
+   dans certains cas, il naest pas utile de le recuperer, notamment pour les resultats de
+   type evol_char. Globalement, le modele est indispensable pour laimpression de champs aux
+   points de Gauss (ELGA) ; pour le reste(NOEU,ELNO), on peut saen dispenser.
+   
+   Correction :
+   Nous avons introduit dans irchme.f une condition sur le type de champ (TYPECH) pour
+   recuperer le modele.
+   1. Si TYPECH != 'ELGA', on met MODELE a blanc car on ne devrait pas l'utiliser.
+   2. si TYPECH=='ELGA',
+   2.1 si on a RESULTAT, on appelle RSADPA
+   2.2 si on a CHAM_GD, l'utilisateur doit avoir
+   renseigne le mot-cle MODELE, c'est obligatoire (cf 9582).
+   Routines impactees : irch19.f, irchme.f.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   etude fournie
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 23/05/2006 - 13:10:21
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009632 DU 2006-03-31 12:36:10
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TMA : CS
+TITRE
+   Bug dans COMB_MATR_ASSE mot cles COMB_R et PARTIE
+FONCTIONNALITE
+   Il y avait effectivement un bug dans la combinaison des
+   matrices complexes lorsque l'on voulait forcer le
+   resultat a etre reel.
+   
+   Ce bug est corrige.
+   
+   Remarque sur la validation : le bug n'apparait pas sur
+   les tests officiels. Comme l'emetteur de la fiche n'a
+   pas fourni d'etude mettant ce bug en evidence, sa
+   correction n'est pas demontree.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de tous les  tests utilisant COMB_R.
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009666 DU 2006-04-07 14:15:50
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TMA : CS
+TITRE
+   Bug dans la routine memax.f
+FONCTIONNALITE
+   Il y avait un bug dans la routine MEMAX qui faisait que
+   la recherche du max donnait 0. lorsque toutes les
+   valeurs etaient strictement negatives.
+   
+   Ce bug concernait uniquement POST_ELEM/RICE_TRACEY et
+   POST_ELEM/CHAR_LIMIT. Il est maintenant corrige (en NEW8
+   et NEW7).
+   
+   Resultats faux :
+   ----------------
+   Oui pour POST_ELEM/RICE_TRACEY lorsque toutes les
+   valeurs etaient strictement negatives. Le code trouvait
+   alors 0. au lieu du vrai maximum, mais on peut
+   considerer qu'un utilisateur averti doit s'en apercevoir.
+   
+   Pour POST_ELEM/CHAR_LIMIT, lorsque le bug se produisait,
+   le maximum trouve (0.) provoquait ensuite une division
+   par zero et ne conduisait donc pas a des resultats faux.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas tests validant CHARGE_LIMITE et RICE_TRACEY
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009698 DU 2006-04-21 11:26:55
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TMA : CS
+TITRE
+   Coherence d'arguments a l'appel de RCVALA
+FONCTIONNALITE
+   Le code a ete entierement verifie (340 routines appelant
+   RCVALA).
+   Apres controle, seules 2 routines etaient fautives :
+   te0431 (deja remarquee par Gerald) et TE0334.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de la liste restreinte
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE A.              DATE 23/05/2006 - 13:10:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009651 DU 2006-04-06 06:54:34
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   Test sdnl131a en version NEW8.2.16 sous linux Calibre 3
+FONCTIONNALITE
+   Le test sdnl131a s'arretait brutalement dans CALC_ELEM. Il s'agit d'un probleme de champ
+   donne en entree a CALCUL (LCHIN). Certains n'etaient pas definis et donc on passait
+   n'importe quoi. Ca plantait lorsque l'on testait le contenu de ces champs. Ca ne plantait
+   que sur certains linux, apparament l'alpha etait plus permissif.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdnl131a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR romeo        FERNANDES R.           DATE 23/05/2006 - 13:10:31
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009727 DU 2006-05-02 09:28:24
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   calcul des FORC_NODA en THM
+FONCTIONNALITE
+   Modification de la routine fnothm.
+   On encapsule le calcul des forces interieures
+   dans une nouvelle routine fonoda.
+   
+   quelques modifs dans les fichiers de commande :
+   en v8 : wtna103a (ajout de test depuis la v7)
+   wtna103b (modelisation inexistante en v7)
+   wtnv131a (modelisation inexistante en v7)
+   en v7 : wtnl103b (a ete supprime en v8)
+   wtnv118a (a ete supprime en v8)
+   
+   pour lesquels de legeres perturbations des TEST_RESU
+   sont observes. Il s'agit de differences inferieures a 1%
+   sur des tests en NON REGRESSION. Je modifie le pourcentage
+   d'erreur.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   astest
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 23/05/2006 - 13:10:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009606 DU 2006-03-28 14:13:25
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TMA : DeltaCad
+TITRE
+   Message  incomprehensible dans  CREA_MAILLAGE
+FONCTIONNALITE
+   Lionel Salmona (qui a reporte cette correction en NEW7) m'a fait gentiment
+   remarquer que je me suis emmele les pinceaux  dans la reponse precedente :
+   
+   Apres correction, pour tous les mots cles facteur (sauf ECLA_PG), on
+   verifie que l'utilisateur n'a pas oublie de renseigner le mot cle MAILLAGE.
+   
+   S'il l'a oublie, le code emet le message d'erreur fatale suivant :
+   
+   <F> LE MOT-CLE MAILLAGE EST OBLIGATOIRE AVEC LE MOT-CLE xxxx.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pabhhhh      TARDIEU N.             DATE 23/05/2006 - 13:10:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009702 DU 2006-04-24 09:44:45
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TITRE
+   Message d'erreur plus clair pour extrapolation
+FONCTIONNALITE
+   Pour clarifier le message d'erreur, je modifie le fichier NMDEPR.F en particularisant le
+   message en fonction du code retour de la routine appelee pour l'interpolation.
+   
+   Le message est maintenant :
+   
+   <F> <STAT_NON_LINE> <NMDEPR> PB. INTERPOLATION PRESSION:
+   
+   EVOL_CHAR  : >RES_PROJ< INSTANT    :  8.3333E-02
+   
+   ON NE SAIT EXTRAPOLER LE CHAMP DE PRESSION PAR RAPPORT AU TEMPS
+   
+   MAIS SEULEMENT L'INTERPOLER
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Passage test zzzz215c modifie
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 23/05/2006 - 13:10:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009716 DU 2006-04-27 13:03:53
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Pb avec DEFI_FICHIER (action = associer)
+FONCTIONNALITE
+   On ne pouvait pas faire :
+   DEFI_FICHIER(UNITE=33, FICHIER='...')
+   
+   PRE_GMSH(UNITE_GMSH=33)
+   ou
+   PRE_IDEAS(UNITE_IDEAS=33)
+   
+   Car les routines ne recevaient pas l'unite logique, elles utilisaient encore IUNIFI(...).
+   
+   Je modifie donc les routines pour transmettre les valeurs des unites logiques jusqu'aux
+   routines de lecture.
+   
+   Je fais le menage des 23 routines qui utilisent IUNIFI avec autre chose que 'MESSAGE',
+   'ERREUR', 'RESULTAT'.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE A.              DATE 23/05/2006 - 13:10:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009585 DU 2006-03-22 16:40:31
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TITRE
+   Stanley ne donne pas acces aux groupe de mailles GM*
+FONCTIONNALITE
+   La limitation a ete levee. On peut dorenavent acceder aux groupes GM* definis dans le
+   maillage.
+   Il reste une petite limitation : on ne peut pas creer dans l'IHM Stanley des points ou des
+   chemins dont le nom commence par 'GM'.
+   
+   Note pour la correction v7 : prendre contact avec AA pour definir ce qui correspond
+   effectivement a cette fiche.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR jmbhh01      PROIX J.M.             DATE 23/05/2006 - 13:10:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009392 DU 2006-01-24 14:11:43
+TYPE anomalie concernant Code_Aster (VERSION 7.6)
+TMA : DeltaCad
+TITRE
+   Suite 7982 : CALC_ELEM et recuperation de la charge
+FONCTIONNALITE
+   Au lieu de stocker dans la SD_RESULTAT le MODELE, CHAM_MATER, CARA_ELEM, et la SD Charge
+   a
+   la fin des pas de temps [op0070 (STAT_NON_LINE)] , on la stocke maintenant au debut des
+   pas de temps, des que le premier pas de temps a converge.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ETUDE JOINTE
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 23/05/2006 - 13:10:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009642 DU 2006-04-04 12:16:28
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   Impr_Courbe et les nappes
+FONCTIONNALITE
+   L'utilisateur definit une formule a 2 parametres, puis fait un CALC_FONC_INTERP.
+   L'operateur produit bien une nappe, mais le catalogue dit que la sd_prod est une
+   fonction !
+   
+   Correction de calc_fonc_interp.capy : Quand le type en entree est une formule et que
+   NOM_PARA_FONC est fourni, c'est qu'il s'agit d'une nappe.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.32.01
+VALIDATION
+   etude jointe
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF rccm01a                       cibhhlv L.VIVAN            199      1      1
+ CASTEST MODIF ssls108a                      cibhhlv L.VIVAN            186      9      9
+ CASTEST MODIF ssls108b                      cibhhlv L.VIVAN            196      9      9
+ CASTEST MODIF ssnv102c                      cibhhlv L.VIVAN            303     12      7
+ CASTEST MODIF wtnl103b                      cibhhpd L.SALMONA          359      2      2
+ CASTEST MODIF wtnv118a                      cibhhpd L.SALMONA          311      2      2
+ CASTEST MODIF zzzz140a                      cibhhlv L.VIVAN            190     32     25
+CATALOPY MODIF commande/affe_char_cine       cibhhpd L.SALMONA           60      4     14
+CATALOPY MODIF commande/calc_fonc_interp     cibhhpd L.SALMONA           53      6      3
+CATALOPY MODIF commande/test_fichier         cibhhlv L.VIVAN             42      3      3
+ FORTRAN AJOUT postrele/rcevfu               cibhhlv L.VIVAN            178    178      0
+ FORTRAN AJOUT postrele/rcimpr               cibhhlv L.VIVAN             79     79      0
+ FORTRAN MODIF algeline/mtxcnl               cibhhpd L.SALMONA          182     97     24
+ FORTRAN MODIF algeline/op0167               cibhhpd L.SALMONA          873     42      5
+ FORTRAN MODIF algeline/preres               cibhhlv L.VIVAN            185      2      1
+ FORTRAN MODIF algeline/tldur8               cibhhpd L.SALMONA          405      2      9
+ FORTRAN MODIF algorith/fnothm               cibhhpd L.SALMONA          334     27     14
+ FORTRAN MODIF algorith/lcdpnl               cibhhlv L.VIVAN            121      4      6
+ FORTRAN MODIF algorith/nmdepr               cibhhpd L.SALMONA          261     11      2
+ FORTRAN MODIF algorith/op0070               cibhhpd L.SALMONA          833      3      1
+ FORTRAN MODIF calculel/mecalc               cibhhpd L.SALMONA          504      1     10
+ FORTRAN MODIF calculel/memax                cibhhpd L.SALMONA          168     58    112
+ FORTRAN MODIF calculel/memoy                cibhhpd L.SALMONA          219     33    164
+ FORTRAN MODIF cataelem/inccat               cibhhpd L.SALMONA          352      1      8
+ FORTRAN MODIF elements/te0334               cibhhpd L.SALMONA          426      2      2
+ FORTRAN MODIF modelisa/lrmmfa               cibhhlv L.VIVAN            523      7      1
+ FORTRAN MODIF modelisa/op0101               cibhhpd L.SALMONA           96      3     11
+ FORTRAN MODIF postrele/prccm1               cibhhlv L.VIVAN            480     12      3
+ FORTRAN MODIF postrele/prccm5               cibhhlv L.VIVAN            196      4      4
+ FORTRAN MODIF postrele/prccm6               cibhhlv L.VIVAN            350      4      4
+ FORTRAN MODIF postrele/prccm7               cibhhlv L.VIVAN            338     21      5
+ FORTRAN MODIF postrele/prccm8               cibhhlv L.VIVAN            233     51    122
+ FORTRAN MODIF postrele/prgarg               cibhhlv L.VIVAN            304      2      2
+ FORTRAN MODIF postrele/rc36ca               cibhhlv L.VIVAN            195      3      1
+ FORTRAN MODIF postrele/rcevol               cibhhlv L.VIVAN            218      3      3
+ FORTRAN MODIF prepost/gmeelt                cibhhpd L.SALMONA          224      4      9
+ FORTRAN MODIF prepost/gmeneu                cibhhpd L.SALMONA          129      4      6
+ FORTRAN MODIF prepost/gmlelt                cibhhpd L.SALMONA          187      3      7
+ FORTRAN MODIF prepost/gmlneu                cibhhpd L.SALMONA           94      4      4
+ FORTRAN MODIF prepost/gmsast                cibhhpd L.SALMONA           49      2      2
+ FORTRAN MODIF prepost/irch19                cibhhlv L.VIVAN            172      2      2
+ FORTRAN MODIF prepost/irchme                cibhhlv L.VIVAN            252     43      6
+ FORTRAN MODIF prepost/op0049                cibhhlv L.VIVAN            108      2      3
+ FORTRAN MODIF prepost/op0176                cibhhpd L.SALMONA          207      3      4
+ FORTRAN MODIF prepost/pregms                cibhhpd L.SALMONA          133      7      8
+ FORTRAN MODIF prepost/stbast                cibhhpd L.SALMONA           51      2      2
+ FORTRAN MODIF stbtrias/ecrelt               cibhhpd L.SALMONA          234      3      6
+ FORTRAN MODIF stbtrias/ecrneu               cibhhpd L.SALMONA          247      4      5
+ FORTRAN MODIF stbtrias/lecelt               cibhhpd L.SALMONA          107      3      3
+ FORTRAN MODIF stbtrias/lect82               cibhhpd L.SALMONA          100      2      5
+ FORTRAN MODIF stbtrias/presup               cibhhpd L.SALMONA          194     14     15
+ FORTRAN MODIF stbtrias/slecol               cibhhpd L.SALMONA          118      2      5
+ FORTRAN MODIF stbtrias/slecor               cibhhpd L.SALMONA          117      3      6
+ FORTRAN MODIF stbtrias/sleelt               cibhhpd L.SALMONA          234      6      6
+ FORTRAN MODIF stbtrias/slegeo               cibhhpd L.SALMONA          282      3      6
+ FORTRAN MODIF stbtrias/slegro               cibhhpd L.SALMONA          348      4      8
+ FORTRAN MODIF stbtrias/sleneu               cibhhpd L.SALMONA          211      3      4
+ FORTRAN MODIF utilitai/ops026               cibhhpd L.SALMONA          102      2      2
+ FORTRAN MODIF utilitai/pechli               cibhhpd L.SALMONA          194      2      2
+ FORTRAN MODIF utilitai/peritr               cibhhpd L.SALMONA          411     10     10
+  PYTHON MODIF Macro/macr_ascouf_mail_ops    cibhhlv L.VIVAN           2853     14     10
+  PYTHON MODIF Macro/macr_aspic_mail_ops     cibhhlv L.VIVAN            927      6      6
+  PYTHON MODIF Macro/test_fichier_ops        cibhhlv L.VIVAN            279    144     59
+  PYTHON MODIF Outils/calc_eolienne          cibhhlv L.VIVAN           1740      4      3
+  PYTHON MODIF Stanley/stanley               cibhhpd L.SALMONA         2070      5      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         257       257              +257
+ MODIF :   63       22069       783     808       -25
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   65       22326      1040     808      +232 

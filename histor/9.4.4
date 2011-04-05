@@ -1,0 +1,1073 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR brie         BRIE Nicolas           DATE 26/01/2009 - 16:39:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013075 DU 2009-01-21 07:51:01
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Menage dans les catalogues REST_GENE_PHYS, REST_SOUS_STRUC et REST_COND_TRAN
+FONCTIONNALITE
+   1) Objectifs de la fiche
+   Lors de l'eclatement de la commande REST_BASE_PHYS (fiche REX 11586) certains mots clé ont
+   été herités à tort dans les nouveaux catalogues REST_GENE_PHYS, REST_SOUS_STRUC et
+   REST_COND_TRAN. Il s'agit de BASE_MODALE pour les deux premiers et de NUME_DDL pour le
+   dernier. On propose donc de faire le menage et d'adapter au même temps les sources Fortran.
+   
+   2) Modification des catalogues des commandes
+   Opérateur REST_GENE_PHYS :
+     - le mot-clé BASE_MODALE a été supprimé
+     - les 2 règles d'exclusion ('INST','LIST_INST','TOUT_INST') et
+   ('TOUT_ORDRE','NUME_ORDRE','NUME_MODE') ont été fusionnées car il n'est pas possible de
+   restituer à la fois en transitoire et en fréquentiel.
+   
+   Opérateur REST_SOUS_STRUC :
+     - le mot-clé BASE_MODALE a été supprimé
+     - les 3 règles d'exclusion ('INST','LIST_INST','TOUT_INST'),
+   ('TOUT_ORDRE','NUME_ORDRE','NUME_MODE') et ('FREQ', 'LIST_FREQ') ont été fusionnées.
+   
+   Opérateur REST_COND_TRAN :
+     - le mot-clé NUME_DDL a été supprimé car il ne sert pas pour cette commande.
+   
+   Dans ces 3 commandes, on a rajouté un bloc de type condition qui permet d'exclure la
+   déclaration simultanée de TOUT_CHAM et NOM_CHAM : on regarde d'abord si l'utilisateur veut
+   restituer tous les champs (TOUT_CHAM='OUI'), si non on lit le nom renseigné dans NOM_CHAM
+   (en gardant la valeur par défaut 'ACCE').
+   
+   3) Impact sur les sources Fortran
+   Routine regene.f appelée par (REST_GENE_PHYS (op0075) et REST_SOUS_STRUC (op0077)) :
+      - la lecture du mot-clé BASE_MODALE a été supprimée
+      - rajout d'une vérification d'existence pour le mot-clé MODE_MECA.
+   
+   Routine  tran78.f appelée par REST_COND_TRAN (op0078)) :
+      - la lecture du mot-clé NUME_DDL a été supprimée
+   
+   Sous-routine noli75.f (appelée par tran78.f) :
+      - la lecture du mot-clé NUME_DDL a été supprimée
+   
+   Pour rendre cohérent la numérotation des routines, la sous-routine noli75.f a été résorbée
+   et renommée en noli78.f. Par conséquent, les appels à noli75 dans tran78 ont été remplacés
+   par des appels à noli78.
+   
+   4) Validation
+   Ces corrections ont été testées sur les 93 cas-tests faisant appel à l'un des 3 opérateurs
+   de restitution cités. Aucun de ces cas-tests n'est cassé.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.63.31; U4.63.32; U4.63.33
+VALIDATION
+   liste des cas-tests REST_*_*
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 27/01/2009 - 18:31:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012938 DU 2008-12-04 14:47:43
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   POST_RCCM : erreur dans le calcul du facteur d'amorcage
+FONCTIONNALITE
+   Problème
+   --------
+   Trois erreurs dans le calcul du facteur d'amorçage (FA) : opérateur POST_RCCM, option
+   'AMORCAGE', TYPE_RESU_MECA='EVOLUTION' :
+   1/ la matrice pour les combinaisons des états est construite avec FA*NB_OCCUR, et non pas
+   sur FA directement. Cela peut conduire en particulier à ne pas classer correctement les
+   combinaisons les plus pénalisantes (i.e. prendre une combinaison très fréquente mais pas
+   la plus sévère).
+   2/ Le nombre d'occurence NB_OCCUR qui est utilisé n'est pas le bon : on prend celui de la
+   dernière situation définie par l'utilisateur et non celui de la situation considérée.
+   3/ On prend en compte des combinaisons même si NB_OCCUR = 0.
+   
+   Les résultats étaient donc faux depuis le développement de cette option (9.0.20).
+   Remarque : cette option n'a pas encore été utilisée pour des études.
+   
+   Correction
+   ----------
+   Les corrections impactent uniquement la routine rcevoa.f :
+   1/ ligne 295 : on stocke le FA élémentaire dans la matrice
+   3/ test ajouté ligne 325 sur le nombre d'occurences de la ligne (avant on ne testait que
+   sur les colonnes)
+   
+   Validation
+   ----------
+   On complète le cas test existant (rccm09a). 
+   On n'a pas eu de "chance" pour la validation : le cas choisi était sans doute un des rares
+   pour lequel les erreurs 1 et 2 n'avaient pas d'impact. Pour l'erreur 3, j'avais fait la
+   même erreur dans le calcul analytique de la solution de référence...
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.20
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.04.147
+VALIDATION
+   rccm09
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012819 DU 2008-11-14 15:17:47
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   POST_RCCM - methode EVOLUTION
+FONCTIONNALITE
+   Problème
+   --------
+   1/ Le Sn(ti,ti) (i.e. de deux mêmes instants) n'est pas nul. Dans la programmation, on
+   considère, quand on combine deux mêmes instants, non pas l'amplitude de variation de la
+   contrainte linéaire (donc zéro) mais la contrainte linéaire elle-même.
+   Ceci a été fait intentionnellement, pour prendre en compte l'amplitude de variation entre
+   l'état non contraint et l'état actuel, mais cela semble inutilement conservatif.
+   
+   2/ Le Salt n'est pas calculé à partir de Sp comme prescrit dans le RCC-M mais à partir de Sn. 
+   
+   3/ Dans le calcul du facteur d'usage, on ne met pas correctement les lignes et les
+   colonnes à zéro après combinaison. Le résultat est trop conservatif.
+   
+   4/ La matrice pour les combinaisons des états est construite avec FU*NB_OCCUR, et non pas
+   sur FU directement. Cela peut conduire en particulier à ne pas classer correctement les
+   combinaisons les plus pénalisantes (i.e. prendre une combinaison très fréquente mais pas
+   la plus sévère).
+   
+   Correction
+   ----------
+   1/ On modifie la routine rcevsn (resp. rcevsp, rcevse, rcevfa), de façon à mettre
+   Sn(ti,ti) = 0 (resp. Sp, Sn* et le facteur d'usage élémentaire) l'origine et à l'extrémité
+   du segment.
+   On modifie également le tableau produit en sortie (rcevod : TYPE_RESU='DETAILS' pour ne
+   pas imprimer les valeurs correspondant à la combinaison des instants entre eux.
+   
+   Avec cette modification, il faut que l'utilisateur pense à  définir la siutation où les
+   contraintes sont nulles : cela doit être explicitement indiqué dans les doc R et U de
+   POST_RCCM. Ceci est d'ailleurs conforme au RCC-M, qui précise qu'il faut prendre en compte
+   tous les états dans le calcul.
+   
+   2/ Déjà corrigé par JMP en 9.3.22 (rcevfa)
+   
+   3/ On modifie l'algo de calcul des facteurs d'usage dans rcevfu
+   
+   4/ On construit la matrice des FU élémentaires (sans NB_OCCUR) dans rcevfa et on la
+   multiplie par le facteur d'usage dans rcevfu.
+   
+   
+   Validation
+   ----------
+   - rccm01a : ce cas test analytique devait théoriquement valider le calcul... mais il était
+   trop simple pour pouvoir mettre en évidence plusieurs des erreurs signalées ici (en
+   particulier on avait Sp=Sn...).
+   On le modifie pour le rendre plus discriminant. Tous les paramètres sont calculés
+   analytiquement (fichier excel) et comparés à la solution Aster.
+   
+   - rccm06a : il s'agit d'un test industriel. On peut se comparer à la solution d'un autre
+   code (Systus), mais pas pour le facteur d'usage (seulement PM et Sn).
+   Sur ce test, on note que l'évolution conduit à une diminution sensible des facteurs
+   d'usage. On ajoute un test de non-régression.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R7.04.03, U4.83.11, U2.09.03,V1.01.107
+VALIDATION
+   rccm01a,rccm06a
+NB_JOURS_TRAV  : 2.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012834 DU 2008-11-18 09:03:11
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   POST_RCCM - UNITAIRE : erreurs dans la programmation
+FONCTIONNALITE
+   Problème :
+   ----------
+   Plusieurs erreurs dans la programmation de la nouvelle formulation du calcul du facteur
+   d'usage avec la méthode UNITAIRE (restituée en 9.3.17) ont été relevées :
+   
+   1/ Calcul de Sp(p,q) et de Sn(p,q) : il faut considérer le cas où la combinaison la plus
+   pénalisante correspond à deux extrema de contraintes thermiques appartenant à la même
+   situation. 
+   
+   2/ KE_MIXTE : le facteur d'usage avec la décomposition Sp_méca / Sp_ther est mal calculé.
+   En particulier, on ne prenait pas en compte les 2 transitoires fictifs dans cette étape.
+   
+   3/ SEISME : la matrice des facteurs d'usage avec séisme était mal calculée. Par ailleurs,
+   on note une erreur dans la formulation qui était adoptée depuis longtemps. On faisait :
+   .  Sp(situation p, situation q, séisme) = max ( || Sig_p - Sig_q +/- Sig_séisme || ) 
+   la maximisation portant sur les combinaisons de signe ;
+   alors qu'il faut faire :
+   .  Sp(situation p, situation q, séisme) = max ( || Sig_p - Sig_q +/- 2* Sig_séisme || )
+   En effet, il s'agit d'une amplitude qu'on calcule, et il faut donc mettre un facteur 2 sur
+   la partie sismique. C'est d'ailleurs bien ce qui est fait pour le B3600.
+   
+   Remarque : la fiche portait initialement sur les paramètres du tableau en sortie. En fait
+   le paramètre SP des combinaisons est bien imprimé (ou plutôt SP1_IJ et SP2_IJ des deux
+   transitoires fictifs)
+   
+   
+   Corrections :
+   -------------
+   rc3201 : 
+   - on ajoute les termes Sp(p,p) et Sp(q,q) dans la maximisation pour le calcul de Sp(p,q)
+   (même chose pour Sn)
+   - on crée une routine rc32ms pour faciliter la recherche des deux transitoires fictifs
+   
+   rc32sa : 
+   - SPMECA et SPTHER en entree de longueur 2 (car il y a deux transitoires fictifs pour une
+   combinaison)
+   - calcul du facteur d'usage associé aux deux transitoires fictifs (impact sur rc3201 et
+   rc32ac)
+   
+   rc32sn : correction d'une petite erreur dans le cas ou nb_inst_p !=0 et nb_inst_q=0 (il
+   faut alors calculer l'amplitude à partir du transitoire thermique p seulement)
+   ajout max sur combinaison meca+/- therm
+   traitement des cas particuliers (pas de transitoire thermique sur p ou sur q, pas de
+   transitoire sur p ni sur q, ...)
+   
+   rc32sp : idem rc32sn
+   
+   rc32st : on se contente de faire (sig_meca+/- sig_ther) et non plus (sig_meca+/-
+   sig_ther(tmax) - sig_ther(tmin)) pour facilliter le développement (sinon différence avec /
+   sans séisme)
+   
+   rc32fs : amélioration des messages en INFO=2 (on affiche la matrice avec séisme)
+   
+   rc32s0 : facteur 2 sur les composantes du torseur de séisme (pour Sn et Sp) car on calcule
+   une amplitude
+   
+   
+   Validation :
+   ------------ 
+   - rccm01b : on modifie complètement le test pour valider analytiquement la totalité des
+   fonctionnalités (avec / sans séisme, KE_MIXTE ou KE_MECA, VALE_MAX ou DETAILS).
+   
+   - Autres cas test de la méthode (rccm04a, rccm07a, rccm10a, rccm10b, rccm11a) : les
+   valeurs calculées évoluent, on change les valeurs de référence (qui sont généralement des
+   valeurs de non-régression). Les valeurs ont changées par rapport à la version 9.4 (car le
+   calcul était faux), et par rapport à la version 9.3 (car la formulation du calcul n'est
+   plus la même).
+   Les évolutions sont généralement de 10 à 20 % (cf tableau en pièce jointe). Les facteurs
+   d'usage en présence de séisme tendent à augmenter car on multiplie la contribution du
+   séisme par un facteur 2.
+   
+   Remarque : la doc R de POST_RCCM a complètement été mise à jour pour prendre en compte des
+   évolutions et expliquer les hypothèses du calcul.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.3.17
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R7.04.03,V1.01.107,V3.04.136,V3.04.141
+VALIDATION
+   rccm*
+NB_JOURS_TRAV  : 7.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR meunier      MEUNIER Sébastien      DATE 27/01/2009 - 15:52:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012273 DU 2008-07-07 11:27:25
+TYPE anomalie concernant Code_Aster (VERSION 9.3)
+TITRE
+   ARLEQUIN - bug crxc3xa9ation d'un vecteur de taille nulle
+FONCTIONNALITE
+   Problème :
+   ----------
+   Pour assurer la validation élémentaire de la méthode Arlequin, j'ai créé 2 cas tests très
+   simples où le patch n'est en fait qu'une maille. Le problème est que ce cas n'a pas été
+   pris en compte dans la programmation de la méthode. On s'arrête en erreur :
+   
+      !-------------------------------------------------------!
+      ! <F> <JEVEUX_57>                                       !
+      !                                                       !
+      !                                                       !
+      !  Longueur du segment de valeurs à allouer invalide 0. !
+      !                                                       !
+      !                                                       !
+      !                                                       !
+      ! Cette erreur est fatale. Le code s'arrete.            !
+      !-------------------------------------------------------!
+   
+   Solution :
+   ----------
+   
+   Dans arlgdg (calcul du degré du graphe maille - maille), on change l'instruction
+   <       IF (NBMA1.GT.1) THEN
+   ---
+   >       IF (NBMA1.GE.1) THEN
+   
+   Dans grmama (création du graphe maille-maille), on traite le cas d'un graphe à une arête à
+   la ligne 96.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   2 tests joints cassxc3xa9s
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 26/01/2009 - 14:33:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013067 DU 2009-01-16 08:00:54
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.4.3, les cas-tests hsna120a et ssnv104d s'arretent en ERREUR_<F> sur toutes les machines.
+FONCTIONNALITE
+   Problème:
+   ---------
+   Les 2 tests ssnv104d et hsna120a sont cassés en version 9.4.3
+                                                                                            
+                           
+   Solution:
+   ---------
+   Il s'agit d'une conséquence malheureuse de la réalisation de la fiche 12826 (routine
+   nmarch.f).
+   Pour ne pas prendre de risque en version 9, on décide de revenir en arrière sur la fiche
+   12826 : on crée à chaque pas de temps un prof_chno différent pour les champs VALE_CONT.
+                                                                                            
+                           
+   La conséquence de ce retour en arrière est que l'on ne peut pas archiver plus de 9999 pas
+   de temps dans STAT_NON_LINE s'il y a du contact. Une nouvelle fiche d'EL (13072) a été
+   émise pour corriger ce défaut.
+                                                                                            
+                           
+   Remarque : le message d'erreur observé par Mickael quand on dépasse 9999 est quand meme
+   plus clair qu'avant 12826.
+                                                                                            
+                           
+   Validation:
+   -----------
+   Passage du test ssnv104d.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  13067
+     nmarch.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv104d
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013001 DU 2008-12-19 13:26:57
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   AFFE_MODELE / TOUT='OUI'
+FONCTIONNALITE
+   Problème:
+   ---------
+   Quand on fait AFFE_MODELE / TOUT='OUI' et que le maillage comporte des mailles non
+   supportées par la modélisation (triangle avec AXIS_SI par exemple), on a un message
+   d'alarme qui indique que certaines mailles n'ont pas pu être affectées.
+                                                                                            
+                          
+   Or on continue le calcul et on se retrouve avec un résultat faux...
+                                                                                            
+                          
+   Solution proposée :
+   -------------------
+   Le message d'alarme émis jusqu'à présent était :
+                                                                                            
+                          
+   !----------------------------------------------------------------!
+   !.<A>.<MODELISA8_70>.............................................!
+   !................................................................!
+   !..pour.l'occurence.de.affe...numero..1..........................!
+   !...on.n'a.pas.pu.affecter..87...................................!
+   !...mailles.de.dimension..2......................................!
+   !...(info=2.pour.details)..2.....................................!
+   !................................................................!
+   !.Ceci.est.une.alarme..Si.vous.ne.comprenez.pas.le.sens.de.cette.!
+   !.alarme,.vous.pouvez.obtenir.des.résultats.inattendus.!.........!
+   !----------------------------------------------------------------!
+                                                                                            
+                          
+   Le bon conseil (utiliser INFO=2) était déjà indiqué ...
+                                                                                            
+                          
+   J'améliore toutefois le message d'alarme :
+                                                                                            
+                          
+   !-------------------------------------------------------------------------------------------------------!
+   !.<A>.<MODELISA8_70>....................................................................................!
+   !.......................................................................................................!
+   !..Possible.erreur.utilisateur.dans.la.commande.AFFE_MODELE.:...........................................!
+   !....Un.problème.a.été.détecté.lors.de.l'affectation.des.éléments.finis.................................!
+   !....Pour.l'occurrence.AFFE.de.numéro.1,.certaines.mailles.de.meme.dimension.topologique................!
+   !....que.la.(ou.les).modélisation(s).(ici.dimension.=.2).n'ont.pas.pu.etre.affectées....................!
+   !.......................................................................................................!
+   !....Cela.veut.dire.que.la.(ou.les).modélisation(s).que.l'on.cherche.à.affecter.........................!
+   !....ne.supporte(nt).pas.tous.les.types.de.mailles.présents.dans.le.maillage............................!
+   !.......................................................................................................!
+   !....Le.nombre.de.mailles.que.l'on.n'a.pas.pu.affecter.(pour.cette.occurrence.de.AFFE).est.:..87........!
+   !.......................................................................................................!
+   !..Risques.&.conseils.:.................................................................................!
+   !....*.Comme.certaines.mailles.n'ont.peut-etre.pas.été.affectées,.il.y.a.un.risque......................!
+   !......de.résultats.faux.(présence.de."trous".dans.la.modélisation).....................................!
+   !......Pour.connaitre.les.mailles.non.affectées.(à.la.fin.de.l'opérateur),.on.peut.utiliser.INFO=2......!
+   !....*.Ce.problème.est.fréquent.quand.on.souhaite.une.modélisation."sous-intégrée"......................!
+   !......(par.exemple.AXIS_SI)..Pour.l'éviter,.il.faut.donner.une.modélisation.de.........................!
+   !......"substitution".pour.les.mailles.qui.n'existent.pas.dans.la.modélisation.désirée.(ici.'AXIS_SI')..!
+   !......On.fera.par.exemple.:............................................................................!
+   !.........MO=AFFE_MODELE(.MAILLAGE=MA,..INFO=2,.........................................................!
+   !.........................AFFE=_F(TOUT='OUI',.PHENOMENE='MECANIQUE',.MODELISATION=('AXIS','AXIS_SI')))..!
+   !.......................................................................................................!
+   !......Ce.qui.aura.le.meme.effet.(mais.sans.provoquer.l'alarme).que.:...................................!
+   !.........MO=AFFE_MODELE(.MAILLAGE=MA,..INFO=2,.AFFE=(..................................................!
+   !........................._F(TOUT='OUI',.PHENOMENE='MECANIQUE',.MODELISATION=('AXIS')),.................!
+   !........................._F(TOUT='OUI',.PHENOMENE='MECANIQUE',.MODELISATION=('AXIS_SI')),..............!
+   !.........................))............................................................................!
+   !.......................................................................................................!
+   !.Ceci.est.une.alarme..Si.vous.ne.comprenez.pas.le.sens.de.cette........................................!
+   !.alarme,.vous.pouvez.obtenir.des.résultats.inattendus.!................................................!
+   !-------------------------------------------------------------------------------------------------------!
+                                                                                            
+                          
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  13001
+     op0018.f
+     modelisa8.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013060 DU 2009-01-15 09:49:58
+TYPE aide utilisation concernant Code_Aster (VERSION 7.0)
+TITRE
+   creation champ par maille xc3xa0 partir d'une table : quel TYPE_CHAMP et quelle OPTION ?
+FONCTIONNALITE
+   Problème:
+   ---------
+   L'utilisateur essaie de transformer une table en carte en faisant :
+                                                                                            
+                           
+   # lecture de la table :
+   tab_Ey=LIRE_TABLE(UNITE=81, FORMAT='ASTER', SEPARATEUR=' ');
+   # extraction du champ depuis la table :
+   chp_Ey = CREA_CHAMP( OPERATION= 'EXTR',
+             TYPE_CHAM='CART_NEUT_R', MODELE=modl,  PROL_ZERO='OUI', OPTION='CART_NEUT_R',
+             TABLE= tab_Ey );
+                                                                                            
+                           
+   Il est arreté par le message d'erreur très peu clair :
+      !-----------------------------------------------------------------------------------!
+      ! <F> <JEVEUX_26>                                                                   !
+      !                                                                                   !
+      !                                                                                   !
+      !      Objet JEVEUX inexistant dans les bases ouvertes : ?????????.MODELE    .LGRF< !
+      !      l'objet n'a pas été créé ou il a été détruit                                 !
+      !-----------------------------------------------------------------------------------!
+                                                                                            
+                           
+                                                                                            
+                           
+   Correction:
+   -----------
+   La programmation CREA_CHAMP : TABLE -> CHAMP n'était pas complète :
+   Les seuls cas traités jusqu'à présent étaient :
+       TABLE -> CHAM_NO
+       TABLE -> CHAM_ELEM
+   Je complète les sources pour pouvoir traiter :
+       TABLE -> CARTE
+                                                                                            
+                           
+                                                                                            
+                           
+   Validation:
+   -----------
+   Je modifie le test zzzz126a pour y ajouter le cas TABLE -> CARTE :
+                                                                                            
+                           
+   > # J : CART_ENER_R
+   > # ---------------------------
+   >
+   > CH5=CREA_CHAMP(OPERATION='EXTR',INFO=2,
+   >               TYPE_CHAM='CART_ENER_R',TABLE=T4, MAILLAGE=MA, )
+   > # remarque : on ne teste pas CH5 car TEST_RESU ne sait pas traiter les cartes.
+                                                                                            
+                           
+                                                                                            
+                           
+   AOM:
+   ----
+   Les mots clés de CREA_CHAMP pour créer une carte ne sont pas les memes que ceux pour créer
+   un cham_elem/elem.
+                                                                                            
+                           
+   Le fichier de l'utilisateur (pour etre correct) doit etre modifié comme ceci :
+   chp_Ey = CREA_CHAMP( OPERATION= 'EXTR', TYPE_CHAM='CART_NEUT_R', MAILLAGE=???, TABLE=
+   tab_Ey );
+                                                                                            
+                           
+   Mais cette syntaxe ne sera fonctionnelle qu'après la correction de la fiche.
+                                                                                            
+                           
+   => je joins les fichiers (NEW9) associés à cette correction pour le cas où  l'utilisateur
+   voudrait tester la correction en "avant première".
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  13060
+     u195tb.f
+     modelisa7.py
+     zzzz126a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz126a
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013064 DU 2009-01-15 15:07:20
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   message d'erreur FONCT0_51 xc3xa0 amxc3xa9liorer
+FONCTIONNALITE
+   Problème:
+   ---------
+                                                                                            
+                           
+   Si on exécute le fichier de commandes suivant :
+                                                                                            
+                           
+                                                                                            
+                           
+   F1 = FORMULE(NOM_PARA=('X',),VALE='2*(X+Y)')
+                                                                                            
+                           
+   TEST_FONCTION(VALEUR=(
+            _F(  FONCTION = F1,
+                     NOM_PARA = ( 'X',  'Y', ),
+                     VALE_PARA = ( 0.5, 0.5,),
+                     VALE_REFE = 2.),
+                    ))
+                                                                                            
+                           
+   On est arreté par les messages d'erreur suivants :
+                                                                                            
+                           
+   !------------------------------------------------------------------------------!
+   !.<A>.<FONCT0_51>..............................................................!
+   !..............................................................................!
+   !.Erreur.lors.de.l'interprétation.de.la.formule.'F1'...........................!
+   !..............................................................................!
+   !.Erreur.lors.de.l'évaluation.de.la.formule....................................!
+   !.La.remontée.d'erreur.suivante.peut.aider.à.comprendre.où.se.situe.l'erreur.:.!
+   !.Traceback.(most.recent.call.last):...........................................!
+   !...File."./Python/Build/B_ETAPE.py",.line.459,.in.fiintf......................!
+   !.....res=eval(objet_sd.code,self.jdc.const_context,context)...................!
+   !...File."2*(X+Y)",.line.0,.in.?...............................................!
+   !.NameError:.name.'Y'.is.not.defined...........................................!
+   !------------------------------------------------------------------------------!
+                                                                                            
+                           
+   !-----------------------------------------------------!
+   !.<E>.<FONCT0_9>......................................!
+   !.....................................................!
+   !.Erreur.lors.de.l'interpolation.de.la.fonction.'F1'..!
+   !.....................................................!
+   !.Nombre.de.paramètres.fournis.:.2....................!
+   !.Noms.des.paramètres.fournis..:.X.Y..................!
+   !-----------------------------------------------------!
+                                                                                            
+                           
+                                                                                            
+                           
+   Solution :
+   ----------
+                                                                                            
+                           
+   On améliore le message FONCT0_51/52 en donnant une piste pour corriger son erreur :
+   !-----------------------------------------------------------------------------------------!
+   !.<A>.<FONCT0_51>.........................................................................!
+   !.........................................................................................!
+   !.Erreur.lors.de.l'interprétation.de.la.formule.'F1'......................................!
+   !.........................................................................................!
+   !.Erreur.lors.de.l'évaluation.de.la.formule...............................................!
+   !.La.remontée.d'erreur.suivante.peut.aider.à.comprendre.où.se.situe.l'erreur.:............!
+   !.Traceback.(most.recent.call.last):......................................................!
+   !...File."./Python/Build/B_ETAPE.py",.line.459,.in.fiintf.................................!
+   !.....res=eval(objet_sd.code,self.jdc.const_context,context)..............................!
+   !...File."2*(X+Y)",.line.0,.in.?..........................................................!
+   !.NameError:.name.'Y'.is.not.defined......................................................!
+   !.........................................................................................!
+   !.Conseils.:..............................................................................!
+   !...Si.le.problème.reporté.ci-dessus.ressemble.à.'NameError:.name.'XXX'.is.not.defined.',.!
+   !...vérifiez.que.le.paramètre.'XXX'.fait.bien.partie.des.paramètres.de.définition.de......!
+   !...la.formule.(mot.clé.FORMULE./.NOM_PARA)...............................................!
+   !-----------------------------------------------------------------------------------------!
+                                                                                            
+                           
+                                                                                            
+                           
+   Détail :
+   --------
+   En faisant le test précédent, je suis tombé sur un petit bug de TEST_FONCTION / VALEUR :
+   Dans le catalogue de la commande, on a interdit (erreur de copier/coller) que 2 paramètres
+   de la fonction aient la meme valeur.
+                                                                                            
+                           
+   Je corrige le catalogue :
+   33c33
+   <            VALE_PARA       =SIMP(statut='o',typ='R'  ,validators=NoRepeat(),max=2),
+   ---
+   >            VALE_PARA       =SIMP(statut='o',typ='R'  ,max=2),
+                                                                                            
+                           
+                                                                                            
+                           
+                                                                                            
+                           
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  13064
+     fonct0.py
+     test_fonction.capy
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013021 DU 2009-01-06 10:40:45
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   validation routine chsraz.f
+FONCTIONNALITE
+   Problème:
+   ---------
+   Nicolas Sellenet a remarqué que la routine chsraz.f n'était jamais appelée dans le code,
+   donc non-testée.
+                                                                                            
+                           
+   Réponse :
+   ---------
+   Finalement, suite aux remarques désobligeantes de certains de mes camarades en EDA, je
+   propose de détruire la routine chsraz.f.
+   Nicolas Sellenet s'en charge dès cette semaine.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013020 DU 2009-01-06 10:20:32
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   validation routine kndif2.f
+FONCTIONNALITE
+   Problème :
+   ----------
+   Nicolas Sellenet a remarqué que la routine kndif2 n'est jamais appelée dans les tests
+   d'Aster. Est-elle bien programmée et efficace ?
+                                                                                            
+                           
+   Réponse :
+   ---------
+   La routine kndiff.f réalise la fonction LK3 = LK1 - LK2  où LK1, LK2 et LK3 sont des
+   listes de chaines de caractères.
+                                                                                            
+                           
+   Lorsque les listes LK1 et LK2 sont courtes, on fait une "bete" double-boucle pour
+   connaitre les éléments de LK1 qui ne sont pas dans LK2.
+                                                                                            
+                           
+   En revanche, lorsque les listes sont longues, on utilise un pointeur de noms JEVEUX pour
+   éviter l'algorithme en n**2. C'est ce qui est fait dans la routine kndif2 appellée par kndiff.
+                                                                                            
+                           
+   Validation :
+   ------------
+   J'ai fait un petit programme de test qui vérifie LK3 = LK1 - LK2 pour des listes de K8
+                                                                                            
+                           
+   Justesse : les 2 algorithmes donnent le bon résultat !
+                                                                                            
+                           
+   Performances :
+   J'ai pris 2 listes LK1 et LK2 de meme longueur n
+                                                                                            
+                           
+   J'ai obtenu les temps suivants (mesurés en secondes) :
+                                                                                            
+                           
+   n                        10       1000    100000
+   V1 (double boucle)       0.0      0.01    121.
+   V2 (kndif2)              0.0      0.01    1.17
+                                                                                            
+                           
+                                                                                            
+                           
+   Conclusions :
+   -------------
+   1) La routine kndif2.f est juste et efficace pour les longues listes. Il faut la conserver.
+   2) La granulométrie de la mesure (0.01s) ne permet de choisir précisément la longueur à
+   partir de laquelle il faut basculer vers kndif2. Je propose de le faire lorsque
+   long(LK1)*long(LK2) > 100*100
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  13020
+     kndif2.f  kndiff.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+NB_JOURS_TRAV  : 0.25
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013023 DU 2009-01-06 16:13:17
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   PROJ_CHAMP donne des rxc3xa9sultats bizarres
+FONCTIONNALITE
+   Problème:
+   ---------
+   Jean-Luc Fléjou a cru observer un comportement anormal de PROJ_CHAMP lorsque l'on projette
+   le champ de pression sur un aéroréfrigérant (projection du maillage Saturne sur le
+   maillage Aster).
+                                                                                            
+                 
+   Solution:
+   ---------
+   Il s'agit d'une inattention de Jean-Luc : il n'avait pas remarqué que dans le fichier de
+   commande, on avait ajouté un morceau de "code" pour modifier la pression calculée par
+   Saturne (on soustrait la pression atmosphérique "normale" fonction de l'altitude pour
+   obtenir une "sur-pression" qui est le vrai chargement appliqué sur la structure mécanique).
+   C'est ce qui explique que le champ Saturne a des valeurs de l'ordre de 100 000 alors que
+   le champ Aster (après projection) varie entre -220 et +71
+                                                                                            
+                 
+   Il n'y a pas d'anomalie.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien de particulier
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 26/01/2009 - 17:54:56
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013077 DU 2009-01-21 10:42:52
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   Erreur de programmation sur VISC_CIN2_MEMO Version STA9
+FONCTIONNALITE
+   Le calcul (VISC_CIN2_MEMO) s'arrêtait dès l'entrée en plasticité sur "erreur numérique
+   (floating point exception).
+   
+   Correction :
+   ------------
+   
+   Il y avait effectivement un bug : jusqu'ici, on n'avait utilisé (et testé) VISC_CIN2_MEMO
+   qu'en 3D (Intherpol, tests). Or l'étude jointe est en 2D.
+   Dans la programmation, de façon non astucieuse, on boucle sur toutes les composantes, de 1
+   à 6. Or en 2D, les deux dernières n'était pas initialisée à zéro. Les routines (nmchcr,
+   nmchab) sont corrigées pour tenir compte du cas 2D.
+   
+   
+   Validation :
+   ------------
+   
+   Le calcul de l'éprouvette joint à la fiche tourne avec cette correction.
+   Attention, il faut modifier le fichier de commandes pour améliorer la rapidité du calcul :
+   donner un nombre d'itérations internes supérieur à 20 : ITER_INTE_MAXI=150 au moins et
+   utiliser la matrice tangente : NEWTON=_F(REAC_ITER=1)
+   
+   On introduit dans comp002h (qui ne testait qua le 3D) un calcul supplémentaire en 
+   contraintes planes (avec deborst). Ce calcul ne tournerait pas sans la correction, mais
+   est OK avec (plus les habituelles alarmes dues au fait que l'on calcule les déformations
+   totales en contraintes planes).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   comp002h
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013034 DU 2009-01-08 15:02:32
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   En NEW 9.4.2, le cas-test ssnv172a s?arrete en ERREUR_<S> sur Calibre4.
+FONCTIONNALITE
+   En NEW 9.4.2, le cas-test ssnv172a s?arrete en ERREUR_<S> sur Calibre4.
+   Le message d'erreur obtenu dans le fichier .mess est le suivant:
+      !-------------------------------------------------------------------!
+      ! <EXCEPTION> <COMPOR1_9>                                           !
+      ! Arret suite à l'échec de l'intégration de la loi de comportement. !
+      !-------------------------------------------------------------------!
+   
+   Mais en 9.4.3, il est OK sur toutes les plateformes. 
+   Néanmoins, il y avait une variable non initialisée dans la routine lcmaei.f .
+   Je corrige donc cette routine.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv172a
+NB_JOURS_TRAV  : 0.35
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 26/01/2009 - 15:17:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013035 DU 2009-01-08 15:04:47
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   En NEW 9.4.2, le cas-test ssnv193a s?arrete par manque de temps CPU sur Calibre4.
+FONCTIONNALITE
+   Problème :
+   ----------
+   En NEW 9.4.2, le cas-test ssnv193a s?arrete par manque de temps CPU sur Calibre4.
+   Le message d'erreur obtenu dans le fichier .mess est le suivant:"  
+   !-----------------------------------------------------------------------------------!
+      ! <EXCEPTION> <MECANONLINE_79>                                                      !
+      !                                                                                   !
+      !                                                                                   !
+      !    Arret par manque de temps CPU au num?ro d'instant : 17                         !
+      !                                  lors de l'it?ration : 1                          !
+      !       - Temps moyen par it?ration : 9.740000                                      !
+      !       - Temps cpu restant         : 16.800000                                     !
+      !                                                                                   !
+      !    La base globale est sauvegard?e. Elle contient les pas archiv?s avant l'arret. !
+      !                                                                                   !
+      !                                                                                   !
+      !                                                                                   !
+      !                                                                                   !
+      !-----------------------------------------------------------------------------------!
+      
+   "
+   
+   Solution :
+   ----------
+   J'ai fait des runs sur claut617 et sur la bull et je n'ai pas pu mettre en évidence de
+   variabilité de MACR_ELEM_STAT. Les temps d'exécution sont en moyenne de :
+   - 620 secondes sur calibre4
+   - et 430 secondes sur bull.
+   
+   Donc, je modifierai le .para en mettant 700s.
+   
+   A la demande de Mathieu, je modifie aussi le .para de ssnv199f en le passant de 800 à 860
+   secondes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   aucun
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013086 DU 2009-01-22 16:00:18
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   Nouvelles suppression de sources
+FONCTIONNALITE
+   Problème :
+   ----------
+   Suite de la couverture de code. Encore des subroutines et fonctions non utilisées.
+   
+   ascnpr
+   ascopc
+   ascopn
+   asretn
+   assmmn
+   
+   thh018
+   thh218
+   thh2m8
+   thhm18
+   thm018
+   hh0018
+   hh2018
+   hh2m18
+   hhm018
+   hm0018
+   
+   Solution :
+   ----------
+   On supprime.
+   
+   Suite à la demande de Jacques, je rajoute chsraz.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   aucune
+NB_JOURS_TRAV  : 0.5
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR zentner      ZENTNER Irmela         DATE 14/01/2009 - 08:51:26
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012467 DU 2008-09-10 16:15:53
+TYPE evolution concernant Documentation (VERSION )
+TITRE
+   crxc3xa9ation d'une doc U2.06.12 sur ISS et variabilitxc3xa9 spatiale + test Miss01
+FONCTIONNALITE
+   La doc U2.06.12 concernant un cas d'étude avec DYNA_ISS_VARI (ISS avec 
+   variabilité spatiale) est rédigée. Le modèle traité pour l'application est le 
+   même que celui du cas test MISS01.
+   Le cas test de non régression correspondant à la doc U2 sera stocke dans la 
+   base de données études (et ne sera donc pas restitué parmi les castest Aster).
+   
+   Lot T128 OMERSI
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U2.06.12
+VALIDATION
+   base d'?des Aster
+NB_JOURS_TRAV  : 14.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF comp002h                        proix J-M.PROIX          381    187     34
+ CASTEST MODIF rccm01a                       galenne E.GALENNE          376    317    145
+ CASTEST MODIF rccm01b                       galenne E.GALENNE          648    477    327
+ CASTEST MODIF rccm04a                       galenne E.GALENNE          421     11     11
+ CASTEST MODIF rccm06a                       galenne E.GALENNE         1493     46      1
+ CASTEST MODIF rccm07a                       galenne E.GALENNE          353      6      6
+ CASTEST MODIF rccm09a                       galenne E.GALENNE          102     24      3
+ CASTEST MODIF rccm09b                       galenne E.GALENNE          295     47      7
+ CASTEST MODIF rccm10a                       galenne E.GALENNE          364      5      5
+ CASTEST MODIF rccm10b                       galenne E.GALENNE          275      3      3
+ CASTEST MODIF rccm11a                       galenne E.GALENNE          659     17     17
+ CASTEST MODIF ssnv172a                        proix J-M.PROIX         1129      1      1
+ CASTEST MODIF ssnv193a                     sellenet N.SELLENET         179      2      1
+ CASTEST MODIF ssnv199f                     sellenet N.SELLENET         389      2      2
+ CASTEST MODIF zzzz126a                       pellet J.PELLET           451      8      1
+CATALOPY MODIF commande/rest_cond_tran          brie N.BRIE              64      5      4
+CATALOPY MODIF commande/rest_gene_phys          brie N.BRIE              75      7      6
+CATALOPY MODIF commande/rest_sous_struc         brie N.BRIE              88     10      6
+CATALOPY MODIF commande/test_fonction         pellet J.PELLET            90      2      2
+ FORTRAN AJOUT algorith/noli78                  brie N.BRIE             336    336      0
+ FORTRAN AJOUT postrele/rc32ms               galenne E.GALENNE           62     62      0
+ FORTRAN AJOUT postrele/rc32s2               galenne E.GALENNE           50     50      0
+ FORTRAN MODIF algorith/lcmaei                 proix J-M.PROIX          119      5     36
+ FORTRAN MODIF algorith/lcmafl                 proix J-M.PROIX          151      1     14
+ FORTRAN MODIF algorith/lcmmat                 proix J-M.PROIX          378      2      1
+ FORTRAN MODIF algorith/nmarch                pellet J.PELLET           284      3      5
+ FORTRAN MODIF algorith/nmchab                 proix J-M.PROIX          447     10      4
+ FORTRAN MODIF algorith/nmchcr                 proix J-M.PROIX          205      4      4
+ FORTRAN MODIF algorith/regene                  brie N.BRIE             340      4      4
+ FORTRAN MODIF algorith/tran78                  brie N.BRIE             256      7      7
+ FORTRAN MODIF calculel/arlgdg               meunier S.MEUNIER          141      4      3
+ FORTRAN MODIF calculel/grmama               meunier S.MEUNIER          206     10      3
+ FORTRAN MODIF calculel/kndif2                pellet J.PELLET           100      2      2
+ FORTRAN MODIF calculel/kndiff                pellet J.PELLET            76      2      4
+ FORTRAN MODIF modelisa/arlnor               meunier S.MEUNIER           86      2      9
+ FORTRAN MODIF modelisa/caarle               meunier S.MEUNIER          284      4      3
+ FORTRAN MODIF modelisa/op0018                pellet J.PELLET           655      2      3
+ FORTRAN MODIF modelisa/u195tb                pellet J.PELLET           115     16     13
+ FORTRAN MODIF postrele/rc3201               galenne E.GALENNE          758    252    141
+ FORTRAN MODIF postrele/rc32ac               galenne E.GALENNE          533      5      6
+ FORTRAN MODIF postrele/rc32fs               galenne E.GALENNE          128     12      7
+ FORTRAN MODIF postrele/rc32pm               galenne E.GALENNE          148      4      4
+ FORTRAN MODIF postrele/rc32s0               galenne E.GALENNE          247     22     46
+ FORTRAN MODIF postrele/rc32sa               galenne E.GALENNE          131     45     15
+ FORTRAN MODIF postrele/rc32sn               galenne E.GALENNE          262     47     40
+ FORTRAN MODIF postrele/rc32sp               galenne E.GALENNE          305     77     98
+ FORTRAN MODIF postrele/rc32st               galenne E.GALENNE           65      2      2
+ FORTRAN MODIF postrele/rcevfa               galenne E.GALENNE          113      6     38
+ FORTRAN MODIF postrele/rcevfu               galenne E.GALENNE          200     28     10
+ FORTRAN MODIF postrele/rcevoa               galenne E.GALENNE          396     36     42
+ FORTRAN MODIF postrele/rcevod               galenne E.GALENNE          456      1     77
+ FORTRAN MODIF postrele/rcevse               galenne E.GALENNE          117      3     15
+ FORTRAN MODIF postrele/rcevsn               galenne E.GALENNE          114      3     15
+ FORTRAN MODIF postrele/rcevsp               galenne E.GALENNE          115      4     15
+ FORTRAN SUPPR algorith/hh0018              sellenet N.SELLENET          51      0     51
+ FORTRAN SUPPR algorith/hh2018              sellenet N.SELLENET          51      0     51
+ FORTRAN SUPPR algorith/hh2m18              sellenet N.SELLENET          54      0     54
+ FORTRAN SUPPR algorith/noli75                  brie N.BRIE             336      0    336
+ FORTRAN SUPPR algorith/thh218              sellenet N.SELLENET          56      0     56
+ FORTRAN SUPPR algorith/thh2m8              sellenet N.SELLENET          62      0     62
+ FORTRAN SUPPR assembla/ascnpr              sellenet N.SELLENET          23      0     23
+ FORTRAN SUPPR assembla/ascopc              sellenet N.SELLENET          23      0     23
+ FORTRAN SUPPR assembla/ascopn              sellenet N.SELLENET          23      0     23
+ FORTRAN SUPPR assembla/asretn              sellenet N.SELLENET          23      0     23
+ FORTRAN SUPPR assembla/assmmn              sellenet N.SELLENET          24      0     24
+ FORTRAN SUPPR calculel/chsraz              sellenet N.SELLENET          57      0     57
+ FORTRAN SUPPR modelisa/hhm018              sellenet N.SELLENET          54      0     54
+ FORTRAN SUPPR modelisa/hm0018              sellenet N.SELLENET          57      0     57
+ FORTRAN SUPPR modelisa/thh018              sellenet N.SELLENET          57      0     57
+ FORTRAN SUPPR modelisa/thhm18              sellenet N.SELLENET          63      0     63
+ FORTRAN SUPPR modelisa/thm018              sellenet N.SELLENET          61      0     61
+  PYTHON MODIF Messages/fonct0                pellet J.PELLET           351      6      1
+  PYTHON MODIF Messages/modelisa7             pellet J.PELLET           406      5      3
+  PYTHON MODIF Messages/modelisa8             pellet J.PELLET           384     28      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    3         448       448              +448
+ MODIF :   54       16904      1841    1277      +564
+ SUPPR :   17        1075              1075     -1075
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   74       18427      2289    2352       -63 

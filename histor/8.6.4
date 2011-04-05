@@ -1,0 +1,289 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE Erwan          DATE 02/04/2008 - 16:06:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011878 DU 2008-03-25 16:14:45
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   POST_RCCM: bug pour les calculs sur piquage
+FONCTIONNALITE
+   Contexte : cette fiche a été émise par Deltacad suite à un appel à l'assistance
+   téléphonique d'un prestataire d'UTO.
+   Le problème signalé est une différence de résultat du calcul en fatigue si on définit son
+   chargement avec 6 composantes (FX,MX, ..) ou 12 composantes (FX_CORPS, FX_TUBU, ...).
+   Les chargements sont définis de manière à modéliser exactement le même problème, mais la
+   solution est très largement différente.
+   
+   Correction : il y avait en effet des erreurs dans le calcul pour TYPE_RESU_MECA='UNITAIRE'
+   quand les situations sont définies par des torseurs d'effort sur le corps et sur la
+   tubulure (mots clés MX_CORPS, MX_TUBU...).
+   Cette erreur induisait des résultats faux pour toutes les options (PM_PB, SN et FATIGUE)
+   dès qu'un chargement de séisme était défini.
+   
+   - Première erreur : dans rc32s0 (routine de calcul des contraintes pour les combinaisons
+   de chargement), dans le cas avec température, décalage dans la lecture d'un vecteur :
+   Ligne 132 : SIGC = SIGUN(6*(ICMP+6-1)+ICMPS+6) 
+   à remplacer par  SIGC = SIGUN(6*(ICMP+6-1)+ICMPS)
+   C'est cette erreur qui explique que les résultats pour SN et pour le facteur d'usage
+   n'étaient pas réalistes.
+   
+   - Deuxième erreur : dans rc32s0, on ne faisait pas toutes les combinaisons de signes sur
+   le torseur de la situation de séisme pour calculer le max des contraintes. La
+   programmation revenait de fait à supposer que FX_CORP et FX_TUBU (et toutes les autres
+   composantes deux à deux) avaient le même signe.
+   Cette erreur induit une sous-estimation de tous les paramètres. C'est ce qui explique que
+   dans l'étude UTO on trouvait aussi un écart sur PM/PB.
+   
+   Conséquence : la correction fait que l'on multiplie par 64 le nombre de combinaisons à
+   faire pour maximiser les contraintes (passage de 2^6*nb_inst à 2^12*nb_inst). 
+   Pour ne pas nuire aux performances dans le cas où le chargement n'est défini que par 6
+   composantes (cas le plus général), on distingue les deux situations dans rc32s0 (paramètre
+   logique identifié dans rc32mu). Cependant dans le cas où le chargement est défini par les
+   12 composantes, on peut s'attendre à un temps de calcul 6à fois plus élevé.
+   
+   Dans le cas de l'étude UTO, les transitoires comportent de 80 à 320 pas de temps, ce qui
+   fait donc près de 1 million de combinaisons à traiter à chaque appel de rc32so !! de plus,
+   rc32s0 est appelé pour chaque combinaison de transitoire (et il y a 12 transitoires
+   définis...).
+   Le calcul avec le torseur à 6 composantes prend ainsi 60 s ; avec 12 composantes, on passe
+   à 3000 s. (sur clpaster)
+   
+   On rappelle donc qu'il est indispensable de ne sauvegarder dans les tableaux de
+   contraintes thermiques que les instants caractéristiques !!
+   En limitant le nombre de pas de temps dans les 7 transitoires thermiques à 15 au maximum
+   (en sélectionnant "à la main" les instants correspondants aux extrémaux), j'arrive
+   exactement au même résultat avec un temps de calcul significativement plus faible :
+   
+      
+   .                                   Avant correction     Après correction
+   .           Cas                     Temps  FU_origine       Temps  FU_origine
+   6 composantes  Tr. Th complet        60s      0,421          60s     0,421          
+   12 composantes Tr. Th complet        60s      0,62           3050s   0,421      
+   6 composantes  Tr. Th simpl.         4s       0,421          4s      0,421 
+   12 composantes Tr. Th simpl.         4s       0,62          210s     0,421 
+   
+   Validation : l'étude fournie par UTO valide la correction.
+   Le cas test qui avait été restitué lors du développement du calcul unitaire sur
+   tubulure/corps est en mécanique pur sans séisme : l'erreur n'avait donc pas été détectée.
+   Pour compléter la validation, on restitue un nouveau cas test (rccm11a) basé sur l'étude
+   UTO. Le calcul mécanique n'est pas fait dans le test (on se contente d'ouvrir les tables)
+   et on ne prend en compte qu'une partie des transitoires pour obtenir un cas test qui
+   tourne en 80 s.
+   
+   Remarque : correction à faire aussi en v8. Il y a a priori peu de différences entre les
+   deux routines modifiées (rc32s0 et rc32mu) entre les deux versions.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.12
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rccm11 et ?de fournie
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 01/04/2008 - 10:23:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011802 DU 2008-02-22 16:56:22
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+   MN10 - Suppression des messages d'alarme contact_1 et contact3_94 en mxc3xa9thode VERIF
+FONCTIONNALITE
+   Objet
+   =====
+   
+   Suite à la correction de l'AL 11260, la méthode 'VERIF' va être implantée dans
+   MACR_ASCOUF_CALC pour détecter d'éventuelles interpénétrations.
+   Suite à une discussion avec E. Galenne, on voit que la méthode 'VERIF' produit deux
+   alarmes qui émises aux milieu de MACR_ASCOUF_CALC nuisent à la lisibilité de cet outil
+   industriel.
+   
+   
+   Messages
+   ========
+   
+   - CONTACT_1 : message qui n'a pas lieu d'être avec la méthode 'VERIF' (avertissement sur
+   la symétrie de la matrice, inutile ici car on ne fait pas de contact à proprement parler)
+   ==> intervention dans exfonc.f
+   
+   - CONTACT3_94 : introduit suite à la première vague de correction de la méthode 'VERIF'
+   (Fiche 9973). Il précise qu'avec cette méthode lorsque l'on utilise des éléments
+   quadratiques QUAD8 (ou QUAD9), le jeu risque d'être imprécis sur les noeuds milieux.
+   Des tests de validation sur ascou01a et ascou08a montrent en effet une oscillation du jeu
+   lorsque les éléments quadratiques sont élancés (cf image jointe).
+   Cela se produit car on ne liaisonne pas les noeuds milieux avec les noeuds sommets et
+   parce que la projection n'est pas encore quadratique (objet fiche 9896).
+   ==> intervention dans exnocp.f, nbnoco.f, nbnocp.f, nbnoel.f, nbsuco.f
+   
+   On propose de déplacer cette alarme dans le message CONTACT_93 affiché lorsqu'il y a
+   détection d'une interpénétration en attendant la projection quadratique et de le signaler
+    dans la documentation d'AFFE_CHAR_MECA/CONTACT.
+   
+   
+   NEW8
+   ====
+   
+   Message plus clair lors de la détection de l'interpénétration et ajout de l'avertissement
+   quant à la précision du jeu (il s'appelle algorith_93).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.44.01
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 01/04/2008 - 10:23:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011825 DU 2008-03-07 12:29:35
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   MACR_LIGN_COUPE
+FONCTIONNALITE
+   On boucle deux fois sur le nombre de lignes de coupes : bug uniquement en version 8.
+   
+   C'est insensible pour le cas, le plus courant, où on ne demande qu'une seule ligne.
+   
+   L'évolution assez importante 10431 de macr_lign_coupe en version 9.0.12 l'avait corrigé en
+   version 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ?de jointe
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 01/04/2008 - 10:23:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 011544 DU 2007-12-10 13:32:10
+TYPE evolution concernant Code_Aster (VERSION )
+TMA : CS
+TITRE
+   PROJ_CHAMP message
+FONCTIONNALITE
+   Problème :
+   ----------
+   Lorsque PROJ_CHAMP est utilisé et que le point est trop éloigné, il y a un messsage qui
+   nous informe que le point est trop éloigné.
+   Le problème est que si ce message est affiché 5 fois et que si pour les 5 premiers points
+   projetés on est à une distance que l'on considère comme correcte, les autres alarmes ne
+   seront pas affichées et le controle de la projection ne
+   peut donc pas se faire.
+   
+   Réalisation :
+   -------------
+   Si ALARME='OUI' et si un noeud a été projeté un peu loin, on émet l'alarme suivante :
+    
+      !--------------------------------------------------------------------------------!
+      ! <A> <CALCULEL5_48>                                                             !
+      !                                                                                !
+      !                                                                                !
+      !  PROJ_CHAMP (ou LIAISON_MAIL) :                                                !
+      !  Certains noeuds ont été projetés sur des mailles un peu distantes             !
+      !  (la distance à la maille est supérieure à 1/10ième du diamètre de la maille)  !
+      !  Le noeud projeté le plus loin est le noeud: N1101                             !
+      !  Il a été projeté à la distance 3.997028                                       !
+      !                                                                                !
+      !                                                                                !
+      !                                                                                !
+      ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette                 !
+      ! alarme, vous pouvez obtenir des résultats inattendus !                         !
+      !--------------------------------------------------------------------------------!
+   
+   On ajoute aux routines pj2dap,pj3dap,pj4dap et pj6dap: 2 arguments de sortie LOIN et DMIN.
+   Les appelants de ces routines emettent eventuellement l'alarme ci-dessus après avoir
+   vérifié que ALARME='OUI' et LOIN=.TRUE. sur au moins un noeud.
+   La distance donnée dans le message est la plus grande distance observée sur les noeuds
+   projetes.
+   
+   Anomalie :
+   ----------
+   Une anomalie a été détectée sur les routines pjXdap.f, car on compare DISTMA (la distance
+   maximale de projection autorisée) avec D2 qui est le carré d'une distance.
+   Si on corrige cette anomalie (ce que l'on fait dans cette fiche), le test sslv134b
+   s'arrête en erreur fatale car plus aucun noeud n'est projeté.
+   La fiche d'anomalie 11790 a été émise pour corriger le problème posé par ce test. En
+   attendant, ce test sera cassé.
+   
+   NEW8 :
+   ------
+   Il faut reporter en NEW8 la correction du bug "confusion de DISTMA et de son carré".
+   
+   Impact :
+   --------
+   pj2dap.f
+   pj3dap.f
+   pj4dap.f
+   pj6dap.f
+   pj2dco.f
+   pj3dco.f
+   pj4dco.f
+   pj6dco.f
+   pj2da2.f
+   pj4da2.f
+   calculel5.py
+   
+   Résultats faux :
+   ----------------
+   L'utilisation du mot clé DISTANCE_MAX (pour exclure de la projection les noeuds situés au
+   dela de cette distance) a pu conduire à projeter des noeuds qui n'auraient pas du être
+   projeté ou à exclure des noeuds qui n'auraient pas du l'être.
+   En effet, la distance utilisée dans la programmation était en réalité la racine carrée de
+   celle donnée par l'utilisateur.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.2.16
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   essai perso
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ FORTRAN MODIF calculel/pj2da2               macocco K.MACOCCO          145      2      1
+ FORTRAN MODIF calculel/pj2dap               macocco K.MACOCCO          178      3      4
+ FORTRAN MODIF calculel/pj3dap               macocco K.MACOCCO          186      3      4
+ FORTRAN MODIF calculel/pj4da2               macocco K.MACOCCO          111      2      1
+ FORTRAN MODIF calculel/pj4dap               macocco K.MACOCCO          148      4      3
+ FORTRAN MODIF calculel/pj6dap               macocco K.MACOCCO          148      3      3
+ FORTRAN MODIF postrele/rc32mu               galenne E.GALENNE          174     10      2
+ FORTRAN MODIF postrele/rc32s0               galenne E.GALENNE          271    119     19
+ FORTRAN SUPPR postrele/rc36fu               macocco K.MACOCCO          232      0    232
+  PYTHON MODIF Macro/macr_lign_coupe_ops     macocco K.MACOCCO          415      1      2
+  PYTHON MODIF Messages/algorith             macocco K.MACOCCO          423      9      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   10        2199       156      41      +115
+ SUPPR :    1         232               232      -232
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   11        2431       156     273      -117 

@@ -1,0 +1,159 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mcourtoi     COURTOIS Mathieu       DATE 28/11/2006 - 10:08:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010263 DU 2006-11-16 14:04:46
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TITRE
+   NEW7.7.6, le test ssnv166b manque de memoire (Bull)
+FONCTIONNALITE
+   On modifie le type d'allocation memoire dans DEBUT (comme ce qui a ete fait en version
+   8)
+   et on augmente la limite memoire dans le fichier .para.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ras
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR voldoire     VOLDOIRE F.            DATE 28/11/2006 - 10:08:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010117 DU 2006-10-06 13:51:44
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   Loi Labord_1D : calcul faux des taux de restit Y1 et Y2
+FONCTIONNALITE
+   Modification du Fortran
+   Loi LABORD_1D (poutres PMF)
+   Conformite avec la doc R7.01.07.
+   
+   Routine nmcb1d.f : modifiee
+   - on decommente les deux lignes qui actualisent les seuils
+   Cela met a jour les vari V3 et V4, qui sont les taux de restitution d'energie Y1 et Y2.
+   
+   CAS TEST modifie :
+   on a ajoute le test_resu de non-regression de V3 et V4 a deux instants differents dans
+   :
+   
+   ssnl120a Reponse cyclique de la loi de comportement du beton (modele de La Borderie)
+   [V6.02.120]
+   
+   Mais pas dans les autres tests de cette loi (ssnl119 ni sdnl130).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.11
+VALIDATION
+   tests
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mabbas       ABBAS M.               DATE 28/11/2006 - 10:08:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009266 DU 2005-12-15 00:00:00
+TYPE anomalie concernant Code_Aster (VERSION 8.2)
+TITRE
+   LONG_ARC  avec POURSUITE
+FONCTIONNALITE
+   On reproduit le bug sur un cas-test de la base (ssnl133B).
+   Si on divise le STAT_NON_LINE en deux avec une reprise, on observe le
+   
+   meme dysfonctionnement.
+   Apres une analyse un peu plus attentive, on peut s'interroger sur la
+   
+   valeur d'un parametre que l'on ne stocke pas d'un calcul a l'autre
+   
+   dans la SD EVOL_NOLI.
+   Dans le cas du pilotage en longueur d'arc avec choix du parametre de
+   
+   pilotage par SELECTION='ANGL_INCR_DEPL', on a besoin de l'increment de
+   deplacement trouve au
+   pas precedent (DEPOLD dans les routines Fortran).
+   Pour s'en convaincre, avec SELECTION='NORM_INCR_DEPL', tout fonctionne
+   
+   correctement car l'on n'a pas besoin de DEPOLD.
+   
+   Solution: reconstruire DEPOLD quand on fait une reprise.
+   Condition necessaire : avoir stocke les deux derniers champs de
+   deplacements.
+   Di PILOTAGE + 'ANGL_INCR_DEPL':
+   - Erreur fatale si reprise sans les deux derniers
+   champs de deplacements (donc pas de reprise avec un simple champ de
+   deplacement par exemple) -> conseiller d'utiliser plutot
+   DEPL_INCR_DEPL
+   - Alarme si ARCHIVAGE lors du premier STAT_NON_LINE (pour prevenir
+   l'utilisateur qu'il est imperatif de stocker les deux derniers champs
+   de deplacements dans ce cas)
+   
+   On modifie ssnl133b pour tester le developpement option
+   
+   POur la version 7, on bloque par une erreur fatale
+   LONG_ARC/ANGL_INCR_DEPL en poursuite.
+   Intervention dans nmdoet. PAsser la SD PILOTAGE PILOTE en argument de
+   NMINIT puis NMDOET:
+   
+   Au debut:
+   CALL GETFAC('PILOTAGE',NOCC)
+   PILOT = .FALSE.
+   IF (NOCC .NE. 0) THEN
+   CALL GETVTX('PILOTAGE','TYPE',1,1,1,TYPPIL,NOCC)
+   IF (TYPPIL(1:8).EQ.'LONG_ARC') THEN
+   CALL GETVTX('PILOTAGE','SELECTION',1,1,1,SELPIL,NOCC)
+   IF (SELPIL(1:14).EQ.'ANGL_NORM_DEPL') THEN
+   PILOT = .TRUE.
+   ENDIF
+   ENDIF
+   ENDIF
+   
+   Puis dans  le IF (EVONOL)
+   IF (PILOT) THEN
+   CALL U2MESK('F','MECANONLINE_77',1,STRUCT)
+   ENDIF
+   
+   Ne pas le mettre dans le ELSE car c'est le cas ou il n'y a pas
+   ETAT_INIT !
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnl133b
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssnl120a                        vivan L.VIVAN            163     16      1
+ CASTEST MODIF ssnv166b                        vivan L.VIVAN            430      4      2
+ FORTRAN MODIF algorith/nmdopi                 vivan L.VIVAN            283     10      2
+ FORTRAN MODIF elements/nmcb1d                 vivan L.VIVAN            127      5      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    4        1003        35      10       +25
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    4        1003        35      10       +25 

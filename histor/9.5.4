@@ -1,0 +1,724 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 10/08/2009 - 16:13:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013554 DU 2009-06-23 12:41:12
+TYPE evolution concernant Code_Aster (VERSION 7.0)
+TITRE
+   MODI_REPERE et champ complexe
+FONCTIONNALITE
+   L'opérateur MODI_REPERE sur des résultats complexes ne fonctionne 
+   pas et se plante quand il essaie de vider la mémoire.
+   En regardant, on constate qu'il n'est pas programmé pour les champs 
+   complexes !
+   Or il est prévu pour traiter des résultats dyna_harmo, donc 
+   complexes.
+   On développe donc le traitement des résultats complexes.
+   
+   Routines modifiees :
+   - routine chprno : traitement des cham_no
+   - routine chprel : traitement des cham_elem
+   
+   2 cas-tests sont enrichis :
+   - SHLV100A pour des tenseurs et des vecteurs complexes
+   - SDLS01B  pour des torseurs complexes
+   
+   On ne fait pas le developpement en V9, mais on blinde MODI_REPERE
+   en émettant un message d'erreur clair si le résultat contient des 
+   champs complexes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V2.07.100 V2.03.001
+VALIDATION
+   SHLV100A SDLS01B
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 01/09/2009 - 18:54:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013672 DU 2009-07-31 15:47:09
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   En NEW10.0.11, le cas-test shll102a est NOOK sur Bull, Calibre4, Calibre5 et Rocks
+FONCTIONNALITE
+   Contrairement à ce que j'annonçais il y deux semaines dans la fiche 13653, les petites
+   corrections apportées dans le calcul de la gyroscopie ont une influence sur les résultats
+   de calcul modal et de calcul harmonique en STA9.
+   En effet, la principale erreur était d'avoir considéré que le calcul élémentaire de la
+   matrice de gyroscopie était effectué sur la demi-matrice supérieure alors que la
+   convention dans Code_Aster est d'employer la demi-matrice inférieure. La matrice de
+   gyroscopie étant antisymétrique, cela conduisait à une inversion de signe pour les termes
+   de gyroscopie. 
+   La correction a eu un impact sur le test SHLL102 où, dans une deuxième erreur qui
+   compensait la première, le rotor tournait à l'envers. 
+   Je corrige le test en question.
+   
+   Comme l'inversion du sens de rotation peut prêter à confusion et que les corrections sont
+   mineures, je préconise aussi d'appliquer les légères modifications aux fichiers
+   projmr.f
+   dlnewi.f
+   copmat.f
+   dlfext.f
+   upletr.f
+   te0009.f (cf fiche 13653)
+   et au cas test SHLL102a
+   aussi en v9.5.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.3
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SHLL102a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013605 DU 2009-07-08 13:49:35
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   calcul de lacher dans DYNA_LINE_TRAN
+FONCTIONNALITE
+   Lors d'un calcul de lâcher (calcul dynamique transitoire à partir d'un état hors
+   équilibre), il n'y a, en général, pas de forces extérieures. Or dans la routine DLFEXT,
+   qui calcule les forces externes appliquées au système pour DYNA_LINE_TRAN, ce cas a été
+   oublié et le vecteur chargement n'est pas mis à zéro, mais reste non initialisé. Les
+   resultats d'un calcul de lâcher avec DYNA_LINE_TRAN ne sont donc pas toujours justes.
+   C'est le cas depuis au moins la version 5. Attention aux résultats faux !
+   On peut pondérer ce risque en remarquant qu'il est exceptionnel de faire un calcul de
+   dynamique transitoire sans forces extérieures.
+   La restitution a été anticipée et a été intégrée dans la fiche 13653.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V2.01.034
+VALIDATION
+   SDLD34
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 01/09/2009 - 18:54:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013246 DU 2009-03-24 17:10:41
+TYPE anomalie concernant Code_Aster (VERSION 9.6)
+TITRE
+   Messages d'alarme frequents et peu clairs
+FONCTIONNALITE
+   Problème :
+   ========
+   Il y en a 138 messages d'alarmes différents émis par les tests de Code_Aster.
+   Si on regarde les messages les plus fréquents dans les tests, on en trouve 20 qui sont
+   émis par plus de 10 tests différents.
+   Parmi ces 20 messages d'alarme, il y en a 3 assez obscurs : 
+   UTILITAI5_93
+   UTILITAI5_94
+   CALCULEL6_65
+   
+   on ne comprends pas le danger et on n'a pas de piste pour les éviter.
+   
+   Analyse :
+   =======
+   Les deux premiers messages sont émis de manière intempestives. On émet le message avant de
+   vérifier que l'on se trouve bien dans le contexte prévu par le message.
+   
+   Le troisième est plus suspect quant à son émission : est-il normal de se trouver dans ce
+   cas de figure dans les tests de la base.
+   
+   Correction :
+   ==========
+   Pour les deux premiers messages, on vérifie avant le message de bien être dans le contexte
+   et on reformule.
+   
+   Pour le troisième, on reformule le message pour qu'il soit plus clair et une fiche (fiche
+   13668) est émise pour savoir s'il est bien normal d'avoir ce message dans les tests de la
+   base.
+   
+   Impacts :
+   =======
+   op0150.f
+   972,975d972
+   <        IF(TYPRES.EQ.'EVOL_CHAR'.OR.TYPRES.EQ.'HARM_GENE')THEN
+   <          CALL U2MESK('A','UTILITAI5_93',1,TYPRES)
+   <          GOTO 35
+   <        ENDIF
+   979a977,982
+   >        IF ( ( (N1.EQ.0) .OR. (N2.EQ.0) .OR. (N3.EQ.0) ) .AND.
+   >      &  ( (TYPRES.EQ.'EVOL_CHAR') .OR. (TYPRES.EQ.'HARM_GENE') ) ) THEN
+   >          CALL U2MESK('A','UTILITAI5_93',1,TYPRES)
+   >          GOTO 35
+   >        ENDIF
+   > 
+   1022,1025d1024
+   <        IF(TYPRES(1:4).EQ.'DYNA'.OR.TYPRES(1:4).EQ.'MODE')THEN
+   <          CALL U2MESK('A','UTILITAI5_94',1,TYPRES)
+   <          GOTO 35
+   <        ENDIF
+   1027a1027,1030
+   >          IF(TYPRES(1:4).EQ.'DYNA'.OR.TYPRES(1:4).EQ.'MODE')THEN
+   >            CALL U2MESK('A','UTILITAI5_94',1,TYPRES)
+   >            GOTO 35
+   >          ENDIF
+   
+   utilitai5.py
+   calculel6.py
+   
+   A reporter en version d'exploitation.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste complete
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013265 DU 2009-03-31 17:51:45
+TYPE anomalie concernant Code_Aster (VERSION 9.6)
+TITRE
+   Alarme intempestive dans LIRE_RESU(TYPE_RESU='EVOL_CHAR'
+FONCTIONNALITE
+   Problème :
+   ========
+   Le message UTILITAI5_93 est peu clair dans le contexte du calcul. (idem 13246)
+   
+   Analyse :
+   =======
+   Le message est émis avant d'avoir vérifié que l'on est bien dans le contexte prévu par le
+   message.
+   
+   Correction :
+   ==========
+   idem 13246
+   On vérifie que l'on est bien dans le contexte prévu par le message avant de l'émettre.
+   
+   Impact :
+   ======
+   op0150.f
+   utilitai5.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste complete
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013514 DU 2009-06-15 14:22:49
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   En NEW10.0.5, les cas-tests sslv134d est NOOK sur Bull, Rocks, Calibre4 et 5
+FONCTIONNALITE
+   Problème :
+   ========
+   En NEW10.0.5, les cas-tests sslv134d est très légèrement NOOK sur Bull, Rocks, Calibre4 et 5. 
+   
+   Analyse :
+   =======
+   Après avoir creusé, on s'aperçoit que l'évolution responsable de la variation est
+   l'introduction des matrices de coulage pour Arlequin (fiche 11717). Cette évolution a eu
+   pour effet de modifier la taille des ligrels. Dans le calcul du terme de saut de l'erreur
+   en mécanique en 3D (ermes2.f), on navigue dans le champ de contraintes des voisins grâce à
+   des formules magiques donnant le bon décalage. Or ce calcul du décalage était faux (depuis
+   l'introduction). On ne récupérait pas les bonnes valeurs de contraintes et avec la fiche
+   11717 on allait chercher d'autres valeurs (toujours fausses). Ceci explique le NOOK.
+   
+   Correction :
+   ==========
+   Une erreur était faite pour le nombre de n?uds voisins ; on le déduisait de la maille
+   courante alors qu'il doit être déduit de la maille voisine. On corrige cette erreur et on
+   réécrit la routine avec les bonnes formules données dans la doc sur les champs. On modifie
+   la valeur de référence du test en laissant la même tolérance (10e-8 %).
+   
+   Impact :
+   ======
+   ermes3.f
+   te0375.f
+   te0368.f
+   sslv134d.comm
+   
+   A faire en version d'exploitation (les routines doivent pouvoir être reprise à l'identique)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.3
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste erreur
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 01/09/2009 - 18:54:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013654 DU 2009-07-24 15:37:23
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   X-FEM : bug dans une interpolation lineaire
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   On cherche la valeur d'un champ nodal LST sur un point C d'une arete AB.
+   
+   Pour cela, on interpole linéairement le champ nodal LST entre les points A et B
+   
+      LST(C) = LST(A) + ( LST(B)-LST(A) ) * ( C-A ) / ( B-A )
+   
+   Le mieux est de faire l'interpolation le long de l'arête, en calculant une abscisse
+   curviligne pour C.
+   
+   Mais dans xstano.f, on choisit un axe pour faire cette interpolation (pour des raisons de
+   simplicité).
+   
+   si X(A) différent de X(B), alors on prend l'axe X, la formule devient donc : 
+   
+      LST(C) = LST(A) + ( LST(B)-LST(A) ) * ( X(C)-X(A) ) / ( X(B)-X(A) )
+   
+   sinon, si Y(A) différent de Y(B), alors on prend l'axe Y, ...
+   
+   
+   Dans certains cas, on peut avoir X(A) très légèrement différent de X(B)
+   X(A)-X(B) = 1e-14 dans le cas présent
+   et donc le point C a aussi le même X, donc X(C)-X(A) est très faible aussi.
+   ce qui donne 0/0 -> valeur indéterminée, dans noter cas, une valeur complètement fausse,
+   mais qui ne provoque pas le plantage, donc le calcul continue normalement.
+   En fait, cela provoque des statut d'enrichissement des noeuds incompatibles avec la
+   position du fond de fissure, ce qui finit par faire planter le calcul proprement par un
+   call assert dans xenrch.f, mais le message d'erreur ne permet pas bien de comprendre l'erreur.
+   
+   
+   Solution :
+   ----------
+   
+   1ere solution : On recherche avant de faire l'interpolation la direction de l'espace où
+   l'écart entre A et B est le plus grand. On fait ensuite l'interpolation suivant cet axe.
+   
+   2eme solution : on utilise le produit scalaire AB.AC / || AB || comme abscisse curviligne
+   du segment AB. 
+      LST(C) = LST(A) + ( LST(B)-LST(A) ) * AB.AC / || AB ||
+   
+   On retient la 2eme solution
+   
+   impact : 
+   xstano.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test perso
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 01/09/2009 - 18:54:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013474 DU 2009-06-03 17:01:11
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Redecoupage des pas de temps et methode CONTINUE
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Lors du redécoupage de pas de temps, la méthode CONTINUE de contact ne remet pas à son
+   état antérieur certaines données (plus précisément, le statut de contact et le seuil de
+   frottement). Par conséquent on risque de repartir avec un état de contact/frottement
+   erroné, pouvant entraîner :
+   
+   - au mieux : rien
+   - au pire : non convergence
+   
+   En présence de frottement, il risque cependant d'y avoir des résultats différents (de si
+   on avait pas découpé).
+   
+   Analyse
+   =======
+   
+   On propose de stocker dans un objet temporaire (ETATCT) attaché à la structure de
+   résolution du contact RESOCO les informations suivantes dès qu'un pas de temps a convergé :
+   
+   * statut de contact : 0 ou 1 (jeu nul ou non)
+   * seuil de frottement : lambda
+   * compliance : 0 ou 1 (on touche ou pas les aspérités)
+   * glissière : 0 ou 1 (on a déjà collé ou pas)
+   
+   et ce pour chaque point d'intégration. Il s'agit donc d'un vecteur de taille 4*NTPC.
+   
+   Ce vecteur est créé sur la base volatile puis : 
+   
+   1. en début de pas de temps (CFMXME) on recopie son contenu dans le vecteur TABFIN (si il
+   s'agit d'un nouveau pas de temps alors c'est comme si on ne faisait rien, si par contre il
+   s'agit d'un redécoupage alors on restaure ainsi l'état du dernier pas de temps convergé
+   (au lieu de celui au moment de l'échec)
+   
+   2. en fin de pas de temps (MMMRES) on sauvegarde les informations ci-dessus dans ETATCT.
+   
+   Validation
+   ==========
+   
+   Perso sur le cas-test SSNV506F modifié joint à la fiche : auparavant le fait de ne
+   demander qu'un seul incrément de temps (de 0.0 à 1.0) entrainait un sous-découpage (en 10)
+   jusqu'à 0.001 où l'on ne convergeait toujours pas. Si on demande directement l'incrémeent
+   0.001 on converge. Après correction cela fonctionne et donne exactement le même tableau de
+   convergence.
+   
+   Impact : cfinit.f  cfmmvd.f  cfmxme.f  cfmxre.f  mmmres.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv506f modifixc3xa9
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013683 DU 2009-08-05 11:16:46
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Bug methode CONTINUE dans le cas GLISSIERE
+FONCTIONNALITE
+   Express
+   =======
+   
+   Dans MMMBCA, il y a eu une petite régression dans le cas GLISSIERE : si plusieurs zones de
+   contact sont définies et que seules certaines d'entre elles sont GLISSIERE alors elles
+   risquent d'être ignorées.
+   
+   cf. issue12018
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroches    DESROCHES Xavier       DATE 01/09/2009 - 18:54:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013649 DU 2009-07-24 09:22:13
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Performance POST_RELEVE_T + IMPR_TABLE
+FONCTIONNALITE
+   Pour post-traiter les études sur les Internes de Cuve Jean-Luc fait 
+   une poursuite avec POST_RELEVE_T.
+   Il fait des extractions sur 55000 noeuds et obtient des temps CPU 
+   variant entre 2000 et 2500 secondes!
+   
+   Malgré le fait que les fichiers n'ont pas été transmis, j'ai pu 
+   reproduire le problème sur le cas-test de performance YYYY106 
+   (clapet sous transitoire froid) qui a 19000 noeuds.
+   J'obtiens un temps d'extraction de 330s (sur un cham_no à 6 cmp), ce 
+   qui est aberrant.
+   En regardant la programmation et en faisant des mesures de temps cpu,
+   je me suis aperçu que 95% du temps est passé dans la routine TBAJLI,
+   qui construit la table de sortie ligne par ligne. De plus, 90% du 
+   temps de TBAJLI est passé dans la routine JUVECA, qui augmente la 
+   dimension d'un tableau. Le problème est que cette routine est 
+   appelée beaucoup trop souvent et qu'elle coûte cher.
+   Or on peut l'appeler sans problème 100 fois moins: il suffit 
+   d'agrandir la taille des tableaux toutes les 1000 lignes de la table
+   au lieu de toutes les 10, comme c'est le cas actuellement. 
+   Evidemment on augmente l'incrément de taille d'autant.
+   En faisant çà, je passe de 330s à 12.9s (soit un gain d'un facteur 
+   25) et Jean-Luc devrait passer de 2500 à 100 secondes.
+   
+   J'ai également fait un gain important dans le cas d'une extraction 
+   avec TOUT_CMP = 'OUI' si le champ possède des noeuds dont les 
+   composantes ne sont pas affectées. La programmation était correcte 
+   dans le cas de NOM_CMP mais n'avait pas été répercutée pour 
+   TOUT_CMP. Sur un exemple, on gagne plus d'un facteur 100 cette fois.
+   
+   Malgré tout, la "sauce" POST_RELEVE est lourde et les performances 
+   sont moyennes, mais c'est à la généralité (et à la complexité) de la 
+   commande que c'est dû. On pourra difficilement faire mieux sans 
+   reprogrammer les choses plus simplement, tout au moins une partie.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   LISTE RESTREINTE
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 01/09/2009 - 18:54:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013015 DU 2009-01-05 09:46:08
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TITRE
+   Erreur en quantite d'interet
+FONCTIONNALITE
+   Problème :
+   ========
+   Dans l'étude jointe, on plante salement dans CALC_ELEM / OPTION='QIRE_ELEM_SIGM' sans
+   remontée d'erreur.
+   
+   Analyse :
+   =======
+   Un problème similaire (fiche 13556) fourni une remontée d'erreur et permet de montrer que
+   le problème se situe dans le te0368.
+   
+   Un gentil développeur (G. Nicolas) a vu qu'il y avait un gros cafouillage dans le
+   dimensionnement de certains tableaux. On range le résultat d'opérations d'additions et de
+   soustraction sur des tableaux dans des tableaux sous dimensionnés.
+   REAL*8 ADD(3), A(15), B(15)
+   DO 10 I=1,15
+     ADD(I)=A(I)+B(I)
+   10 CONTINUE
+   D'où un bel écrasement (passé inaperçu dans les tests jusque là...).
+   
+   Corrections :
+   ===========
+   On redimensionne tous les tableaux posant problème (taille de 9 correspondant au nombre
+   max de noeuds sur une face).
+   
+   Validation :
+   ==========
+   Passage de l'étude jointe + étude fiche 13556
+   Passage liste tests erreur
+   
+   Impacts :
+   =======
+   calnor.f
+   ermeb3.f
+   ermes3.f
+   intega.f
+   te0368.f
+   te0375.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.2.16
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de l'xc3xa9tude + liste erreur
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013556 DU 2009-06-23 15:36:45
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   Arret brutal dans CALC_ELEM pour QIRE_ELEM_SIGM
+FONCTIONNALITE
+   Problème :
+   ========
+   Dans l'étude jointe, on plante salement dans CALC_ELEM / OPTION='QIRE_ELEM_SIGM'.
+   
+   Analyse :
+   =======
+   Le problème est similaire à la fiche 13015. Il y avait un gros cafouillage dans le
+   dimensionnement de certains tableaux. On range le résultat d'opérations d'additions et de
+   soustraction sur des tableaux dans des tableaux sous dimensionnés.
+   
+   Corrections :
+   ===========
+   On redimensionne tous les tableaux posant problème (taille de 9 correspondant au nombre
+   max de noeuds sur une face).
+   
+   Validation :
+   ==========
+   Passage de l'étude jointe
+   Passage liste tests erreur
+   
+   Impacts :
+   =======
+   calnor.f
+   ermeb3.f
+   ermes3.f
+   intega.f
+   te0368.f
+   te0375.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.2.16
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage de l'xc3xa9tude + liste erreur
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013157 DU 2009-02-23 11:08:38
+TYPE anomalie concernant Code_Aster (VERSION 9.4)
+TMA : DeltaCad
+TITRE
+   IMPR_RESU / FORMAT='CASTEM' pour les champs VARI_R
+FONCTIONNALITE
+   Problème :
+   ========
+   Lorsque l'on précise une composante dans IMPR_RESU / FORMAT='CASTEM', aucune impression
+   n'est realisée et le code renvoie le message :
+    <A> <IMPR_RESU> <IRCECA> ON NE TROUVE PAS LA COMPOSANTE >V1      <  DANS LA             
+                                              
+        GRANDEUR  >VARI_R  <                                                                
+                                          
+   Analyse :
+   =======
+   Le code plantait précisément avec une grandeur de type VARI_R car on vérifie la cohérence
+   de la composante fournie par l'utilisateur (V1 par exemple) avec les composantes
+   existantes dans le catalogue. Or, dans le catalogue, la seule composante de VARI_R est VARI.
+   La commande fonctionnait lorsqu'on ne précisait aucune composante car on ne fait pas de
+   vérification dans le code.
+   
+   Correction:
+   ==========
+   On modifie les routines irceca.f, irdeca.f telles qu'on vérifie la cohérence de la
+   composante donnée par l'utilisateur (V + [0 à N]) et que l'on dit que VN correspond à la N
+   composante du catalogue pour la grandeur VARI_R.
+   
+   Vérification  :
+   ============
+   On vérifie que cela marche (impression dans perf004 de VARI_ELNO_ELGA restreinte à V1).
+   Le comportement est homogène aux autre formats.
+   
+   Passage de l'étude fournie et vérification du contenu du fichier cast.
+   Passage d'une liste restreinte a IMPR_RESU/format CASTEM (82 cas-tests)
+   
+   Impacts :
+   =======
+   irceca.f
+   irdeca.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   IMPR_RESU / format CASTEM
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 01/09/2009 - 18:54:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013699 DU 2009-08-07 14:10:45
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TMA : CS
+TITRE
+   En NEW9.5.3, le cas-test perf005c est NOOK sur Bull.
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   En NEW9.5.3, le cas-test perf005c est NOOK sur Bull.
+   Les cas-tests NOOK sont les suivants:
+   "
+     
+   !--------------------------------------------------------------------------------------------------!
+      ! Commande               ! Ordre  ! Reference  ! Mesure     ! Difference ! Tolerance  !
+   Diagnostic !
+     
+   !--------------------------------------------------------------------------------------------------!
+      ! STAT_NON_LINE          !      1 !    5000.00 !    5981.82 !     981.82 !    1000.00 !
+        OK    !
+      ! STAT_NON_LINE          !      1 !   10000.00 !   12086.39 !    2086.39 !    2000.00 !
+      NOOK    !
+     
+   !--------------------------------------------------------------------------------------------------!
+   
+   
+   --------------------------------------------------------------------------------
+    ---- TABLE: tab1__   NOM_PARA: DIAGNOSTIC              
+                                          
+   REFERENCE: NON_DEFINI
+   NOOK tab1__       ABSO    -1.000   VALE:        0
+   DIAGNOSTIC        TOLE  0.00E+00   REFE:        1
+   
+   "
+   """
+   
+   
+   Solution :
+   ----------
+   Modification du cas test sur la Bull pour la NEW9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test lui meme
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF perf005a                      macocco K.MACOCCO          127      5      5
+ CASTEST MODIF perf005c                      macocco K.MACOCCO          120      3     10
+ CASTEST MODIF sdls01b                       macocco K.MACOCCO          308     52      2
+ CASTEST MODIF shll102a                      macocco K.MACOCCO          416      3      3
+ CASTEST MODIF shlv100a                      macocco K.MACOCCO          675    236      2
+ CASTEST MODIF sslp315b                      macocco K.MACOCCO          165      6      4
+ CASTEST MODIF sslv134d                      macocco K.MACOCCO         1329      2      2
+ FORTRAN MODIF algeline/upletr               macocco K.MACOCCO           56      3      3
+ FORTRAN MODIF algorith/cfinit               macocco K.MACOCCO          204     26      4
+ FORTRAN MODIF algorith/cfmxme               macocco K.MACOCCO          236     18      3
+ FORTRAN MODIF algorith/cfmxre               macocco K.MACOCCO          135      3      3
+ FORTRAN MODIF algorith/chrpel               macocco K.MACOCCO          716    185      4
+ FORTRAN MODIF algorith/chrpno               macocco K.MACOCCO          615    130      3
+ FORTRAN MODIF algorith/dlfext               macocco K.MACOCCO          378      3      1
+ FORTRAN MODIF algorith/dlnewi               macocco K.MACOCCO          617     18      2
+ FORTRAN MODIF algorith/mmmbca               macocco K.MACOCCO          402      5      2
+ FORTRAN MODIF algorith/mmmres               macocco K.MACOCCO          949     25      8
+ FORTRAN MODIF algorith/op0191             desroches X.DESROCHES        192      4      1
+ FORTRAN MODIF algorith/projmr               macocco K.MACOCCO          213      3      2
+ FORTRAN MODIF algorith/xstano               macocco K.MACOCCO          220      7      9
+ FORTRAN MODIF elements/ermeb3               macocco K.MACOCCO          287     16     14
+ FORTRAN MODIF elements/ermes3               macocco K.MACOCCO          179     76     37
+ FORTRAN MODIF elements/intega               macocco K.MACOCCO           80      8      5
+ FORTRAN MODIF elements/te0009               macocco K.MACOCCO           95      3      3
+ FORTRAN MODIF elements/te0368               macocco K.MACOCCO          605     29     31
+ FORTRAN MODIF elements/te0375               macocco K.MACOCCO          509     18     20
+ FORTRAN MODIF modelisa/cfmmvd               macocco K.MACOCCO          103      5      3
+ FORTRAN MODIF postrele/rvgnoe               macocco K.MACOCCO          217      2      2
+ FORTRAN MODIF postrele/rvouex               macocco K.MACOCCO          273     15      3
+ FORTRAN MODIF prepost/irceca                macocco K.MACOCCO          491     15      1
+ FORTRAN MODIF prepost/irdeca                macocco K.MACOCCO          277     12      1
+ FORTRAN MODIF utilitai/calnor               macocco K.MACOCCO          343      5      5
+ FORTRAN MODIF utilitai/copmat               macocco K.MACOCCO          132     30      1
+ FORTRAN MODIF utilitai/op0150               macocco K.MACOCCO         1119      9      7
+ FORTRAN MODIF utilitai/tbajli               macocco K.MACOCCO          294      2      2
+  PYTHON MODIF Messages/algorith17         desroches X.DESROCHES         41      4      1
+  PYTHON MODIF Messages/calculel6            macocco K.MACOCCO          352     33     26
+  PYTHON MODIF Messages/elements3            macocco K.MACOCCO          283      1      5
+  PYTHON MODIF Messages/indicateur           macocco K.MACOCCO          140      6      1
+  PYTHON MODIF Messages/utilitai5            macocco K.MACOCCO          300     10      7
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   40       14193      1036     248      +788
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   40       14193      1036     248      +788 

@@ -1,0 +1,1315 @@
+
+
+-----------------------------------------------------------------------
+--- AUTEUR cibhhlv L.VIVAN   DATE  le 11/05/2005 a 15:41:24
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-032
+   NB_JOURS_TRAV  : 2
+   POUR_LE_COMPTE_DE   : A.ASSIRE
+   INTERET_UTILISATEUR : OUI
+   TITRE : IMPR_RESU / GMSH
+   FONCTIONNALITE : L'impression au format GMSH possédait deux bugs indentifiés
+   DETAILS : L'écriture d'un résultat au format GMSH était bloqué à
+   999999 mailles de meme type. Au dela l'affichage du nombre de mailles par
+   type indiquait *****.
+   La routine IRGMPV qui écrit l'entete au format GMSH utilise pour calculer le
+   nombre de maille des INTEGER (donc des INTEGER*8). Or lors de l'écriture
+   proprement dite dans le fichier GMSH, on utilisait un FORMAT qui n'autorisait
+   que des INTEGER*6. On remplace donc ce FORMAT par INTEGER*8 ce qui donne :
+       1030 FORMAT(3(I6,1X))
+   devient
+       1030 FORMAT(3(I8,1X))
+   De plus, le logiciel GMSH ne peut recevoir un fichier a post traiter ou il y
+   a mélange d'un maillage et de champs à visualiser. Dans le cas ou un
+   maillage est présent, seul ce maillage est visualisable. Les types de
+   syntaxes ci-dessous sont donc erronés.
+   IMPR_RESU(FORMAT='GMSH', UNITE=20,
+	  RESU=(_F(MAILLAGE=MA,),
+		_F(CHAM_GD=TEMP0,
+		  NOM_CMP='TEMP'), ), );
+
+   IMPR_RESU(FORMAT='GMSH', UNITE=21,
+	  RESU=(_F(RESULTAT=TEMPV,
+		   NOM_CHAM='TEMP',
+		   INST=0.,
+		   NOM_CMP='TEMP'),
+                _F(MAILLAGE=MA,), ), );
+   On émet donc une alarme pour prévenir l'utilisateur et on interrompt la
+   commande IMPR_RESU en cours.
+
+   Un autre bug faisait que dans la syntaxe suivante
+   IMPR_RESU(FORMAT='GMSH', UNITE=20,
+	  RESU=_F(CHAM_GD=TEMP0,
+		  NOM_CMP='TEMP',
+		  MAILLAGE=MAIL), );
+
+   Le code considérait que l'on voulait imprimer le maillage et le champ TEMP0.
+   Comme il a été précisé dessus, GMSH n'accepte pas un mélange entre maillage
+   et champ ce qui avait pour conséquence de ne pouvoir visualiser que le
+   maillage.
+
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : OUI
+   DOC_U : U7.05.32-B
+   EXPL_ : On précise dans la doc que l'impression d'un maillage et d'un champ
+           est interdite
+   VALIDATION : cas tests personnel
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-139
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : X. DESROCHES
+   INTERET_UTILISATEUR : NON
+   TITRE : POST_RELEVE_T
+   FONCTIONNALITE : Le cas test zzzz136a plante sous Linux
+     Cette correction corrige aussi les fiches AL 2004-237 et AL 2005-113.
+   DETAIL :
+     L'erreur se produit dans la routine oreino. Pour verifier que la
+     projection des noeuds se situent bien sur le segment de projection,
+     on compare la valeur de ||AM||**2 avec ||AB||**2, A et B etant les
+     extremites du segment et M le noeud concerne.
+     L'erreur se produit quand le noeud M est en fait egal au noeud B.
+     Or la facon de calculer ||AM||**2 et ||AB||**2 est la meme.
+     Les valeurs observees sur le cas test qui plante sont :
+         ||AM||**2         8.3578647213750856E-01
+         ||AB||**2         8.3578647213750845E-01
+         R8PREM            2.2204460492503131E-16
+         ECART (relatif)   1.3283572558739575E-16
+     La solution qui a ete adoptee pour l'instant est de comparer
+     l'ecart a R8PREM et de ne declencher le message d erreur que
+     dans le cas ou ECART > R8PREM.
+     Sur l'alphaserveur, les valeurs relevees sont strictement identiques
+     et egale a 8.3578647213750845D-01.
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : zzzz136a
+
+-----------------------------------------------------------------------
+CORRECTION AL 2004-251
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : G.NICOLAS
+   INTERET_UTILISATEUR : OUI
+   TITRE : non affichage des valeurs extraitres par CALC_ELEM dans le .resu
+   FONCTIONNALITE
+     Lorsque l'on imprime un champ de déplacement de sensibilité par rapport
+     à au moins 2 paramètres et sur une liste de noeuds, l'impression
+     se plante lors de la récupération des noms des noeuds.
+     Pas de problème si l'impression est sur tout le maillage.
+   DETAIL
+     routine op0039.f:
+       initialisation des variables NBCMP, NBMAT, NBNOT, NBNOS,
+       NBNOU dans la boucle "SENSIBILITE"
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     sensm07a
+
+-----------------------------------------------------------------------
+CORRECTION AL 2004-336
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : G.NICOLAS
+   INTERET_UTILISATEUR : OUI
+   TITRE : IMPR_RESU et calcul de sensibilité
+   FONCTIONNALITE
+     Lorsque l'on imprime un champ de déplacement de sensibilité par rapport
+     à au moins 2 paramètres et sur une liste de noeuds, l'impression
+     se plante lors de la récupération des noms des noeuds.
+     Pas de problème si l'impression est sur tout le maillage.
+   DETAIL
+     routine op0039.f:
+       initialisation des variables NBCMP, NBMAT, NBNOT, NBNOS,
+       NBNOU dans la boucle "SENSIBILITE"
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     sensm07a
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-072
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : M.COURTOIS
+   INTERET_UTILISATEUR : OUI
+   TITRE : IMPR_RESU format MED
+   FONCTIONNALITE
+     IMPR_RESU(FORMAT='MED',
+               RESU=_F(RESULTAT=resu1,
+                       GROUP_MA=('SSUP','SINF',),),);
+     ca plante avec le message :
+     <S> <JJALLS01> LONGUEUR DU SEGMENT DE VALEURS INVALIDE
+         >&&IRCMPE.PROFIL_MED             <
+   DETAIL
+     Depuis la réalisation de l'EL 2005-062, on attribue au mot
+     clé FORMAT "position='global'". Ceci permet de réaliser
+     des blocs sous le mot clé facteur RESU.
+     Pour etre en conformité avec la doc U7.05.21, le bloc
+     b_topologie (NOEUD, GROUP_NO, MAILLE, GROUP_MA) ne
+     s'applique pas au format MED.
+
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U7.05.21
+       EXPL_ : NOM_CMP s'applique au format MED
+   VALIDATION
+     passage des 59 cas tests validant MED
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-131
+   NB_JOURS_TRAV  : 1
+   POUR_LE_COMPTE_DE   : O.NICOLAS
+   INTERET_UTILISATEUR : NON
+   TITRE : CALC_ELEM
+   FONCTIONNALITE
+     Avec la version NEW8.0.16 compilée sous linux, le tests sslv139a
+     pose probleme :
+       NOOK sous Calibre3 (clp50a8)
+       ERREUR sous Rocks (clpaster)
+     Ajout dans ce cas test du calcul des énergies en 8.0.16
+   DETAIL
+     routine TE0575 (calcul de 'ENEL_ELGA' et 'ETOT_ELGA')
+      * pour FOURIER, le nombre de contraintes est 6,
+        or tous les tableaux de travail étaient dimensionnés à 4
+      * pour FOURIER, le numéro d'harmonique n'était pas transmis au te
+        catalogue d'élément gener_meafo2.cata et catalogues d'option
+        etot_elem, etot_elga et etot_elno_elga modifiés
+   RESU_FAUX_VERSION_EXPLOITATION    : OUI  DEPUIS: 7.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : OUI  DEPUIS: 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-136
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE   : E.BOYERE
+   INTERET_UTILISATEUR : NON
+   TITRE : DYNA_TRAN_MODAL
+   FONCTIONNALITE
+     Si on veut générer des tests via la procédure ENGENDRE_TEST à partir
+     d'un concept issu de l'opérateur DYNA_TRAN_MODAL, le code se plante:
+        <S> <JJVERN03> LE CARACTERE "@" EST ILLICITE
+   DETAIL
+     variables non initialisées dans la routine mdchoc.f
+   RESU_FAUX_VERSION_EXPLOITATION    : NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   : NON
+   RESTITUTION_VERSION_EXPLOITATION  : OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT : OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+-----------------------------------------------------------------------
+--- AUTEUR durand C.DURAND   DATE  le 28/04/2005 a 11:15:57
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-087
+   NB_JOURS_TRAV  : 0.
+   INTERET_UTILISATEUR : NON
+   TITRE : properties.py
+   FONCTIONNALITE properties.py
+   DETAIL
+     fichier contenant le numéro de version. En double dans Accas et Noyau.
+     Seul celui de Accas est utilisé et à jour.
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-127
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : reca_weibull
+   FONCTIONNALITE reca_weibull
+   DETAIL
+     pb avec l'objet temporaire TAPAIT, créé avec un nom fixe, sur la base
+     global.
+     Je le renomme "&&"qquechose et je le créée sur la volatile.
+     Nécessairement, le conflit de noms interdisait l'exécution consécutive
+     de plusieurs RECA_WEIBULL.
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     passage de ssna103a avec 2 RECA_WEIBULL
+
+
+-----------------------------------------------------------------------
+--- AUTEUR galenne E.GALENNE   DATE  le 09/05/2005 a 14:14:28
+
+--------------------------------------------------------------------------
+CORRECTION AL 2005-111
+   NB_JOURS_TRAV  : 3
+   INTERET_UTILISATEUR : OUI
+   TITRE CALC_G_LOCAL_T : prise en compte des forces surfaciques en 2D
+   FONCTIONNALITE
+   Les forces surfaciques (pression) sur les lèvres de la fissure apportent une
+   contribution supplémentaire dans le calcul du taux de restitution d'énergie G et des
+   facteurs d'intensité de contraintes K1, K2.
+   Il y a cependant une erreur dans la prise en compte de ce terme en 2D : on retrouve un
+   même G mais un K1 très différent selon que l'on applique une pression sur la lèvre
+   supérieure ou sur la lèvre inférieure d'une fissure dans une structure symétrique. Pour
+   une entaille, on retrouve bien un résultat identique pour G et pour K1.
+
+   Modification de la routine te0300 : on s'appuie sur l'orientation des mailles linéiques
+   pour déterminer sur quelle lèvre de la fissure on se trouve et introduire ainsi
+   correctement les déplacements singuliers.
+   Pour que cette vérification soit licite, il faut que les mailles de bords soient
+   orientées correctement. C'est forcément le cas si la force est une pression mais pas
+   nécessairement si elle est du type force_contour.
+   Il faut donc OBLIGATOIREMENT faire un ORIE_PEAU_2D sur les lèvres de la fissure si on
+   veut que les forces qui s'exercent sur celles-ci soient correctement prises en compte.
+
+   Remarque : le terme surfacique n'est pas encore développé en 3D pour le calcul de K1,
+   K2 et K3 mais ça fait l'objet de la fiche EL2005-073.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.0
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U4.82.03  (CALC_G_THETA_T)
+         EXPL_ : Réorientation des mailles des lèvres de la fissure obligatoire pour le
+         calcul du terme surfacique de G et K
+     DOC_V : V3.02.310
+         EXPL_ : Modification du maillage
+   VALIDATION
+      sslp310 : modification du maillage pour prendre en compte une fissure entière
+      (et non une lèvre unique)
+      + cas test perso comparaison fissure/entaille
+
+
+-----------------------------------------------------------------------
+--- AUTEUR gjbhhel E.LORENTZ   DATE  le 09/05/2005 a 14:01:16
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-150
+   NB_JOURS_TRAV  : 1
+   INTERET_UTILISATEUR : OUI
+   TITRE : LONGUEUR CARACTERISTIQUE DU MATERIAU (GRAD_EPSI)
+   FONCTIONNALITE
+      Dorénavant, derrière le paramètre LONG_CARA (DEFI_MATERIAU, NON_LOCAL),
+      c'est la longueur caractéristique (et non plus son carré) qui est renseignée.
+      ATTENTION : les fichiers de commande doivent être modifiés sous peine de
+      conduire à des résultats faux.
+   DETAILS
+      Code source impacté :
+        Modif:        nmpl2g.f, nmpl3g.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 6.2.20
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 6.2.20
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION :
+     SSNP127A, SSNP127B,
+     SSNV157A, SSNV157B, SSNV157C, SSNV157D, SSNV157E, SSNV157F, SSNV157G,
+     SSNV175A
+
+
+-----------------------------------------------------------------------
+--- AUTEUR godard V.GODARD   DATE  le 20/04/2005 a 14:29:58
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-047
+   NB_JOURS_TRAV  : 0.1
+   INTERET_UTILISATEUR : NON
+   TITRE : affectation de la pesanteur pour les grilles
+   FONCTIONNALITE : pesanteur pour les grilles
+   DETAILS
+     La modification de la modélisation des grilles n'a pas été répercutée
+     dans l'affectation des chargements de pesanteur.
+     Le te0032 qui calcule le poids fait toujours référence aux anciennes grilles
+     (avec le POUR_CENT_L et le POUR_CENT_T), on tombe donc sur un NaN
+     car ces grandeurs n'existent plus dans la nouvelle modélisation.
+     Le bug se situe dans le te0032, il n'y a a priori plus de raison de distinguer
+     les grilles des autres elements (ligne 229 de te0032.f).
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : personnelle
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-106
+   NB_JOURS_TRAV  : 0.1
+   INTERET_UTILISATEUR : NON
+   TITRE : STAT_NON_LINE/FLOATING POINT EXCEPTION
+   FONCTIONNALITE : pas de test sur les parametres materiau pour endo_isot_beton
+   DETAILS
+     Lorsque l'utilisateur essaie d'utiliser la loi ENDO_ISOT_BETON sans avoir
+     spécifié les paramètres sous l'opérande BETON_ECRO_LINE dans DEFI_MATERIAU, il
+     obtient le message suivant:
+       <F> <ASTER  7. 4. 0 08/12/2004 >
+       <F> <STAT_NON_LINE> <"FLOATING POINT EXCEPTION">
+       IL Y A PROBABLEMENT UNE ERREUR DANS LA PROGRAMMATION
+
+    On interdit donc ce cas de figure avec l'arret fatal suivant dans la routine lceib1.f:
+       <F> <STAT_NON_LINE> <LCLDSB>  SYT ET D_SIGM_EPSI DOIVENT  ETRE
+       SPECIFIES SOUS L OPERANDE BETON_ECRO_LINE  DANS DEFI_MATERIAU
+       POUR UTILISER LA LOI ENDO_ISOT_BETON
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION : etude jointe a la fiche
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mabbas M.ABBAS   DATE  le 09/05/2005 a 12:59:33
+
+-----------------------------------------------------------------------
+CORRECTION AL 2002-339
+   NB_JOURS_TRAV  : 1
+   INTERET_UTILISATEUR : OUI
+   TITRE : CONTACT et elements quadratiques avec noeuds au quart
+   FONCTIONNALITE
+     Un petit sujet de réflexion pour passer l'été:
+     quand on fait du contact en quadratique on lie
+     les noeuds milieux aux noeuds sommets.
+     La question est : est-ce légitime quand on utilise des
+     éléments avec noeuds au quart?
+     Que valent alors les résultats?
+     Sinon, quelle approximation utiliser?
+     Faire attention au fait que sur ces éléments, seuls
+     les noeuds jouxtant le fond de fissure sont au quart.
+   DETAILS
+     Solution préconisée : faire du contact sur les lèvres de la fissure à
+     l'exclusion de la zone BARSOUM. Cette AL se transforme donc en ED
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_U : U2.05.01
+       EXPL_ : Domaine d'application des opérateurs de mécanique de
+               la rupture du Code_Aster et conseils d'utilisation.
+               Precisez l'usage avec contact et noeuds au quart.
+     DOC_U : U2.04.04
+       EXPL_ : Precisez l'usage du contact avec noeuds au quart.
+   VALIDATION
+     Etude associee a la fiche
+
+-----------------------------------------------------------------------
+REALISATION EL 2005-068
+   NB_JOURS_TRAV  : 3
+   INTERET_UTILISATEUR : OUI
+   TITRE : AOM - DYNA_NON_LINE ET CONTACT
+   FONCTIONNALITE
+     Cette étude traite du lâcher libre d'un bloc pesant sur une table
+     par rotation autour d'un de ses coins bas et de chocs successifs.
+     Dans cette étude, il y a plusieurs fichiers de commande :
+       1 en sta 7.3 : test_rocking_block.comm
+       1 en sta 7.4 : test_rocking_block_V74.comm
+       1 en new 8.0.x : test_rocking_block_V8.comm
+
+     il y a plusieurs fichiers de message :
+       1 en old 7.3 : test_rocking_block.mess
+       1 en sta 7.4 : test_rocking_block_V74.mess
+       1 en new 8.0.x : test_rocking_block_V8.mess
+
+     tandis qu'en 7.3, le fichier .comm marche : tous les pas convergent,
+     le premier impact ayant lieu à t = 0.05564 s sans que la convergence soit très affectée,
+     ni de même à t = 0.05569 s,
+
+     en 7.4 et 8.0.x, à l'instant 0.05569 s le résidu reste constant pendant 20 itérations.
+     Ce pas semble correspondre à la collison du bloc sur la table ?
+
+   DETAILS
+     Après analyse, j'ai découvert un bug dans le contact.
+
+     Situation:
+     Modeles 2D purs avec contact/frottement de type lagrangien
+     Modeles impliquant peu de noeuds en contact (probleme non regulier)
+
+     Explication du bug:
+     Une mauvaise initialisation du vecteur des forces de contact dans le
+     cas ou aucun contact n'etait actif provoquait un defaut dans
+     l'evaluation du residu.
+
+     Correction du bug:
+     Dans fro2gd, le vecteur ATMU contient les forces nodales de contact.
+     Ce vecteur est initialise a zero puis est rempli avec le calcul effectif
+     de ces forces dans la routine cfatmu.
+     Si aucune liaison n'est activee, l'initialisation de ATMU n'etait pas
+     faite et on recuperait les anciennes valeurs (a l'iteration de Newton
+     precedente). Residu faux.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.3.12
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Liste cas-test contact
+     FV a l'intention de restituer cette etude comme cas-test.
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-075
+   NB_JOURS_TRAV  : 0
+   INTERET_UTILISATEUR : NON
+   TITRE : DYNA_NON_LINE et POURSUITE
+   FONCTIONNALITE
+     Le calcul concerné est fait avec DYNA_NON_LINE et un pas de temps de
+     5 par seconde. On définit le CONTACT en CONTROLE avec une
+     réactualisation de 1 ou 2 par pas de temps.
+     Les jobs n° 179712 et 179707 correspondent respectivement à ces deux
+     cas.
+     Le calcul avec 1 tourne et celui avec deux plante en erreur numérique.
+   DETAILS
+     Bug generique (voir fiche AL2005-091)
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Etude associee a la fiche
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-076
+   NB_JOURS_TRAV  : 0
+   INTERET_UTILISATEUR : NON
+   TITRE : CONTACT
+   FONCTIONNALITE
+     en complément de l'AL (2005-075) signalée ce matin le fichier associé
+     correspond au même calcul lancé avec réactualistion AUTOMATIQUE
+     erreur numérique
+   DETAILS
+     Idem fiche AL2005-075
+     Bug generique (voir fiche AL2005-091)
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Etude associee a la fiche
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-133
+   NB_JOURS_TRAV  : 0
+   INTERET_UTILISATEUR : NON
+   TITRE : Plantage contact
+   FONCTIONNALITE
+     J'obtiens un ENDED ERR_NUMERIQUE pour la simulation ci-jointe.
+       <F> <ASTER  7. 4. 3 07/04/2005 >
+       <F> <STAT_NON_LINE> <"FLOATING POINT EXCEPTION"> IL Y A PROBABLEMENT
+       UNE ERREUR  DANS LA PROGRAMMATION
+   DETAILS
+     Il y a effectivement un bug dans le contact
+     Idem fiche AL2005-075 et AL2005-076
+     Bug generique (voir fiche AL2005-091)
+     NB: l'etude ne passe pas sans contact (pivot nul)
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     Etude associee a la fiche
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-091
+   NB_JOURS_TRAV  : 6
+   INTERET_UTILISATEUR : OUI
+   TITRE : CONTACT - Bug reactualisation geometrique
+   FONCTIONNALITE
+     Depuis la version 7.3.23, la suppression d'un noeud esclave du contact
+     se fait exactement et non plus par l'introduction d'un grand jeu
+     fictif.
+     Dans les algos de contact AVEC frottement, la procedure de recuperation
+     de l'info apres réactualisation géométrique est bugguée et ne
+     réinitialise pas certains vecteurs. Ce qui provoque des plantages du
+     style division par zéro et, probablement, des résultats faux dans
+     certaines situations.
+
+   DETAILS
+    Il y a un bug dans le contact
+    L'introduction d'un vecteur variable des noeuds esclaves en contact
+n'est pas bien pris en compte. Depuis la >7.3.23<, le nombre de
+noeuds esclaves peut varier d'un pas de temps a l'autre ou apres
+une reactualisation geometrique.
+En effet, si on detecte une projection hors de la maille (gere par
+le mot-clef 'TOLE_PROJ_EXT') ou si on active l'appariement
+symetrique ('APPARIEMENT=MAIT_ESCL_SYME'), il peut arriver que le
+nombre effectif de noeuds esclave varie.
+Dans ce cas, soit le calcul passe avec _probablement_ un resultat faux
+sur l'etat d'adherence, soit il plante en erreur numerique quand
+l'algo de contact/frottement tape au mauvais endroit dans le vecteur
+et tente une division par zero (c'est le cas de toutes les fiches AL
+emises a ce sujet)
+
+Circonstances de declenchement du bug:
+1/ Maillage peu adapte avec une distorsion importante de la finesse
+relative des surfaces maitres et esclaves ou des surfaces crees
+_a maxima_
+2/ Glissement relatif des deux surfaces tres important
+Ces deux cas relevent du reglage de TOLE_PROJ_EXT, on desactive le bug
+si on autorise la projection "infinie" (TOLE_PROJ_EXT=1E15).
+
+Correction du bug:
+Au lieu de supprimer le noeud esclave, on le marque dans le vecteur
+ APMEMO.
+Ce vecteur, de longueur egale au nombre total de noeuds des surfaces
+en contact (noeuds maitres ET escalves) est modifie.
+
+POSNO est le noeud contenu dans le vecteur DEFICO.CONTNO
+
+APMEMO = RESOCO(1:14)//'.APMEMO'
+CALL JEVEUO(APMEMO,'L',JAPMEM)
+ZI(JAPMEM+4*(POSNO-1)) = IMARQ
+
+IMARQ vaut 0 si POSNO est un noeud maitre
+IMARQ vaut 1 si POSNO est un noeud esclave autorise
+IMARQ vaut -1 si POSNO est un noeud esclave interdit
+ -> FAIT PARTIE DE SANS_GROUP_NO OU SANS_NOEUD
+IMARQ vaut -2 si POSNO est un noeud esclave interdit
+ -> PIVOT NUL DANS APPARIEMENT SYMETRIQUE
+IMARQ vaut -3 si POSNO est un noeud esclave interdit
+ -> PROJECTION HORS DE LA MAILLE INTERDITE
+
+On modifie cfsupm, chmano et cfelsn pour modifier ce vecteur
+au moment de l'appariement.
+
+Dans les algorithmes de contact, quand on verifie la condition de
+non-penetration, on verifie pralablement que cette liaison peut
+etre activee via la fonction cfexcl
+
+C ----------------------------------------------------------------------
+C ROUTINE APPELEE PAR : ALGOS DE CONTACT/FROTTEMENT
+C ----------------------------------------------------------------------
+C
+C ON VERIFIE QUE LE NOEUD ESCLAVE N'EST PAS EXCLU DE L'APPARIEMENT
+C
+C IN  JAPMEM : POINTEUR VERS RESOCO(1:14)//'.APMEMO'
+C IN  JAPPAR : POINTEUR VERS RESOCO(1:14)//'.APPARI'
+C IN  IESCL  : NUMERO DU NOEUD ESCLAVE DANS LE TABLEAU D'APPARIEMENT
+C RETOUR     : SI CFEXCL=.TRUE. CE NOEUD DOIT ETRE EXCLU
+C              SINON, LE NOEUD EST BON
+
+On modifie en consequence toutes les routiens du contact:
+algocl,algoco,algocp,algogl,fro2gd,frogdp,frolgd,fropgd
+
+
+On en profite pour corriger un bug dans frolgd qui provoque un plantage
+lors des affichages si INFO = 2.
+
+C --- LA LIAISON II N'ETAIT PAS DEJA ACTIVE -> ON L'ACTIVE
+                   IF (.NOT.TROUAC) THEN
+                     POSIT = NBLIAC + LLF + LLF1 + LLF2 + 1
+                     CALL CFTABL(INDIC,NBLIAC,AJLIAI,SPLIAI,LLF,LLF1,
+     &                          LLF2,RESOCO,TYPEAJ,POSIT,II,TYPEC0)
+                     IF (NIV.GE.2) THEN
+      --------------------------------------* (II a la place de LLIAC)
+                       CALL CFIMP2(IFM,NOMA,II,TYPEC0,TYPEAJ,'ALG',
+     &                             AJEU,JAPPAR,JNOCO,JMACO)
+                     END IF
+                   ENDIF
+
+   RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.3.23
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0.0
+   RESTITUTION_VERSION_EXPLOITATION  :  OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_D : D4.06.14
+       EXPL_ : Modif de la SD de contact (modif de RESOCO.APMEMO)
+   VALIDATION
+      Voir fiches 2005-075/2005-075/2005-133
+
+-----------------------------------------------------------------------
+CORRECTION AL 2005-138
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : OUI
+   TITRE : CONTACT ssnv505b
+   FONCTIONNALITE
+     Avec la version NEW8.0.17 compilée sous linux Rocks, le tests ssnv505b
+     s'arrete avec le message suivant :
+      INSTANT DE CALCUL :  3.477881622E-01
+---------------------------------------------------------------------
+|   ITERATIONS   |     RESIDU     |     RESIDU     |     OPTION     |
+|                |    RELATIF     |     ABSOLU     |   ASSEMBLAGE   |
+|                | RESI_GLOB_RELA | RESI_GLOB_MAXI |                |
+---------------------------------------------------------------------
+                 ECHEC DANS LE TRAITEMENT DU CONTACT
+                      SUBDIVISER LE PAS DE TEMPS
+
+   CHAMP STOCKE : VALE_CONT        INSTANT :  3.47788E-01  NUMERO D'ORDRE :     9
+   CHAMP STOCKE : DEPL             INSTANT :  3.47788E-01  NUMERO D'ORDRE :     9
+   CHAMP STOCKE : SIEF_ELGA        INSTANT :  3.47788E-01  NUMERO D'ORDRE :     9
+   CHAMP STOCKE : VARI_ELGA        INSTANT :  3.47788E-01  NUMERO D'ORDRE :     9
+     <ASTER  8. 0.17 21/04/2005 >
+     <STAT_NON_LINE>
+     <OP0070> ARRET PAR ECHEC DE TRAITEMENT DU CONTACT
+    Il fonctionne correctement sur clp50a8
+
+   DETAILS
+     Meme bug qu'AL2005-091.
+     Le declenchement apparement aleatoire de ce bug (ne se declenche que
+     sur clpaster) est explicable. La difference relative de precision des
+     machines fait qu'un noeud esclave peut etre exclu (parce qu'il se
+     projette en dehors de la maille maitre) ou pas.
+     Si le noeud esclave est exclu sur une machine, on peut "tomber" alors
+     dans le bug AL2005-091.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+     ssnv505b
+
+
+-----------------------------------------------------------------------
+--- AUTEUR mcourtoi M.COURTOIS   DATE  le 11/05/2005 a 08:39:33
+
+-------------------------------------------------------------------------------
+CORRECTION AL 2005-029
+   INTERET_UTILISATEUR : NON
+   TITRE
+      Utilisation de DEFI_FICHIER dans les macros
+   FONCTIONNALITE
+
+Constat :
+=========
+    - il y a des risques de conflits entre les fichiers créés dans
+      les macros ou dans le fortran,
+    - les macros n'ont pas les moyens de récupérer le nom associé à une
+      unité logique, ne peuvent donc pas tenir compte du nom passé à
+      DEFI_FICHIER.
+
+   On ajoute donc un état dans la gestion des unités logiques ('RESERVE')
+   en modifiant DEFI_FICHIER et la possibilité de récupérer le nom associé
+   à une unité logique via INFO_EXEC_ASTER/ETAT_UNITE.
+
+   Sur l'idée de Jean-Luc, on écrit une classe pour manipuler plus facilement
+   les unités dans les macros :
+
+class UniteAster
+ |  Classe pour manipuler les fichiers en Python en accord avec les unités
+ |  logiques utilisées en Fortran.
+ |  De manière analogue au Fortran, les états possibles d'une unité sont :
+ |     'F' : fermé, 'O' : ouvert, 'R' : réservé.
+ |
+ |  Méthodes :
+ |     Nom      : Retourne le nom du fichier associé à une unité,
+ |     Etat     : Retourne l'état d'une unité,
+ |     Libre    : Retourne un numéro d'unité libre,
+ |     EtatInit : Remet une, plusieurs ou toutes les unités dans leur état initial.
+ |
+ |  Méthode privée :
+ |     _setinfo : pour remplir le dictionnaire des 'infos'
+ |  Attribut privé :
+ |     infos[numéro unité] = { 'nom' : x, 'etat' : x , 'etat_init' : x }
+ |
+ |  Methods defined here:
+ |
+ |  Etat(self, ul, **kargs)
+ |      Retourne l'état de l'unité si 'etat' n'est pas fourni
+ |      et/ou change son état :
+ |         kargs['etat']  : nouvel état,
+ |         kargs['TYPE']  : type du fichier à ouvrir ASCII/BINARY/LIBRE,
+ |         kargs['ACCES'] : type d'accès NEW/APPEND/OLD.
+ |
+ |  EtatInit(self, ul=None)
+ |      Remet l'unité 'ul' dans son état initial.
+ |      Si 'ul' est omis, toutes les unités sont remises dans leur état initial.
+ |
+ |  Libre(self, nom=None)
+ |      Réserve et retourne une unité libre en y associant, s'il est fourni,
+ |      le fichier 'nom'.
+ |
+ |  Nom(self, ul)
+ |      Retourne le nom du fichier associé à l'unité 'ul'.
+ |
+ |  __init__(self)
+ |      Initialise le dictionnaire des unités.
+
+
+Utilisation dans les macros IMPR_FONCTION et IMPR_TABLE :
+=========================================================
+
+   from Utilitai.UniteAster import UniteAster
+   UL=UniteAster()
+   nomfich=UL.Nom(UNITE)
+   if UNITE==8:
+      UL.Etat(UNITE, etat='F')
+   ... les classes Graph et Table font les open/close ...
+   UL.EtatInit()
+
+
+   RESU_FAUX_VERSION_EXPLOITATION   :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT  :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+      DOC_U : U4.12.03
+      EXPL_ : - nouvelle ACTION='RESERVER' (on ne fait pas d'open),
+              - dire que depuis que les commandes utilisent directement UNITE
+                cela n'a d'intérêt qu'en précisant FICHIER='...',
+              - donner un exemple avec REPE_OUT,
+              - dire que seul cette commande devrait modifier l'état des unités
+                logiques et donc que les IMPR_xxxx, LIRE_yyyy doivent les
+                laisser dans l'état où elles les ont trouvées.
+   VALIDATION
+      tous les tests qui utilisent IMPR_FONCTION/IMPR_TABLE testent UniteAster
+      + impression dans REPE_OUT dans zzzz140a
+   DETAILS
+   NB_JOURS_TRAV  : 1
+------------------------------------------------------------------------------
+CORRECTION AL 2005-039
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE : DEFI_FICHIER / FICHIER et IMPR_FONCTION
+   FONCTIONNALITE
+      idem AL 2005-029
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-086
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  Fichier MED et DEFI_FICHIER
+   FONCTIONNALITE
+      Les routines d'impression au format MED postulaient que le nom de
+      fichier était 'fort.'+ul.
+      On utilise maintenant ULISOG (qui lit NAMEFI(ul) le common), car c'est
+      bien le nom de fichier que l'on passe ensuite à EFOUVR, routine med qui
+      ouvre le fichier.
+
+      Pour les ouvertures de fichiers :
+       - Si on fait un open fortran (non nommé en général), utiliser ULOPEN.
+       - Si on fait un open nommé (par exemple en C par les routines med) :
+            1. On essaie de récupérer le nom associé à l'ul (s'il y a eu un
+               DEFI_FICHIER).
+            2. Si le nom est vide et que le fichier est dans l'état [F]ermé,
+               son nom sera 'fort.'+ul.
+   DETAILS
+    + ircame.f (résultat), irmhdf.f (maillage) en écriture
+    + op0150.f, lrcame.f (résultat), lrmhdf.f (maillage) en lecture
+    + On tronque le nom à 200 caractères pour med alors que l'on va jusqu'à
+      255 caractères dans DEFI_FICHIER (on est bien dans la zone détail !).
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      forma03a en POURSUITE :
+         ul=DEFI_FICHIER(FICHIER='REPE_OUT/fichier.med', TYPE='LIBRE')
+         IMPR_RESU(UNITE  = ul,
+                   FORMAT = 'MED',
+                   MODELE = MO,
+                   RESU   = _F(MAILLAGE = M,
+                               RESULTAT = SOLNL2,),)
+
+------------------------------------------------------------------------------
+REALISATION EL 2005-092
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  Ne pas s'arrêter sur un niveau de version de GIBI inconnu
+   FONCTIONNALITE
+      On émet une alarme si le niveau n'est pas dans ceux répertoriés,
+      car si on réussit à lire le maillage, c'est bon.
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+   DETAILS
+      op0049
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-110
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  IMPR_TABLE / Ordre de la PAGINATION
+   FONCTIONNALITE
+      On enchaîne ces deux commandes :
+
+         tab=POST_RELEVE_T(..., NUME_ORDRE = (23, 45, 76, 80),)
+
+         IMPR_TABLE(TABLE=tab,
+                    TRI=_F(NOM_PARA = 'COOR_Y',
+                           ORDRE = 'DECROISSANT',),
+                    PAGINATION=('NUME_ORDRE'),)
+
+      On trie d'abord les COOR_Y, les NUME_ORDRE sont alors mélangés, et il
+      se trouve que la pagination est faite avec NUME_ORDRE=80, 76, 45 puis 23.
+
+      Le tri est fait assez tôt dans impr_table_ops alors que la pagination
+      est traitée par la méthode Impr des objets Table.
+
+      J'ai deux solutions :
+       - je remonte la pagination dans impr_table_ops et je crée les N tables
+         avant d'appeler les méthodes d'impression, je dois ajouter une boucle
+         systématique sur LA table à imprime ou LES tables si PAGINATION.
+       - j'ajoute une ligne dans la méthode Impr pour trier systématiquement
+         les valeurs des paramètres de PAGINATION.
+      J'ai choisi la seconde !
+
+      S'il y a un intérêt à mettre NUME_ORDRE=(76, 23, 80, 45) et à paginer
+      dans cet ordre, la première solution devra être mise en oeuvre.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-101
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  LIRE_RESU / FORMAT='MED' de champs NOEU
+   FONCTIONNALITE
+      Aujourd'hui, LIRE_RESU ne sait lire que ces champs (grandeur/support) :
+         TEMP >>> TEMP_R / NOEU
+         DEPL >>> DEPL_R / NOEU
+         SIEF_ELNO, EPSA_ELNO, VARI_ELNO >>> SIEF_R, EPSA_R, VARI_R / ELNO
+         PRES >>> PRES_R / ELEM
+
+      J'ajoute quelques possibilités :
+         SIEF_NOEU >>> SIEF_R / NOEU
+         EPSI_ELNO, EPSI_NOEU >>> EPSI_R / ELNO, NOEU
+         EPSA_NOEU >>> EPSA_R / NOEU
+         VARI_NOEU >>> VARI_R / NOEU
+         EQUI_ELNO_SIGM, EQUI_NOEU_SIGM >>> SIEF_R / ELNO, NOEU
+
+      Néanmoins, je pense qu'il faudrait remettre la commande à plat pour
+      qu'elle soit plus générale.
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+REALISATION EL 2003-075
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  Simplifier l'utilisation de LIRE_RESU au format MED
+   FONCTIONNALITE
+    - NOM_CMP_IDEM='OUI' par défaut :
+      C'était effectivement assez curieux : NOM_CMP_IDEM ne peut valoir que OUI
+      mais si aucun des mots-clés NOM_CMP/_IDEM/_MED n'est présent, on s'arrête
+      sur "COMPOSANTES INCOMPATIBLES" (grâce à NBCMPV non initialisée !).
+      C'est une AL.
+
+    => je supprime NOM_CMP_IDEM (c'est le comportement par défaut), j'ajoute
+      une règle ENSEMBLE('NOM_CMP', 'NOM_CMP_MED')
+
+    - redondance du mot-clé NOM_CHAMP en dehors et sous le mcfact FORMAT_MED
+      On a déjà supprimé NOM_CHAMP hors du mcfact avant la 7.4.
+   DETAILS
+      op0150, lire_resu
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+      DOC_U : U7.02.01
+      EXPL_ : Modifications de la gestion des noms de composantes
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2004-250
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  UTEXCP : Levée d'exception
+   FONCTIONNALITE
+      Avec UTEXCP, le message associé à l'exception est tronqué à
+      132 caractères, nom de la commande compris.
+
+      Je n'avais été très malin quand j'avais mis en place ce mécanisme !!!
+      Je remets tout à plat :
+         UTEXCP( n° d'exception, sous-prog, message )
+      remplace
+         UTMESS( 'S', sous-prog, message )
+
+      et
+         UTDEXC( n° d'exception, sous-prog, message )
+      remplace
+         UTDEBM( 'S', sous-prog, message )
+
+      En dessous, UTEXCP et UTDEXC appellent UTMESS et UTDEBM avec un type
+      d'erreur 'Z' + le numéro de l'exception passé en COMMON. On peut
+      ensuite utiliser les routines UTIMPI/K/R...
+      Car on ne souhaite pas modifier toutes les routines utilisant UTMESS
+      ou UTDEBM !
+
+=== Message plus clair :
+...
+ <ASTER  8. 0.17 21/04/2005 > <EXCEPTION LEVEE>
+ <STAT_NON_LINE> <OP0070>     ARRET : ABSENCE DE CONVERGENCE AVEC LE NOMBRE
+     D'ITERATIONS REQUIS
+
+  %  FIN COMMANDE: STAT_NON_LINE    DUREE TOTALE:       0.65 s (SYST:    0.01 s)
+
+=== si l'exception est interceptée :
+
+Non convergence, on augmente le nombre d'iterations...
+...
+
+=== sinon FIN() puis :
+
+>> JDC.py : DEBUT RAPPORT
+CR phase d'initialisation
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! <S> Exception utilisateur levee mais pas interceptee.                 !
+   ! Les bases sont fermees.                                               !
+   ! NonConvergenceError : <STAT_NON_LINE> <OP0070>     ARRET : ABSENCE DE !
+   ! CONVERGENCE AVEC LE NOMBRE...                                         !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+fin CR phase d'initialisation
+
+>> JDC.py : FIN RAPPORT
+
+
+      Exemple, dans la routine chbcvg (objet de la fiche) :
+       CALL UTDEXC(23,'CHABOCHE','ERREUR D''INTEGRATION ')
+       CALL UTIMPI('L','- ESSAI D''INTEGRATION  NUMERO ',1, INTG)
+       CALL UTIMPI('L','- CONVERGENCE VERS  UNE SOLUTION NON CONFORME ',
+     &      0, 0)
+       CALL UTIMPR('L','- INCREMENT DE DEFORMATION CUMULEE NEGATIVE = '
+     &      , 1, DP)
+       CALL UTIMPI('L','- CHANGER LA TAILLE D''INCREMENT', 0, 0)
+       CALL UTFINM
+
+   DETAILS
+      utfinm retrouve à peu près la tête qu'il avait avant, en traitant
+      le cas IDF=8 (exception = erreur de type 'Z').
+      utcomm est supprimé.
+
+      Remplacement de UTEXCP par UTDEXC pour les messages longs dans :
+         chbcvg.f cvmcvg.f lcpllg.f lcctrl.f lmacvg.f inscvg.f onocvg.f
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+      DOC_D : D6.00.01
+      EXPL_ : lister les routines UTEXCP et UTDEXC
+   VALIDATION
+      zzzz107a
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-135
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :   GETCON et UTMESS
+   FONCTIONNALITE
+      On ne peut pas mettre d'UTMESS dans GETCON car on est entre deux commandes
+      (dans aster.getvectjev par exemple) et donc GETRES plante.
+      ==> dans GETRES (astermodule.c) :
+
+        /* (MC) le 1er test ne me semble pas suffisant car entre deux commandes,
+           commande n'est pas remis à (PyObject*)0... */
+        if(commande == (PyObject*)0 || PyObject_HasAttrString(commande, "getres")==0) {
+          /* Aucune commande n'est active on retourne des chaines blanches */
+          BLANK(nomres,lres);
+          BLANK(concep,lconc);
+          BLANK(nomcmd,lcmd);
+          return ;
+        }
+
+      Ainsi CALL UTMESS('A', 'GETCON', 'TEST UTMESS') dans getcon.f produit :
+          <A> <> <GETCON> TEST UTMESS
+   DETAILS
+      Visiblement, le cas était prévu. Est-ce 'depile' qui est censé remettre
+      'commande' à zéro ?
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-027
+   NB_JOURS_TRAV  : 0.5
+   INTERET_UTILISATEUR : NON
+   TITRE :  IMPR_FONCTION / XMGRACE - AGRAF
+   FONCTIONNALITE
+      1. Le filtre JPEG ne marche pas : sur l'Alpha, c'est vrai (la doc
+      d'IMPR_FONCTION précise les filtres disponibles, c'est lié à l'absence
+      de certaines librairies sur la machine et nécessite de recompiler xmgrace
+      pour en ajouter).
+
+      2. Echelle LOG et valeurs négatives.
+      Par défaut, si les bornes ne sont pas fournies via BORNE_X/BORNE_Y, on les
+      fixe aux min/max des valeurs -/+ 5% de (max-min) (pour faire joli).
+      Donc la valeur min de l'échelle peut donc être négative même si toutes
+      les valeurs sont positives.
+      => Si échelle LOG, on prend la plus petite valeur positive comme valeur
+         min de l'échelle.
+
+      3. Impression de 3 graphes de 5 courbes chacun (avec 3 appel successifs
+      à IMPR_FONCTION), xmgrace affiche les 15 courbes superposées.
+      => On ne gère qu'un graphe dans IMPR_FONCTION (on pourrait éventuellement
+         le traiter, mais il faudrait s'en souvenir d'un appel à l'autre ce qui
+         n'est très bon, ou bien avoir un mot-clé pour cela).
+         Il faut plutôt faire chaque appel à IMPR_FONCTION dans un fichier
+         différent, si on a bcp de fichiers, utiliser REPE_OUT
+         (exemple dans U2.51.02).
+
+      4. modification des courbes semble plus compliqué qu'avec agraf :
+      => Dire ce qu'il manque dans U2.51.01 ?
+
+      5. nappe de spectres
+      Les fonctions d'une nappe ne sont plus imprimées en colonnes mais comme
+      N fonctions indépendantes.
+      => Au format AGRAF, on saute une ligne entre chaque fonction dans le .digr
+         comme demandé.
+         On précise la légende des différentes fonctions en reprenant la valeur
+         du paramètre, format '%s %s=%g' :
+            - légende (nom de la nappe par défaut),
+            - nom du paramètre,
+            - sa valeur.
+
+      6. plantage au format TABLEAU
+      => Je n'ai plus les données ; je suppose qu'une des fonctions de la nappe
+         ne peut pas être interpolée ou prolongée...
+         - Est-ce au superviseur de s'arrêter sur un message plus explicite :
+         "plantage dans CALC_FONC_INTERP" au lieu de "impossible de construire
+         la macro" ?
+         - Faut-il être capable de récupérer les erreurs <F> dans les macros ?
+         - Modifier ici l'erreur <F> en erreur <S> pour la récupérer ?
+   DETAILS
+      Graph.py (pour les bornes)
+      impr_fonction_ops.py (pour la légende)
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+      zzzz140a modifié
+
+
+-----------------------------------------------------------------------
+--- AUTEUR rezette C.REZETTE   DATE  le 12/04/2005 a 14:32:15
+
+------------------------------------------------------------------------------
+CORRECTION AL 2005-062
+   NB_JOURS_TRAV  : 0.5
+   POUR_LE_COMPTE_DE : S.MICHEL-PONNELLE
+   INTERET_UTILISATEUR : OUI
+   TITRE :  Modélisation 3D_NS
+   FONCTIONNALITE Suppression des fichiers relatifs à cette modélisation.
+   DETAILS :
+     La modélisation 3D_NS permettait d'utiliser une matrice non symétrique dans
+     le cas par exemple du couplage fluage-fissuration.
+     Depuis la restitution de cette modélisation (histor 7.2.6 décembre 2003), des
+     évolutions de la modélisation classique 3D ont permis l'accès aux matrices non
+     symétriques. La modélisation non-symétrique n'a donc plus de raison d'etre,
+     on fait donc le ménage.
+     En parcourant les catalogues, nous avons constaté que la modélisation 3D_NS
+     était absente du fichier phenomene_modelisation__.capy, de ce fait aucun
+     élément fini n'est rattaché à cette modélisation. De plus, les catalogues
+     d'éléments mentionnés dans l'histor 7.2.6 n'existent plus.
+     En parcourant les fichiers de commandes de la base de tests, on s'est apercu
+     que la modélisation 3D_NS n'était plus utilisée.
+     Aucune doc U3 ne fait référence à cette modélisation.
+     Seul le catalogue de commandes affe_modele.capy reconnait cette modélisation.
+     Nous l'avons donc corrigé.
+     Source modifiée  : affe_modele.capy
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   NON
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   NON
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : NON
+   VALIDATION
+
+
+-----------------------------------------------------------------------
+--- AUTEUR smichel S.MICHEL-PONNELLE   DATE  le 09/05/2005 a 14:20:11
+
+-----------------------------------------------------------------------------------
+CORRECTION AL 2004-431
+   NB_JOURS_TRAV  : 0.8
+   INTERET_UTILISATEUR : OUI
+   TITRE couplage BETON_UMLV_FP /  ENDO_ISOT_BETON
+   FONCTIONNALITE
+     Dans le cadre du couplage entre BETON_UMLV et EIB, les paramètres de température,
+     de séchage et d'hydratation n'étaient pas passé comme argument de la loi EIB.
+     En conséquence, en présence de déformations liées à l'un de ces 3 phénomènes, on
+     n'utilisait pas la même déformation pour les 2 lois. En particulier, l'endommagement
+     était calculé à partir de la déformation totale, alors que dans ENDO_ISOT_BETON seum,
+     on considère que seule la déformation élastique crée de l'endommagement.
+     En ce qui concerne la question de la dépendance des paramètres matériaux à la
+     température, pas de problème, tout est cohérent dans les 2 lois puisque le RCVALA
+     est fait dans les 2 cas pour TEMP = 0.
+   DETAILS
+     On passe en argument les variables TM,TP,TREF,HYDRM,HYDRP lors des appels à la routine
+     lcldsb. Et pour la routine lceibt qui calcule des termes complémentaires à la matrice
+     tangente on transmet EPS-EPSth-EPSretrait au lieu de EPS
+
+   RESU_FAUX_VERSION_EXPLOITATION    :   OUI   DEPUIS : 7.2.6
+   RESU_FAUX_VERSION_DEVELOPPEMENT   :   OUI   DEPUIS : 7.2.6
+   RESTITUTION_VERSION_EXPLOITATION  :   OUI
+   RESTITUTION_VERSION_DEVELOPPEMENT :   OUI
+   IMPACT_DOCUMENTAIRE : OUI
+     DOC_V : V3.06.103
+       EXPL_ : ajout de la dilatation thermique dans toutes les modélisations
+             + ajout modélisation F
+   VALIDATION
+     On ajoute une modélisation F au cas-test ssla103 (qui valide les calculs de retrait)
+     en utilisant le couplage ENDO_ISOT_BETOB/BETON_UMLV_FP mais en désactivant le fluage
+     en prenant des paramètres matériaux fictifs pour BETON_UMLV_F. Pour être plus pertinent
+     (dilatation et non retrait), on rajoute de la dilatation thermique dans toutes
+     les modélisations de ce test.
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+       C MODIF supervis/astermodule         mcourtoi M.COURTOIS        3749      4      2
+ CASTEST MODIF sensm07a                      cibhhlv L.VIVAN            216     13      1
+ CASTEST MODIF ssll107g                     mcourtoi M.COURTOIS         353     47     47
+ CASTEST MODIF sslp310a                      galenne E.GALENNE         1289     71     49
+ CASTEST MODIF sslv139a                      cibhhlv L.VIVAN            138      1      1
+ CASTEST MODIF ssnp115b                     mcourtoi M.COURTOIS         176      1      3
+ CASTEST MODIF ssnp127a                      gjbhhel E.LORENTZ          151      2      2
+ CASTEST MODIF ssnp127b                      gjbhhel E.LORENTZ          151      2      2
+ CASTEST MODIF ssnv157a                      gjbhhel E.LORENTZ          135      2      2
+ CASTEST MODIF ssnv157b                      gjbhhel E.LORENTZ          135      2      2
+ CASTEST MODIF ssnv157c                      gjbhhel E.LORENTZ          135      2      2
+ CASTEST MODIF ssnv157d                      gjbhhel E.LORENTZ          136      2      2
+ CASTEST MODIF ssnv157e                      gjbhhel E.LORENTZ          139      2      2
+ CASTEST MODIF ssnv157f                      gjbhhel E.LORENTZ          142      2      2
+ CASTEST MODIF ssnv157g                      gjbhhel E.LORENTZ          139      2      2
+ CASTEST MODIF ssnv175a                      gjbhhel E.LORENTZ          146      2      2
+ CASTEST MODIF yyyy106a                     mcourtoi M.COURTOIS         921      2      3
+ CASTEST MODIF yyyy106b                     mcourtoi M.COURTOIS         747      2      3
+ CASTEST MODIF zzzz140a                     mcourtoi M.COURTOIS         183      8      6
+ CASTEST MODIF zzzz161a                     mcourtoi M.COURTOIS         226      5      6
+ CASTEST MODIF zzzz162a                     mcourtoi M.COURTOIS         392      3      8
+ CASTEST MODIF zzzz162b                     mcourtoi M.COURTOIS         219      3      6
+CATALOGU MODIF options/etot_elem             cibhhlv L.VIVAN             31      3      1
+CATALOGU MODIF options/etot_elga             cibhhlv L.VIVAN             31      3      1
+CATALOGU MODIF options/etot_elno_elga        cibhhlv L.VIVAN             31      3      1
+CATALOGU MODIF typelem/gener_meafo2          cibhhlv L.VIVAN            162      4      4
+CATALOPY MODIF commande/affe_modele          rezette C.REZETTE          176      1      2
+CATALOPY MODIF commande/defi_fichier        mcourtoi M.COURTOIS          69     13      4
+CATALOPY MODIF commande/impr_resu            cibhhlv L.VIVAN            146      2      2
+CATALOPY MODIF commande/lire_resu           mcourtoi M.COURTOIS         171      2      2
+ FORTRAN AJOUT algorith/cfexcl                mabbas M.ABBAS             87     87      0
+ FORTRAN AJOUT utilifor/utdexc              mcourtoi M.COURTOIS          37     37      0
+ FORTRAN AJOUT utilitai/ulisog              mcourtoi M.COURTOIS          63     63      0
+ FORTRAN MODIF algeline/lcpllg              mcourtoi M.COURTOIS         304     19     19
+ FORTRAN MODIF algorith/algocl                mabbas M.ABBAS            674     20     11
+ FORTRAN MODIF algorith/algoco                mabbas M.ABBAS            690     16      9
+ FORTRAN MODIF algorith/algocp                mabbas M.ABBAS            371     17      9
+ FORTRAN MODIF algorith/cfelsn                mabbas M.ABBAS            105      4      7
+ FORTRAN MODIF algorith/cfimp1                mabbas M.ABBAS            195      6     14
+ FORTRAN MODIF algorith/cfimp2                mabbas M.ABBAS            171      7      4
+ FORTRAN MODIF algorith/cfimp3                mabbas M.ABBAS            168      7      4
+ FORTRAN MODIF algorith/cfimp4                mabbas M.ABBAS            479      1      1
+ FORTRAN MODIF algorith/cfsupm                mabbas M.ABBAS            107      7     39
+ FORTRAN MODIF algorith/chbcvg              mcourtoi M.COURTOIS         305     37     34
+ FORTRAN MODIF algorith/chmano                mabbas M.ABBAS            544     18     11
+ FORTRAN MODIF algorith/cvmcvg              mcourtoi M.COURTOIS         321     28     27
+ FORTRAN MODIF algorith/fro2gd                mabbas M.ABBAS            757     16      5
+ FORTRAN MODIF algorith/frogdp                mabbas M.ABBAS            647     30     14
+ FORTRAN MODIF algorith/frolgd                mabbas M.ABBAS           1105     14      5
+ FORTRAN MODIF algorith/fropgd                mabbas M.ABBAS            850     14      6
+ FORTRAN MODIF algorith/inscvg              mcourtoi M.COURTOIS         303     29     27
+ FORTRAN MODIF algorith/lcctrl              mcourtoi M.COURTOIS         158     20     20
+ FORTRAN MODIF algorith/lceib1                godard V.GODARD           154      7      1
+ FORTRAN MODIF algorith/lcumfp               smichel S.MICHEL-PONNELLE    539     17      7
+ FORTRAN MODIF algorith/lmacvg              mcourtoi M.COURTOIS         326     34     32
+ FORTRAN MODIF algorith/mdfcho               cibhhlv L.VIVAN            529      9      8
+ FORTRAN MODIF algorith/nmpl2g               gjbhhel E.LORENTZ          672      2      2
+ FORTRAN MODIF algorith/nmpl3g               gjbhhel E.LORENTZ          690      2      2
+ FORTRAN MODIF algorith/nmvpir                mabbas M.ABBAS            587      5      1
+ FORTRAN MODIF algorith/onocvg              mcourtoi M.COURTOIS         306     29     27
+ FORTRAN MODIF elements/te0032                godard V.GODARD           270      3     10
+ FORTRAN MODIF elements/te0300               galenne E.GALENNE          324     20      1
+ FORTRAN MODIF elements/te0575               cibhhlv L.VIVAN            345     33     24
+ FORTRAN MODIF modelisa/lrmhdf              mcourtoi M.COURTOIS         307      9      3
+ FORTRAN MODIF prepost/ircame               mcourtoi M.COURTOIS         418     10      5
+ FORTRAN MODIF prepost/irgmpv                cibhhlv L.VIVAN            148      2      2
+ FORTRAN MODIF prepost/irmhdf               mcourtoi M.COURTOIS         289     10      5
+ FORTRAN MODIF prepost/lrcame               mcourtoi M.COURTOIS         622      9      6
+ FORTRAN MODIF prepost/op0039                cibhhlv L.VIVAN            827     38     10
+ FORTRAN MODIF prepost/op0049               mcourtoi M.COURTOIS         109      3      3
+ FORTRAN MODIF soustruc/oreino               cibhhlv L.VIVAN            177      8      3
+ FORTRAN MODIF utilifor/utdebm              mcourtoi M.COURTOIS         157     17      6
+ FORTRAN MODIF utilifor/utexcp              mcourtoi M.COURTOIS          36      8     12
+ FORTRAN MODIF utilifor/utfinm              mcourtoi M.COURTOIS         118     99      6
+ FORTRAN MODIF utilifor/utinit              mcourtoi M.COURTOIS         115      8      3
+ FORTRAN MODIF utilifor/utmess              mcourtoi M.COURTOIS          27      2      2
+ FORTRAN MODIF utilifor/utvtam              mcourtoi M.COURTOIS          49      2      2
+ FORTRAN MODIF utilitai/op0035              mcourtoi M.COURTOIS         127     24     10
+ FORTRAN MODIF utilitai/op0150              mcourtoi M.COURTOIS         892     45     26
+ FORTRAN MODIF utilitai/op0197                durand C.DURAND           618      3      3
+ FORTRAN MODIF utilitai/ops026              mcourtoi M.COURTOIS         102      7      2
+ FORTRAN MODIF utilitai/ulclos              mcourtoi M.COURTOIS          53      3      1
+ FORTRAN MODIF utilitai/ulimpr              mcourtoi M.COURTOIS          72      3      1
+ FORTRAN MODIF utilitai/ulopen              mcourtoi M.COURTOIS         236     45      8
+ FORTRAN SUPPR utilifor/utcomm              mcourtoi M.COURTOIS         146      0    146
+  PYTHON AJOUT Utilitai/UniteAster          mcourtoi M.COURTOIS         194    194      0
+  PYTHON MODIF Macro/impr_fonction_ops      mcourtoi M.COURTOIS         400     20     22
+  PYTHON MODIF Macro/impr_table_ops         mcourtoi M.COURTOIS         231      7      8
+  PYTHON MODIF Utilitai/Graph               mcourtoi M.COURTOIS        1069     15      4
+  PYTHON MODIF Utilitai/Table               mcourtoi M.COURTOIS         705      2      1
+  PYTHON SUPPR Noyau/properties               durand C.DURAND             0      0      0
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    4         381       381              +381
+ MODIF :   85       31735      1081     707      +374
+ SUPPR :    2         146               146      -146
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   91       32262      1462     853      +609 

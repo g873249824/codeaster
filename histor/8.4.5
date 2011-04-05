@@ -1,0 +1,863 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 09/05/2007 - 10:16:32
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010766 DU 2007-04-06 12:13:12
+TYPE anomalie concernant Code_Aster (VERSION 8.5)
+TITRE
+   ELAS_ORTH et POLYCRISTAL : possiblitxc3xa9 de rxc3xa9sultats faux
+FONCTIONNALITE
+   AL découverte grâce à la restitution de Lionel sur l'élasticité orthotrope : dans le cas
+   du monocristal,(comportements MONOCRISTAL et POLYCRISTAL) et d'une élasticité orthotrope,
+   on ne prenait pas bien en compte les termes en racine(2) : ceci donnait des résultats faux
+   dès que le repère d'orthotropie n'était
+   plus dirigé selon les axes globaux.
+   
+   Cette situation n'était pas testée (et pas utilisée dans les études). On teste maintenant
+   toutes ces possibilités dans le test SSLV120A :  ETIREMENT D'UN PARALLELEPIPEDE ORTHOTROPE
+   SOUS SON PROPRE POIDS. On teste :
+   
+   - l'élasticité orthotrope, avec MECA_STATIQUE et STAT_NON_LINE
+   - la ême chose en changeant l'orientation du repère
+   - l'ensemble de ces tests avec MONOCRISTAL implicite et explicite et POLYCRISTAL
+   
+   les corrections portent sur les deux seules routines LCMMAP et LCMMAT.
+   
+   Restitution en NEW8 et NEW9.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.3.15
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.3.15
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   SSLV120A
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010767 DU 2007-04-06 12:43:14
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   renommage des tests FORMA01
+FONCTIONNALITE
+   Suite à la restitution des nouveaux tests FORMA01 cette semaine, intégrant l'utilisation
+   de SALOME, il a été choisi pour que tous les anciens fichiers soient nettoyés, de les
+   rentrer avec les modélisation K,L,M,N, en NEW9 et en NEW8.
+   
+   Pour que la dénonimation redevienne cohérente avec la doc, on les renomme A,B,C,D.
+   
+   A faire en NEW9 et en NEW8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.15.100
+VALIDATION
+   forma01
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 09/05/2007 - 10:16:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010445 DU 2007-01-12 15:40:13
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Plantage de ERRE_ELEM_SIGM en mécanique avec éléments de Barsoum
+FONCTIONNALITE
+   Modification du titre
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage cas-tests
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 09/05/2007 - 10:16:33
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010181 DU 2006-10-25 09:46:04
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   CONTACT (FROTTANT?) et SIMO_MIEHE
+FONCTIONNALITE
+   Quand on utilise les méthodes discrètes de traitement du contact (METHODE = 'CONTRAINTES'
+   ou 'LAGRANGIEN' ou 'PENALISATION'), on est amené à manipuler une matrice A.C-1.AT qui est
+   un complément de Schur (objet '.CM1A'). 
+   Or cette matrice est TOUJOURS stockée symétrique (voir cfcrma.f). On conçoit bien que cela
+   pose un pb quand la matrice tangente est non-symétrique....
+   
+   Les matrices non-symétriques sont essentiellement créées dans les cas             
+   suivants:             
+   * déformation de type SIMO-MIEHE             
+   * chargements suiveurs             
+   * problèmes de THM (les conditions de suintement ont la même             
+   "pathologie" vis-à-vis des matrices non-symétriques que le contact)             
+               
+   Il nous semble trop couteux pour le moment de faire le             
+   développement permettant que les matrices non-symétriques soient            
+   prises en compte dans le traitement du contact (ou du suintement)            
+   compte tenu de la relative stabilité et de la robustesse actuelle de            
+   ces méthodes (ce qui nous a déjà couté en temps et en bugs très            
+   difficiles à débusquer depuis quelques années) et du caractère            
+   intrusif de telles modifications.            
+   
+   On propose donc de forcer automatiquement SYME='OUI' quand :
+   * on détecte l'utilisation de contact ou de suintement avec une méthode discrète
+   * SYME='OUI' n'est pas déjà demandé
+   
+   On émet aussi l'alarme suivante :
+   
+   ---------------------------------------------------------------------------
+   <A> <CONTACT_1>                                                         
+                                                                           
+                                                                           
+     La méthode de résolution du contact utilisée suppose la symétrie de la
+     matrice du système à résoudre.                                        
+     Dans le cas où votre modélisation ferait intervenir une matrice       
+     non-symétrique, on force sa symétrie. On émet une alarme pour vous    
+     en avertir.                                                           
+                                                                           
+     CONSEIL :                                                             
+     Vous pouvez supprimer cette alarme en renseignant SYME='OUI' sous le  
+     mot-clé facteur SOLVEUR.                                              
+                                                                           
+                                                                           
+   Ceci est une alarme. Si vous ne comprenez pas le sens de cette          
+   alarme, vous pouvez obtenir des résultats inattendus !                  
+   ---------------------------------------------------------------------------
+   
+   Au cousr de mon ASREST, le test SSNV193A a planté. Il s'est avéré que cela est dû à
+   SYME='OUI' avec des macro-éléments stratiques. 
+   En effet, pour voir si les matrices élémentaires sont symétriques, on va rechercher un
+   objet NOMOB//'.LISTE_RESU' dans DISMME.F. Or les macro-éléments stratiques ne disposent
+   pas de cet attribut. D'où un vilain plantage.
+   
+   Pour résoudre ce bug, j'ai modifié DISMME.F en testant la présence de macro-éléments :
+   --------------------------------------------------------------------------
+         ELSE IF (QUESTI.EQ.'TYPE_MATRICE') THEN
+              CALL JEVEUO(NOMOB//'.LISTE_RESU','L',IALIRE)
+              CALL JELIRA(NOMOB//'.LISTE_RESU','LONUTI',NBRESU,KBID)
+   --------------------------------------------------------------------------
+   devient 
+   --------------------------------------------------------------------------
+         ELSE IF (QUESTI.EQ.'TYPE_MATRICE') THEN
+   C        Y A-T-IL DES MACRO-ELEMENTS?
+            IF(ZK24(IAREFE-1+3)(1:3).EQ.'OUI') THEN
+              CALL DISMMO(CODMES,'NB_SS_ACTI',MO,REPI,REPK,IERD)
+            ELSE
+               REPI= 0
+            END IF
+            IF (REPI.GT.0) THEN 
+              REPK='SYMETRI'
+              GO TO 9999
+            ELSE 
+              CALL JEVEUO(NOMOB//'.LISTE_RESU','L',IALIRE)
+              CALL JELIRA(NOMOB//'.LISTE_RESU','LONUTI',NBRESU,KBID)
+   --------------------------------------------------------------------------
+   
+   
+   En outre, pour résorber un UTFINM dans OP0070, j'ai créé avec l'aide de J.P.L un routine
+   UTEXCM, qui lève une exception et imprime un message.
+   
+         SUBROUTINE UTEXCM( NUM, IDMESS, NK, VALK, NI, VALI, NR, VALR)
+   C AJOUT UTILIFOR
+   C     ------------------------------------------------------------------
+   C     ROUTINE QUI LEVE UNE EXCEPTION AVEC IMPRESSION DE MESSAGES 
+   C     ------------------------------------------------------------------
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03, R5.03.50
+VALIDATION
+   Passage de test
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 09/05/2007 - 10:16:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010672 DU 2007-03-21 12:21:36
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+   affe_char_meca ddl_poutre : plantage
+FONCTIONNALITE
+   Le problème venait du fait que d'imposer un ddl à ZERO dans un repère local ne correspond
+   pas forcement à des DDL nuls dans le repère global. De la même façon imposer des ddl non
+   nul dans un repère local peut conduire à imposer des DDL nuls dans le repère global. Le
+   problème était donc de traduire les ddl locaux en DDL globaux, sans tester une valeur
+   numérique NULLE sur les DDL globaux. Cette valeur pouvant être due soit à une combinaison
+   des ddl locaux, soit à une absence de conditions, et imposer ZERO ou rien ce n'est pas la
+   même chose pour des déplacements.
+   
+   Le nouveau cas test SSLL118 permet de valider la bonne "traduction" des ddl locaux en DDL
+   globaux en tenant compte de la présence ou non des conditions sur les ddl locaux et non
+   plus sur les valeurs nulles des DDL globaux.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.01.118
+VALIDATION
+   nouveau cas test SSLL118a
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010345 DU 2006-12-04 16:17:25
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+   AFFE_CARA_ELEM : Pour les coques 'ANGLE_REP' et 'VECTEUR' ne sont exclusifs
+FONCTIONNALITE
+   Ajout de EXCLUS('ANGL_REP','VECTEUR') sous le mot clef COQUE
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   passage dans eficas
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 09/05/2007 - 10:16:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010795 DU 2007-04-18 15:03:02
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   CONTACT - Bug mxc3xa9thode continue
+FONCTIONNALITE
+   Dans les routines XCONLI et CONLIG qui calculent les LIGRELS de mailles tardives pour 
+   XFEM et la méthode continue, on met à zéro le vecteur de déplacement cumulé au début 
+   du pas de temps, via la routine ZZZERO.
+   Cette routine prend en entrée :
+   NEQ longueur du CHAM_NO
+   JDEPL adresse du .VALE
+   Or JDEPL est en LECTURE et non en ECRITURE.
+   
+   Bug corrigé
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   liste restreinte
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 09/05/2007 - 10:16:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010805 DU 2007-04-23 14:17:42
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   Bloc vide dans la catalogue de IMPR_FONCTION
+FONCTIONNALITE
+   Il y avait un BLOC vide dans le catalogue d'IMPR_FONCTION.
+   
+   Les mot-clés concernant la mise en forme des courbes n'ont de sens qu'aux formats autres
+   que TABLEAU.
+   
+   Cependant, il serait fastidieux de devoir supprimer ces mots-clés simplement quand on
+   repasse au format TABLEAU. On décide donc de supprimer ce bloc, les mots-clés étant
+   simplement ignorés au format TABLEAU.
+   
+   A reporter en version 8.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   asrest
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 09/05/2007 - 10:16:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010548 DU 2007-02-19 16:51:06
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   Pb sans Stanley/salomeVisu.py
+FONCTIONNALITE
+   Un bug s'est glissé dans ce fichier, qui fait qu'en utilisation de Salome avec Stanley, en
+   local, la variable du mode distant est utilisée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 09/05/2007 - 10:16:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010810 DU 2007-04-24 07:35:22
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   Homogénéïser le comportement de Stanley entre Xmgrace et Salomé
+FONCTIONNALITE
+   Depuis l'assistant de post-traitement Stanley, il est possible de tracer des courbes affichées
+   dans Salomé. Or, le comportement dans le cadre Salomé est légèrement différent que lorsque
+   l'on utilise Xmgrace. On rend ces fonctionnements identiques :
+   dans le cas
+   de multi-sélection de composantes et/ou de numéros d'ordre, on  trace toutes les courbes 
+   sur un même graphe. En outre,  chaque courbe apparaît avec une couleur différente de ses
+   voisines.
+   
+   Les fichiers salomeVisu.py et stanley.py ont été modifiés pour réaliser ces modifications.
+   En outre, il faut utiliser la tête de branche du module pylotage.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Test IHM
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 09/05/2007 - 10:16:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010825 DU 2007-05-02 14:21:27
+TYPE anomalie concernant Code_Aster (VERSION 8.4)
+TITRE
+   Salome_Meca : le mode distant de Stanley ne marche pas
+FONCTIONNALITE
+   Au sein de la plate-forme Salome_Meca, il est possible de lancer des visualisations
+   distantes sur d'autres sessions de Salomé. Malheuresement, ce mode distant de Stanley ne
+   marche pas... On corrige.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   stanley
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 09/05/2007 - 10:16:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010764 DU 2007-04-06 08:33:58
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   NEW8.4.4, le test sdnl103a s'arrete en ERREUR (BCR)
+FONCTIONNALITE
+   Cette fiche est du au fait que le travail de la fiche 10494 n'a pas été reporté en version 8.
+                                                                                            
+                           
+   J'ai fait l'essai de reprendre la routine mrmmvr.f de la version NEW9 en version NEW8 et
+   le test est OK.
+   (ce qui est normal car cette routine n'a pas divergé depuis la création de la version 9).
+                                                                                            
+                           
+   Je ne fais donc rien en version 9 et je compte sur CS pour ne pas oublié de modifier cette
+   routine en NEW8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdnl103a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 09/05/2007 - 10:16:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010497 DU 2007-02-02 11:41:57
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   IMPR_RESU : INFO_MAILLAGE et INFO_RESU
+FONCTIONNALITE
+   Ces deux mots-clés d'IMPR_RESU ne sont (n'ont jamais été) documentés !
+   
+   1. on les documente (en lisant le fortran)
+   
+   2. on met INFO_MAILLAGE dans un bloc "si FORMAT='MED'".
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   nxc3xa9ant
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 09/05/2007 - 10:16:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010757 DU 2007-04-05 09:14:17
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   NEW9.0.16 et NEW8.4.4, les tests sdld313d et zzzz208a s'arretent en erreur (BCR)
+FONCTIONNALITE
+   Lors de la correction de la fiche 10513, la routine chpass a été modifiée afin de recréer
+   systématiquement le PROF_CHNO du champ sortant. En effet, pour pouvoir réduire le champ
+   sur un groupe de
+   maille il est nécessaire de réaliser cette opération. 
+   Or dans les cas tests concernés, l'objet JEVEUX absent appartient à un NUME_DDL et non au
+   PROFCHNO.
+   
+   Auparavant, le PROF_CHNO récupéré coincidait avec le NUME_DDL et on pouvait alors
+   récupérer les informations contenues dans le NUME_DDL. 
+   Pour conserver cette "glute" (car un CHAM_NO ne devrait avoir qu'un simple PROF_CHNO en
+   théorie), on impose le NUME_DDL dans le fichier de commande via le mot clé NUME_DDL dans
+   CREA_CHAMP :
+   
+   FASC =CREA_CHAMP(OPERATION='ASSE',MODELE=MODEL, TYPE_CHAM='NOEU_DEPL_C',NUME_DDL=NUME,
+                     ASSE=_F(CHAM_GD=FASC2,TOUT='OUI',CUMUL='NON',
+                             COEF_C=('RI',1.0,0.5,),),);
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdld313d et zzzz208a
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010415 DU 2006-12-28 15:30:23
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   CREA_RESU reuse champ med projetxc3xa9 + affe cham_gd temp : violation mxc3xa9moire
+FONCTIONNALITE
+   Problème :
+   -----------
+   Cette étude de J.F. Rit se plante dans CREA_RESU lorsqu'il tente d'ajouter des instants <0
+   dans son evol_ther :
+                                                                                            
+                           
+   Le plantage a lieu dans CREA_RESU mais le bug se trouve dans la commande PROJ_CHAMP à la
+   fin de l'op0166.f :
+                                                                                            
+                           
+      - l'evol_ther à projeter vient de LIRE_RESU. Il contient 25 numeros d'ordre (mais il
+   est alloué pour en contenir 100).
+                                                                                            
+                           
+      - Dans PROJ_CHAMP, l'evol_ther projeté est alloué (par la routine pjefpr.f) a la taille
+   juste nécessaire (25). Malheureusement, quelqu'un est intervenu maladroitement à la fin de
+   l'op0166 (PROJ_CHAMP) pour ajouter le paramètre 'MODELE' dans la SD : on écrit 100 valeurs
+   dans un vecteur dimensioné à 25, d'où le plantage brutal dans la commande suivante (JEDUPO
+   appelé par CREA_RESU).
+   
+   Merci à Jean-Pierre pour avoir eu le courage de se lancer à la recherche de ce bug.
+                                                                                            
+                           
+   Solution :
+   ----------
+   On corrige la routine op0166.f
+                                                                                            
+                           
+   Validation:
+   ------------
+   Suite à cette correction, le "CREA_CHAMP" qui se se plantait dans l'étude initiale va
+   jusqu'au bout.
+   J'ai vérifié (avec des impressions temporaires) que la SD produite par le PROJ_CHAMP était
+   correctement
+   allouée pour les 25 numéros d'ordre : les objets .CARA, .MODL, ... ont un LONMAX de 25
+                                                                                            
+                           
+                                                                                            
+                           
+                                                                                            
+                           
+   Cette correction est à reporter en NEW8 (op0166.f):
+   ---------------------------------------------------
+                                                                                            
+                           
+   34c34
+   <       REAL*8             ZR
+   ---
+   >       REAL*8             ZR,R8B
+   36c36
+   <       COMPLEX*16         ZC
+   ---
+   >       COMPLEX*16         ZC,C16B
+   56c56
+   <       INTEGER IBID, KVALE
+   ---
+   >       INTEGER IBID, KVALE,NBORDR
+   244,246c244,248
+   <         CALL JEDUP1(LERES0//'           .MODL','G', LERES1//'.MODL')
+   <         CALL JEDUP1(LERES0//'           .MATE','G', LERES1//'.MATE')
+   <         CALL JEDUP1(LERES0//'           .CARA','G', LERES1//'.CARA')
+   ---
+   >         CALL RSORAC(LERES0,'LONUTI',IBID,R8B,K8B,C16B,R8B,K8B,NBORDR,1,
+   >      &              IBID)
+   >
+   248d249
+   <         CALL JELIRA(LERES0//'           .MODL','LONUTI',NB,K8B)
+   250c251
+   <         DO 70 I=1,NB
+   ---
+   >         DO 70 I=1,NBORDR
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010725 DU 2007-03-30 12:17:51
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   la commande DEPL_INTERNE xc3xa9met des alarmes injustifixc3xa9es en "modification structurale"
+FONCTIONNALITE
+   Problème:
+   ---------
+   Le test sdll173 émet des alarmes injustifiées.
+   
+   Correction :
+   ---------------
+   Modif de op0089.f : on distingue le cas cham_no_depl_R / sd_resultat en utilisant la
+   routine gettco.
+   
+   La correction est à reporter en NEW8.
+   
+   Remarque : En réalité, suite à une erreur de ma part, cette fiche est déjà corrigée depuis
+   la version 9.0.16
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test sdll137a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 09/05/2007 - 10:16:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010447 DU 2007-01-12 16:16:55
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : CS
+TITRE
+   NEW8.4.1, le cas test zzzz219a s'arrxc3xaate en ERREUR_<F> (B)
+FONCTIONNALITE
+   Le test zzzz219a plantait sur Bull en debug et nodebug.
+   
+   ddlfac appelle getmjm (dans astermodule.c) qui appelle getmjm (dans B_ETAPE.py).
+   Dès que l'on surcharge ddlfac.f sans le modifier, çà passe...
+   
+   Le problème n'apparait plus. Il était surement dû au décalage dans les sources lors des
+   versions 8.4.1 et 8.4.2.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz219a
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR michel       MICHEL-PONNELLE Sylvie   DATE 09/05/2007 - 10:16:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010750 DU 2007-04-04 14:28:59
+TYPE anomalie concernant Code_Aster (VERSION 8.4)
+TMA : CS
+TITRE
+   NEW8.4.4, les tests ssnv112b et ssnv112c terminent NOOK
+FONCTIONNALITE
+   suite à la réalisation de la fiche 10613 :
+   "Le diamètre d'un élément est la longueur du plus grand segment que l'on peut insérer dans
+   la maille. Pour un simplexe (triangle ou tétraèdre), cela correspond au plus grand côté.
+   Pour les autres mailles, il faut prendre le max des côtés et des diagonales."
+   Le calcul de l'option ERRE_ELEM_SIGM se trouve modifié.
+   On modifie les tests de non regression, dont les variations sont minimes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv112b et c
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 09/05/2007 - 10:16:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010836 DU 2007-05-04 17:37:32
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TITRE
+   VMIS_ISOT_PUIS en C_PLAN
+FONCTIONNALITE
+   Contrairement à ce que dit la doc, VMIS_ISOT_PUIS ne fonctionnait pas en C_PLAN. 
+   Après avoir ajouté les quelques instructions nécessaires, cela fonctionne.
+   
+   On teste dans COMP001H : de façon simulaire à COMP001B (VMIS_ISOT_TRAC), 
+   un trajet de chargement complexe est appliqué. 
+   On teste aussi l'insensibilité au changement d'unité, à la rotation et la symétrie 
+   du chargement sur lees invariants (V1, VMIS, TRACE).
+   
+   De plus on compare les résultats de VMIS_ISOT_PUIS, pour une loi puissance donnée, 
+   avec ceux de VMIS_ISOT_TRAC, où la courbe de traction résulte d'une discrétisation 
+   de la loi puissance (par CALC_FONC_INTERP). 
+   
+   La restitution est en version 8 et en version 9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   comp001h
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 09/05/2007 - 10:16:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010576 DU 2007-02-26 06:35:54
+TYPE anomalie concernant Code_Aster (VERSION 2.x)
+TMA : DeltaCad
+TITRE
+   MACR_LIGN_COUPE et GROUP_NO
+FONCTIONNALITE
+   L'utilisation de MACR_LIGN_COUPE avec GROUP_NO produisait une erreur fatale.
+   
+   Le plantage avait lieu lorsque la macro cherchait a recuperer le contenu du mot-cle VECT_Y
+   quand celui-ci n'etait pas renseigne.
+   Avant le remaniement syntaxique de la macro (effectue lors du traitement de la fiche
+   10431), le mot-cle VECT_Y cohabitait avec le mot-cle GROUP_NO bien qu'il n'etait pas
+   initialise; il avait donc 'None' comme valeur par defaut.
+   Apres ce remaniement syntaxique, des blocs ont ete crees dans le catalogue de commande et
+   VECT_Y n'a ete defini que pour les blocs relatifs aux types 'SEGMENT' et 'ARC', et non
+   pour le bloc relatif au type GROUP_NO.
+   La restructuration du contenu du fichier macr_lign_coupe_ops.py a permis de corriger le
+   problème.
+   
+   Pour plus d'information, se reporter à la fiche 10508.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv07a
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 10/05/2007 - 07:56:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 010845 DU 2007-05-10 05:39:30
+TYPE express concernant Code_Aster (VERSION 2.x)
+TITRE
+   resorption comp002a en NEW8
+FONCTIONNALITE
+   résorption de COMP002A.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   comp001h
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT comp001h                      salmona L.SALMONA          265    265      0
+ CASTEST AJOUT forma01a                      salmona L.SALMONA          269    269      0
+ CASTEST AJOUT forma01b                      salmona L.SALMONA          278    278      0
+ CASTEST AJOUT forma01c                      salmona L.SALMONA          330    330      0
+ CASTEST AJOUT forma01d                      salmona L.SALMONA          333    333      0
+ CASTEST AJOUT ssll118a                      salmona L.SALMONA          117    117      0
+ CASTEST MODIF cabri02a                      salmona L.SALMONA          488      2      1
+ CASTEST MODIF cente01a                      salmona L.SALMONA          998     11      1
+ CASTEST MODIF demo002a                      salmona L.SALMONA          512      2      1
+ CASTEST MODIF demo003a                      salmona L.SALMONA          203      2      1
+ CASTEST MODIF forma12d                      salmona L.SALMONA          225      3      2
+ CASTEST MODIF hpla310a                      salmona L.SALMONA         1002      7      1
+ CASTEST MODIF hplp310a                      salmona L.SALMONA         1963     21      1
+ CASTEST MODIF hsna120a                      salmona L.SALMONA          762      2      1
+ CASTEST MODIF sdld313d                      salmona L.SALMONA          321      2      2
+ CASTEST MODIF sdnl111c                      salmona L.SALMONA          254      3      3
+ CASTEST MODIF sdnl111d                      salmona L.SALMONA          149      2      2
+ CASTEST MODIF sdnv100a                      salmona L.SALMONA          383      2      1
+ CASTEST MODIF sdnv100b                      salmona L.SALMONA          282      2      1
+ CASTEST MODIF sdnv100h                      salmona L.SALMONA          251      2      2
+ CASTEST MODIF sdnv103d                      salmona L.SALMONA          241      3      3
+ CASTEST MODIF sdnv104a                      salmona L.SALMONA          223      3      2
+ CASTEST MODIF sdnv104b                      salmona L.SALMONA          229      3      3
+ CASTEST MODIF sdnv104d                      salmona L.SALMONA          226      3      2
+ CASTEST MODIF sdnv104e                      salmona L.SALMONA          228      3      3
+ CASTEST MODIF sdnv105a                      salmona L.SALMONA         1267     15     15
+ CASTEST MODIF sdnv105c                      salmona L.SALMONA          957      8      8
+ CASTEST MODIF sslv04h                       salmona L.SALMONA          372      2      1
+ CASTEST MODIF sslv134d                      salmona L.SALMONA         1328    868    843
+ CASTEST MODIF ssna102a                      salmona L.SALMONA          486      3      1
+ CASTEST MODIF ssna102b                      salmona L.SALMONA          311      2      1
+ CASTEST MODIF ssna102c                      salmona L.SALMONA          314      2      1
+ CASTEST MODIF ssna102e                      salmona L.SALMONA          388      3      1
+ CASTEST MODIF ssna105a                      salmona L.SALMONA          229      2      2
+ CASTEST MODIF ssna111a                      salmona L.SALMONA          216      8      7
+ CASTEST MODIF ssnl107b                      salmona L.SALMONA          162      2      1
+ CASTEST MODIF ssnl107c                      salmona L.SALMONA          173      2      1
+ CASTEST MODIF ssnl107d                      salmona L.SALMONA          168      2      1
+ CASTEST MODIF ssnl132a                      salmona L.SALMONA          879      3      1
+ CASTEST MODIF ssnl132b                      salmona L.SALMONA          908      4      1
+ CASTEST MODIF ssnp121b                      salmona L.SALMONA          165      2      1
+ CASTEST MODIF ssnp121c                      salmona L.SALMONA          166      2      1
+ CASTEST MODIF ssnp121l                      salmona L.SALMONA          170      2      1
+ CASTEST MODIF ssnp501a                      salmona L.SALMONA          253      2      1
+ CASTEST MODIF ssnp501b                      salmona L.SALMONA          249      2      1
+ CASTEST MODIF ssnp501d                      salmona L.SALMONA          256      2      1
+ CASTEST MODIF ssnp502a                      salmona L.SALMONA          256      2      1
+ CASTEST MODIF ssnp502b                      salmona L.SALMONA          256      2      2
+ CASTEST MODIF ssnv104b                      salmona L.SALMONA          484      7      1
+ CASTEST MODIF ssnv104d                      salmona L.SALMONA          495      3      1
+ CASTEST MODIF ssnv104e                      salmona L.SALMONA          252      4      1
+ CASTEST MODIF ssnv104f                      salmona L.SALMONA          628      9      1
+ CASTEST MODIF ssnv104g                      salmona L.SALMONA          501      5      3
+ CASTEST MODIF ssnv104h                      salmona L.SALMONA          296      3      2
+ CASTEST MODIF ssnv104i                      salmona L.SALMONA          368      2      1
+ CASTEST MODIF ssnv104j                      salmona L.SALMONA          370      2      1
+ CASTEST MODIF ssnv112b                      salmona L.SALMONA          230      5      5
+ CASTEST MODIF ssnv112c                      salmona L.SALMONA          290      5      5
+ CASTEST MODIF ssnv127a                      salmona L.SALMONA          481      2      1
+ CASTEST MODIF ssnv127b                      salmona L.SALMONA          425      2      1
+ CASTEST MODIF ssnv127c                      salmona L.SALMONA          432      2      2
+ CASTEST MODIF ssnv127d                      salmona L.SALMONA          431      2      2
+ CASTEST MODIF ssnv127e                      salmona L.SALMONA          427      2      1
+ CASTEST MODIF ssnv128a                      salmona L.SALMONA          465      5      3
+ CASTEST MODIF ssnv128b                      salmona L.SALMONA          433      5      3
+ CASTEST MODIF ssnv128c                      salmona L.SALMONA          434      5      3
+ CASTEST MODIF ssnv128d                      salmona L.SALMONA          440      5      3
+ CASTEST MODIF ssnv128e                      salmona L.SALMONA          402      5      3
+ CASTEST MODIF ssnv128f                      salmona L.SALMONA          420      5      4
+ CASTEST MODIF ssnv128g                      salmona L.SALMONA          281      5      3
+ CASTEST MODIF ssnv128h                      salmona L.SALMONA          400      5      3
+ CASTEST MODIF ssnv128i                      salmona L.SALMONA          419      5      3
+ CASTEST MODIF ssnv128j                      salmona L.SALMONA          399      5      3
+ CASTEST MODIF ssnv128k                      salmona L.SALMONA          294      5      3
+ CASTEST MODIF ssnv128l                      salmona L.SALMONA          255      3      2
+ CASTEST MODIF ssnv128o                      salmona L.SALMONA          265      3      2
+ CASTEST MODIF ssnv129a                      salmona L.SALMONA          202      2      1
+ CASTEST MODIF ssnv129b                      salmona L.SALMONA          215      2      1
+ CASTEST MODIF ssnv129c                      salmona L.SALMONA          221      2      1
+ CASTEST MODIF ssnv129e                      salmona L.SALMONA          206      2      1
+ CASTEST MODIF ssnv166a                      salmona L.SALMONA          410      2      2
+ CASTEST MODIF ssnv166b                      salmona L.SALMONA          431      2      2
+ CASTEST MODIF ssnv166c                      salmona L.SALMONA          293      2      1
+ CASTEST MODIF ssnv167a                      salmona L.SALMONA          176      2      1
+ CASTEST MODIF ssnv167b                      salmona L.SALMONA          459      3      1
+ CASTEST MODIF ssnv167c                      salmona L.SALMONA          470      2      1
+ CASTEST MODIF ssnv167d                      salmona L.SALMONA          212      3      1
+ CASTEST MODIF ssnv167e                      salmona L.SALMONA          214      3      1
+ CASTEST MODIF ssnv193a                      salmona L.SALMONA          179      2      1
+ CASTEST MODIF ssnv501a                      salmona L.SALMONA          405      2      1
+ CASTEST MODIF ssnv501b                      salmona L.SALMONA          355      2      1
+ CASTEST MODIF ssnv503a                      salmona L.SALMONA          411      3      3
+ CASTEST MODIF ssnv503b                      salmona L.SALMONA          425      4      4
+ CASTEST MODIF ssnv503c                      salmona L.SALMONA          427      4      4
+ CASTEST MODIF ssnv503d                      salmona L.SALMONA          424      4      4
+ CASTEST MODIF ssnv503e                      salmona L.SALMONA          561      4      4
+ CASTEST MODIF ssnv503f                      salmona L.SALMONA          537      4      4
+ CASTEST MODIF ssnv503g                      salmona L.SALMONA          561      2      2
+ CASTEST MODIF ssnv504a                      salmona L.SALMONA          288      3      1
+ CASTEST MODIF ssnv504b                      salmona L.SALMONA          275      2      1
+ CASTEST MODIF ssnv504c                      salmona L.SALMONA          223      2      1
+ CASTEST MODIF ssnv504e                      salmona L.SALMONA          246      2      1
+ CASTEST MODIF ssnv504f                      salmona L.SALMONA          302      2      1
+ CASTEST MODIF ssnv504g                      salmona L.SALMONA          304      2      1
+ CASTEST MODIF ssnv505a                      salmona L.SALMONA          226      2      1
+ CASTEST MODIF ssnv505b                      salmona L.SALMONA          183      2      1
+ CASTEST MODIF ssnv505c                      salmona L.SALMONA          187      2      1
+ CASTEST MODIF ssnv505f                      salmona L.SALMONA          276      2      1
+ CASTEST MODIF ssnv505g                      salmona L.SALMONA          244      3      1
+ CASTEST MODIF ssnv505h                      salmona L.SALMONA          446      2      1
+ CASTEST MODIF ssnv506a                      salmona L.SALMONA          226      2      1
+ CASTEST MODIF ssnv506b                      salmona L.SALMONA          228      2      1
+ CASTEST MODIF ssnv506c                      salmona L.SALMONA          230      2      1
+ CASTEST MODIF ssnv506d                      salmona L.SALMONA          228      2      1
+ CASTEST MODIF ssnv506e                      salmona L.SALMONA          213      2      1
+ CASTEST MODIF yyyy106a                      salmona L.SALMONA          673      3      3
+ CASTEST MODIF yyyy106b                      salmona L.SALMONA          654      4      2
+ CASTEST MODIF zzzz107b                      salmona L.SALMONA          139      3      2
+ CASTEST MODIF zzzz113b                      salmona L.SALMONA         1169      3      1
+ CASTEST MODIF zzzz208a                      salmona L.SALMONA          427      2      2
+ CASTEST SUPPR comp002a.comm                   proix J-M.PROIX          162      0    162
+ CASTEST SUPPR forma01k.comm                 salmona L.SALMONA          252      0    252
+ CASTEST SUPPR forma01l.comm                 salmona L.SALMONA          261      0    261
+ CASTEST SUPPR forma01m.comm                 salmona L.SALMONA          313      0    313
+ CASTEST SUPPR forma01n.comm                 salmona L.SALMONA          318      0    318
+CATALOPY MODIF commande/affe_cara_elem       salmona L.SALMONA          582      3      2
+CATALOPY MODIF commande/impr_fonction        salmona L.SALMONA          136      8      6
+CATALOPY MODIF commande/impr_resu            salmona L.SALMONA          154      5      2
+CATALOPY MODIF commande/test_table           salmona L.SALMONA           60      2      2
+ FORTRAN MODIF algeline/mrmmvr               salmona L.SALMONA          103     42     36
+ FORTRAN MODIF algorith/conlig               salmona L.SALMONA          113      3      3
+ FORTRAN MODIF algorith/lcmmap               salmona L.SALMONA          488     41      1
+ FORTRAN MODIF algorith/lcmmat               salmona L.SALMONA          376     41      1
+ FORTRAN MODIF algorith/nmcri1               salmona L.SALMONA           67      6      3
+ FORTRAN MODIF algorith/nmfonc               salmona L.SALMONA          256      6      1
+ FORTRAN MODIF algorith/nmisot               salmona L.SALMONA          521      7      4
+ FORTRAN MODIF algorith/op0166               salmona L.SALMONA          257      7      9
+ FORTRAN MODIF algorith/xconli               salmona L.SALMONA          243      3      3
+ FORTRAN MODIF modelisa/caddlp               salmona L.SALMONA          264     15      7
+ FORTRAN MODIF soustruc/op0089               salmona L.SALMONA           99      5      5
+ FORTRAN MODIF utilitai/calnor               salmona L.SALMONA          339     98     26
+ FORTRAN MODIF utilitai/dismme               salmona L.SALMONA          115      7      3
+ FORTRAN MODIF utilitai/op0195               salmona L.SALMONA          252      6      1
+  PYTHON AJOUT Messages/contact              salmona L.SALMONA           37     37      0
+  PYTHON MODIF Macro/macr_lign_coupe_ops     salmona L.SALMONA          416     11      5
+  PYTHON MODIF Stanley/salomeVisu            salmona L.SALMONA          510     47    115
+  PYTHON MODIF Stanley/stanley               salmona L.SALMONA         3173      6      4
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    7        1629      1629             +1629
+ MODIF :  135       53591      1614    1301      +313
+ SUPPR :    5        1306              1306     -1306
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :  147       56526      3243    2607      +636 

@@ -1,0 +1,373 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 03/15/2011 - 05:12:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016539 DU 2011-03-04 08:16:48
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.7.8, les cas-tests forma03d, ssna110a, zzzz159a,b,c,d,e s'arretent anormalement sur Rocks et zzzz159f sur toutes les machines.
+FONCTIONNALITE
+   Pour le zzzz159f, il suffit de replacer as_profil par asrun.profil dans le .comm.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz159f
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 03/15/2011 - 05:12:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016551 DU 2011-03-04 16:03:25
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Probleme de mot-clef facteur obligatoire mais vide
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Quand on oublie de mettre des chargements dans EXCIT pour SNL, on tombe sur le message pas
+   sympa: 
+   
+   Objet JEVEUX inexistant dans les bases ouvertes : >&&OP0070.LISCHA    .INFC< 
+   
+   Or le mot-clef EXCIT est bien obligatoire (dans SNL, pas dans DNL)
+   Par contre, visiblement, le superviseur peut accepter EXCIT=_F( _vide_ )
+   
+   Solution
+   ========
+   
+   Il y a une faiblesse du superviseur.
+   Un mot-clef facteur déclaré obligatoire, même avec min=1, accepte que le mot-clef facteur
+   soit vide.
+   J'émets une autre fiche pour Mathieu qui veut regarder ça au niveau du superviseur.
+   En attendant, je blinde au niveau du fortran (nmdoch)
+   
+     
+   !--------------------------------------------------------------------------------------------------!
+      ! <F> <CHARGES_2>                                                                     
+               !
+      !                                                                                     
+               !
+      ! Il n'y a aucune charge dans le mot-clef facteur EXCIT. Ce n'est pas possible avec
+   STAT_NON_LINE. !
+      !                                                                                     
+               !
+      !                                                                                     
+               !
+      ! Cette erreur est fatale. Le code s'arrete.                                          
+               !
+     
+   !--------------------------------------------------------------------------------------------------!
+   
+   On peut le faire en 9
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cas-test perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016104 DU 2010-12-21 11:56:34
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Dxc3xa9faut de convergence LIAISON_UNILATER
+FONCTIONNALITE
+   Problème
+   ========
+   
+   On a voulu forcer l'utilisateur à faire du SYME='OUI' dans le cas de LIAISON_UNILATER
+   (issue14548) car cette fonctionnalité ne peut fonctionner avec des matrices
+   non-symétriques.
+   Or, quand on force la matrice à être symétrique dans les cas-tests suivants:
+   wtna108a
+   wtna108b
+   wtna108c
+   wtnp109a
+   wtnp111b
+   On ne converge plus (ce qui est logique).
+   
+   Diagnostic
+   ==========
+   
+   Plusieurs soucis:
+   - La condition unilatérale ne peut pas fonctionner avec une matrice non-symétrique (c'est
+   une limitation informatique et non théorique)
+   - L'algorithme de la condition unilatérale n'est absolument pas blindé: si on ne converge
+   pas (dépassement du nombre max d'itérations de contraintes actives ou matrice de "contact"
+   singulière), on sort de l'algo comme si de rien n'était.
+   
+   Solutions
+   =========
+   
+   Thomas a programmé la prise en compte d'une matrice non symétrique dans la condition
+   unilatérale. Ca ne permet pas à l'algorithme de converger. De plus, on peut considérer ça
+   comme une évolution.
+   
+   Je propose:
+   1/ De corriger l'algorithme LIAISON_UNILATER pour s'arrêter en cas de défaut de convergence
+   2/ De résorber les 5 cas-tests en question puisqu'ils sont potentiellement faux. Les gens
+   de la THM doivent vérifier que les fonctionnalités de ces cas-tests sont bien testées
+   ailleurs. Si ce n'est pas le cas, il faut construire des cas-tests sans la condition de
+   suintement. LIAISON_UNILATER est testé par ailleurs.
+   3/ De corriger le cas-test sdnv103e:
+    - rétablissement du modèle complet
+    - correction de l'imposition de la condition unilatérale (inversion COEF_MULT et COEF_IMPO)
+    - modification des TEST_RESU
+   
+   RESULTATS FAUX
+   ==============
+   Concernant les résultats faux:
+   - Les résultats sont faux dès lors que la matrice est non-symétrique
+   - Les résultats sont possiblement faux (avec un faible risque toutefois) dans les autres
+   cas à cause du non-blindage de l'algorithme contre les défauts de convergence. La théorie
+   qui sous-tend cet algorithme garantie la convergence en un nombre fini d'itérations. Ce
+   nombre étant déterminé et utilisé dans l'algorithme comme borne max.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.2.12
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.2.12
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V5.03.103
+VALIDATION
+    liste LIAISON_UNILATER
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016105 DU 2010-12-21 14:42:18
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En contact discret quadratique, il ne faut pas lier les noeuds maitres
+FONCTIONNALITE
+   Problème
+   ========
+   
+   En contact discret quadratique, il ne faut pas lier les noeuds maitres ; or c'est le cas
+   actuellement!
+   
+   Réponse
+   =======
+   
+   Il faut les lier, sinon la surface se bombe.
+   Par acquis de conscience, j'ai fait la modif , les cas-tests deviennent NOOK. En
+   particulier ssnv167b qui a une solution analytique (un cube sur un cube)
+   Voir image jointe
+   Donc, je ne fais rien.
+   
+   Par contre, il serait peut être plus sain d'avertir l'utilisateur quand il utilise des
+   QUAD8 que:
+   1/ Les résultats seront "faux" par nature (oscillations sur les forces de contact)
+   2/ On fait des LIAISON_MAIL en "souterrain" sur la surface esclave ET sur la surface maitre
+   Voici l'alarme (CONTACT_8):
+   
+   
+   8 : _("""
+   Contact méthodes discrètes.
+    -> Il y a des éléments de type QUAD8 sur la surface esclave de contact. Ces éléments
+   produisent des forces nodales négatives aux noeuds sommets.
+       Afin de limiter les oscillations des forces et d'empêcher une pénétration intempestive
+   de la surface maître dans la surface esclave, on
+       a procédé à des liaisons cinématiques (LIAISON_DDL) entre les noeuds milieux et les
+   noeuds sommets, sur les deux surfacs (maître et esclave).
+    -> Risque & Conseil :
+       Il est préférable d'utiliser des éléments de type QUAD9. Changer votre maillage ou
+   utiliser la commande MODI_MAILLAGE.
+       Ces liaisons supplémentaires peuvent provoquer des incompatibilités avec les
+   conditions limites, ce qui se traduira par un pivot nul dans
+       la matrice.
+   """),
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    néant
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 03/15/2011 - 05:12:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016541 DU 2011-03-04 08:47:18
+TYPE express concernant Code_Aster (VERSION 10.4)
+TITRE
+    RUPT : mot-cle DIRECTION de CALC_G
+FONCTIONNALITE
+   La doc de CALC_G dit :
+   "Le mot-clé DIRECTION sous CALC_G/THETA sert à définir la direction du champ thêta si le
+   champ thêta n'a pas déjà été calculé."
+   
+   Ce mot-clé est facultatif au sens capy.
+   
+   1) Si le champ theta est déjà calculé, et que la direction n'est pas renseignée, -> tout
+   est ok.
+   
+   2) Si le champ theta est déjà calculé, le superviseur interdit le mot-clé DIRECTION -> ok
+   
+   3) Si le champ theta n'est pas déjà calculé :
+   3a) si la direction est renseignée on l'utilise pour le calcul de theta -> cela n'est vrai
+   que pour des fonds droits -> bien le dire dans la doc 
+   3b) si elle n'est pas renseignée :
+     - si le fond est défini avec les mailles des lèvres : on se sert des mailles pour
+   calculer la direction -> OK
+     - si le fond est défini avec les noeuds du fond : on se sert de la normale pour calculer
+   la direction, et on émet un message d'alarme pour dire que le signe est p-e faux et on
+   conseille de soit définir la direction, soit de définir le fond avec les mailles des
+   lèvres. -> on insiste sur le fait que la définition de la direction n'est valable que pour
+   les fonds droits !
+   
+   bilan : DIRECTION ne sert que si le champ theta n'a pas déjà été calculé et si le fond est
+   défini à partir de noeuds. Des risques d'erreurs existe si on se trompe dans la valeur de
+   DIRECTION ou si DIRECTION est donnée pour un fond courbe.
+   
+   
+   
+   impact : rupture0.py, doc U4.82.03, op0100.f
+   
+   Remarque : seuls 3 tests 3d utilisent DIRECTION dans CALC_G/THETA :
+   sdlv123b sslv110e.comm  ssnv218a.comm
+   Pour les 2 premiers : on s'assure que le fond est bien droit
+   Pour ssnv218a : le fond n'est pas droit -> le calcul de G est peut-être faux ! -> fiche 16544
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.82.03
+VALIDATION
+    sdlv123b sslv110e.comm  ssnv218a.comm
+NB_JOURS_TRAV  : 0.8
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016592 DU 2011-03-10 13:50:42
+TYPE express concernant Code_Aster (VERSION 10.4)
+TITRE
+    X-FEM : choix de DEFORMATION
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Avec X-FEM, le choix des déformations possibles n'est pas clair.
+   Notamment, suite à la fiche 14112, DEFORMATION='GROT_GDEP a été rendu possible, mais cela
+   n'a pas été reporté dans la doc U2.
+   
+   l'utilisation de PETIT_REAC n'est pas blindée or cela induit pourtant des resultats faux
+   car tel que cela est programmé actuellement (te0539) la géométrie des points
+   d'intersections ne pas reactualisée (mais un commentaire dans le fortran dit clairement
+   que les resultats sont faux...)
+   
+   
+   Solution :
+   ----------
+   
+   On interdit DEFORMATION = 'PETIT_REAC'.
+   
+   Dans la doc U2.05.02, on explique les choix possibles (§2.2) sous COMP_ELAS/INCR :
+   DEFORMATION = 'PETIT' ou 'GROT_GDEP'
+   
+   impact :
+   te0539.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U2.05.02
+VALIDATION
+    aucun
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 03/15/2011 - 05:12:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016600 DU 2011-03-14 07:23:03
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.8.4, le cas-test ssnl133a s'arrete anormalement sur Rocks.
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En NEW9.8.4, le cas-test ssnl133a s'arrete anormalement sur Rocks.
+   # TITRE POST-FLAMBEMENT ELASTIQUE D'UNE STRUCTURE EN L
+   
+   Le message d'erreur est le suivant:
+   "
+   MATRICE DU SYSTEME SINGULIERE                                         
+    
+   La subdivision est forcée, méthode UNIFORME.
+      Nombre d'intervalle             = <4>
+      Niveau de subdivision           = <6>
+      Ratio sur le premier intervalle = <1.000000E+00>
+      Pas de Temps actuel             = <3.814697E-07>
+   ---------------------------------------------------------------------
+    
+   SUBDIVISION DU PAS DE TEMPS EN    4 SOUS PAS
+    
+   Méthode de subdivision : Pendant la nouvelle subdivision
+   Le pas minimal de la subdivision est atteint.
+   "
+   
+   Correction
+   ==========
+   
+   Ce test d'instabilité a une matrice de rigidité quasi-singulière. On applique la même
+   solution qu'en version 10 : autorisation d'un pas de temps minimal de 1.0E-12.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnl133a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssnl133a                      macocco K.MACOCCO          274      3      3
+ CASTEST MODIF zzzz159f                      macocco K.MACOCCO          177      3      3
+ CASTEST SUPPR wtna108a.comm                 macocco K.MACOCCO          362      0    362
+ CASTEST SUPPR wtna108b.comm                 macocco K.MACOCCO          361      0    361
+ CASTEST SUPPR wtna108c.comm                 macocco K.MACOCCO          361      0    361
+ CASTEST SUPPR wtnp109a.comm                 macocco K.MACOCCO          360      0    360
+ CASTEST SUPPR wtnp111a.comm                 macocco K.MACOCCO          170      0    170
+ CASTEST SUPPR wtnp111b.comm                 macocco K.MACOCCO          176      0    176
+ FORTRAN MODIF algorith/algocu               macocco K.MACOCCO          531     15      4
+ FORTRAN MODIF algorith/exfonc               macocco K.MACOCCO          279      6      1
+ FORTRAN MODIF algorith/nmcoun               macocco K.MACOCCO          124      3      3
+ FORTRAN MODIF algorith/nmdome               macocco K.MACOCCO          835      6      2
+ FORTRAN MODIF algorith/nmunil               macocco K.MACOCCO          129     13      4
+ FORTRAN MODIF calculel/op0100               macocco K.MACOCCO         1075     14      7
+ FORTRAN MODIF elements/te0539               macocco K.MACOCCO          320      9      6
+ FORTRAN MODIF modelisa/cfleq8               macocco K.MACOCCO          292      4      2
+  PYTHON MODIF Messages/charges              macocco K.MACOCCO          117      6      2
+  PYTHON MODIF Messages/contact              macocco K.MACOCCO          160     13      2
+  PYTHON MODIF Messages/rupture0             macocco K.MACOCCO          569      9      2
+  PYTHON MODIF Messages/unilater             macocco K.MACOCCO           49     16      2
+  PYTHON MODIF Messages/xfem                 macocco K.MACOCCO          232      5      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   15        5163       125      44       +81
+ SUPPR :    6        1790              1790     -1790
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   21        6953       125    1834     -1709 

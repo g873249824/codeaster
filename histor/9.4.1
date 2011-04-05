@@ -1,0 +1,388 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 08/12/2008 - 17:08:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012956 DU 2008-12-08 08:14:06
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Probleme de compilation avec gfortran
+FONCTIONNALITE
+   4 routines ne se compilent pas avec gfortran si on utilise l'option "-x f77-cpp-input".
+   Cette option n'est pas indispensable mais cela évitera des soucis si on l'utilise par
+   mégarde ou si on veut "préprocesser" quelques sources f77 un jour.
+   Le problème apparait sur des commentaires fixant la syntaxe f77 et f90 mais non fermés.
+   Par exemple :
+   C        /*       ET REPERAGE DANS LE MAILLAGE              /*
+   C        \\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
+   
+   
+   J'en profite pour modifier un PyImport_ImportModule dans astermodule.c pour qu'il soit
+   accepté en python 2.6.
+   
+   
+   Rem : shb8ps donne bcp (trop) de warning sur ftnchek.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Liste restreinte
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012946 DU 2008-12-05 15:14:30
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.4.0, le cas-test ascou08a s?arrete en <F>_ABNORMAL sur Rocks.
+FONCTIONNALITE
+   Plantage des tests ascou08a, ascou13a avec la remontée :
+   #0  0x08148cb6 in jjcren_ ()
+   #1  0x0814e5f0 in jjvern_ ()
+   #2  0x081637c5 in jeexin_ ()
+   #3  0x0842bc85 in nueffe_ ()
+   
+   nueffe est appelé par caliel qui n'initialise pas la valeur de la variable SOLVEU.
+   jeexin plante ensuite car le nom d'objet est invalide.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ras
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 08/12/2008 - 18:08:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012945 DU 2008-12-05 14:10:01
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   Le test SSNS108A ne converge pas sur CLPASTER en 9.3.25
+FONCTIONNALITE
+   Le test SSNS108A (ENDO_ISOT_BETON + ITER_MAXI_DEBORST>1 + MATRICE='TANGENTE_SECANTE) pose
+   des problèmes de convergence suivant les versions. Historique :
+   - introduit en 9.1.12 (fiche 11003)
+   - modifie en 9.2.6 (fiche 11004) pour activer MATRICE='TANGENTE_SECANTE. Le test est alors
+   poussé plus loin (passe de tmax=0.051 à tmax=0.15) c'est à dire que la structure
+   s'endommage beaucoup plus.
+   - en 9.2.27 (fiche 12146) : ne converge plus. On augmente ITER_GLOB_MAXI et ITER_MAXI_DEBORST
+   - en 9.3.16 (ficher 12595) : ne converge plus. On augmente ITER_MAXI_DEBORST
+   - en 9.3.22 : cassé mais ok en 9.3.23.
+   
+   En fait ce test donne des résultats très différents suivant les différentes plateformes,
+   aux instants où l'on a endommagé, et où le nombre d'itérations de DEBORST est supérieur à 1. 
+   
+   Explication : en fait la  méthode DEBORST (et la correction des déformations associées)
+   (EPS33=EPS33-SIG33/D33) devient inefficace pour un point de Gauss complètement endommagé
+   car SIG33 et D33 tendent tous deux vers 0. Cela peut expliquer les différences entre
+   machines. En tous cas, si on met dans le fichier de commandes ITER_MAXI_DEBORST=1, les
+   résultats sont identiques sur toutes les machines (on s'arrête en non convergence vers
+   l'istant 0.04, mais il y a déjà eu de l'endommagement).
+   
+   Du coup en modifiant la méthode deborst (nmcpl3) c'est à dire en ne faisant pas la
+   correction ci-dessus pour un point complètement endommagé, les résultats deviennent
+   identiques sur toutes les machines. 
+   
+   De plus l'arrêt des itérations de De Borst suit un critère relatif : on compare SIG33 à la
+   norme de Sig. Or dans le cas d'un point de Gauss endommagé, la norme de Sigma tend vers 0.
+   Là encore ce n'est plus licite. Je propose donc de modifier le mot clé RESI_DEBORST de la
+   façon suivante :
+   - RESI_DEBO_RELA on utilise comme maintenant un critère relatif en contraintes
+   - RESI_DEBO_MAXI, on utilise sa valeur absolue pour définir un critère absolu :
+   SIG33 < RESI_DEBORST. Ceci a du sens (l'utilisateur peut définir une valeur suffisamment
+   faible des contriantes pour laquelle on peut considérer SIG33 nul numériquement).
+   
+   J'arrête le test à t=0.0495. Le test SSNS108A tourne alors en une centaine de secondes, et
+   teste bien TANGENTE_SECANTE et ITER_MAXI_DEBORST, tout en fournissant les memes valeurs
+   sur toutes les machines. Les tests sont de non régression, je les modifie donc.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssns108a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012915 DU 2008-12-01 10:33:05
+TYPE anomalie concernant Code_Aster (VERSION 8.7)
+TITRE
+   Probl? d'interpolation en m?llurgie avec META_TRACTION
+FONCTIONNALITE
+   Cf la fiche 11797 : le HSNA104A était NOOK sur CLPASTER.
+   
+   Après invesgations de JP, MA, MC, JMP : il s'avère que c'est un problème de programmation
+   dans la métallurgie, pour META_TRACTION, quand on reconstitue la courbe R(P,T). EN effet,
+   on utilise dans RCTRAC la même programmation que pour VMIS_ISOT_TRAC, mais avec des
+   particularités :
+   
+   VMIS_ISOT_TRAC : la courbe obtenue est :
+   p=0---R(0)=Sy
+   p1----R(p1)
+   etc..
+   quand on cherche la valeur de R(p) pour p quelconque, on interpole classiquement entre ces
+   valeurs.
+   
+   Pour META_TRACTION (*INL) :
+   p1---R(p1)
+   p2---R(p2)
+   etc...
+   Mais à l'interpolation, si p<=p1, on interpole entre le premier point (0,0) (implicite) et
+   (p1,R(p1)).
+   
+   Dans la programmation actuelle, on ne se méfiait pas et on mettait p1 à 0.
+   Conséquence : l'interpolation pour META_TRACTION entre p=0 et p1 était fausse.
+   (voir les courbes jointes : la courbe interpolée à 100 degrés avant et après correction)
+   
+   
+   En quoi consiste la correction ?
+   --------------------------------
+   
+   Dans RCTRAC, ligne 316 et suivante on avait :
+   
+             IF (NOMRC(1:8).EQ.'TRACTION') THEN
+   ...
+               LTRAC = .TRUE.
+             ENDIF
+             ZR(JVALE) = 0.D0  => dans tous les cas : TRACTION et MECA_TRACTION
+   
+   Donc on mettait à zéro la première abscisse de la courbe R(p), aussi bien pour TRACTION
+   que pour META_TRACTION.
+   
+   Dans le cas d'un prolongement CONSTANT, c'etait juste, puisque l'on se contente de
+   recopier la courbe de l'utilisateur. Mais ce n'est pas seulement un problème de
+   prolongement, mais d'interpolation en général.
+   
+   On corrige en faisant :
+             IF (NOMRC(1:8).EQ.'TRACTION') THEN
+                ZR(JVALE) = 0.D0
+               ...
+             ELSE
+               IF (ABS(Z2-Z1).LE.(TOLE*Z1)) THEN
+                  ZR(JVALE) = Z1
+               ELSEIF (Z2.GT.Z1) THEN
+                  ZR(JVALE)=Z1
+               ELSE
+                  ZR(JVALE)=Z2
+               ENDIF
+             ENDIF
+   
+   Alors HSNA104A est OK sur toutes les plateformes ainsi que la liste des tests
+   META_TRACTION : sauf HTNA100A
+   hsna104a
+   hsnv126a
+   hsnv126b
+   hsnv127a
+   htna100a => NOOK sur une valeur :
+   
+   REFERENCE: AUTRE_ASTER     
+   NOOK vm           RELA    -6.221 % VALE: 3.0812632461944D+08
+   VMIS              TOLE     4.000 % REFE: 3.2856555000000D+08
+   
+   D'autre part, on constate sur la courbe jointe que l'interpolation des courbes R(p,T) est
+   réalisée en prenant toutes les abcsisses des courbes R(p,T1) et R(p,T2), contrairement à
+   ce qui est dit dans R5.03.02. Il faut donc changer cette doc.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 5.3.19
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 5.3.19
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.02
+VALIDATION
+   tous les tests META_TRACTION
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 08/12/2008 - 14:30:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012879 DU 2008-11-21 15:46:46
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Probleme pour l'extraction de la partie imaginaire d'une matrice
+FONCTIONNALITE
+   Problème :
+   ----------
+   "Je rencontre un petit souci pour extraire la partie imaginaire d'une matrice de raideur,
+   construite en utilisant une hypothèse d'amortissement hystérétique. Voici le message
+   d'erreur en question :
+   
+      Kcomp=COMB_MATR_ASSE(COMB_R=_F(MATR_ASSE=Ktot_H,
+                                    COEF_R=1.0,
+                                    PARTIE='IMAG'),
+                          );
+   
+      
+      !--------------------------------------------------------------------!
+      ! <F> <ALGELINE4_25>                                                 !
+      !                                                                    !
+      !                                                                    !
+      !  combinaison non prevue   type resultat :  R    type matrice  :  R !
+      !     type constante:  C                                             !
+      !                                                                    !
+      !                                                                    !
+      !                                                                    !
+      ! Cette erreur est fatale. Le code s'arrete.                         !
+      !--------------------------------------------------------------------!"
+   
+   Analyse :
+   ---------
+   Lorsqu'on utilise COMB_MATR_ASSE et qu'il existe au moins un DDL de Lagrange dans l'une
+   des matrices à combiner, il est nécessaire de combiner aussi le coefficient de mise à
+   l'échelle '.CONL'. Or ces coefficients sont toujours réels.
+   
+   Dans le cas qui nous interesse, le COEF_R est réel égal à 1 mais, ici, on souhaite prendre
+   la partie imaginaire de la matrice à combiner. Du coup Jacques a utilisé une astuce qui
+   consiste à modifier COEF_R en un coefficient complexe = 0 - j*COEF_R car :
+   Kcomp = Re( (0-j)*Ktot_H )
+   
+   Cette astuce fonctionne sans problème pour les matrices à combiner mais pas pour les
+   '.CONL' car ils sont forcément réels, ce qui fait que le code nous insulte en remarquant
+   très justement que réel*complexe ne donnera pas réel !
+   ==> Problème
+   
+   Solution :
+   ----------
+   On prend le module du coefficient complexe créé à partir du COEF_R lorsqu'il s'agit de
+   calculer le '.CONL' comme ça, la combinaison est possible.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Etude utilisateur
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012901 DU 2008-11-27 15:54:17
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Post_elem ( ener_cin) ; floating point exception
+FONCTIONNALITE
+   Problème :
+   ----------
+   "Reçu un message DVP_2: 
+   Post_elem ( ener_cin) ; floating point exception
+   
+   contexte : 
+   elements discrets, 
+   DYNA_TRAN_MODAL
+   REST_GENE_PHYS
+   B_eM_kin=POST_ELEM(ENER_CIN=_F(GROUP_MA='TOUT',),
+                      MODELE=MODELE, CHAM_MATER=CHMAT,
+                      CARA_ELEM=CHAMPCAR, RESULTAT=DYNAREE1,);"
+   
+   Analyse :
+   ---------
+   On est dans le cas d'un problème avec 1 seul ddl pour lequel l'énergie cinétique est nulle.
+   
+   Dans la routine peenca.f, on calcul une valeur totale de l'énergie cinétique (valeur qui
+   sert ensuite à calculer un pourcentage). Or ici, énergie cinétique totale = 0.
+   => Problème car pas de test pour vérifier que la division pour le calcul du pourcentage
+   est possible.
+   
+   Solution :
+   ----------
+   Dans peenca.f, on rajoute un test qui vérifie que l'énergie cinétique totale n'est pas nulle.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test unitaire
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ahlv101a                     sellenet N.SELLENET         108      1      1
+ CASTEST MODIF fdlv100a                     sellenet N.SELLENET         140      1      1
+ CASTEST MODIF fdlv101a                     sellenet N.SELLENET         164      1      1
+ CASTEST MODIF fdlv102a                     sellenet N.SELLENET         463      1      1
+ CASTEST MODIF fdlv103a                     sellenet N.SELLENET         201      1      1
+ CASTEST MODIF fdlv104a                     sellenet N.SELLENET         301      1      1
+ CASTEST MODIF fdlv105a                     sellenet N.SELLENET         175      1      1
+ CASTEST MODIF fdlv109a                     sellenet N.SELLENET         202      1      1
+ CASTEST MODIF fdlv110a                     sellenet N.SELLENET         491      1      1
+ CASTEST MODIF fdlv112a                     sellenet N.SELLENET         293      1      1
+ CASTEST MODIF fdnv100a                     sellenet N.SELLENET         331      1      1
+ CASTEST MODIF hsna104a                        proix J-M.PROIX         1191    839    819
+ CASTEST MODIF htna100a                        proix J-M.PROIX         1196      4      2
+ CASTEST MODIF miss02a                      sellenet N.SELLENET         529      1      1
+ CASTEST MODIF miss07a                      sellenet N.SELLENET         359      1      1
+ CASTEST MODIF miss09a                      sellenet N.SELLENET         849      1      1
+ CASTEST MODIF sdll08a                      sellenet N.SELLENET         143      1      1
+ CASTEST MODIF sdll100a                     sellenet N.SELLENET         204      1      1
+ CASTEST MODIF sdll101a                     sellenet N.SELLENET         328      1      1
+ CASTEST MODIF sdll118b                     sellenet N.SELLENET         347      1      1
+ CASTEST MODIF sdll119a                     sellenet N.SELLENET         495      1      1
+ CASTEST MODIF sdll133a                     sellenet N.SELLENET         244      1      1
+ CASTEST MODIF sdll141a                     sellenet N.SELLENET         180      1      1
+ CASTEST MODIF sdll311a                     sellenet N.SELLENET         282      1      1
+ CASTEST MODIF sdll403a                     sellenet N.SELLENET         232      1      1
+ CASTEST MODIF sdls08a                      sellenet N.SELLENET         284      1      1
+ CASTEST MODIF sdls105a                     sellenet N.SELLENET         315      1      1
+ CASTEST MODIF sdls107a                     sellenet N.SELLENET         397      1      1
+ CASTEST MODIF sdls118a                     sellenet N.SELLENET         439      1      1
+ CASTEST MODIF sdls119a                     sellenet N.SELLENET         423      1      1
+ CASTEST MODIF sdlv301b                     sellenet N.SELLENET         184      1      1
+ CASTEST MODIF sdlx201a                     sellenet N.SELLENET         670      1      1
+ CASTEST MODIF sdnl105c                     sellenet N.SELLENET         623      1      1
+ CASTEST MODIF sdns01a                      sellenet N.SELLENET         691      1      1
+ CASTEST MODIF shll100c                     sellenet N.SELLENET         585      1      1
+ CASTEST MODIF shls200a                     sellenet N.SELLENET         561      1      1
+ CASTEST MODIF shlv100h                     sellenet N.SELLENET         226      1      1
+ CASTEST MODIF sslv105a                     sellenet N.SELLENET         112      1      1
+ CASTEST MODIF ssns106f                        proix J-M.PROIX          737      4      3
+ CASTEST MODIF ssns108a                        proix J-M.PROIX          432     29      8
+ CASTEST MODIF ssnv101b                        proix J-M.PROIX          157      3      2
+ CASTEST MODIF zzzz108a                     sellenet N.SELLENET        1146      1      1
+CATALOPY MODIF commande/comb_matr_asse      sellenet N.SELLENET          62      2      2
+CATALOPY MODIF commun/c_comp_incr              proix J-M.PROIX          260      8      2
+       C MODIF supervis/astermodule         courtois M.COURTOIS        4161      2      2
+ FORTRAN MODIF algeline/mtconl              sellenet N.SELLENET         142     16      1
+ FORTRAN MODIF algorith/nmcham              courtois M.COURTOIS         194      6      5
+ FORTRAN MODIF algorith/nmcomp                 proix J-M.PROIX          180      3      3
+ FORTRAN MODIF algorith/nmcpl2                 proix J-M.PROIX          209     10      3
+ FORTRAN MODIF algorith/nmcpl3                 proix J-M.PROIX           98     16      7
+ FORTRAN MODIF algorith/nmdocr                 proix J-M.PROIX          247      8      2
+ FORTRAN MODIF algorith/nmvprk                 proix J-M.PROIX          342      3      3
+ FORTRAN MODIF calculel/peenca              sellenet N.SELLENET         169      5      1
+ FORTRAN MODIF elements/shb8ps              courtois M.COURTOIS        1425      4     13
+ FORTRAN MODIF modelisa/caliel              courtois M.COURTOIS         127      2      1
+ FORTRAN MODIF modelisa/rctrac                 proix J-M.PROIX          488     23      4
+ FORTRAN MODIF postrele/i2chem              courtois M.COURTOIS         379      4      4
+ FORTRAN MODIF postrele/i2segm              courtois M.COURTOIS         543     17     20
+ FORTRAN MODIF postrele/rvpste              courtois M.COURTOIS         135      2      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   59       26591      1047     946      +101
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   59       26591      1047     946      +101 

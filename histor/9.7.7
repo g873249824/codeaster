@@ -1,0 +1,702 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 11/17/2010 - 10:24:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015481 DU 2010-08-31 12:56:09
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    MECA_STATIQUE imprudent pour les variables de commande differentes de TEMP, HYDR et SECH
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans la commande MECA_STATIQUE, pour éviter de réassembler la matrice à chaque pas de
+   temps, on regarde si les coefficients matériels (ELAS) sont des fonctions d'une variable
+   de commande.
+   Actuellement, on teste les variables 'TEMP', 'HYDR' et 'SECH'.
+   Pour cela, on utilise les 3 questions dismoi différentes :
+     ELAS_F_TEMP/HYDR/SECH
+                                                                                            
+               
+   Cette situation est dangereuse :
+     * si on ajoute une nouvelle variable de commande et qu'on oublie d'ajouter une nouvelle
+   question DISMOI.
+     * si on utilise une variable de commande actuellement non testée ; par exemple : 'NEUT1'
+                                                                                            
+               
+   Le danger est que l'on utilise alors pendant tout le calcul la matrice de rigidité
+   correspondant aux variables de commande du 1er pas de temps. Ce qui peut entrainer des
+   résultats faux.
+                                                                                            
+               
+   Corrections :
+   ------------
+   1) J'ajoute une nouvelle question DISMOI plus générale : ELAS_FO.
+   Cette question répond 'OUI', si l'un des matériaux du CHAM_MATER définit l'un de ses
+   paramètres élastiques (sous ELAS) par une "vraie" fonction (pas une constante).
+   2) Dans la routine mestat.f, je remplace l'usage des 3 dismoi ELAS_F_TEMP/HYDR/SECH par
+   ELAS_FO.
+   3) Je résorbe les 2 autres usages (inutiles) de ELAS_F_TEMP (routines meriro.f et vectme.f)
+   4) Je supprime les 3 questions ELAS_F_TEMP/HYDR/SECH dans dismcm.f
+                                                                                            
+               
+   Impact_documentaire :
+   ---------------------
+   Mettre à jour le document DISMOI (D6.07.01)
+                                                                                            
+               
+   Validation :
+   ------------
+   Essai perso à partir de zzzz227a. J'ai vérifié que la question dismoi répondait
+   correctement en faisant varier les fonctions (constantes ou non).
+                                                                                            
+               
+   Résulats faux :
+   ---------------
+   On obtient des résultats faux avec la commande MECA_STATIQUE si :
+     - on utilise les variables de commande : 'CORR', 'EPSA', 'IRRA', 'NEUT1', 'NEUT2',
+   'M_ACIER', 'MZIRC'
+     - les coefficients matériels de l'élasticité (ELAS_FO) sont des fonctions des variables
+   de commande précédentes.
+     - les variables de commande précédentes évoluent au cours du temps
+     - on calcule plusieurs pas de temps
+                                                                                            
+               
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  15481
+     dismcm.f  meriro.f  mestat.f  vectme.f
+     algorith.py
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : D6.07.01
+VALIDATION
+    zzzz227a
+DEJA RESTITUE DANS : 10.2.18
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015890 DU 2010-11-12 07:27:06
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW10.2.24, les cas-tests zzzz272a et zzzz272b s'arretent en <F>_ERROR sur Bull, Rocks, Calibre 5 et Aster 4
+FONCTIONNALITE
+   Problème :
+   ----------
+   En 10.02.24, les test zzzz272a/b s'arretent en erreur <F> sur toutes les plateformes
+   (message CALCULEL2_5)
+                                                                                            
+                           
+   Correction :
+   ------------
+   Il s'agit d'une légère erreur dans correction de la fiche 15718 :
+   On a voulu interdire d'utiliser CREA_RESU / AFFE + champ de fonctions lorsque la grandeur
+   XXXX_F est différente de DEPL_F, TEMP_F et PRES_F.
+   Il y a une 4ème grandeur qu'il faut autoriser : FORC_F.
+                                                                                            
+                           
+   Validation :
+   ------------
+   les tests cassés sont réparés.
+                                                                                            
+                           
+   NEW9 :
+   ------
+   Comme la correction de 15718 a été reportée en NEW9, il faut faire de meme pour celle-ci :
+   crtype.f :
+   444c444
+   < C              AUJOURD'HUI, SEULES TEMP_F, DEPL_F ET PRES_F SONT AINSI.
+   ---
+   > C              AUJOURD'HUI, SEULES 4 GRANDEURS SONT AINSI.
+   446c446,447
+   <      &      NOGDSI.NE.'PRES_F') CALL U2MESK('F','CALCULEL2_5',1,NOGDSI)
+   ---
+   >      &          NOGDSI.NE.'PRES_F'.AND.NOGDSI.NE.'FORC_F')
+   >      &          CALL U2MESK('F','CALCULEL2_5',1,NOGDSI)
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  15890
+     crtype.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tests cassxc3xa9s
+DEJA RESTITUE DANS : 10.2.25
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 11/17/2010 - 10:24:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013656 DU 2009-07-28 05:37:15
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Se proteger d'erreurs de la MKL 10 sur Aster4
+FONCTIONNALITE
+   Problème
+   ========
+   
+   sdll123a, sdld313c, sdld27a, sdld27e s'arrêtent dans les 
+   appels à la routine lapack zggevx sur Aster4 avec MKL 10.
+   
+   
+   Correction
+   ==========
+   
+   Après analyse d'Olivier, effectivement, le premier appel à 
+   la routine lapack retourne une dimension d'espace de travail 
+   de 2N alors qu'au 2ème appel, il a besoin de 4N.
+   (4N est la valeur retournée avec les MKL 9).
+   
+   On modifie spécialement dans vpqzla (seule routine qui 
+   utilise cette lapack), avec un commentaire, pour au minimum 
+   dimensionné l'espace de travail à 4N.
+   
+   Si jamais, d'autres versions se contentaient de moins que 
+   4N, on surdimensionnerait un peu cet espace (pas critique à 
+   cet endroit).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdld27a, sdld27e, sdll123a, sdld313c
+DEJA RESTITUE DANS : 10.2.23
+NB_JOURS_TRAV  : 2.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015811 DU 2010-10-22 16:04:36
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW10.2.21, les cas-test sdlx201a s'arretent en erreur _<F> sur Aster4
+FONCTIONNALITE
+   Le problème est similaire à celui de issue13656 mais ici pour 
+   dggevx (en réel).
+   La documentation MKL dit lwork=10*N en réel... mais il faut 
+   12*N.
+   Le documentation NETLIB dit 12*N.
+   On met donc cette valeur.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdlx201a
+DEJA RESTITUE DANS : 10.2.23
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 11/17/2010 - 10:25:00
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015861 DU 2010-11-03 18:04:42
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Comportement VISC_CIN2_MEMO faux si ETA < 0.5
+FONCTIONNALITE
+   Suite à des comparaisons systématiques, F.Curtit a constaté une différence entre les résultats
+   SIDOLO, et VISCOCHAB, d'un part, et VISC_CIN2_MEMO d'autre part, pour des valeurs du
+   paramètre ETA
+   inférieures à 0.5, et au bout de plusieurs cycles de chargement (résultats OK pour le
+   premier cycle).
+   
+   En effet il y avait un bug pour l'effet de mémoire dans VISC_CIN2_MEMO, qui se manifestait
+   surtout pour des valeurs du paramètre ETA inférieures à 0.5. En effet, dans la formulation
+   intiale de J.L.Chaboche, ce paramètre ETA n'existe pas (ce qui revient à lui affecter une
+   valeur 0.5 dans la formulation Aster, issue de travaux MMC). 
+   
+   Les tests de validation avaient donc été effectués avec ETA=0.5. Seul un test de non
+   régression comportait une valeur de ETA inférieure à 0.5, mais sur un seul cycle de
+   chargement. Les tests étaient donc insuffisants pour mettre en évidence le problème. On
+   ajoute donc un test (SSND111) similaire à l'étude qui a mis en évidence le problème avec
+   comparaison entre SIDOLO, VISCOCHAB implicite, VISCOCHAB explicite et VISC_CIN2_MEMO.
+   
+   Les résultats étaient donc faux dans les conditions suivantes :
+   
+   - comportement VMIS_CIN2_MEMO ou VISC_CIN2_MEMO
+   - ETA < 0.5
+   - plusieurs cycles de chargement.
+   
+   Details de la correction :
+   - l'effet de mémoire (du plus grand écrouissage) est caractérisé par un domaine convexe,
+   une fonction seuil et une loi d'évolution du centre de ce domaine, tout à fait similaires
+   à la plasticité de Von Mises (cf. R5.03.04, ou R5.03.12). Le bug était dans le calcul du
+   centre du domaine : celui-ci évolue avec une amplitude égale au rayon du domaine, dans le
+   cas où ETA=0.5, mais dans le cas où ETA < 0.5, avec une amplitude beaucoup plus grande.
+    
+   Tout se passe dans la routine NMCHCR, qui calcule la fonction scalaire dont on cherche le
+   zero. Cette résolution est faite par une méthode de sécante. Pour l'initialiser, on
+   cherche des bornes telles que la fonction change de signe. Or dans le cas présent, dans la
+   recherche des bornes, on franchissait la fonction seuil relative à la mémoire, mais
+   ensuite, lors de la résolution par la sécante, on ne la franchissait plus : c'était du au
+   fait que si le seuil n'était pas franchi, la variable représentant le centre n'était pas
+   initialisée. Le code devrait donc utiliser la dernière valeur restée en mémoire de la
+   subroutine (rémanence des variables statiques).
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.2.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.2.16
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.08.111
+VALIDATION
+    tests avec VISC_CIN2_MEMO, SSND111
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 11/17/2010 - 10:25:00
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015808 DU 2010-10-22 15:32:17
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW10.2.21, les cas-test sdll141a, sdll141d s'arretent en erreur _<F> sur Aster4
+FONCTIONNALITE
+   PROBLEME
+   =========
+     Planton sur Aster4 des cas-tests sdll141a et sdll141d (NEW10.2.21 seq nodebug)
+   ANALYSE
+   =======
+     Il s'agit de calcul modaux QEP en reel non symetrique. Pb de taille N=106 dont on
+     cherche 30 modes via MODE_ITER_SIMULT + METHODE='SORENSEN' (+ potards par defaut).
+     Ces plantons sont dus a une norme d'erreur du 29ieme mode legerement superieure a 
+     la tolerance. Le changement de machine a legerement modifie ces chiffres.
+     Dans un tel cas de figure, l'utilisateur a plusieurs bras de levier:
+         - diminuer le nbre de frequence souhaitees (via OPTION, NMAX_FREQ...) ou 
+           MACRO_MODE_MECA (en GEP sym reel),
+         - augmenter la taille de l'espace de projection (via DIM/COEF_SOUS_ESPACE...),
+         - changer de solveur modal (ici SORENSEN ou QZ),
+         - changer de variante (APPROCHE pour SORENSEN, TYPE_QZ pour QZ)
+     Plutot qu'augmenter la tolerance, on va aussi introspecter ds ce sens:
+                         
+   ____________________________Norme_erreur_mode_29 ____Erreur_moyenne_tous_les_modes
+   ____Pour SDLL141A
+   ________Bull
+   SORENSEN+REEL+COEF_DIM_ESPACE=2___1.49 E-03 _____________________ 0.06 E-03
+   ________Aster4
+   SORENSEN+REEL+COEF_DIM_ESPACE=2___2.15 E-03 _____________________ 0.11 E-03
+   ________+COMPLEXE_________________0.63 E-03 _____________________ 0.04 E-03
+   ________+REEL+COEF_DIM_ESPACE=3___4.14 E-03 _____________________ 0.14 E-03
+   
+   QZ________________________________0.02 E-03 _____________________ 0.006 E-03
+   
+     Donc ici le changement de variante pour SORENSEN, passage de APPROCHE='REEL' a
+   'COMPLEXE' amene un gain notable sur l'erreur qui permet de passer la barre fatidi
+   que. Mais le vrai gain (facteur 100) est procure par la methode QZ.
+   On passe donc en methode QZ sur ce calcul. On est tout a fait ds son perimetre d'uti
+   lisation: pb de petite taille (<1000) dont on cherche une grande partie du spectre
+   (ici 30%).
+   
+    On fait la meme chose pour le SDLL141D. QZ fait passer l'erreur de 2.42 E-03 a
+    2.E-5
+   
+   SOURCES RESTITUEES
+   ==================
+   sdll141a et sdll141d
+   
+   Attention, l'usage de QZ fait apparaitre, ds ce cas, l'ALARME suivante:
+   
+      !----------------------------------------------------------------!
+      ! <A> <ALGELINE4_87>                                             !
+      !                                                                !
+      ! pour le probleme réduit                                        !
+      !  valeur(s) propre(s) réelle(s)                  :  0           !
+      !  valeur(s) propre(s) complexe(s) avec conjuguée :  100         !
+      !  valeur(s) propre(s) complexe(s) sans conjuguée :  12          !
+      !                                                                !
+      !                                                                !
+      ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+      ! alarme, vous pouvez obtenir des résultats inattendus !         !
+      !----------------------------------------------------------------!
+   
+   Elle est normale. Elle signifie que QZ a rate potentiellement 12 modes parmis
+   les 2x106 recherches mais, ds la bande frequentielle recherchee, on les a (sans
+   doute) toutes recuperees (en l'absence de test de Sturm adapte on ne peut en dire
+   plus !).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    informatique, non-regression
+DEJA RESTITUE DANS : 10.2.24
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 11/17/2010 - 10:25:01
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015577 DU 2010-09-21 16:03:05
+TYPE anomalie concernant Code_Aster (VERSION 10.2)
+TMA : DeltaCad
+TITRE
+    Poutre MULTI_FIBRE ELAS+THERMIQUE
+FONCTIONNALITE
+   Objectifs
+   ---------
+   - Routine pmfcom: correction de l'anomalie concernant le calcul de la déformation
+   thermique pour le comportement ELAS. 
+   - Transfert dans les routines chapeaux (pmfcom,...) du calcul de la dilatation thermique
+   qui est actuellement effectué dans les routines loi de comportement (nm1dis,...)
+   
+   Modifications
+   -------------
+   -> Routine pmfcom: le calcul de la déformation thermique pour le comportement ELAS.
+   L'erreur est du au fait que l'on calculait la déformation thermique et non l'accroissement
+   la déformation thermique. Il faut mettre à la ligne 115 de pmfcom, lors de l'appel à la
+   routine VERIFM dans les arguments 'T' et non '+' 
+   -> Transfert dans les routines chapeaux du calcul de la déformation thermique
+   - Routine chapeaux concernées: pmfcom, nmco1d, nmpine, nmiclb, comcq1
+   - Routines lois de comportement concernées
+     'LABORD_1D'..........-> routine nmcb1d
+     'PINTO_MENEGOTTO'....-> routine n1dpm
+     'VMIS_CINE_LINE' ....-> routine nm1dci
+     'VMIS_ISOT_LINE' ....-> routine nm1dis
+     'GRAN_IRRA_LOG'  ....-> routine nm1vil
+     'VISC_IRRA_LOG'  ....-> routine   "
+   
+   Validation
+   ----------
+   => Non-regression
+   Passage des cas-tests utilisant les lois de comportements : 'LABORD_1D',
+   'PINTO_MENEGOTTO', 'VMIS_CINE_LINE', 'VMIS_ISOT_LINE', 'GRAN_IRRA_LOG', 'VISC_IRRA_LOG' 
+   => nouveau cas-test
+   Création d'un nouveau cas-test hsll100a "Poutre multi-fibre bi-encastrée soumise à un
+   champ de température",basé sur l'étude fournie. Dans ce cas-test on test :
+   - Le comportement ELAS (Premier STAT_NON_LINE): résultat comparer a la solution analytique.
+   - Le comportement VMIS_ISOT_LINE (Deuxième STAT_NON_LINE): 
+   résultat comparer a la solution analytique. Pour ce calcul le comportement de la poutre
+   est toujours élastique.
+   
+   Documentation
+   -------------
+   Création de la doc V7.16.100 correspondant au nouveau cas-test hsll100a
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1.15
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.16.100
+VALIDATION
+    hsll100a
+DEJA RESTITUE DANS : 10.2.25
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 11/17/2010 - 10:25:01
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015154 DU 2010-06-04 06:08:58
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    creation d'un tran_gene avec REST_SPEC_TEMP
+FONCTIONNALITE
+   Depuis son implantation REST_SPEC_TEMP était censé pouvoir travailler sur des 
+   structures de données résultats sur base physique ou modale :
+   En effet sa syntaxe comporte en entrée, l'un des deux mot-clé suivant :
+   RESU_GENE       =SIMP(statut='f',typ=(harm_gene,tran_gene,) ),
+   RESULTAT        =SIMP(statut='f',typ=(dyna_harmo,dyna_trans,) ),
+   En pratique cet opérateur n'avait été utilisé et testé que sur base physique 
+   (cf. cas-test sdls119a).
+   Irmela, en voulant l'utiliser sur base modale, a obtenu une erreur.
+   
+   Analyse du problème :
+   la programmation sur base modale est incorrecte dès qu'on manipule une sd de 
+   type tran_gene (que ce soit en lecture ou création). En effet c'est la seule sd 
+   qui soit très différente des autres sd utilisables avec REST_SPEC_TEMP.
+   Par exemple, tran_gene ne peut être créee par RSCRSD et ainsi de suite...
+   Son mode de construction et de manipulation doit donc être programmé à part, en 
+   reprenant ce qui est fait dans DYNA_TRAN_MODAL.
+   
+   Correction :
+   on rajoute les traitements spécifique à tran_gene (impact sur ECRESU et PREFFT).
+   On en profite aussi pour modifier SPDFFT afin de coller à la FFT de 
+   CALC_FONCTION (point milieu du spectre : cf. t_fonction.py).
+   
+   On corrige aussi un petit bug dans la FFT de CALC_FONCTION (dans t_fonction.py).
+   Le calcul de FFT avec CALC_FONCTION et option PROL_ZERO ne marche pas 
+   correctement si le nombre d'échantillons du signal d'entrée est une puissance de 
+   deux. En effet, dans ce cas on va prolonger jusqu'à la prochaine puissance de 
+   deux supérieure.
+   Nombre échantillon = 2^n, alors on prolonge avec des 0 jusqu'à 2^(n+1).
+   C'est pas totalement faux, mais c'est pas ce qu'on attend...
+   
+   Dans t_fonction.py, le test fautif c'est celui là :
+          if len(self.vale_y) < 2**(n+1):
+   Le n est le plus grand entier tel que Nb échantillon (=len(self.vale_y)) soit 
+   supérieur ou égal à 2^n. Donc en cas d'égalité : 
+   len(self.vale_y) = 2**n et donc on a aussi len(self.vale_y) < 2**(n+1) ce qui 
+   fait qu'on va prolonger le signal indûment.
+   Je propose de corriger cela en remplaçant par le test suivant :
+          if len(self.vale_y) > 2**n:
+   La fiche 15038 devait corriger cela, mais il y a eu un petit raté...
+   
+   
+   Impact sur les sources :
+   prefft.f
+   spdfft.f
+   ecresu.f
+   t_fonction.py
+   
+   Pas d'impact sur la doc : on met en fait le code en conformité avec sa doc...
+   
+   Validation :
+   j'ai testé avec une version modifiée de sdls119a (qui est le seul cas-test 
+   utilisant RESP_SPEC_TEMP mais sur base physique) et j'ai repassé tous les cas-
+   tests faisant de la FFT (demo002a, miss07b, sdls119a, zzzz100b, zzzz241a)  pour 
+   vérifier que les tests restaient OK.
+   Je ne livre pas de cas-test sur base modale (sdls119a est déjà suffisamment 
+   compliqué et long) car Irmela va livrer un vrai cas-test complet utilisant cette 
+   fonctionnalité.
+   
+   Report en NEW9 :
+   on reporte la correction de la FFT dans t_fonction.py : c'est très simple, il 
+   faut juste reporter les corrections indiquées ci-dessus aux lignes 412 et 467.
+   Pour REST_SPEC_TEMP lui-même on décide de ne pas reporter la correction. En 
+   effet, les routines PREFFT et SPDFFT sont assez différentes. De plus aucune 
+   utilisation sur base modale n'a eu lieu en NEW9.
+   Afin de blinder le code, on va juste modifier le catalogue rest_spec_temp.capy 
+   pour interdire la manipulation de sd sur base modale.
+   Pour cela il suffit de retirer les quatre lignes suivantes :
+     if AsType(RESU_GENE) == harm_gene    : return tran_gene
+     if AsType(RESU_GENE) == tran_gene    : return harm_gene
+     regles=UN_PARMI('RESU_GENE','RESULTAT'),
+     RESU_GENE       =SIMP(statut='f',typ=(harm_gene,tran_gene,) ),
+   et rendre le mot-clé RESULTAT obligatoire :
+     RESULTAT        =SIMP(statut='o',typ=(dyna_harmo,dyna_trans,) ),
+   
+   Dans le fortran, si on veut être totalement rigoureux, il faudrait aussi retirer 
+   les lectures du mot-clé RESU_GENE. Donc, dans OP0181, il faudrait retirer les 
+   lignes suivantes :
+         IF ( NVAL.EQ.0 ) THEN
+            CALL GETVID(' ','RESU_GENE',1,1,1,RESIN,NVAL)
+         ENDIF
+   Et retirer la partie suivante du IF ligne 66  :
+   .OR.(TYPRES(1:9).EQ.'HARM_GENE')
+   Ensuite il faut retirer toutes les allusions à HARM_GENE et TRAN_GENE dans 
+   ECRESU, et c'est tout.
+   Je modifie la doc U4.63.34 en version 9 pour retirer les allusions au mot-clé 
+   RESU_GENE (en v10 la doc reste OK telle qu'elle était).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cas-test perso (basxc3xa9 sur sdls119a)
+DEJA RESTITUE DANS : 10.2.25
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR moulin       MOULIN Stéphane       DATE 11/17/2010 - 10:25:01
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015176 DU 2010-06-09 13:41:38
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    poutre multifibres : arrxc3xaat en erreur en multi-matxc3xa9riau
+FONCTIONNALITE
+   Problème :
+   ----------
+   Il s'agit d'un problème relevé sur le forum.
+   Si l'on utilise une poutre multi-fibre avec plusieurs matériaux dont au moins un qui
+   utilise ALGO_1D='DEBORST', on rencontre une erreur dans la construction du matériau.
+   
+   Analyse :
+   ---------
+   Il s'agit d'un problème dans les poutres multi-fibres avec ALGO_1D='DEBORST' où l'on ne
+   récupère que le 1er matériau. Il y a un commentaire dans le source qui décrit cette
+   limitation.
+   
+   Solution :
+   ----------
+   Dans DEFI_COMPOR, Si on essaie de définir une poutre multi-fibre avec plusieurs matériaux
+   dont au moins un qui utilise ALGO_1D='DEBORST', on émet une erreur fatale avec le message : 
+   ...!-----------------------------------------------------------------------!
+   ...!.<EXCEPTION>.<COMPOR1_15>..............................................!
+   ...!.......................................................................!
+   ...!.L'utilisation.de.lois.de.comportement.via.ALGO_1D='DEBORST'.nécessite.!
+   ...!..d'avoir.un.seul.matériau.par.poutre!.................................!
+   ...!-----------------------------------------------------------------------!
+   De plus, on l'écrit dans la doc d'utilisation des poutres multi-fibres.
+   
+   La fiche issue15882 a été émise pour faire le développement des poutres multi-fibres
+   multi-matériaux avec ALGO_1D='DEBORST'.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U3.11.07
+VALIDATION
+    sans objet
+DEJA RESTITUE DANS : 10.2.25
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR devesa       DEVESA Georges         DATE 11/17/2010 - 10:25:01
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015910 DU 2010-11-16 09:01:17
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.7.6, le cas-test sdnv107c s'arrete pour des erreurs de syntaxe sur toutes les plates-formes.
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Le test sdnv107c a été restitué en version 9 avec une mauvaise syntaxe 
+   (la restitution ayant été forcée pour ne pas bloquer les autres 
+   corrections).
+   
+   
+   Correction
+   ==========
+   
+   Georges a fourni une nouvelle version du test avec la syntaxe corrigée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdnv107c
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR audebert     AUDEBERT Sylvie        DATE 11/17/2010 - 10:25:02
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015710 DU 2010-10-11 12:36:01
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    COMB_SISM_MODAL
+FONCTIONNALITE
+   Analyse sismique spectrale : utilisation de la correction statique via 
+   le calcul du pseudo-mode relativement à l'opérateur COMB_SISM_MODAL
+   
+   PB. décrit par SEPTEN : 
+   La doc R4.05.03 spécifie que la contribution du pseudo-mode est la 
+   valeur lue sur le spectre de pseudo-accélération pour la dernière 
+   fréquence propre de la base modale retenue. Or, il apparait que 
+   la pseudo-accélération réellement prise en compte est celle 
+   correspondant à la fréquence de coupure du spectre.
+   La comparaison entre un calcul avec Code_Aster et avec Hercule a permis 
+   de montrer ceci.
+   
+   Constat : tel que c'est codé dans Code_Aster, lorsqu'on tronque la base 
+   modale avant la fréquence de coupure et qu'on effectue une correction 
+   via le pseudo-mode (pratique de l'ingénierie non recommandée par la 
+   R&D), on n'est plus majorant. Le source n'est pas en cohérence avec la 
+   doc. R. Il est cohérent avec ce que fait CASTEM par rapport auquel on 
+   s'est comparé. Cette anomalie existe depuis le début de l'existence de 
+   Code_Aster.
+   Il existe des cas-tests discriminants, c'est-à-dire visant à mettre en 
+   évidence l'effet du pseudo-mode mais, soit les valeurs de référence 
+   sont des moyennes de codes qui se basent certainement sur la même 
+   hypothèse, soit les valeurs de référence sont analytiques, mais les 
+   calculs analytiques se basent également sur cette même hypothèse.
+   
+   Correction : la correction consiste à mettre le source en cohérence 
+   avec la doc. R, c'est-à-dire à considérer le pseudo-mode calculé à 
+   partir de la valeur lue sur le SRO à la dernière fréquence de la base 
+   modale considérée.
+   Les cas-tests analytiques SDLD30 et SDLD301 sont repris avec la 
+   formulation corrigée et la modification est validée.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v2.01.30, v2.01.301, v2.01.25, v2.02.23, v2.02.131, R04.05.03
+VALIDATION
+    astout sur COMB_SISM_MODAL
+DEJA RESTITUE DANS : 10.2.25
+NB_JOURS_TRAV  : 12.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 11/17/2010 - 10:25:02
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015913 DU 2010-11-16 09:41:13
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW9.7.6, le cas-test senst05a est NOOK sur Aster 4.
+FONCTIONNALITE
+   Report en version 9 dans la fiche 15813 (restituée en 10.2.24) : on 
+   relâche les tolérances.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    senst05a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT hsll100a                      macocco K.MACOCCO          280    280      0
+ CASTEST AJOUT ssnd111a                      macocco K.MACOCCO          150    150      0
+ CASTEST MODIF sdld25a                       macocco K.MACOCCO          229     25      4
+ CASTEST MODIF sdld301a                      macocco K.MACOCCO          781      1      1
+ CASTEST MODIF sdld30a                       macocco K.MACOCCO         2268     19     25
+ CASTEST MODIF sdll131a                      macocco K.MACOCCO         1477      7      7
+ CASTEST MODIF sdll141a                      macocco K.MACOCCO          180      2      2
+ CASTEST MODIF sdll141d                      macocco K.MACOCCO          184      2      2
+ CASTEST MODIF sdll23a                       macocco K.MACOCCO          657     88     18
+ CASTEST MODIF sdnv107c                      macocco K.MACOCCO          646      5     10
+ CASTEST MODIF senst05a                      macocco K.MACOCCO          307      3      3
+CATALOPY MODIF commande/rest_spec_temp       macocco K.MACOCCO           35      3      7
+ FORTRAN MODIF algeline/vpqzla               macocco K.MACOCCO         1111     13      1
+ FORTRAN MODIF algorith/asacce               macocco K.MACOCCO          124      6      6
+ FORTRAN MODIF algorith/ascalc               macocco K.MACOCCO          219      3      3
+ FORTRAN MODIF algorith/astron               macocco K.MACOCCO          161      9      6
+ FORTRAN MODIF algorith/crtype               macocco K.MACOCCO          453      4      3
+ FORTRAN MODIF algorith/nm1dci               macocco K.MACOCCO          111      5      5
+ FORTRAN MODIF algorith/nm1dis               macocco K.MACOCCO          161      5      5
+ FORTRAN MODIF algorith/nm1dpm               macocco K.MACOCCO          406      5      7
+ FORTRAN MODIF algorith/nm1vil               macocco K.MACOCCO          239      4      6
+ FORTRAN MODIF algorith/nmchcr               macocco K.MACOCCO          219     19      5
+ FORTRAN MODIF algorith/nmco1d               macocco K.MACOCCO          153     11      5
+ FORTRAN MODIF algorith/nmiclb               macocco K.MACOCCO          152      9      4
+ FORTRAN MODIF algorith/nmpime               macocco K.MACOCCO          125      7      5
+ FORTRAN MODIF algorith/op0109               macocco K.MACOCCO          426      1      2
+ FORTRAN MODIF elements/comcq1               macocco K.MACOCCO          113      8      4
+ FORTRAN MODIF elements/nmcb1d               macocco K.MACOCCO          126      6      5
+ FORTRAN MODIF elements/pmfcom               macocco K.MACOCCO          315     31     16
+ FORTRAN MODIF modelisa/op0059               macocco K.MACOCCO          379     12      2
+ FORTRAN MODIF utilitai/ecresu               macocco K.MACOCCO          153      3     11
+ FORTRAN MODIF utilitai/op0181               macocco K.MACOCCO           89      2      6
+  PYTHON MODIF Messages/compor1              macocco K.MACOCCO          383      6      1
+  PYTHON MODIF Utilitai/t_fonction           macocco K.MACOCCO          729      3      3
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         430       430              +430
+ MODIF :   32       13111       327     190      +137
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   34       13541       757     190      +567 

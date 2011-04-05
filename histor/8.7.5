@@ -1,0 +1,504 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 05/11/2008 - 14:39:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012648 DU 2008-10-16 15:12:38
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.3.16, le cas-test yyyy117a s?arrete en ERREUR_<F> sur Rocks.
+FONCTIONNALITE
+   Problème:
+   ---------
+   Le test yyyy117a se plante dans le te0581 sur clpaster.
+                                                                                            
+                         
+   Solution:
+   ---------
+   Jean-Michel a instrumenté le source de te0581 pour en savoir plus :
+                                                                                            
+                         
+         CALL TECACH('ONN','PEPCON1',7,JTAB1,IRET)
+         CALL TECACH('ONN','PEPCON2',7,JTAB2,IRET)
+         CALL TECACH('ONN','PEPCON3',7,JTAB3,IRET)
+                                                                                            
+                         
+         IF ( JTAB1(1)*JTAB2(1)*JTAB3(1).EQ.0 ) THEN
+            WRITE(6,*) ' ', JTAB1(1)    # ajout JMP
+            WRITE(6,*) ' ', JTAB2(1)    # ajout JMP
+            WRITE(6,*) ' ', JTAB3(1)    # ajout JMP
+            VALK(1) = OPTION
+            VALK(2) = NOMTE
+            CALL U2MESK('F','ELEMENTS4_38', 2 ,VALK)
+         ENDIF
+                                                                                            
+                         
+   Et il a été supris de voir que, bien que leur produit soit 0 :
+          JTAB1=-231864320
+          JTAB2=-231919616
+          JTAB3=-231974912
+                                                                                            
+                         
+   C'est vraiment la faute à "pas de chance" : le produit de 3 adresses jeveux non nulles est
+   nul grace aux propriétés de l'arithmétique entière !
+                                                                                            
+                        
+   J'ai effectivement repris ces nombres "pas de chance" dans un petit programme fortran :
+                                                                                            
+                        
+   -----------------------------------------------------------------------------------
+          program toto
+          integer*4 i1, i2, i3
+          i1=-231 864 320
+          i2=-231 919 616
+          i3=-231 974 912
+                                                                                            
+                         
+          write(6,*) 'i1+1=',i1+1
+          write(6,*) 'i2+1=',i2+1
+          write(6,*) 'i3+1=',i3+1
+                                                                                            
+                         
+          write(6,*) 'i1*i2=',i1*i2
+          write(6,*) 'i1*i2*i3=',i1*i2*i3
+          write(6,*) 'i1*i2*(i3+1)=',i1*i2*(i3+1)
+          write(6,*) 'i1*i2*(i3+2)=',i1*i2*(i3+2)
+                                                                                            
+                  
+          end
+   -----------------------------------------------------------------------------------
+   Ce programme, exécuté sur clpaster produit le résultat suivant :
+    i1+1= -231864319
+    i2+1= -231919615
+    i3+1= -231974911
+    i1*i2= 159383552
+    i1*i2*i3= 0
+    i1*i2*(i3+1)= 159383552
+    i1*i2*(i3+2)= 318767104
+   -----------------------------------------------------------------------------------
+                                                                                            
+                        
+   On constate que i1*i2*i3 est bien nul ! ce qui est très surprenant pour un ingénieur de la
+   vieille école.
+                                                                                            
+                         
+   Pourtant, la multiplication des "grands nombres" conserve une certaine régularité :
+   i1*i2*(i3+2) = i1*i2*i3 (0) + i1*i2*2 = 318767104  !!
+                                                                                            
+                         
+   Reste une question non élucidée :
+   Pourquoi cette programmation (qui existe depuis la version 5.2.21) n'a jamais produit ce
+   problème et qu'elle le fait assez systématiquement depuis 15 jours ? Est-ce parce que les
+   adresses en "Jeveux dynamique" sont plus "négatives" ?
+                                                                                            
+                                                                                            
+                                               
+   Conclusion :
+   ------------
+   Pour tester que 3 adresses JEVEUX sont toutes non nulles, il ne faut pas utiliser l'astuce
+   de tester leur produit mais il faut tester les 3 valeurs.
+                                                                                            
+                         
+   Je modifie te0581.f en conséquence
+                                                                                            
+                         
+   Temps passé :
+   -------------
+   JMP : 0.3
+   JP  : 0.1
+   
+   Correction à reporter en NEW8 :
+   -------------------------------
+   te0581.f :
+   67c67
+   <       IF ( JTAB1(1)*JTAB2(1)*JTAB3(1).EQ.0 ) THEN
+   ---
+   >       IF ( (JTAB1(1).EQ.0) .OR.(JTAB2(1).EQ.0).OR.(JTAB3(1).EQ.0)) THEN
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   yyyy117a
+NB_JOURS_TRAV  : 0.4
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012684 DU 2008-10-21 15:14:08
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   souci avec RESOUDRE
+FONCTIONNALITE
+   Problème:
+   ---------
+   L'étude fournie se plante (salement) dans la commande FIN.
+                                                                                            
+                                                                                            
+                                 
+   Solution:
+   ---------
+   Si on force l'usage de la mémoire STATIQUE, on s'aperçoit que l'écrasement a lieu dans la
+   commande RESOUDRE.
+   En utilisant JXVERI, on peut alors trouver l'origine du problème.
+   Il s'agit d'une erreur d'utilisation car la matrice n'a pas le meme nombre de ddls que le
+   second membre.
+                                                                                            
+                         
+   Cette erreur d'utilisation conduit maintenant au message (factor.py) :
+   67: _("""
+   Erreur d'utilisation (commande RESOUDRE) :
+     La matrice et le second membre fournis à la commande RESOUDRE
+     ne sont pas de meme dimension (nombre de ddls).
+   Conseil: Vérifier la cohérence des arguments MATR et CHAM_NO.
+   """),
+   
+   NEW8 :
+   ------
+   Corrections à reporter en version 8 :
+   
+   resoud.f :
+   82c82
+   <       CHARACTER*3 KMPIC,TYPE,TYP1
+   ---
+   >       CHARACTER*3 KMPIC,TYPE,TYP1,KBID
+   86c86
+   <       INTEGER JSLVK,JSLVR,JSLVI,IDBGAV,NEQ
+   ---
+   >       INTEGER JSLVK,JSLVR,JSLVI,IDBGAV,NEQ,NEQ1
+   145a148,151
+   >           CALL JELIRA(SECM19//'.VALE','LONMAX',NEQ1,KBID)
+   >           IF (NEQ1.NE.NEQ) CALL U2MESS('F','FACTOR_67')
+   >           CALL JELIRA(SECM19//'.VALE','TYPE',IBID,TYP1)
+   >           IF (TYP1.NE.TYPE) CALL U2MESS('F','FACTOR_68')
+   180a187  
+   
+   factor.py :
+   263a264,277
+   > 67: _("""
+   > Erreur d'utilisation (commande RESOUDRE) :
+   >   La matrice et le second membre fournis à la commande RESOUDRE
+   >   ne sont pas de meme dimension (nombre de ddls).
+   > Conseil: Vérifier la cohérence des arguments MATR et CHAM_NO.
+   > """),
+   >
+   > 68: _("""
+   > Erreur d'utilisation (commande RESOUDRE) :
+   >   La matrice et le second membre fournis à la commande RESOUDRE
+   >   ne sont pas du meme type (réel/complex).
+   > Conseil: Vérifier la cohérence des arguments MATR et CHAM_NO.
+   > """),
+   >
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   xc3xa9tude fournie
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 05/11/2008 - 14:39:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012686 DU 2008-10-22 09:18:20
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   le cas test ssnv166c plante en NEW9 sur la bull
+FONCTIONNALITE
+   Le test ssnv166c est exécuté en mémoire statique avec une partition de la mémoire. Au
+   cours de l'exécution cette partition est supprimée pour pouvoir s'allouer une zone, le
+   mécanisme en question devrait éliminer toute trace de la partition, ce n'est pas le cas .
+   La mise en oeuvre récente de la vérification de la segmentation mémoire dans la commande
+   FIN (appel à JXVERI) détecte une anomalie, ce qui aurait pu se produire avec l'appel à
+   JEIMPM. Cette ereur n'a aucun impact sur les calculs, seules les deux routines ci-dessus
+   pouvaient détecter ce défaut.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   test ssnv166c
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012679 DU 2008-10-20 12:52:35
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.3.16, le cas-test zzzz127a s?arrete en ERREUR_<F> sur Calibre 4 et 5
+FONCTIONNALITE
+   L'erreur a lieu lorsqu'on effectue le retassage de la base globale. Lors de cette
+   opération il est nécessaire de fermer les bases globale et volatile, puis de relire la
+   base globale. Lors de cette étape de relecture, au moment de l'ouverture de la base, il
+   est nécessaire de reconstruire les objets système Jeveux. L'objet systéme contenant les
+   statistiques d'accès au enregistrement n'était pas créé assez tôt et lors de la relecture
+   du premier enregistrement on accèdait à une zone mémoire invalide. En mémoire dynamique
+   cet accès provoque tout de suite une erreur. 
+   On corrige la routine JEINIF en déplacant le bloc de création de l'objet système associé à
+   IACCE.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   zzzz127a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 05/11/2008 - 14:39:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012471 DU 2008-09-11 14:03:44
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Problxc3xa8me CREA_CHAMP / ASSE pour les variables internes
+FONCTIONNALITE
+   Problème :
+   ----------
+   Ce problème a été rencontré par Roméo Fernandes dans le cadre du projet MADRAS.
+                                                                                            
+                           
+   Lors de la modification du plan d'assemblage d'un coeur, il faut pouvoir extraire d'un
+   evol_noli un état mécanique (deplacements, contraintes et variables internes) puis
+   "réinitialiser" (à zéro) les assemblages remplacés par des assemblages neufs.
+                                                                                            
+                           
+   Pour cela, on veut faire (par exemple à la fin du test ssnl122a) :
+                                                                                            
+                           
+   U1=CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+                      NOM_CHAM='DEPL', RESULTAT=STNL,  INST=2. )
+                                                                                            
+                           
+                                                                                            
+                           
+   U2 = CREA_CHAMP ( OPERATION = 'ASSE' , MODELE = MO , TYPE_CHAM = 'NOEU_DEPL_R' ,
+                       ASSE = (_F ( TOUT = 'OUI' ,      CHAM_GD = U1 ,  COEF_R=1.E0),
+                               _F ( MAILLE = 'E00203' , CHAM_GD = U1 ,  COEF_R=0.E0),
+                                   ) , )
+                                                                                            
+                           
+   SIG1=CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',
+                      NOM_CHAM='SIEF_ELGA', RESULTAT=STNL,  INST=2. )
+                                                                                            
+                           
+                                                                                            
+                           
+   SIG2 = CREA_CHAMP ( OPERATION = 'ASSE' , MODELE = MO , TYPE_CHAM = 'ELGA_SIEF_R' ,
+                       ASSE = (_F ( TOUT = 'OUI' ,      CHAM_GD = SIG1 ,  COEF_R=1.E0),
+                               _F ( MAILLE = 'E00203' , CHAM_GD = SIG1 ,  COEF_R=0.E0),
+                                   ) , )
+                                                                                            
+                           
+                                                                                            
+                           
+   VAR1=CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_VARI_R',
+                      NOM_CHAM='VARI_ELGA', RESULTAT=STNL,  INST=2. )
+                                                                                            
+                           
+   VAR2 = CREA_CHAMP ( OPERATION = 'ASSE' , MODELE = MO , TYPE_CHAM = 'ELGA_VARI_R' ,
+                       ASSE = (_F ( TOUT = 'OUI' ,      CHAM_GD = VAR1 ,  COEF_R=1.E0),
+                               _F ( MAILLE = 'E00200' , CHAM_GD = VAR1 ,  COEF_R=0.E0),
+                                   ) , )
+                                                                                            
+                           
+   Malheureusement, le modèle contient des éléments à "sous-points" (poutres multi-fibres) et
+   la séquence de calcul précédente se termine en erreur fatale dans la dernière commande
+   (CREA_CHAMP/ASSE pour les variables internes) :
+     "<F> CONDITION NON VERIFIEE" (assert appelé par la routine cesfus à la ligne 176).
+                                                                                            
+                           
+   Analyse :
+   ---------
+   Il y a 2 problèmes qui se téléscopent :
+   1) dans la routine cesfus.f :
+     Une faute de frappe (.EQ. -> .NE.) faisait que la fusion de ch1 avec ch2, ne stockait
+   pas les
+     valeurs de ch2 sur les mailles pour lesquelles ch1 était "vide" (pas de points ni de
+   sous-points)
+   2) dans la routine chpass.f :
+     J'avais ajouté un bout de code (vers la ligne 267) :
+             IF ((NOMGD.EQ.'VARI_R') .AND. (TYCHR(1:2).EQ.'EL')) THEN
+   C           -- POUR CONSERVER LE NOMBRE DE VARIABLES INTERNES DU
+   C              CHAMP "MODELE" :
+               CESRAZ = '&&CHPASS.CESRAZ'
+               ...
+     Je pense que j'ai ajouté ce bloc de code idiot car il permettait (mais c'était
+   involontaire) de contourner dans certains cas le problème de cesfus.f : en effet, le champ
+   ch1 donné à cesfus.f n'était jamais "vide" sur les mailles du modèle.
+                                                                                            
+                           
+                                                                                            
+                           
+   Solution proposée :
+   -------------------
+   On corrige cesfus.f et chpass.f
+                                                                                            
+                           
+   Je propose de reporter ces corrections en NEW8 :
+                                                                                            
+                           
+   cesfus.f :
+   176c177
+   <               IF (NBPT.EQ.0) ZI(JNBPT-1+IMA)=NBPT
+   ---
+   >               IF (NBPT.NE.0) ZI(JNBPT-1+IMA)=NBPT
+   188c189
+   <               IF (NBSP.EQ.0) ZI(JNBSP-1+IMA)=NBSP
+   ---
+   >               IF (NBSP.NE.0) ZI(JNBSP-1+IMA)=NBSP
+                                                                                            
+                           
+   chpass.f :
+   267,284d266
+   <           IF ((NOMGD.EQ.'VARI_R') .AND. (TYCHR(1:2).EQ.'EL')) THEN
+   < C           -- POUR CONSERVER LE NOMBRE DE VARIABLES INTERNES DU
+   < C              CHAMP "MODELE" :
+   <             CESRAZ = '&&CHPASS.CESRAZ'
+   <             CALL COPISD('CHAM_ELEM_S','V',CESMOD,CESRAZ)
+   <             CALL CHSRAZ(CESRAZ)
+   <             LICHS(1) = CESRAZ
+   <             LICHS(2) = CHS2
+   <             LCUMUL(1) = .FALSE.
+   <             LCUMUL(2) = .FALSE.
+   <             LCOEFR(1) = 1.D0
+   <             LCOEFR(2) = COEFR
+   <             LCOEFC(1) = 1.D0
+   <             LCOEFC(2) = COEFC
+   <             CALL CHSFUS(2,LICHS,LCUMUL,LCOEFR,LCOEFC,LCOC,'V',CHS3)
+   <             CALL DETRSD('CHAM_ELEM_S',CESRAZ)
+   <
+   <           ELSE
+   286d267
+   <           ENDIF
+                                                                                            
+                           
+                                                                                            
+                           
+   Validation :
+   ------------
+   1) je modifie ssnl122a pour tester le besoin du projet MADRAS
+   2) J'ai vérifié que les autres tests de CREA_CHAMP/ASSE étaient encore OK
+                                                                                            
+                           
+   Détails :
+   ---------
+   1) J'améliore un peu 2 messages d'erreur de la routine cesfus.f
+   2) Je modifie la valeur PROL_ZERO dans la commande CREA_CHAMP :
+       - l'utilisateur continue à utiliser PROL_ZERO='OUI'/'NON' (defaut: 'NON')
+       - mais le programme (op0195.f) transforme 'NON' en 'NAN', ce qui a comme effet
+   d'éviter que CREA_CHAMP s'arrete en erreur Fatale au fin fond du fortran (sans pouvoir
+   émettre de message clair). Le champ produit contient alors des composantes "undef" qui ne
+   pourront pas etre utilisées sans provoquer d'erreur plus tard.
+   3) J'améliore SDVERI='OUI' et la routine cheksd :
+      * Pour la sd_cham_elem :
+       - vérification assez détaillée de l'objet .CELD (protégée par "if checker._profond :")
+       Remarque : la variable checker._profond est initialisée dans ascheckers.py
+      * Pour la routine cheksd :
+        - calcul correct de IRET (qui était faux car les "assert" ne donnaient pas lieu à un
+   ajout dans checker.msg[]
+        - impression de la liste des messages de checker.msg[]
+        - supression de la glute "AJACOT NON" dans asojb.py (recopie de la traceback de
+   l'assert dans checker.msg)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnl122a
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 05/11/2008 - 14:39:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 012672 DU 2008-10-20 12:25:45
+TYPE anomalie concernant Code_Aster (VERSION 7.0)
+TITRE
+   En NEW 9.3.16, le cas-test sdnd100c est NOOK sur Rocks.
+FONCTIONNALITE
+   Bug dans ACEVD2
+   
+   CALL GETVTX(MCF,'CARA'     ,IOC,1,NBCAR,CAR      ,NCAR)
+   
+   
+            DO 25 ICAR=1,NBCAR
+              IF (CAR(ICAR)(3:4).EQ.'TR') GOTO 28
+      25    CONTINUE
+   
+   
+   Or NBCAR est un PARAMETER
+   PARAMETER    ( NBCAR = 100 )
+   Et le tableau CAR n'est pas initialisé
+   
+   Je corrige par:
+   
+   IF (NCAR.GT.NBCAR) CALL ASSERT(.FALSE.) (protection débordement)
+   
+   et la boucle:
+   DO 25 ICAR=1,NCAR 
+   
+   A faire en 8
+   
+   En fait, c'est un premier bug. Mais il y en a un plus subtil
+   
+   Dans DICHOC.
+   Pour savoir s'il y a glissement, on fait le test suivant:
+   IF (FORT.GT.ABS(COULOM*KTY2)) THEN
+    patacouffin
+   ENDIF
+   
+   FORT-ABS(COULOM*KTY2) vaut -5.55111512E-17 sur les deux machines.
+   Par contre, suivant la machine ou le niveau de DEBUG, on passe dans le test... ou non.
+   Or ce test conditionne le passage glissant/adhérent, ça entraine donc une différence qui
+   se propage tout au long du transitoire pour aboutir à un NOOK sur Rocks:
+   NOOK DX           RELA    -4.219 % VALE: 3.4002311838543D-05
+            NO1      TOLE     0.200 % REFE: 3.5500000000000D-05
+   
+   On pourrait essayer de blinder mieux DIS_CHOC, mais c'est dangereux en plus d'etre
+   difficile. Il est fort probable qu'une modif dans DIS_CHOC impacte d'autres cas-tests.
+   
+   On propose donc de relever la tolerance à 5%
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sdnd100c
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ FORTRAN MODIF algeline/resoud               macocco K.MACOCCO          239     12      2
+ FORTRAN MODIF calculel/cesfus               macocco K.MACOCCO          377      3      3
+ FORTRAN MODIF elements/te0581               macocco K.MACOCCO          103      2      2
+ FORTRAN MODIF jeveux/jeinif                 macocco K.MACOCCO          617      7      5
+ FORTRAN MODIF jeveux/jjcpsg                 macocco K.MACOCCO           92      2      2
+ FORTRAN MODIF modelisa/acevd2               macocco K.MACOCCO          176      4      2
+ FORTRAN MODIF utilitai/chpass               macocco K.MACOCCO          299      1     19
+  PYTHON MODIF Messages/factor               macocco K.MACOCCO          124     14      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    8        2027        45      36        +9
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    8        2027        45      36        +9 

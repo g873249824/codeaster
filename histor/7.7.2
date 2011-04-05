@@ -1,0 +1,146 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR mjbhhpe      FLEJOU J.L.            DATE 02/08/2006 - 11:44:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009682 DU 2006-04-14 12:02:02
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TMA : DeltaCad
+TITRE
+   MACR_CARA_POUTRE : calcul de IYR2 et IZR2 inverse
+FONCTIONNALITE
+   a) Analyse
+   ----------
+   Les grandeurs IYR2 et IZR2 sont des caracteristiques geometriques d'une section de poutre
+   comme par exemple les moments d'inerties geometriques principaux IY et IZ. Elles servent
+   au calcul de la matrice de rigidite des poutres de timonshenko avec gauchissement
+   (POU_D_TG(M)) et leurs expressions sont donnees dans la documentation de reference
+   R3.08.04. Ces caracteristiques ne s'obtenant pas
+   simplement selon le type de section, elles peuvent etre calculees par la macro d'Aster
+   MACR_CARA_POUTRE en fournissant un maillage de la section transverse.
+   
+   Or les expressions donnees dans la documentation de reference et utilisees dans le code (
+   qui decoulent directement de la formulation du principe des travaux virtuels) et les
+   expressions utilisees pour calculer ces caracteristiques dans la macro d'Aster ne
+   coincident pas, elles sont inverses.
+   
+   La consequence de cette inversion et que si on utilise les caracteristiques donnees en
+   sortie de MACR_CARA_POUTRE dans AFFE_CARA_ELEM/POUTRE on va inverser IYR2 et IZR2 et
+   potentiellement commettre des erreurs sur l'evalutation des charges critiques de
+   flambement.
+   
+   b) modification
+   ---------------
+   La correction a consiste a modifier le te0285 qui calcule IYR2 et IZR2.
+   
+   c) Validation
+   -------------
+   Passage de cas-tests ssll107a,d,e,f,g et i.
+   
+   d) Documentation
+   ----------------
+   On rappelle dans la doc U4.42.02 de MACR_CARA_POUTRE les expressions de IYR2
+   et IZR2.
+   
+   RESTIT EN NEW ET STA
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.42.02, R3.08.03
+VALIDATION
+   cas test
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR vabhhts      PELLET Jacques         DATE 02/08/2006 - 11:44:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009880 DU 2006-06-29 05:44:23
+TYPE evolution concernant Code_Aster (VERSION )
+NB_JOURS_TRAV  : 0.1
+TITRE
+   Remise en conformite du dismoi sur PROF_CHNO
+FONCTIONNALITE
+   Anomalie :
+   ----------
+   Dans la routine DISMPN de DISMOI.F, on obtient le nbre d'equation par :
+   
+   CALL JEVEU0(NOMOB//'.NEQU','L',IDNEQU)
+   NEQU=ZI(IDNEQU)
+   
+   Hors, selon la doc D, le '.NEQU' appartient a NUME_EQUA et pas a PROF_CHNO.
+   Il faut recuperer l'info par un jeveuo sur la LONMAX de l'objet .NUEQ
+   
+   Correction :
+   ----------------
+   Il y avait effectivement un petit bug qui est maintenant corrige.
+   
+   Remarque: ce bug ne pouvait se voir qu'en "dynamique" car il concerne la
+   question 'NB_DDLACT'.
+   
+   Pour la NEW7 : le fichier dismpn.f est identique en 7 et en 8
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009910 DU 2006-07-07 10:59:49
+TYPE express concernant Code_Aster (VERSION 2.x)
+NB_JOURS_TRAV  : 0.1
+TITRE
+   ameliorations de la routine TECACH
+FONCTIONNALITE
+   Suite a une AL regardee recemment par Aimery et Jean-
+   Pierre, je propose de faire 2 petites corrections dans la
+   routine TECACH :
+   
+   1) si l'argument NVAL est hors bornes ( 1<= NVAL <=8), on
+   s'arrete maintenant en erreur fatale : c'est une erreur de
+   programmation.
+   
+   2) Si NVAL < 8 et que le champ est incomplet (=> IRET=3) on
+   rend ITAB(1)=0 car l'adresse du champ local incomplet est
+   en fait inexploitable. Cela permet (par exemple te0496) de
+   se contenter de tester la non-nullite de ITAB(1)pour etre
+   sur que le champ local est bien complet (sans regarder
+   IRET).
+   
+   Remarque : je joins pour CS le fichier tecach.f corrige
+   pour la NEW7
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   rien
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ FORTRAN MODIF calculel/tecach               cibhhlv L.VIVAN            326      5      3
+ FORTRAN MODIF elements/te0285               cibhhlv L.VIVAN            207      3      3
+ FORTRAN MODIF utilitai/dismpn               cibhhlv L.VIVAN             93      7      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    3         626        15      11        +4
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    3         626        15      11        +4 

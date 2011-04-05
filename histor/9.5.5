@@ -1,0 +1,422 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 29/09/2009 - 10:12:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013932 DU 2009-09-24 08:55:27
+TYPE express concernant Code_Aster (VERSION 7.0)
+TITRE
+   Couplage Aster-Ecrevisse : mot-cle tortuosite
+FONCTIONNALITE
+   Après utilisation pendant quelques mois du couplage Aster-Ecrevisse par Septen, il s'avere
+   qu'une fonctionnalité n'avait pas été prévue dans la macro-commande de couplage : la
+   possibilité de définir dans Ecrevisse une fissure plus grande que le massif traversé
+   (possibilité de prendre en compte une fissure non rectiligne).
+   
+   On décide d'ajouter cette possibilité dans la macro par l'intermediaire du mot-clé
+   facultatif TORTUOSITE (valeur comprise entre 0 et 1).
+   
+   Nota : intégré en NEW10 et NEW9.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.03.41, A0.02.29
+VALIDATION
+   zzzz218a et zzzz218b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 29/09/2009 - 09:53:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013827 DU 2009-09-07 16:29:58
+TYPE anomalie concernant Code_Aster (VERSION 10.1)
+TITRE
+   bug dans elrfdf : derivee des ff du PYRA5
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Les dérivées par rapport à Z des 4 premières fonctions de forme du PY5 sont fausses au
+   noeud N5 :
+             DFF(3,1) = -UNDEMI
+             DFF(3,2) = -UNDEMI
+             DFF(3,3) = -UNDEMI
+             DFF(3,4) = -UNDEMI
+   
+   Solution :
+   ----------
+   
+   Par passage à la limite des expressions des dérivées des fonctions de formes (voir en PJ
+   la feuille Maple), on trouve -1/4.
+   
+   impact : 
+   elrfdf.f
+   
+   risque de RESU_FAUX :
+   potentiel mais réduit car les dérivées ne sont fausses qu'au noeud N5, c'est-à-dire que si
+   on utilise la famille d'intégration NOEU.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 1.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 1.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   ssnv173q, ssnv185r
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR gnicolas     NICOLAS Gérald         DATE 29/09/2009 - 10:08:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013016 DU 2009-01-05 10:04:53
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Indicateur d'erreur en residu pour les pyramides
+FONCTIONNALITE
+   Contexte
+   ========
+   Depuis la version 9.3.17, HOMARD sait raffiner des maillages comportant des hexaèdres.
+   Pour raccorder les zones de niveaux de raffinement différents, il y a découpage des
+   hexaèdres concernés en tétraèdres et/ou pyramides. Mais le calcul des indicateurs d'erreur
+   ne fonctionnait pas sur les pyramides.
+   La correction est simple. Il a suffit d'inclure la description des voisins d'une pyramide
+   pour que les programmes fonctionnent.
+   Attention : une inconnue reste : la constante présente dans tous les calculs d'indicateurs
+   d'erreur. Cette constante est définie dans les travaux amont pour un type unique de
+   maille. Avec du mélange (QUAD/TRIA ou HEXA/TETR/PYRA par exemple), à notre connaissance,
+   aucun résultat n'existe.
+   
+   
+   Sous-programmes modifiés
+   ========================
+   Des programmes de calcul élémentaire sont modifiés, pour inclure la définition des voisins.
+   te0003 : nouveau tableau 'NOE' des voisins par noeuds. On a ajouté un commentaire detaillé
+   avec des croquis pour expliquer les conventions retenues.
+   Dans les programmes suivants, on inclut la nouvelle définition du tableau 'NOE', avec un
+   commentaire léger et une référence à te0003 pour les détails.
+   Sont concernés : te0368, te0375, uthk, utno3d, ermeb3, ermes3
+   
+   resvoi : nouveau tableau 'SOM' des voisins par sommets
+   
+   Des programmes ont des corrections locales :
+   ermeb3 : prise en compte des pyramides en tant que voisin
+   
+   
+   Cas-tests créé
+   ==============
+   Un nouveau cas-test est créé pour l'occasion : sslv150a. C'est un maillage formé de 4
+   mailles volumiques de chacun des types : tétraèdre, pentaèdre, hexaèdre et pyramide, avec
+   tous les voisinages possibles. Il n'a évidemment aucun autre intérêt que de tester la non
+   régression sur la prise en compte des pyramides.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv150a
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013789 DU 2009-08-28 12:48:26
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   Indicateur d'erreur - mauvais choix de points de Gauss
+FONCTIONNALITE
+   Contexte
+   ========
+   Un examen attentif du source des programmes de calculs des indicateur d'erreur en résidu
+   et en quantité d'intérêt a montré une erreur dans le calcul. Il faut se souvenir que, sur
+   une maille donnée, de tels indicateurs sont formés de deux termes :
+   - un terme volumique, qui mesure un écart de la solution au sein de la maille
+   - un terme surfacique regroupant les écarts entre les contraintes dans la maille courante
+   et l'état au dehors, face par face. Cela recouvre deux situations. Pour une face limitant
+   une autre maille voisine de même dimension, on mesure le saut du champ de contraintes
+   entre la maille courante et cette voisine ; pour une face bordant le domaine de calcul, on
+   mesure l'écart entre les contraintes dans la maille courante et les contraintes imposées
+   ce bord.
+   Pour ces termes surfaciques, la contribution est une intégrale sur la face. En 3D,
+   l'intégration se fait par une formule aux points de Gauss, ces points étant choisis aux
+   noeuds de la face (sp. intega). Malheureusement, les champs étaient calculés sur d'autres
+   points. Le travail a consisté à modifier la programmation de telle sorte que tous les
+   champs à intégrer soient calculés aux noeuds de la face.
+   Par la même occasion, on a constaté que pour le pentaèdre une erreur apparaissait car le
+   changement de nature de face triangle/quadrangle était mal géré.
+   Inévitablement, les résultats sont modifiés car la valeur des termes de saut a changé.
+   Cela justifie la modification des valeurs retenues pour la non-régression, sachant que
+   l'on a pris soin de vérifier que les termes volumiques n'étaient pas impactés.
+   
+   
+   Sous-programmes modifiés
+   ========================
+   Des programmes de calcul élémentaire sont modifiés, essentiellement pour gérer la bonne
+   famille de points de Gauss.
+   Sont concernés : te0003, te0368, te0375, te0377, te0378, te0382, te0497
+   
+   ermes3, le programme de saut entre deux mailles volumiques 3D est modifié pour faire la
+   distinction entre points de Gauss et noeuds.
+   
+   Des programmes ont des corrections locales :
+   ermeb2 : erreur dans le décodage du nombre d'aretes en degré 2
+   ermes2 : erreur dans le décodage du nombre d'aretes en degré 2
+   intega : erreur dans le parcours des points de Gauss pour les pentaèdres
+   resvoi : utilisation du programme utilitaire elref7
+   utvois : utilisation du programme utilitaire elref7
+   xrmev2 : erreur en axisymétrique
+   
+   Des programmes ont subi des corrections dans les commentaires ou les description des
+   arguments.
+   Sont concernés : calnor, ermev3
+   
+   
+   Sous-programme créé
+   ===================
+   Un programme est créé, elref7, pour fournir les caractéristiques d'un type d'element.
+   Entrée : dénomination de l'élément  : 'QU4', 'QU8', ..., 'HE8', 'H20', etc.
+   Sorties :
+   - Type de la maille volumique -2:quadrangle, -1 : triangle, 1 : hexaedre, etc.
+   - Degré de l'élément
+   - Nombre de faces de la maille
+   - Famille des faces
+   - Seconde famille de faces pour les cas mixtes (pentaèdre ou pyramide)
+   
+   
+   
+   Modification annexe
+   ===================
+   Un oubli faisait que l'on ne pouvait pas calculer le champ d'indicateurs d'erreur en
+   quantité d'intérêt aux noeuds par l'option CALC_NO. La correction est simple : il a suffit
+   d'ajouter le nom de champ QIRE_NOEU_ELEM au catalogue c_nom_cham_into.capy
+   
+   Les messages CALCULEL5_28 et CALCULEL5_29 sont supprimés de calculel5.py
+   
+   
+   Cas-tests modifiés
+   ==================
+   Plusieurs motivations aux modifications des cas-tests.
+   A - Suppression du calcul de l'indicateur d'erreur.
+   B - Ajout du calcul de l'indicateur d'erreur.
+   C - Ajout des groupes de mailles de bord dans le maillage
+   D - Applications des conditions aux limites sur les groupes de faces de bord.
+   E - Suppression de créations de groupes de noeuds inutiles.
+   F - Reorientation des mailles de bord.
+   G - Correction des valeurs de non régression pour l'indicateur d'erreur.
+   H - Correction des valeurs de non régression pour des valeurs déduites de l'indicateur
+   d'erreur.
+   
+   forma08b : D, E, F
+   sslp316a : A
+   sslp316b : A
+   ssls09b  : D, E
+   ssls09c  : D, E
+   sslv07a  : G
+   sslv07b  : G
+   sslv07d  : G
+   sslv113c : D, F, G
+   sslv113d : D, F, G
+   sslv130a : A, D, G
+   sslv130b : A
+   sslv130c : A
+   sslv130d : A, D
+   sslv130e : A, D, G
+   sslv134d : D, E, F, G
+   ssnp130a : E, G, H
+   ssnp130d : E
+   ssnp130e : D, F, G, H
+   ssnp130f : D, F, G, H
+   ssnv112a : D, E, F, G
+   ssnv112b : D, E, F, G
+   ssnv112c : D
+   ssnv112d : D, G
+   ssnv124d : D, G
+   tpll01j  : C, D, F, G
+   zzzz121b : C, D, F, G
+   zzzz121e : B, D
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.20
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.15.101, V3.03.109, V3.04.113, V3.04.130, V3.04.134, V6.04.112, V4.21.001, V1.01.121
+VALIDATION
+   forma08a, sslp316a/b, ssls09b/c, sslv07a/b/c, sslv113c, sslv130a/b/c/d/e, sslv134d, ssnp130a/d/e/f, ssnv112a/b/c/d, tpll01j, zzzz121b/e
+NB_JOURS_TRAV  : 10.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 013881 DU 2009-09-15 14:21:51
+TYPE anomalie concernant Code_Aster (VERSION 9.5)
+TITRE
+   ERRE_ELEM_SIGM ne marche pas avec des fonctions
+FONCTIONNALITE
+   Contexte
+   ========
+   Le calcul d'indicateur d'erreur ne savait pas prendre en compte des chargements volumiques
+   sous forme de fonctions. Cela n'avait pas forcément un impact énorme auparavant, mais
+   l'usage des indicateurs en quantité d'intérêt impose la résolution d'un problème dit
+   'dual' avec un chargement de force interne volumique. Il faut donc être capable de digérer
+   un tel chargement dans le calcul de l'indicateur d'erreur.
+   Pour cela, il faut procéder à un décodage correct des composantes des chargements retenus
+   et transmettre de façon optionnelle des fonctions à la routine 'calcul'. ensuite, dans le
+   traitement élémentaire, il faut faire le tri entre les chargements de type réel/fonctions
+   et décoder en conséquence.
+   
+   
+   Sous-programmes modifiés
+   ========================
+   Les programmes amont des calculs des indicateurs d'erreur pour transmettre la fonction
+   éventuelle du chargement.
+   Sont concernés :
+   - qires1, pour l'indicateur en quantité d'intérêt
+   - resloc, pour l'indicateur par résidu
+   
+   Les programmes de calcul élémentaire sont modifiés, pour décoder la présence de force
+   volumique, réel ou fonction.
+   Sont concernés : te0368, te0375, te0377, te0378, te0497
+   
+   Les programmes de calcul de la contribution volumique sont modifiés pour tenir compte de
+   la possibilité d'avoir une fonction.
+   Sont concernés : ermev2, ermev3, erhmv2
+   
+   
+   Catalogues modifiés
+   ===================
+   Les catalogues des options ERRE_ELEM_SIGM et QIRE_ELEM_SIGM sont enrichis pour accepter
+   une force interne volumique.
+   Tous les catalogues d'éléments invoquant ERRE_ELEM_SIGM ou QIRE_ELEM_SIGM sont modifiés
+   pour ajouter la force volumique à la liste des arguments possibles.
+   Sont concernés : gener_me3d_3, gener_me3di3, gener_me3gi3
+                    gener_meagi2, gener_meax_2, gener_meaxs2, gener_mecpl2, gener_medpl2,
+   gener_mepgi2, gener_mepli2
+                    meca_hexs8.cata
+                    mecpqs4, medpqs4, medpqs8
+                    gener_mecpl2_xh, gener_mecpl2_xht, gener_mecpl2_xt
+                    gener_medpl2_xh, gener_medpl2_xht, gener_medpl2_xt
+                    gener_medh22, gener_medhb2
+   
+   
+   Cas-tests créé
+   ==============
+   Un nouveau cas-test est créé pour l'occasion : sslv150a. C'est un maillage formé de 4
+   mailles volumiques de chacun des types : tétraèdre, pentaèdre, hexaèdre et pyramide, avec
+   tous les voisinages possibles. Il n'a évidemment aucun autre intérêt que de la non
+   régression sur la prise en compte des fonctions. Le même calcul est lancé avec des
+   chargements réels, d'une part, des chargements sous forme de fonctions, d'autre part. Les
+   résultats sont les mêmes.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.20
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   sslv150a
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT sslv153a                     gnicolas G.NICOLAS          509    509      0
+ CASTEST MODIF forma08b                     gnicolas G.NICOLAS          517     24     18
+ CASTEST MODIF sslp316a                     gnicolas G.NICOLAS          193      2     20
+ CASTEST MODIF sslp316b                     gnicolas G.NICOLAS          161      2     20
+ CASTEST MODIF ssls09b                      gnicolas G.NICOLAS          335      3     10
+ CASTEST MODIF ssls09c                      gnicolas G.NICOLAS          190      2      9
+ CASTEST MODIF sslv07a                      gnicolas G.NICOLAS          899     25     13
+ CASTEST MODIF sslv07b                      gnicolas G.NICOLAS          155     20      9
+ CASTEST MODIF sslv07d                      gnicolas G.NICOLAS          314     14      5
+ CASTEST MODIF sslv113c                     gnicolas G.NICOLAS          189     33     20
+ CASTEST MODIF sslv113d                     gnicolas G.NICOLAS          189     29     16
+ CASTEST MODIF sslv130a                     gnicolas G.NICOLAS          364      7     42
+ CASTEST MODIF sslv130b                     gnicolas G.NICOLAS          337      1     34
+ CASTEST MODIF sslv130c                     gnicolas G.NICOLAS          316      1     33
+ CASTEST MODIF sslv130d                     gnicolas G.NICOLAS          777      8     32
+ CASTEST MODIF sslv130e                     gnicolas G.NICOLAS          354      8     43
+ CASTEST MODIF sslv134d                     gnicolas G.NICOLAS         1339     23     13
+ CASTEST MODIF ssnp130a                     gnicolas G.NICOLAS          317     50     46
+ CASTEST MODIF ssnp130d                     gnicolas G.NICOLAS          277      1      5
+ CASTEST MODIF ssnp130e                     gnicolas G.NICOLAS          236     78     36
+ CASTEST MODIF ssnp130f                     gnicolas G.NICOLAS          235     92     49
+ CASTEST MODIF ssnv124b                     gnicolas G.NICOLAS          186     15     10
+ CASTEST MODIF tpll01j                      gnicolas G.NICOLAS          126     21     10
+ CASTEST MODIF zzzz121b                     gnicolas G.NICOLAS          688     75     49
+ CASTEST MODIF zzzz121e                     gnicolas G.NICOLAS          322     62     11
+CATALOGU MODIF options/erre_elem_sigm       gnicolas G.NICOLAS           71     16      9
+CATALOGU MODIF options/qire_elem_sigm       gnicolas G.NICOLAS           70     19     10
+CATALOGU MODIF typelem/gener_me3d_3         gnicolas G.NICOLAS          659      9      9
+CATALOGU MODIF typelem/gener_me3di3         gnicolas G.NICOLAS          229      9      9
+CATALOGU MODIF typelem/gener_meax_2         gnicolas G.NICOLAS          577      9      9
+CATALOGU MODIF typelem/gener_meaxs2         gnicolas G.NICOLAS          512      9      9
+CATALOGU MODIF typelem/gener_mecpl2         gnicolas G.NICOLAS          598      9      9
+CATALOGU MODIF typelem/gener_mecpl2_xh      gnicolas G.NICOLAS          292      4      3
+CATALOGU MODIF typelem/gener_mecpl2_xht     gnicolas G.NICOLAS          287      4      3
+CATALOGU MODIF typelem/gener_mecpl2_xt      gnicolas G.NICOLAS          285      4      3
+CATALOGU MODIF typelem/gener_medh22         gnicolas G.NICOLAS          244      7      5
+CATALOGU MODIF typelem/gener_medhb2         gnicolas G.NICOLAS          211      7      4
+CATALOGU MODIF typelem/gener_medpl2         gnicolas G.NICOLAS          603      9      9
+CATALOGU MODIF typelem/gener_medpl2_xh      gnicolas G.NICOLAS          291      4      3
+CATALOGU MODIF typelem/gener_medpl2_xht     gnicolas G.NICOLAS          286      4      3
+CATALOGU MODIF typelem/gener_medpl2_xt      gnicolas G.NICOLAS          284      4      3
+CATALOGU MODIF typelem/gener_mepli2         gnicolas G.NICOLAS          217      9      9
+CATALOGU MODIF typelem/meca_hexs8           gnicolas G.NICOLAS          572      4      4
+CATALOGU MODIF typelem/mecpqs4              gnicolas G.NICOLAS          506      9      9
+CATALOGU MODIF typelem/medpqs4              gnicolas G.NICOLAS          515      9      9
+CATALOGU MODIF typelem/medpqs8              gnicolas G.NICOLAS          519      9      9
+CATALOPY MODIF commande/calc_ecrevisse        assire A.ASSIRE           173      3      1
+CATALOPY MODIF commande/macr_ecre_calc        assire A.ASSIRE           180      1      1
+CATALOPY MODIF commande/macr_ecrevisse        assire A.ASSIRE           280      7     12
+CATALOPY MODIF commun/c_nom_cham_into       gnicolas G.NICOLAS          195      2      1
+ FORTRAN AJOUT elements/elref7              gnicolas G.NICOLAS          195    195      0
+ FORTRAN MODIF calculel/qires1              gnicolas G.NICOLAS          559    164    124
+ FORTRAN MODIF calculel/resloc              gnicolas G.NICOLAS          571    115     57
+ FORTRAN MODIF calculel/uthk                gnicolas G.NICOLAS          416     72     16
+ FORTRAN MODIF calculel/utno3d              gnicolas G.NICOLAS          144     14     12
+ FORTRAN MODIF calculel/utvois              gnicolas G.NICOLAS          113     21    176
+ FORTRAN MODIF elements/elrfdf               geniaut S.GENIAUT         1197      5      5
+ FORTRAN MODIF elements/erhmv2              gnicolas G.NICOLAS          367      6      6
+ FORTRAN MODIF elements/ermeb2              gnicolas G.NICOLAS          351      7      5
+ FORTRAN MODIF elements/ermeb3              gnicolas G.NICOLAS          343    204    148
+ FORTRAN MODIF elements/ermes2              gnicolas G.NICOLAS          206     12      6
+ FORTRAN MODIF elements/ermes3              gnicolas G.NICOLAS          213    103     69
+ FORTRAN MODIF elements/ermev3              gnicolas G.NICOLAS          139      2      2
+ FORTRAN MODIF elements/intega              gnicolas G.NICOLAS           78      4      6
+ FORTRAN MODIF elements/resvoi              gnicolas G.NICOLAS          380     97     37
+ FORTRAN MODIF elements/te0003              gnicolas G.NICOLAS         1185    529    269
+ FORTRAN MODIF elements/te0368              gnicolas G.NICOLAS          777    574    402
+ FORTRAN MODIF elements/te0375              gnicolas G.NICOLAS          583    377    303
+ FORTRAN MODIF elements/te0377              gnicolas G.NICOLAS          588    351    158
+ FORTRAN MODIF elements/te0378              gnicolas G.NICOLAS          687    482    241
+ FORTRAN MODIF elements/te0382              gnicolas G.NICOLAS          471    127    108
+ FORTRAN MODIF elements/te0497              gnicolas G.NICOLAS          672    225    144
+ FORTRAN MODIF elements/xrmev2              gnicolas G.NICOLAS          134      7      5
+ FORTRAN MODIF utilitai/calnor              gnicolas G.NICOLAS          366     98     75
+  PYTHON MODIF Macro/calc_ecrevisse_ops       assire A.ASSIRE           799      2      2
+  PYTHON MODIF Macro/macr_ecre_calc_ops       assire A.ASSIRE           638      1      1
+  PYTHON MODIF Macro/macr_ecrevisse_ops       assire A.ASSIRE           711     17      8
+  PYTHON MODIF Messages/calculel5           gnicolas G.NICOLAS          338      7      7
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         704       704              +704
+ MODIF :   76       30698      4399    3100     +1299
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   78       31402      5103    3100     +2003 

@@ -1,0 +1,171 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR galenne      GALENNE E.             DATE 06/09/2006 - 18:49:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009963 DU 2006-08-24 15:07:17
+TYPE anomalie concernant Code_Aster (VERSION 7.7)
+TITRE
+   macr_ascouf_mail dans une boucle
+FONCTIONNALITE
+   Probleme rencontre en mettant macr_ascouf_mail dans une boucle python.
+   
+   Deux problemes dans cette fiche :
+   - le concept sortant est suivant les cas nomres ou nomre2 : dans le cas nomre2, nomres
+   n'etant pas temporaire (prefixe __), il n'est pas detruit, d'ou conflit au deuxieme
+   passage. La solution adoptee consiste a faire le CREA_MAILLAGE(CREA_POI) dans tous les
+   cas
+   (y compris SYME=QUART). Ainsi, on ne manipule que __nomres (temporaire) et seul nomre2 est
+   sortant.
+   - l'EXEC_LOGICIEL GIBI, au deuxieme passage, serait cense reecraser le fort.19. Ce
+   n'est
+   pas le cas. Un DEFI_FICHIER(LIBERER) sur l'unite 19 resoud le probleme.
+   
+   Au passage, on supprime le AFFE_MODELE qui ne sert plus a rien.
+   
+   (Pas de conflit dans MACR_ASPIC_MAIL, on en profite quand meme pour faire le DEFI_FICHIER
+   et supprimer AFFE_MODELE)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   cas test perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flandi       FLANDI Laila           DATE 06/09/2006 - 18:49:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009911 DU 2006-07-11 11:19:00
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   Comportement VENDOCHAB
+FONCTIONNALITE
+   Le comportement VENDOCHAB avec integration implicite donne des resultats faux des que l'on
+   sollicite en cisaillement :
+   
+   - les fichiers associes correspondent a un essai de traction-cisaillement dans le cas ou
+   le modele VENDOCHAB se reduit au modele de LEMAITRE (endommagement negligeable).
+   La solution de reference est donc obtenue avec LEMAITRE.
+   
+   On constate que la solution est fausse ;
+   ---- RESULTAT:  U2       NUME_ORDRE: 200 NOM_CHAM: EPSP_ELNO
+   
+   REFERENCE: NON_DEFINI
+   NOOK EPXX         RELA    82.042 % VALE: 3.2075870295748E-04
+   M1       N2       TOLE     0.500 % REFE: 1.7620000000000E-04
+   ---- RESULTAT:  U2       NUME_ORDRE: 200 NOM_CHAM: EPSP_ELNO
+   
+   REFERENCE: NON_DEFINI
+   NOOK EPXY         RELA   267.078 % VALE: 6.6661437491598E-04
+   M1       N2       TOLE     0.500 % REFE: 1.8160000000000E-04
+   
+   - par contre avec integration RUNGE_KUTTA_2 c'est OK.
+   
+   Le probleme vient du fait que dans la programmation,(voir la routine LCDVMI par exemple)
+   "on" n'a pas tenu compte des SQRT(2) sur les termes de cisaillement.
+   
+   La correction permet d'obtenir une solution correcte. Elle seule est a reporter en
+   version 7.
+   
+   D'autre part, une integration plus efficace (reduction a une seule equation) a ete
+   developpee et peut etre restituee a cette occasion.
+   Elle est mise en oeuvre automatiquement dans les conditions suivantes :
+   - alpha=beta=0 (l'endommagement n'est fonction que du second invariant des contraintes)
+   - le coefficient R = coefficient K
+   
+   Ce dernier travail a ete effectue pour le projet Calcul de dommage.
+   
+   De plus on rend possible les options ENDO_ELGA et ENDO_ELNO_ELGA en axisymetrique.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.15, V6.04.183
+VALIDATION
+   SSNV183B
+NB_JOURS_TRAV  : 6.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009912 DU 2006-07-11 11:38:04
+TYPE anomalie concernant Code_Aster (VERSION 8.3)
+TITRE
+   CALC_ELEM / ENDO_ELGA
+FONCTIONNALITE
+   fiche corrigee par la 9911. La validation est faite par les etudes du projet Pagodes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   neant
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pabhhhh      TARDIEU N.             DATE 06/09/2006 - 18:50:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 009935 DU 2006-07-24 09:44:11
+TYPE express concernant Code_Aster (VERSION 8.3)
+TITRE
+   PROJ_CHAMP ne sait pas manipuler les TRIA7
+FONCTIONNALITE
+   PROJ_CHAMP ne sait pas manipuler les TRIA7, ce qui est regrettable car il sait manipuler
+   les QUAD9 et que ces deux mailles sont utilisees pour les elements COQUE_3D.
+   
+   Si le champ a projeter est porte par un maillage uniquement en TRIA7, Aster s'arretait
+   en
+   Fatale. Par contre si le maillage est compose de TRIA7 et de QUAD9, la projection se
+   faisait mais avec des erreurs pouvant entrainer des resultats faux.
+   
+   J'etends donc cette fonctionnalite au TRIA7. Il n'y a presque rien a faire, a part
+   dire au
+   Fortran de PROJ_CHAMP qu'il sait le faire.
+   
+   Routines modifees :
+   ------------------
+   
+   pj2dco.f  pj2dtr.f pj4dco.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+   Passage du test, asrest
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssnp101a                      cibhhlv L.VIVAN            213     71      5
+CATALOGU MODIF typelem/gener_meax_2          cibhhlv L.VIVAN            558      8      1
+ FORTRAN MODIF algorith/lcdvmi               cibhhlv L.VIVAN            103      5      5
+ FORTRAN MODIF calculel/pj2dco               cibhhlv L.VIVAN            393     17     12
+ FORTRAN MODIF calculel/pj2dtr               cibhhlv L.VIVAN            209      8      7
+ FORTRAN MODIF calculel/pj4dco               cibhhlv L.VIVAN            400     17     12
+  PYTHON MODIF Macro/macr_ascouf_mail_ops    cibhhlv L.VIVAN           2849     14     18
+  PYTHON MODIF Macro/macr_aspic_mail_ops     cibhhlv L.VIVAN            930      4      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    8        5655       144      61       +83
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    8        5655       144      61       +83 
