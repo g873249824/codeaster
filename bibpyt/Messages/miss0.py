@@ -1,4 +1,4 @@
-#@ MODIF miss0 Messages  DATE 14/03/2011   AUTEUR COURTOIS M.COURTOIS 
+#@ MODIF miss0 Messages  DATE 04/05/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -87,6 +87,11 @@ par pas de %(r3).4f Hz, soit %(i1)d fréquences.
 13 : _("""
 Plage de fréquence du calcul Miss : [%(r1).4f, %(r2).4f]
 par pas de %(r3).4f Hz, soit %(i1)d fréquences.
+"""),
+
+14 : _("""
+Les %(i1)d fréquences du calcul Miss sont :
+    %(k1)s
 """),
 
 15 : _("""

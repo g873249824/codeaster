@@ -1,0 +1,796 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 05/04/2011 - 03:31:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016739 DU 2011-04-05 15:45:46
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Erreur DYNA_NON_LINE et PETSc ou GCPC
+FONCTIONNALITE
+   Problème :
+   ---------
+   Si on veut utiliser PETSc avec DYNA_NON_LINE, le calcul échoue dans une assertion.
+   
+   Analyse :
+   --------
+   Dans la routine nmprac.f l.152, pour garantir le calcul de l'accélération initiale par
+   résolution d'un système linéaire avec la matrice de masse, on va écrire dans la
+   SD solveur à une adresse qui gère le mot-clé STOP_SINGULIER pour les solveurs directs.
+   Malheureusement, pour les solveurs itératifs, il a des significations diverses : niveau de
+   remplissage,
+   compteur du nombre d'itérations.
+   
+   Solution :
+   ---------
+   On met (encore un peu plus) en cohérence les différentes SD solveurs. A savoir, on
+   s'efforce de ne pas utiliser les adresses correspondant à des fonctionnalités très
+   particulières d'un solveur pour les autres.
+   De plus, on propose une nouvelles modélisation du cas test petsc01 qui utilise
+   DYNA_NON_LINE.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : D4.06.11,V1.04.116
+VALIDATION
+    Passage de l'?tude
+DEJA RESTITUE DANS : 11.0.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 05/04/2011 - 03:31:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016762 DU 2011-04-11 07:52:18
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    FDLV112b : correction valeurs de non-regression
+FONCTIONNALITE
+   Suite à la fiche 16690, on a corrgié un bug en ISFS dans miss3d.
+   Il faut donc corriger deux valeurs de non-regression qui sont impactées par 
+   cette correction.
+   Impact : fdlv112b
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fdlv112b
+DEJA RESTITUE DANS : 11.0.1
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR colombo      COLOMBO Daniele        DATE 05/04/2011 - 03:31:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016624 DU 2011-03-17 16:05:59
+TYPE anomalie concernant Code_Aster (VERSION 10.3)
+TITRE
+    En NEW10.3.18, le cas-test sslv315d s'arrete en erreur fatale sur Rocks.
+FONCTIONNALITE
+   Thomas a réussi à reproduire l'erreur dans le cas test. Mois je n'arrive pas toujours à la
+   reproduire. Voici sa explication:
+   
+   « Le test SSLV315D plante à nouveau sur Clpaster (Rocks) mais cette fois-ci 
+   on arrive à reproduire le plantage. J'ai donc jeté un coup d'oeil : le 
+   problème se produit dans xprvit.f à la ligne 626 :
+   
+      625  C              CHANGE IN THE SEARCH DIRECTION
+      626                 IF ((D*DPREC).LT.0.D0) DS=DS*(-0.5D0)
+      627 
+   
+   D vaut en fait NaN (Not A Number) c'est pour cela que ça plante. J'ai 
+   remonté la chaîne pour savoir ce qui causait le NaN, il s'agit des lignes 
+   527-529 :
+   
+      522  C              COORDINATES OF THE POINT AT THE END OF THE CRACK 
+   FRONT 
+      523  C              SEGMENT
+      524                 XI1 = ZR(JFONF-1+4*(JMIN-1)+1)
+      525                 YI1 = ZR(JFONF-1+4*(JMIN-1)+2)
+      526                 ZI1 = ZR(JFONF-1+4*(JMIN-1)+3)
+      527                 XJ1 = ZR(JFONF-1+4*(JMIN-1+1)+1)        <= ces lignes posent problème
+      528                 YJ1 = ZR(JFONF-1+4*(JMIN-1+1)+2)        <= ces lignes posent problème
+      529                 ZJ1 = ZR(JFONF-1+4*(JMIN-1+1)+3)        <= ces lignes posent problème
+   
+   Le tableau JFONF est de taille 20 donc JMIN ne doit pas dépasser 4 sous 
+   peine de lire en dehors.
+   
+   En effet JMIN vaut au plus 4 (=nombre de points du fond de fissure - 1) 
+   avant de commencer la boucle 206 mais il peut être incrémenté/décrémenté. 
+   Au moment du plantage JMIN=5 donc dans les lignes  527-529 font que l'on 
+   lit au delà de JFONF (et ici on lit des NaN).
+   
+   Qu'en penses-tu ? Y-a-t-il un bug quelque part ? Pourquoi JMIN devient 
+   égal à 5 en particulier ? »
+   
+   Effectivement il y a une erreur dans la partie du code de lissage qui gère le changement
+   du morceau du fond considéré et qui est responsable du changement de la valeur de JMIN
+   (cela est nécessaire pour l'algorithme de recherche). Les lignes qui sont à l'origine du
+   problème sont le suivantes:
+   
+   640               IF ((SMIN.GT.1.D0).AND.(JMIN.LT.NBPTFF)) THEN
+   641                  JMIN=JMIN+1
+   642                  SMIN=0.D0
+   643               ELSE IF ((SMIN.GT.1.D0).AND.(JMIN.EQ.NBPTFF)) THEN
+   644                  SMIN=1.D0
+   645                  GOTO 207
+   646               ENDIF
+   
+   La valeur maximale de JMIN est NBPTFF-1 et pas NBPTFF (lignes 640 et 643).
+   On corrige:
+   
+   640               IF ((SMIN.GT.1.D0).AND.(JMIN.LT.(NBPTFF-1))) THEN
+   641                  JMIN=JMIN+1
+   642                  SMIN=0.D0
+   643               ELSE IF ((SMIN.GT.1.D0).AND.(JMIN.EQ.(NBPTFF-1))) THEN
+   644                  SMIN=1.D0
+   645                  GOTO 207
+   646               ENDIF
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ce cas test
+DEJA RESTITUE DANS : 11.0.2
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 05/04/2011 - 03:31:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016832 DU 2011-04-26 09:25:03
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Mauvais type dans pour les GROUP_NO
+FONCTIONNALITE
+   Le type attendu derrière les mots-clés GROUP_NO et GROUP_MA (et 
+   les dérivés comme par exemple GROUP_MA_FISS, etc) est important 
+   car il conditionne le comportement de SaloméMéca pour, par 
+   exemple, mettre à jour les groupes ou sélectionner une entité 
+   géométrique.
+   
+   Il faut utiliser grno et grma.
+   Dans les commandes suivantes, on utilisait 'ma' à la place de 
+   'grma' ou encore 'TXM'.
+   
+   affe_cara_elem.capy  calc_essai.capy    defi_fond_fiss.capy
+   macr_ascouf_calc.capy  propa_fiss.capy affe_char_meca.capy
+   calc_ifs_dnl.capy  dyna_iss_vari.capy   macr_aspic_calc.capy
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    asrest
+DEJA RESTITUE DANS : 11.0.3
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016797 DU 2011-04-20 13:22:44
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Validation du mot-clxc3xa9 LIST_FREQ dans CALC_MISS
+FONCTIONNALITE
+   Le mot-clé LIST_FREQ n'a jamais été utilisé dans les cas-tests, 
+   et donc ça ne fonctionnait pas.
+   
+   Il y avait deux erreurs :
+   
+   1. lors de la construction du fichier de données de Miss3D, ce 
+   n'était pas pris en compte (miss_fichier_interf.py).
+   
+   2. dans le post-traitement, on affiche la plage de fréquences 
+   du calcul Miss sans tester lesquels des mots-clés FREQ_xxx ou 
+   LIST_FREQ sont présents.
+   
+   On valide l'utilisation de LIST_FREQ en modifiant miss04a.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    miss04a
+DEJA RESTITUE DANS : 11.0.3
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 05/04/2011 - 03:31:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016723 DU 2011-04-04 09:19:41
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    Blindage AFFE_CARA_ELEM + RIGI_PARASOL
+FONCTIONNALITE
+   Description de l'erreur :
+   - AFFE_MODELE : DIS_T
+   - AFFE_CARA_ELEM/RIGI_PARASOL avec 6 valeurs (l'utilisateur pensait affecter des DIS_TR :
+    3 raideurs en translation et 3 en rotations).
+   
+   Fonctionnement de AFFE_CARA_ELEM/RIGI_PARASOL.
+   Il est possible de renseigner des grandeurs de raideur et d'amortissement en même temps.
+   On peut donc avoir entre 3 et 12 valeurs réelles. Il n'est donc pas possible de faire de
+   vérification au niveau des catalogues.
+   
+   Catalogue AFFE_CARA_ELEM/RIGI_PARASOL :
+   ---------------------------------------
+   Il faut que les CARA renseignés soient cohérents. Par exemple si on a donné K_TR_D_N on ne
+   peut plus que donner A_TR_D_N, les autres valeurs sont interdites. On ne peut donc plus
+   mélanger des K_TR_D_N avec des K_T_D_L ou des A_TR_D_L.
+   
+   Catalogues .cata :
+   ------------------
+   * grandeur_simple__.cata : Ajout dans CINFDI de TYDI qui permet de connaître le type du
+   discret auquel on affecte les caractéristiques.
+   * gener_me*.cata pour les discrets : Ajout de TYDI dans CCINFDI
+   
+   Fortrans :
+   ----------
+   * acearp : Lors de l'affectation des VALE on vérifie que le nombre de VALE correspond
+   exactement à ce qu'il faut. Avant on pouvait en avoir plus, c'est la cause de cette fiche.
+   * infdis : enrichissement des clefs, mise à jour des commentaires.
+   * aceadi, acearm : initialisation de la carte CINFDI faite par INFDIS (codé en dur
+   uniquement à cet endroit).
+   * afdi2d, afdi3d : récupération du type de section et enregistrement dans la carte CINFDI.
+   * te0009  te0039  te0041  te0042  te0043  te0044  te0045  te0047 : vérification que dans
+   le TE on traite effectivement le bon type de discret, si ce n'est pas le cas <F>. Par
+   défaut les matrices K, M, A des discrets sont initialisées à zéro, lorsque l'on utilise
+   une matrice non affectée par l'utilisateur un message <A> est émis lui indiquant qu'il
+   utilise la matrice nulle.
+   
+   Messages :
+   ----------
+   * discrets.py : ajout des messages liés au blindage.
+   
+   Cas tests :
+   -----------
+   Passage des 274 cas tests avec AFFE_MODELE/DISCRET.
+   !!! Il y plus de message <A> à cause des matrices non renseignées par l'utilisateur qui
+   sont initialisées à zéro.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage des 274 cas tests AFFE_MODELE/DISCRETS
+DEJA RESTITUE DANS : 11.0.2
+NB_JOURS_TRAV  : 5.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 05/04/2011 - 03:31:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016733 DU 2011-04-05 07:36:15
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] Probleme de perfs des plaques mutlicouches
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Réf : http://www.code-aster.org/forum2/viewtopic.php?id=14683
+   
+   Les plaques utilisant DEFI_COQU_MULT sont très lentes quand il s'agit de calculer des
+   contraintes.
+   Le post du forum en référence le montre. Lors de la correction des fiches issue16224 et
+   issue16664, j'ai encore "dégradé" les performances. En effet la routine DXDMUL qui permet
+   de calculer une matrice nécessaire pour le Cisaillement Transverse coûte cher et j'ai
+   décuplé son nombre d'appel. En particulier son coût croît quadratiquement avec le nombre
+   de couches du composite.
+   
+   Exemple sur le test SSLS128A si on retire OPTION='SANS' du MECA_STATIQUE, le temps de
+   calcul explose.
+   
+   Analyse
+   =======
+   
+   Il est normal que la routine DXDMUL soit de plus en plus coûteuse (on doit faire une somme
+   entre -z0 et z, z étant l'altitude de la couche considérée : quand z=z0 c'est plus cher
+   que quand z=-z0, on le comprend ;-))
+   
+   L'évolution autour de RCVALA réalisée en 11.0.1 améliore les choses mais le temps de
+   calcul des contraintes reste important.
+   Comme le coût de DXDMUL est uniquement dû au calcul de termes pour le cisaillement
+   transverse on peut cependant faire en sorte de sauter ce traitement quand par exemple on
+   calcule des déformations (cas où on a besoin d'infos de DXDMUL mais du CT).
+   
+   Correction
+   ==========
+   
+   On modifie les routines qui appellent DXDMUL pour rajouter un argument supplémentaire :
+   calcul ou pas des termes de CT.
+   Cela permet de retrouver un temps correct pour le calcul des déformations (exemple sur un
+   composite à 100 couches) :
+   
+   Avant
+   =====
+    * MECA_STATIQUE            :      13.64 :       0.04 :      13.68 :      13.67 *
+    * CALC_ELEM                :      15.55 :       0.07 :      15.62 :      15.65 *
+    * CALC_ELEM                :     137.52 :       0.43 :     137.95 :     138.23 *
+   
+   Après
+   =====
+    * MECA_STATIQUE            :      13.52 :       0.10 :      13.62 :      13.59 *
+    * CALC_ELEM                :      14.09 :       0.05 :      14.14 :      14.17 *
+    * CALC_ELEM                :      14.08 :       0.09 :      14.17 :      14.20 *
+   
+   Impact :
+   dkqcod.f  dkqcol.f  dkqsie.f  dktcod.f  dktcol.f  dktsie.f  dsqcod.f  dsqcol.f  dsqsie.f 
+   dstcod.f  dstcol.f  dstsie.f  dxdmul.f  dxeffi.f  dxsigm.f  dxsigv.f  q4gcod.f  q4gcol.f 
+   q4gsie.f  te0033.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout plaque
+DEJA RESTITUE DANS : 11.0.2
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 05/04/2011 - 03:31:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016835 DU 2011-04-26 09:56:44
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    X-FEM: floating point error dans DEFI_FISS_XFEM
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   L'opérateur DEFI_FISS_XFEM s'arrête en «floating point error» dans le cas où la fissure
+   définie par DEFI_FISS est en dehors de la structure et un enrichissement géométrique est
+   utilisé. Par contre, l'erreur de l'utilisateur (fissure en dehors de la structure) est
+   correctement détectée (alarme XFEM_58) si on utilise un enrichissement topologique.
+   
+   
+   Solution :
+   ----------
+   
+   il suffit de rajouter une condition sur le nombre de mailles contenant le fond de fissure
+   (NMAFON) dans xtama.f avant de faire de traitement de l'enrichissement géométrique (NB_COUCH).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test fourni
+DEJA RESTITUE DANS : 11.0.4
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016839 DU 2011-04-26 14:28:57
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    X-FEM: erreur JEVEUX dans POST_MAIL_XFEM
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   L'opérateur POST_MAIL_XFEM s'arrête en exception jeveux dans tous les cas où le maillage
+   utilisé pour la définition du modèle X-FEM ne contient pas un group de mailles comprenant
+   tous les éléments du maillage:
+   
+    !------------------------------------------------------------------------------------------!
+    ! <EXCEPTION> <JEVEUX1_22>                                                                 !
+    !                                                                                          !
+    !  L'objet de la collection &&OP0187.LISTGR         $$XNUM contigue est de longueur nulle. !
+    !------------------------------------------------------------------------------------------!
+   
+   Un exemple est contenu dans le fichier exemple.tar.bz2 ci-joint: on lit le même maillage
+   deux fois et on définit le group de tous les mailles par DEFI_GROUP seulement dans le
+   deuxième maillage lu. Seulement l'appel à POST_MAIL_XFEM avec le maillage comprenant le
+   group de maille marche bien.
+   
+   
+   Solution :
+   ----------
+   
+   C'est en fait le même problème que la fiche 13846, mais cette fois-ci dans la routine xpomax.f
+   On applique la même solution : on récupère d'abord le nombre de groupes et on ne fait le
+   call jeveuo que si le nb de groupes est strictement positif.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test fourni
+DEJA RESTITUE DANS : 11.0.4
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016849 DU 2011-04-27 15:12:26
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    RUPT : choix de l'unique methode pour POST_K1_K2_K3
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Suite à la restitution de la fiche 14541, POST_K1_K2_K3 n'affiche plus que les valeurs de
+   K issues de la méthode n°3.
+   
+   Après une étude détaillée il semblerait que les valeurs max de la méthode 1 soient les
+   plus justes dans la plupart des cas.
+   
+   
+   Solution :
+   ----------
+   
+   Le choix de la méthode n°1 est basé sur les constats suivants :
+   sur le test sslv134 :
+   on utilise POST_K1_K2_K3 avec des recommandations de la doc U2 : abs_curv_maxi = 4 elements
+   on donne les erreur moyennes des 5 "méthodes" : methode 1 MAX et MIN, méthode 2 MAX et MIN
+   puis methode 3
+   FEM linéaire : -10.36%		-17.78%		-15.03%		-18.10%		-17.04%
+   FEM quadratique : -2.57%		-6.98%		-4.93%		-8.70%		-6.81%
+   FEM quadratique avec Barsoum : 0.67%		-0.46%		-0.79%		-7.05%		-4.73%
+   X-FEM linéaire : 2.36%		-12.00%		-4.94%		-10.45%		-8.48%
+   
+   A chaque fois, le K1_MAX de la méthode 1 est plus précis que les autres.
+   Voir en PJ pour plus de détails
+   
+   Remarque : avec X-FEM, si on choisit une abs_curv_maxi plus petite, on observe que
+   l'erreur sur K1_MAX meth 1 augmente, alors que celle sur K1 méth 3 diminue.
+   C'est ce que l'on observe sur le cas test sslp319d : POST_K1_K2_K3 avec une abs_curv_maxi
+   = da_max (avancée max de la fissure par pas de propagation), da_max étant de l'orde de h
+   -> erreur <5% avec méthode 3, et erreur entre 5 et 10% avec méthode 1. Le problème est ici
+   que l'on ne peut pas choisir abs_curv_maxi = 4h, car on est limité à la portion droite des
+   lèvres. La solution est d'utiliser CALC_G (sslp319c)
+   
+   
+   De manière générale, sur tous les tests de la base, on observe une diminution de l'erreur
+   avec la méthode 1 par rapport à la méthode 3 (sauf pour le sslp319d).
+   
+   impact : 
+   ascou18b.comm  sdls114a.comm  sslp315b.comm  sslv134d.com1  sslv313a.comm  ssnv185c.comm 
+   zzzz257b.comm
+   hsnv132a.comm  sdls114b.comm  sslp319d.comm  sslv134d.comm  sslv313b.comm  ssnv185d.comm 
+   zzzz257c.comm
+   hsnv132b.comm  sslp313a.comm  sslv134a.comm  sslv134g.comm  ssnp138a.comm  ssnv185p.comm 
+   zzzz257d.comm
+   hsnv132c.comm  sslp313b.comm  sslv134b.comm  sslv134h.comm  ssnp138b.comm  zzzz257a.comm
+   
+   impact doc :
+   V1.01.146, V7.22.132, V2.03.114, V3.02.313, V3.02.315, V3.02.319, V3.04.134, V6.03.138,
+   V6.04.185, V1.01.257
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.146, V7.22.132, V2.03.114, V3.02.313, V3.02.315, V3.02.319, V3.04.134, V6.03.138,
+V6.04.185, V1.01.257
+VALIDATION
+    tests POST_K1_K2_K3
+DEJA RESTITUE DANS : 11.0.4
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 05/04/2011 - 03:31:21
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016806 DU 2011-04-21 08:26:38
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Write dans TE0370
+FONCTIONNALITE
+   La routine te0370 comporte un petit bloc IF de WRITE(6,*) qui a servi pour du debug 
+   (suite aux grosses modifications introduites en 7.3.20 pour pouvoir utiliser la 
+   surface libre IFS dans DYNA_NON_LINE).
+   
+   Je retire donc cela.
+   
+   Impact : te0370
+   
+   A reporter en version 10 (immédiat car la routine a très peu bougé).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fdnv100a
+DEJA RESTITUE DANS : 11.0.4
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016851 DU 2011-04-28 05:59:58
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Test miss08a en version NEW11.0.3 sur Rocks
+FONCTIONNALITE
+   Sur rocks, le cas-test miss08a prends 2112 secondes, alors que le .para précise une 
+   limite à 2000 s. Je modifie donc cette valeur pour la porter à 3000 s.
+   
+   Impact : miss08a.para
+   
+   Pas d'impact doc et il faut reporter en version 10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    miss08a
+DEJA RESTITUE DANS : 11.0.4
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 05/04/2011 - 03:31:21
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016830 DU 2011-04-22 16:42:29
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Algorithme de projection mis en dxc3xa9faut
+FONCTIONNALITE
+   Express
+   =======
+   
+   Dans cette fiche on se contente de corriger un petit bug dans MMNEWT sans conséquence et
+   on décrit également un cas où l'article de projection du contact peut être mis en défaut.
+   Cela conduit à un ajout documentaire.
+   
+   Bug dans MMNEWT
+   ---------------
+   
+   Si jamais la projection n'a pas abouti au bout de 200 itérations, on ressort de
+   l'algorithme avec l'itéré qui a conduit à la plus petite distance de projection, le
+   meilleur donc (ceci afin d'éviter une erreur fatale pour un point problématique).
+   Un petit bug fait que l'on ne récupère en fait pas le projeté qui minimise la distance
+   mais le dernier itéré (le 200ème donc).
+   
+   Ce bug est sans conséquence sur la justesse des résultats ou bien la convergence des calculs.
+   
+   Cas de mise en défaut de l'algorithme de projection
+   ---------------------------------------------------
+   
+   Réf : http://www.code-aster.org/forum2/viewtopic.php?id=15123
+   
+   Ce post du forum a fournir un cas où le calcul échoue lorsque l'on active du lissage. La
+   situation est la suivante (voir image jointe pour détails) :
+   - on moyenne un vecteur normal sur un noeud qui appartient à 4 mailles coplanaires
+   - on devrait donc trouver la même normale pour chaque maille et obtenir une moyenne qui
+   est égale à la normale de chaque maille
+   - pourtant on obtient une normale qui vaut zéro
+   - en effet 2 normales sont orientées d'un côté du plan, 2 autres sur le côté opposé, la
+   moyenne est donc nulle.
+   
+   En fait la normale en chaque maille est déterminée en réalisant le produit vectoriel des 2
+   tangentes en ce point. Or pour 2 des mailles les tangentes sont complètement fausses.
+   
+   Ces tangentes sont obtenues en retrouvant pour un point de coordonnées dans l'espace réel,
+   ses coordonnées dans l'espace paramétrique (on pourra ensuite calculer le gradient dans
+   chaque direction). On écrit pour cela la projection de ce point sur la maille à laquelle
+   il appartient : lors de la projection, pour les 2 mailles marquées d'une croix dans
+   l'image, on ne retrouve pas les bonnes coordonnées paramétriques mais des coordonnées en
+   dehors de l'élément de référence.
+   
+   Remarque : l'utilisation de la routine REEREG qui permet de trouver justement les
+   coordonnées paramétriques d'un point dans l'espace réel n'est pas possible en contact car
+   le problème est 2.5D, il faut donc utiliser des dérivées d'ordre supérieur et c'est
+   exactement le sens de l'écriture au sens de la projection.
+   
+   Après analyse de la projection sur une des 2 mailles, on se rend compte que :
+   - la programmation n'est pas en cause (doc R OK, Fortran OK)
+   - les fonctions de forme et en particulier les dérivées secondes (utilisées dans tout le
+   code uniquement par le contact ou presque) sont correctes
+   - l'algorithme est simplement mis en défaut. La convergence est atteinte, le résidu vaut
+   zéro mais ce n'est pas la solution attendue.
+   
+   Les mailles étant trop distordues (leur qualité est la plus mauvaise du maillage),
+   l'unicité de la projection n'est plus assurée pour tous les points de départ de
+   l'algorithme. Ici le point de coordonnées paramétriques (0,0) permet de trouver une
+   solution parmi les multiples existant.
+   Plus précisément la conséquence de la distortion de la maille est qu'il existe des points
+   dans l'espace paramétrique où les 2 gradients directionnels sont colinéaires, du coup le
+   critère de convergence de l'algorithme qui demande au vecteur PM (P le point à projeter, M
+   la projection) d'être orthogonal aux 2 gradients ne définit plus un unique point mais une
+   droite.
+   
+   Dans l'immédiat on ne fait rien pour empêcher cela. Un travail supplémentaire sera fourni
+   avec les pistes suivantes :
+   - en cours d'algorithme interdire à l'itéré de sortir de l'algorithme lorsqu'il s'agit de
+   retrouver les coordonnées paramétriques d'un élément de la maille
+   - lorsque les 2 gradients deviennent orthogonaux et ne forment donc plus une base du plan
+   tangent, repartir avec un nouvel itéré (dont le calcul est à déterminer)
+   
+   Ajout documentaire
+   ------------------
+   
+   On précise dans la notice d'utilisation du contact (U2.04.04), ainsi que dans
+   l'explication du mot-clé LISSAGE, qu'un maillage de mauvaise qualité peut mettre en défaut
+   l'algorithme et qu'il est donc important de vérifier la qualité de son maillage.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U2.04.04,U4.44.11
+VALIDATION
+    nxc3xa9ant
+DEJA RESTITUE DANS : 11.0.4
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016854 DU 2011-04-28 13:55:25
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] La verif des normales essaye de cr?er un vecteur de longueur nulle
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Dans la routine CHVENO qui permet de vérifier la bonne orientation des mailles données par
+   l'utilisateur dans AFFE_CHAR_MECA/DEFI_CONTACT et autres peut parfois créer des vecteurs
+   de longueur nulle.
+   
+   Dans l'exemple joint c'est le cas.
+   
+   Analyse
+   =======
+   
+   En fait pour que cette routine fonctionne il faut que les mailles à vérifier fassent
+   partie du modèle (pour savoir si ce sont des mailles de bord ou des mailles volumiques).
+   Or en contact ce n'est pas nécessaire.
+   Du coup la routine peut sauter beaucoup des mailles de contact et ne pas vérifier du tout
+   la bonne orientation ! De plus dans certains cas non prévus, elle essaye de créer un
+   vecteur de longueur 0.
+   
+   Pour contourner ce problème, on aide la routine quand elle est appelée depuis DEFI_CONTACT
+   : toutes les mailles sont alors de bord (cela a été vérifié par CFBORD) et on n'a donc pas
+   besoin du modèle.
+   
+   Impact : chveno.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perso
+DEJA RESTITUE DANS : 11.0.4
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT petsc01h                      macocco K.MACOCCO          119    119      0
+ CASTEST MODIF ascou18b                      macocco K.MACOCCO          128      8      8
+ CASTEST MODIF fdlv112b                      macocco K.MACOCCO          462      6      5
+ CASTEST MODIF hsnv132a                      macocco K.MACOCCO          226     19     18
+ CASTEST MODIF hsnv132b                      macocco K.MACOCCO          243     10     11
+ CASTEST MODIF hsnv132c                      macocco K.MACOCCO          185     11     17
+ CASTEST MODIF miss04a                       macocco K.MACOCCO          327     37     39
+ CASTEST MODIF miss08a                       macocco K.MACOCCO          379      2      2
+ CASTEST MODIF sdls114a                      macocco K.MACOCCO          340      8      5
+ CASTEST MODIF sdls114b                      macocco K.MACOCCO          315      3      3
+ CASTEST MODIF sslp313a                      macocco K.MACOCCO          216     57     59
+ CASTEST MODIF sslp313b                      macocco K.MACOCCO          148     31     84
+ CASTEST MODIF sslp315b                      macocco K.MACOCCO          169      5      3
+ CASTEST MODIF sslp319d                      macocco K.MACOCCO          284      7     11
+ CASTEST MODIF sslv134a                      macocco K.MACOCCO          371      4     22
+ CASTEST MODIF sslv134b                      macocco K.MACOCCO          611     92     85
+ CASTEST MODIF sslv134d                      macocco K.MACOCCO          790     91    101
+ CASTEST MODIF sslv134g                      macocco K.MACOCCO          648     46     70
+ CASTEST MODIF sslv134h                      macocco K.MACOCCO          327      8      9
+ CASTEST MODIF sslv313a                      macocco K.MACOCCO          266     10      7
+ CASTEST MODIF sslv313b                      macocco K.MACOCCO          225      3      3
+ CASTEST MODIF ssnp138a                      macocco K.MACOCCO          334      3      4
+ CASTEST MODIF ssnp138b                      macocco K.MACOCCO          382      2      4
+ CASTEST MODIF ssnv185c                      macocco K.MACOCCO          509      2      2
+ CASTEST MODIF ssnv185d                      macocco K.MACOCCO          297      2      2
+ CASTEST MODIF ssnv185p                      macocco K.MACOCCO          387      4      3
+ CASTEST MODIF zzzz257a                      macocco K.MACOCCO          316      2     10
+ CASTEST MODIF zzzz257b                      macocco K.MACOCCO          323      4      4
+ CASTEST MODIF zzzz257c                      macocco K.MACOCCO          305      4      4
+ CASTEST MODIF zzzz257d                      macocco K.MACOCCO          241      3      3
+CATALOGU MODIF compelem/grandeur_simple__    macocco K.MACOCCO         2122      4      3
+CATALOGU MODIF typelem/gener_me2dt0          macocco K.MACOCCO          187      2      2
+CATALOGU MODIF typelem/gener_me2dt1          macocco K.MACOCCO          200      2      2
+CATALOGU MODIF typelem/gener_me2tr0          macocco K.MACOCCO          186      2      2
+CATALOGU MODIF typelem/gener_me2tr1          macocco K.MACOCCO          200      2      2
+CATALOGU MODIF typelem/gener_medit0          macocco K.MACOCCO          199      2      2
+CATALOGU MODIF typelem/gener_medit1          macocco K.MACOCCO          204      2      2
+CATALOGU MODIF typelem/gener_medtr0          macocco K.MACOCCO          205      2      2
+CATALOGU MODIF typelem/gener_medtr1          macocco K.MACOCCO          218      4      3
+CATALOPY MODIF commande/affe_cara_elem       macocco K.MACOCCO          596     15      8
+CATALOPY MODIF commande/affe_char_meca       macocco K.MACOCCO          736      2      2
+CATALOPY MODIF commande/calc_essai           macocco K.MACOCCO          128      4      4
+CATALOPY MODIF commande/calc_ifs_dnl         macocco K.MACOCCO          251      2      2
+CATALOPY MODIF commande/defi_fond_fiss       macocco K.MACOCCO          101      3      3
+CATALOPY MODIF commande/dyna_iss_vari        macocco K.MACOCCO           77      3      3
+CATALOPY MODIF commande/macr_ascouf_calc     macocco K.MACOCCO          140      3      3
+CATALOPY MODIF commande/macr_aspic_calc      macocco K.MACOCCO          152      2      2
+CATALOPY MODIF commande/propa_fiss           macocco K.MACOCCO          157      5      5
+ FORTRAN AJOUT algeline/lspini               macocco K.MACOCCO           65     65      0
+ FORTRAN MODIF algeline/crsvgc               macocco K.MACOCCO          139      5      5
+ FORTRAN MODIF algeline/crsvpe               macocco K.MACOCCO          136      6      6
+ FORTRAN MODIF algeline/gcpc                 macocco K.MACOCCO          273      2      2
+ FORTRAN MODIF algeline/op0014               macocco K.MACOCCO          323      5      5
+ FORTRAN MODIF algeline/pcmump               macocco K.MACOCCO          102      3      3
+ FORTRAN MODIF algorith/accel0               macocco K.MACOCCO          166      6      2
+ FORTRAN MODIF algorith/mmnewt               macocco K.MACOCCO          264      3      2
+ FORTRAN MODIF algorith/xprvit               macocco K.MACOCCO          824     13     20
+ FORTRAN MODIF algorith/xstama               macocco K.MACOCCO          184      9      2
+ FORTRAN MODIF elements/dkqcod               macocco K.MACOCCO          157      3      5
+ FORTRAN MODIF elements/dkqcol               macocco K.MACOCCO          175      5      8
+ FORTRAN MODIF elements/dkqgco               macocco K.MACOCCO          148      2      4
+ FORTRAN MODIF elements/dkqsie               macocco K.MACOCCO          214      3      2
+ FORTRAN MODIF elements/dktcod               macocco K.MACOCCO          164      3      6
+ FORTRAN MODIF elements/dktcol               macocco K.MACOCCO          180      5      8
+ FORTRAN MODIF elements/dktgco               macocco K.MACOCCO          154      2      5
+ FORTRAN MODIF elements/dktsie               macocco K.MACOCCO          215      3      2
+ FORTRAN MODIF elements/dsqcod               macocco K.MACOCCO          205      3      5
+ FORTRAN MODIF elements/dsqcol               macocco K.MACOCCO          219      6     11
+ FORTRAN MODIF elements/dsqsie               macocco K.MACOCCO          255      3      2
+ FORTRAN MODIF elements/dstcod               macocco K.MACOCCO          187      3      5
+ FORTRAN MODIF elements/dstcol               macocco K.MACOCCO          202      6     11
+ FORTRAN MODIF elements/dstsie               macocco K.MACOCCO          241      3      2
+ FORTRAN MODIF elements/dxdmul               macocco K.MACOCCO          197     10      8
+ FORTRAN MODIF elements/dxeffi               macocco K.MACOCCO          161      3      2
+ FORTRAN MODIF elements/dxsigm               macocco K.MACOCCO           86     11     13
+ FORTRAN MODIF elements/dxsigv               macocco K.MACOCCO           81      8     10
+ FORTRAN MODIF elements/infdis               macocco K.MACOCCO          216    141     54
+ FORTRAN MODIF elements/infted               macocco K.MACOCCO          253      2      2
+ FORTRAN MODIF elements/q4gcod               macocco K.MACOCCO          159      3      5
+ FORTRAN MODIF elements/q4gcol               macocco K.MACOCCO          185      6     11
+ FORTRAN MODIF elements/q4gsie               macocco K.MACOCCO          224      3      2
+ FORTRAN MODIF elements/te0009               macocco K.MACOCCO          112     22      8
+ FORTRAN MODIF elements/te0033               macocco K.MACOCCO          330      9     11
+ FORTRAN MODIF elements/te0039               macocco K.MACOCCO          632     41     35
+ FORTRAN MODIF elements/te0041               macocco K.MACOCCO          552     90     41
+ FORTRAN MODIF elements/te0042               macocco K.MACOCCO          168     22      6
+ FORTRAN MODIF elements/te0043               macocco K.MACOCCO          269     23      5
+ FORTRAN MODIF elements/te0044               macocco K.MACOCCO          205     32      9
+ FORTRAN MODIF elements/te0045               macocco K.MACOCCO          320     23      4
+ FORTRAN MODIF elements/te0047               macocco K.MACOCCO          931     42     36
+ FORTRAN MODIF elements/te0370               macocco K.MACOCCO          183      8     18
+ FORTRAN MODIF elements/verdis               macocco K.MACOCCO          100      2      2
+ FORTRAN MODIF modelisa/aceadi               macocco K.MACOCCO          306     10      8
+ FORTRAN MODIF modelisa/acearm               macocco K.MACOCCO          230      9      7
+ FORTRAN MODIF modelisa/acearp               macocco K.MACOCCO          491     18      7
+ FORTRAN MODIF modelisa/afdi2d               macocco K.MACOCCO          216      8      7
+ FORTRAN MODIF modelisa/afdi3d               macocco K.MACOCCO          247      7      4
+ FORTRAN MODIF modelisa/chveno               macocco K.MACOCCO          377      6      4
+ FORTRAN MODIF prepost/xpomax                macocco K.MACOCCO          531      2      2
+FORTRAN90 MODIF petsc/apets3                  macocco K.MACOCCO          208      2      2
+FORTRAN90 MODIF petsc/apetsr                  macocco K.MACOCCO          379      3      3
+  PYTHON MODIF Macro/post_k1_k2_k3_ops       macocco K.MACOCCO         2047     32      9
+  PYTHON MODIF Messages/discrets             macocco K.MACOCCO          179     37      1
+  PYTHON MODIF Messages/miss0                macocco K.MACOCCO          122      6      1
+  PYTHON MODIF Miss/miss_fichier_interf      macocco K.MACOCCO          243     14      2
+  PYTHON MODIF Miss/miss_post                macocco K.MACOCCO          613     13      9
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         184       184              +184
+ MODIF :  104       32493      1315    1121      +194
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :  106       32677      1499    1121      +378 

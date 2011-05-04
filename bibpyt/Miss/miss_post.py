@@ -1,4 +1,4 @@
-#@ MODIF miss_post Miss  DATE 29/03/2011   AUTEUR COURTOIS M.COURTOIS 
+#@ MODIF miss_post Miss  DATE 04/05/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -78,10 +78,7 @@ class POST_MISS(object):
     def argument(self):
         """Vérification des arguments d'entrée."""
         # fréquences du calcul Miss
-        nbfmiss = int((self.param['FREQ_MAX'] - self.param['FREQ_MIN']) / self.param['FREQ_PAS']) + 1
-        UTMESS('I', 'MISS0_13', valr=(self.param['FREQ_MIN'], self.param['FREQ_MAX'],
-                                      self.param['FREQ_PAS']),
-                                vali=nbfmiss)
+        info_freq(self.param)
         # interpolation des accéléros si présents (à supprimer sauf si TABLE)
         self.excit_kw = self.param['EXCIT_HARMO']
         if self.excit_kw is None:
@@ -579,10 +576,7 @@ class POST_MISS_FICHIER(POST_MISS):
     def argument(self):
         """Vérification des arguments d'entrée."""
         # fréquences du calcul Miss
-        nbfmiss = int((self.param['FREQ_MAX'] - self.param['FREQ_MIN']) / self.param['FREQ_PAS']) + 1
-        UTMESS('I', 'MISS0_13', valr=(self.param['FREQ_MIN'], self.param['FREQ_MAX'],
-                                      self.param['FREQ_PAS']),
-                                vali=nbfmiss)
+        info_freq(self.param)
 
 
     def execute(self):
@@ -607,3 +601,13 @@ def PostMissFactory(type_post, *args, **kwargs):
     else:
         raise NotImplementedError, type_post
 
+
+def info_freq(param):
+    """Emet un message sur les fréquences utilisées"""
+    if param['FREQ_MAX']:
+        nbfmiss = int((param['FREQ_MAX'] - param['FREQ_MIN']) / param['FREQ_PAS']) + 1
+        UTMESS('I', 'MISS0_13', valr=(param['FREQ_MIN'], param['FREQ_MAX'],
+                                      param['FREQ_PAS']),
+                                vali=nbfmiss)
+    else:
+        UTMESS('I', 'MISS0_14', valk=repr(param['LIST_FREQ']), vali=len(param['LIST_FREQ']))
