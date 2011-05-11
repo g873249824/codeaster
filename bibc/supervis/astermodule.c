@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------ */
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF astermodule supervis  DATE 04/04/2011   AUTEUR COURTOIS M.COURTOIS */
+/* MODIF astermodule supervis  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET */
 /* ================================================================== */
 /* COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
@@ -3001,7 +3001,7 @@ PyObject *args;
         char *nomamd;
 
         if (!PyArg_ParseTuple(args, "s",&nomast)) return NULL;
-        nomamd = MakeBlankFStr(32);
+        nomamd = MakeBlankFStr(64);
         Fnom = MakeFStrFromCStr(nomast, 8);
         CALL_MDNOMA (nomamd,&lnomam,Fnom,&codret);
 
@@ -3027,7 +3027,7 @@ PyObject *args;
     char *nochmd, *n1, *n2, *n3;
 
     if (!PyArg_ParseTuple(args, "isss",&ilresu,&noresu,&nomsym,&nopase)) return NULL;
-    nochmd = MakeBlankFStr(32);
+    nochmd = MakeBlankFStr(64);
     n1 = MakeFStrFromCStr(noresu, 32);
     n2 = MakeFStrFromCStr(nomsym, 16);
     n3 = MakeFStrFromCStr(nopase, 8);

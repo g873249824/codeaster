@@ -1,7 +1,6 @@
-      SUBROUTINE MFFAMC(FID,MAA,FAM,NUM,NGRO,GRO,CRET)
+      SUBROUTINE MFNCO2(FID,CHA,N,CRET)
 !           CONFIGURATION MANAGEMENT OF EDF VERSION                  
-!& MODIF MFFAMC ECHANGE  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
-! RESPONSABLE SELLENET N.SELLENET
+!& MODIF MFNCO2 ECHANGE  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
 ! ================================================================== 
 ! COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG 
 !                                                                    
@@ -18,26 +17,25 @@
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO : EDF R&D CODE_ASTER,    
 !    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.     
 ! ================================================================== 
+C RESPONSABLE SELLENET N.SELLENET
       IMPLICIT NONE
-      INTEGER FID,NUM,NGRO,CRET
-      CHARACTER*(*) MAA,FAM
-      CHARACTER*80 GRO(*)
+      INTEGER FID,CRET,N
+      CHARACTER*(*) CHA
 #ifdef _DISABLE_MED
       CALL U2MESS('F','FERMETUR_2')
 #else
 ! BEGIN MED
 #ifdef _USE_MED_SHORT_INT
-      INTEGER*4 FID4,NUM4,NGRO4,CRET4
+      INTEGER*4 FID4, CRET4, N4
 #ifdef _DEBUG_MED
-      PRINT *,'=== MFFAMC ==='
+      PRINT *,'=== MFNCHA ==='
 #endif
       FID4 = FID
-      NUM4 = NUM
-      NGRO4 = NGRO
-      CALL MFACRE(FID4,MAA,FAM,NUM4,NGRO4,GRO,CRET4)
+      CALL MFDNCN(FID4,CHA,N4,CRET4)
+      N = N4
       CRET = CRET4
 #else
-      CALL MFACRE(FID,MAA,FAM,NUM,NGRO,GRO,CRET)
+      CALL MFDNCN(FID,CHA,N,CRET)
 #endif
 ! END MED
 #endif

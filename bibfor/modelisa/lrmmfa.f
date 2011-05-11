@@ -7,7 +7,7 @@
      &                    VECGRM, NBCGRM )
 C
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF MODELISA  DATE 08/03/2011   AUTEUR SELLENET N.SELLENET 
+C MODIF MODELISA  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -25,7 +25,6 @@ C ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 C    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 C ======================================================================
 C RESPONSABLE SELLENET N.SELLENET
-C TOLE CRP_20
 C-----------------------------------------------------------------------
 C     LECTURE DU MAILLAGE - FORMAT MED - LES FAMILLES
 C     -    -     -                 -         --
@@ -162,10 +161,12 @@ C               12   345678   9012345678901234
 C
       CALL MFFAML ( FID, NOMAMD, ZI(ADFANO), NBNOEU,
      &              EDNOEU, TYPNOE, CODRET )
-      IF ( CODRET.NE.0 ) THEN
-        SAUX08='MFFAML  '
-        CALL U2MESG('F','DVP_97',1,SAUX08,1,CODRET,0,0.D0)
-      ENDIF
+C      DANS MED3.0, LE CODE RETOUR PEUT ETRE NEGATIF SANS POUR
+C      AUTANT QU'IL Y AIT UN PROBLEME...
+C      IF ( CODRET.NE.0 ) THEN
+C        SAUX08='MFFAML  '
+C        CALL U2MESG('F','DVP_97',1,SAUX08,1,CODRET,0,0.D0)
+C      ENDIF
 
 C
 C 3.2. ==> LA FAMILLE D'APPARTENANCE DE CHAQUE MAILLE
@@ -179,10 +180,12 @@ C
      &                   NMATYP(ITYP),JFAMMA(ITYP))
           CALL MFFAML ( FID, NOMAMD, ZI(JFAMMA(ITYP)),NMATYP(ITYP),
      &                  EDMAIL, TYPGEO(ITYP), CODRET )
-          IF ( CODRET.NE.0 ) THEN
-            SAUX08='MFFAML  '
-            CALL U2MESG('F','DVP_97',1,SAUX08,1,CODRET,0,0.D0)
-          ENDIF
+C         DANS MED3.0, LE CODE RETOUR PEUT ETRE NEGATIF SANS POUR
+C         AUTANT QU'IL Y AIT UN PROBLEME...
+C          IF ( CODRET.NE.0 ) THEN
+C            SAUX08='MFFAML  '
+C            CALL U2MESG('F','DVP_97',1,SAUX08,1,CODRET,0,0.D0)
+C          ENDIF
 C
         ENDIF
 C

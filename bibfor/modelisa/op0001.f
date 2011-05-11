@@ -1,9 +1,9 @@
       SUBROUTINE OP0001()
 C-----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF MODELISA  DATE 19/10/2010   AUTEUR DELMAS J.DELMAS 
+C MODIF MODELISA  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -18,7 +18,7 @@ C YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
 C ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 C    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 C ======================================================================
-C TOLE CRP_20
+C
 C-----------------------------------------------------------------------
 C                                     EDF / DER / IMA / MMN / I75 / PS
 C
@@ -38,7 +38,6 @@ C       CONNEX          NOM DE L OBJET CONNECTIVITES
 C       NOMMAI          NOM DE L OBJET REPERTOIRE DES MAILLES
 C       NOMNOE          NOM DE L OBJET REPERTOIRE DES NOEUDS
 C       TITRE           NOM DE L OBJET TITRE
-C       FORMM           NOM DE L OBJET FORMAT
 C
 C-----------------------------------------------------------------------
 C
@@ -60,7 +59,6 @@ C     ----- DEBUT COMMUNS NORMALISES  JEVEUX  --------------------------
       CHARACTER*32                                    ZK32
       CHARACTER*80                                              ZK80
       COMMON  / KVARJE / ZK8(1) , ZK16(1) , ZK24(1) , ZK32(1) , ZK80(1)
-      CHARACTER*32       JEXNOM, JEXNUM,JEXATR
 C     -----  FIN  COMMUNS NORMALISES  JEVEUX  --------------------------
 C
       CHARACTER*16    CMD
@@ -74,9 +72,9 @@ C
       CHARACTER*8     NOMU, TOTM, FMT, VERI
       CHARACTER*16    CONCEP
       CHARACTER*24    COOVAL, COODSC, COOREF, GRPNOE, GRPMAI, CONNEX
-      CHARACTER*24    FORMM, TITRE, NOMMAI, NOMNOE, TYPMAI
+      CHARACTER*24    TITRE, NOMMAI, NOMNOE, TYPMAI
       CHARACTER*24    ADAPMA, VECGRM
-      CHARACTER*32    NOMAMD
+      CHARACTER*64    NOMAMD
       REAL*8          DTOL
       INTEGER         LXLGUT, ILNG
 
@@ -99,7 +97,8 @@ C
         CALL GETVTX ( ' ','NOM_MED' ,0,1,1,NOMAMD, IAUX )
         IF ( IAUX.EQ.0 ) THEN
 C                   12345678901234567890123456789012
-          NOMAMD = '                                '
+          NOMAMD = '                                '//
+     &'                                '
         ENDIF
         CALL GETVIS (' ','INFO_MED',0,1,1,INFMED,IAUX)
 C
@@ -134,7 +133,6 @@ C               123456789012345678901234
       GRPMAI  = NOMU// '.GROUPEMA       '
       CONNEX  = NOMU// '.CONNEX         '
       TITRE   = NOMU// '           .TITR'
-      FORMM   = NOMU// '           .FORM'
       TYPMAI  = NOMU// '.TYPMAIL        '
       ADAPMA  = NOMU// '.ADAPTATION     '
 C
@@ -150,7 +148,7 @@ C     ---------------------------------
       ELSEIF (FMT(1:3) .EQ. 'MED' ) THEN
           CALL LRMHDF ( NOMAMD,
      &                  NOMU,NOMMAI,NOMNOE,COOVAL,COODSC,COOREF,
-     &                  GRPNOE,GRPMAI,CONNEX,TITRE,FORMM,TYPMAI,
+     &                  GRPNOE,GRPMAI,CONNEX,TITRE,TYPMAI,
      &                  ADAPMA,IFM,IFL,NIV,INFMED,NBNOEU,NBMAIL,
      &                  NBCOOR,VECGRM,NBCGRM)
       ENDIF
