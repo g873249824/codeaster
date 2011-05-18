@@ -1,4 +1,4 @@
-#@ MODIF cata_champs Stanley  DATE 02/02/2011   AUTEUR PELLET J.PELLET 
+#@ MODIF cata_champs Stanley  DATE 19/05/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -158,8 +158,8 @@ class CATA_CHAMPS :
     self('ERME_ELNO', 'ELNO',['ERME_ELEM'],                      "Indicateurs d'erreur en résidu aux noeuds par élément")
     self('QIRE_ELEM', 'ELEM',[],                            "Indicateurs d'erreur en quantités d'intéret en résidu par élément")
     self('QIRE_ELNO', 'ELNO',['QIRE_ELEM'],            "Indicateurs d'erreur en quantités d'intéret en résidu aux noeuds par élément")
-    self('SIZ1_ELGA', 'ELEM',['SIEF_ELGA',],"Champ de contraintes lissées Zhu-Zienkiewicz 1 aux noeuds")
-    self('SIZ2_ELGA', 'ELEM',['SIEF_ELGA',],"Champ de contraintes lissées Zhu-Zienkiewicz 2 aux noeuds")
+    self('SIZ1_NOEU', 'ELEM',['SIEF_ELGA',],"Champ de contraintes lissées Zhu-Zienkiewicz 1 aux noeuds")
+    self('SIZ2_NOEU', 'ELEM',['SIEF_ELGA',],"Champ de contraintes lissées Zhu-Zienkiewicz 2 aux noeuds")
     self('ERZ1_ELEM', 'ELEM',['DEPL'],                      "Indicateurs d'erreur Zhu-Zienkiewicz 1 par élément")
     self('ERZ2_ELEM', 'ELEM',['DEPL'],                      "Indicateurs d'erreur Zhu-Zienkiewicz 2 par élément")
     self('QIZ1_ELEM', 'ELEM',[],                            "Indicateurs d'erreur en quantités d'intéret Zhu-Zienkiewicz 1 par élément")

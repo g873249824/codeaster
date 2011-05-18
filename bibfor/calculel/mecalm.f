@@ -2,7 +2,7 @@
      &                  NBORDR,MODELE,MATE,CARA,NCHAR,CTYP)
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF CALCULEL  DATE 29/03/2011   AUTEUR DELMAS J.DELMAS 
+C MODIF CALCULEL  DATE 19/05/2011   AUTEUR MACOCCO K.MACOCCO 
 C TOLE CRP_20
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -729,10 +729,10 @@ C    ------------------------------------------------------------------
             CALL JEDEMA()
   140     CONTINUE
 C    ------------------------------------------------------------------
-C    -- OPTIONS "SIZ1_ELGA","SIZ2_ELGA"
+C    -- OPTIONS "SIZ1_NOEU","SIZ2_NOEU"
 C    ------------------------------------------------------------------
-        ELSEIF (OPTION.EQ.'SIZ1_ELGA' .OR.
-     &          OPTION.EQ.'SIZ2_ELGA') THEN
+        ELSEIF (OPTION.EQ.'SIZ1_NOEU' .OR.
+     &          OPTION.EQ.'SIZ2_NOEU') THEN
 
 
           DO 160,IAUX=1,NBORDR
@@ -754,9 +754,9 @@ C    ------------------------------------------------------------------
 
             ENDIF
             CALL RSEXC1(LERES1,OPTION,IORDR,CHSIGN)
-            IF (OPTION.EQ.'SIZ1_ELGA') THEN
+            IF (OPTION.EQ.'SIZ1_NOEU') THEN
               CALL SINOZ1(MODELE,CHSIG,CHSIGN)
-            ELSEIF (OPTION.EQ.'SIZ2_ELGA') THEN
+            ELSEIF (OPTION.EQ.'SIZ2_NOEU') THEN
               CALL DISMOI('F','PROF_CHNO',CHAMGD,'CHAM_NO',IB,PFCHNO,IE)
               CALL SINOZ2(MODELE,PFCHNO,CHSIG,CHSIGN)
             ENDIF

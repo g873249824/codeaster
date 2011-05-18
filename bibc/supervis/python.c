@@ -1,9 +1,9 @@
 /* ------------------------------------------------------------------ */
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF python supervis  DATE 11/08/2009   AUTEUR LEFEBVRE J-P.LEFEBVRE */
+/* MODIF python supervis  DATE 19/05/2011   AUTEUR LEFEBVRE J-P.LEFEBVRE */
 /* RESPONSABLE LEFEBVRE J-P.LEFEBVRE */
 /* ================================================================== */
-/* COPYRIGHT (C) 1991 - 2001  EDF R&D              WWW.CODE-ASTER.ORG */
+/* COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
 /* THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR      */
 /* MODIFY IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS     */

@@ -4,7 +4,7 @@
       INTEGER NBORDR
 C ----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF UTILITAI  DATE 15/02/2011   AUTEUR FLEJOU J-L.FLEJOU 
+C MODIF UTILITAI  DATE 19/05/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -82,8 +82,8 @@ C      '1234567890123456','1234567890123456','1234567890123456',
      & 'EPSI_NOEU',        'EPTU_ELNO',         'SIEF_ELGA',
      & 'SIEF_ELNO',        'SIEF_NOEU',         'SIGM_ELNO',
      & 'SIGM_NOEU',        'EPTQ_ELNO',         'SITQ_ELNO',
-     & 'SICA_ELNO',        'SICA_NOEU',         'SIZ1_ELGA',
-     & 'SIZ2_ELGA',        'SIPO_ELNO',         'SIPO_NOEU',
+     & 'SICA_ELNO',        'SICA_NOEU',         'SIZ1_NOEU',
+     & 'SIZ2_NOEU',        'SIPO_ELNO',         'SIPO_NOEU',
      & 'SIEQ_ELGA',        'SIEQ_ELNO',         'SIEQ_NOEU',
      & 'EPEQ_ELGA',        'EPEQ_ELNO',         'EPEQ_NOEU',
      & 'ALPH0_ELGA_EPSP',  'ALPHP_ELGA_ALPH0',  'VARI_NON_LOCAL',

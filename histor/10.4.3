@@ -1,0 +1,852 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 05/19/2011 - 12:27:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016956 DU 2011-05-19 09:26:30
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Passage python2.6
+FONCTIONNALITE
+   Passage à la version 2.6 de Python.
+   Les fichiers de configuration des versions NEW11 et NEW10 ont été modifiés, il est
+   nécessaire de recompiler les fichiers C s'appuyant sur l'include python.
+   Le basculement des versions locales a déjà été réalisé.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 05/19/2011 - 09:34:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016801 DU 2011-04-20 16:14:15
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    Erreur developpeur avec 3D_INCO
+FONCTIONNALITE
+   Anomalies
+   ~~~~~~~~~
+   
+   Les calculs avec INCO plantent dans MECA_STATIQUE. La couverture de code des options
+   RIGI_MECA et MASS_MECA des éléments INCO et INCO_UP n'est pas faite.
+   
+   Corrections
+   ~~~~~~~~~~~
+   
+   Le problème est identique à la fiche 16561. Il suffit de remplacer le test sur les alias
+   par un appel à ELREF2
+   
+   Il faut remplacer 
+   
+         IF (NOMTE(8:12).EQ.'TETRA') THEN
+           ELREF2 = 'TE4'
+         ELSE IF (NOMTE(8:11).EQ.'HEXA') THEN
+           ELREF2 = 'HE8'
+         ELSE IF (NOMTE(8:12).EQ.'PENTA') THEN
+           ELREF2 = 'PE6'
+         ELSE
+           CALL U2MESK('F','DVP_4',1,NOMTE)
+         END IF
+   
+   par
+         CALL ELREF2(NOMTE,10,LIELRF,NTROU)
+   
+   LIELRF contient la liste des éléments de références
+   
+   On en profite pour corriger et améliorer des parties du code pour INCO et INCO_UP.
+   Le calcul de la matrice de masse est fausse dans massup.f pour le cas axisymétrique.
+   On corrige.
+   
+   Impacts
+   ~~~~~~~
+   
+   cata :
+   
+   phenomene_modelisation__
+   gener_me3di3
+   gener_me3du3
+   gener_mepli2
+   gener_meplu2
+   
+   fortran :
+   
+   nirm2b,nirm2c,nirm2d,nirm3b,nirm3c,nirm3d,nifn2b,nifn2c,nifn3b,nifn3c,nipl2d,te0048,te0121,
+   te0454,te0455,te0124,te0125,te0081,te0481,te0215,te0216,te0480,te0120,massup
+   
+   
+   doc : V1.01.289 (cas test zzzz289)
+   
+   Validations
+   ~~~~~~~~~~~
+   
+   Nouveaux cas-test : zzzz289a (3D) , b(D_PLAN), c(AXI)
+   
+   
+   Risque de résultats faux
+   ~~~~~~~~~~~~~~~~~~~~~~~~
+   
+   Le calcul de l'option RIGI_MECA ne pouvait pas donner de résultats faux puisque l'on
+   tombait sur une erreur développeur.
+   L'option MASS_MECA pouvait potentiellement donner des résultats faux. Cela est du à deux
+   bugs :
+   _l'utilisation de dfdm3j et dfdm2j à la place de dfdm3d et dfdm2d : les routines dfdmXj
+   retourne la valeur du Jacobien (JAC) alors que les routines dfdmXd retournes la valeur
+   absolue du Jacobien * le poids de gauss (ABS(JAC)*POIDS). Dans massup, j'ai oublié de
+   tenir compte de la valeur absolue. Il était donc possible d'avoir des problèmes de signes.
+   _en AXIS, le poids d'intégration est divisé par le rayon (distance entre la position du
+   point de Gauss et l'axe de révolution). Il y avait un problème dans son calcul.
+   
+   Le calcul de l'option de MASS_MECA a été validé en comparant les S_R des matrices des
+   formulations standards et incompressibles.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.3.5
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.289
+VALIDATION
+    cas test
+DEJA RESTITUE DANS : 11.0.5
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 05/19/2011 - 09:34:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016874 DU 2011-05-03 15:54:14
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    PETSC + LDLT_SP: probleme de destruction des occurences MUMPS
+FONCTIONNALITE
+   Problème :
+   ---------
+   Il semble que le ménage des occurences MUMPS ne soit pas fait correctement lorsqu'on
+   l'utilise avec PETSC (PRECOND='LDLT_SP'). On dépasse alors le nbre NMXINS=5 d'occurence
+   admissibles. On le vérifie aisément en réalisant 5 STAT_NON_LINE de suite avec PETSC
+   (PRECOND='LDLT_SP') ; on obtient le message :
+      !----------------------------------------------------------------------------------------!
+      ! <F> <FACTOR_60>                                                                        !
+      !                                                                                        !
+      ! Solveur MUMPS :                                                                        !
+      !   Limite atteinte : le solveur Mumps est utilisé par plus de 5 matrices simultanément. !
+      ! Solution :                                                                             !
+      !   Il faut corriger le programme (PARAMETER (NMXINS=5) dans amumps.f)                   !
+      !   Contactez l'assistance.                                                              !
+      !                                                                                        !
+      !                                                                                        !
+      ! Cette erreur est fatale. Le code s'arrete.                                             !
+      !----------------------------------------------------------------------------------------!
+   
+   Solution :
+   ---------
+   Quand on utilise le préconditionneur simple précision LDLT_SP, il existe une instance
+   souterraine du solveur MUMPS. Or cette instance ne doit pas être détruite à chaque
+   réassemblage de la matrice du système comme c'est le cas pour les instances des solveurs.
+   L'intérêt de ce préconditionneur réside en effet dans sa conservation sur plusieurs
+   résolutions.
+   Il faut donc nettoyer les instances MUMPS souterraines à la fin de la résolution.
+   C'est ce que je fais dans les sources de MECA_STATIQUE et {STAT,DYNA}_NON_LINE lors du
+   ménage final.
+   
+   Sources :
+   --------
+   isfonc.f : nouvelles questions LDLT, MULT_FRONT, GCPC, MUMPS, PETSC, LDLT_SP
+   detlsp.f : nouvel utilitaire qui détruit l'instance MUMPS souterraine
+   
+   Aménagements marginaux dans :
+   mestat.f  nmmeng.f  op0046.f  op0070.f
+   apetsr.F
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : D6.00.01
+VALIDATION
+    Passage des tests avec LDLT_SP
+DEJA RESTITUE DANS : 11.0.5
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 05/19/2011 - 09:34:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016790 DU 2011-04-19 07:42:57
+TYPE evolution concernant Code_Aster (VERSION )
+TMA : DeltaCad
+TITRE
+    Message d'alarme suite restitution fiche 16723
+FONCTIONNALITE
+   1 - Objectifs
+   =============
+    Supprimer les alarmes DISCRETS_26, DISCRETS_27 et DISCRETS_28 dans les cas-tests
+   
+   2 - Modifications
+   =================
+   Pour supprimer ces alarmes on affecte dans les fichiers de commande, des  :
+   
+       - MASSES nulles sur les discrets concernés pour l'alarme DISCRETS_26, 
+       - RAIDEURS nulles sur les discrets concernés pour l'alarme DISCRETS_27,
+       - AMORTISSEMENTS nulles sur les discrets concernés pour l'alarme DISCRETS_28. 
+   
+   207 cas-tests sont concernés par ces alarmes. Parmi ceux-ci 196 cas-tests sont restitues.
+   
+   3 - problèmes rencontres
+   ========================
+   La suppressions des alarmes dans les 11 cas-tests non restitues nécessite une intervention
+   dans certaines macro et dans les sources: 
+   
+   =>Commande AFFE_CARA_ELEM
+   - RIGI_PARASOL 
+   Le message DISCRETS_26 (MASSES) ne peut pas être supprime, il n'existe pas de mot_clé
+   permettant de donner les caractéristiques de la matrice masse.
+        Cas-tests concernés :  
+            sdls108a, ssls135a, zzzz115a
+            zzzz200a, zzzz200b, zzzz200c, 
+            zzzz200d, miss05a,
+   
+   - RIGI_MISS_3D (AFFE_CARA_ELEM)
+   Le message DISCRETS_26 (MASSES) ne peut pas être supprime, il n'existe pas mot_clé
+   permettant de donner les caractéristiques de la matrice masse.
+        Cas-test concerné : miss06a 
+   
+   => Macro-commande : CALC_ESSAI
+   Dans ce cas-test, on n'arrive pas a supprimer les alarmes générée par la macro CALC_ESSAI.
+   Pour les supprimer il faudrait intervenir dans la macro au moment ou l'on la commande
+   AFFE_CARA_ELEM est générée.
+      Cas-tests concernés : => sdll137b, sdll137c
+   
+   Pour les cas-tests non-restitués on propose d'ouvrir une autre fiche pour faire le traitement
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage des cas tests
+DEJA RESTITUE DANS : 11.0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 05/19/2011 - 09:34:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016759 DU 2011-04-08 15:18:01
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    IMPR_STURM et MODE_ITER_INV + matrice non symxc3xa9trique
+FONCTIONNALITE
+   PROBLEME
+   ========
+      L'utilisateur Aster peut solliciter les op IMR_STURM et MODE_ITER_INV avec des matrices
+      non symétriques alors que celles-ci sont hors périmètre (seulement sym réel).
+   ANALYSE
+   =======
+      Depuis leur création ces op. ne testent pas le caractère symétrique ou non des matrices
+      qu'ils manipulent. Pendant longtemps cela ne posait aucun pb car le dynamicien ne construi
+      sait généralement que des matrices symétriques. Depuis 4 ou 5 ans et le chantier "résorbtion
+      de CADYRO ds Aster" il me semble, ce n'est plus le cas.
+      
+      Or les matrices non symétriques sont hors périmètre du test de Sturm utilisés ds ces op. et 
+      de plus, certaines opérations d'algébres linéaires ont été codées exclusivement en 
+      symétriques, donc utiliser des matrices non symétriques conduit à:
+            * avec IMPR_STURM: résultat potentiellement faux,
+            * avec MODE_ITER_INV: planton-écrasement tableau.
+   
+      Je blinde donc cela ds les 2 ops. En cas de matrices non symétriques (et/ou complexe) le
+      calcul s'arrête en 
+   
+      !-----------------------------------------------------------------------------------------!
+      ! <F> <ALGELINE3_48>                                                                      !
+      !                                                                                         !
+      ! Cet operateur a besoin du "procede de Sturm" pour tester la valider de modes propres ou !
+      ! pour nourrir un algorithme de recherche de modes propres (dichotomie...). Or celui-ci   !
+      ! ne fonctionne, pour l'instant, que sur des matrices reelles et symetriques.             !
+      !   --> La matrice utilisee MATM ne repond pas a ces criteres !                           !
+      !                                                                                         !
+      !                                                                                         !
+      ! Cette erreur est fatale. Le code s'arrete.                                              !
+      !-----------------------------------------------------------------------------------------!
+   
+      RQ1: En complexe cela ne pourra pas marcher aussi, mais ce cas est blindé dés le capy.
+   
+      RQ2: L'opérateur "dual" de ces 2 larrons, MODE_ITER_SIMULT, qui est de loin le plus utilisé
+        (directement ou via des macros) est lui blinder car il sait traiter du non symétrique voire
+        du complexe.
+   
+      RQ3: A l'avenir, on peut rendre fonctionnelle, même en non symétrique, l'option 'PROCHE' de
+           MODE_ITER_INV si besoin est.
+   
+      RQ4: Avec l'extension du test de Sturm en cours, on pourra probablement faire sauter ces
+           limitations du périmètre d'utilisation.
+   
+      RQ5: La documentation elle avait été mis à jour lorsque je l'ai remaniée il y'a 2 ans.
+   
+     CAS-TEST UTILISE POUR TEST: SDLL123b
+     ====================================
+   
+     SOURCES RESTITUEES:
+     ===================
+      op0032.f op0044.f 
+      algeline3.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    informatique, non-regression, fonctionnel
+DEJA RESTITUE DANS : 11.0.5
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 05/19/2011 - 09:34:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016909 DU 2011-05-11 06:25:11
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    Anomalie avec calcul option INDL_ELGA pour calcul D_PLAN_HM
+FONCTIONNALITE
+   FICHE SIMILAIRE A L'AL 16908:
+   -----------------------------
+   
+   Le calcul elementaire INDL_ELGA ne fonctionne pas en modelisation couple HM, alors que le
+   catalogue
+   d'elements l'autorise.
+   Le message d'erreur obtenu est le suivant:
+   !------------!
+      ! <F> <ELEMENTS_90>          !
+      ! Erreur de programmation :   !
+      !    L'attribut NBSIGM n'est pas défini pour cette modélisation. !
+      ! Solution :                  !
+      !    Il faut modifier la catalogue phenomene_modelisation__.cata pour ajouter NBSIGM
+   pour cette modélisation.  !
+      ! Cette erreur est fatale. Le code s'arrete.          !
+      !---------------------------------------------------------!
+   
+   Justifications de l'erreur rencontree:
+   --------------------------------------
+   La routine te0030.f tente d'etablir une distinction entre les modelisations mecaniques
+   pures (D_PLAN(_SI), C_PLAN, AXIS) et HM (D_PLAN_HM(S), AXIS_HM). Le test est actuellement
+   mal établi en considerant les attributs de modelisation D_PLAN ou AXIS. Ces attributs sont
+   en effet communs aux modelisations mecaniques pures et HM. La distinction souhaitee dans
+   le traitement du te0030 est alors inefficace, car on se dirige toujours vers le traitement
+   mecanique pure qui entraine l'erreur precisee ci-dessus : l'attribut NBSIGM n'est en effet
+   pas defini
+   pour les modelisations D_PLAN_HM(S) ou AXIS_HM.
+   
+   Solutions proposees:
+   --------------------
+   Le test de distinction entre les modelisations seules (D_PLAN(_SI), C_PLAN, AXIS) et
+   couplees (D_PLAN_HM(S), AXIS_HM) porte a present sur la variable ALIAS8 (chaine de
+   caracteres de longueur 8). ALIAS(3:5) contient un identifiant unique de chaque
+   modelisation; Il n'y a alors plus d'erreurs possibles.
+   
+   Impact sources:
+   ---------------
+   te0030.f
+   
+   La solution proposee sera testee dans le cas-test wtnv132c pour verifier le bon traitement
+   en D_PLAN_HM des developpements
+   
+   IMPACT DOCUMENTAIRE:  V7.31.132c
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.31.132
+VALIDATION
+    CAS-TEST
+DEJA RESTITUE DANS : 11.0.6
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 05/19/2011 - 09:34:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016840 DU 2011-04-26 15:51:11
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    Mauvais renommage de l'option SIGM_NOZ1_ELGA
+FONCTIONNALITE
+   Problème :
+   ========
+   Dans le cadre du renommage des options pour CALC_CHAMP, l'option SIGM_NOZ[1,2]_ELGA a été
+   renommée SIZ[1,2]_ELGA. Or c'est un champ localisé aux noeuds.
+   
+   Correction :
+   ==========
+   On renomme l'option SIZ[1,2]_NOEU.
+   
+   Impact :
+   ======
+   mecalm.f
+   calcop.f
+   mscalm.f
+   modopt.f
+   rscrsd.f
+   cata_champs.py
+   calc_elem.capy
+   lire_resu.capy
+   macro_elas_mult.capy
+   c_nom_cham_into.capy
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : r4.10.01, u4.72.04, u4.81.01
+VALIDATION
+    astout estimateur d'erreur
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 05/19/2011 - 09:34:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016846 DU 2011-04-27 11:21:38
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] PRE_IDEAS ne detecte pas le bon type de maille
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   Dans le calcul joint la lecture du maillage au format UNV par PRE_IDEAS se passe bien.
+   Cependant lorsque l'on fait un LIRE_MAILLAGE, on a ensuite une erreur. En effet dans le
+   .mail on constate que des SEG2 ont été déclarés et que l'on donne pour chaque 3 noeuds (ce
+   sont en fait des SEG3).
+   Il doit y avoir une erreur dans la détection du type de maille dans PRE_IDEAS. Remarque :
+   selon l'utilisateur, le maillage au format UNV a été produit par Salomé. Si on le lit dans
+   Salomé et que l'on le réexporte en MED, tout se passe bien.
+   """
+   
+   
+   Analyse :
+   ---------
+   Effectivement, le fichier .mail produit n'est pas correct. Les SEG3 du fichier UNV sont
+   vus comme des SEG2 et copiés comme tel dans le fichier .mail produit par PRE_IDEAS.
+   
+   Le problème vient de la routine COV4V5 qui à partir d'un numéro relu dans le fichier UNV
+   en déduit le type de maille aster correspondant.
+   
+   Ici le numéro est le 22, il devrait pointer vers le type SEG3 (puisque dans le fichier
+   UNV, on donne ensuite 3 numéros de noeuds). Or on pointe vers le type SEG2.
+   
+   
+   Correction :
+   ------------
+   Etant donné que la correspondance SEG3 UNV vers SEG3 Aster est déjà définie, on peut
+   corriger facilement en modifiant COV4V5 pour qu'elle lie le code UNV 22 au type de maille
+   SEG3 Aster.
+   
+   
+   Validation :
+   ------------
+   Comme je n'ai pas de doc sur le lien entre numéro de code et type de maille dans IDEAS, je
+   n'ai pas la confirmation de mes déductions. Mais je pense que la correction que j'apporte
+   n'est pas très dangeureuse. Pour valider, je fais passer tous les tests qui passent par la
+   routine COV4V5 et je valide sur le test fourni dans la fiche :
+   adlv100b adlv100c adlv100d adlv100e adlv100f adlv100g adlv100h adlv100i adlv100j adlv100k
+   adlv100l adlv100m adlv100n ahlv100d ahlv100e ahlv100f ahlv100g ahlv100h ahlv100i ahlv100j
+   ahlv100k ahlv100q ahlv100r ahlv100s ahlv101b ahlv101c ahlv302d ahlv302e ahlv302f fdlv103a
+   fdlv104a fdlv106a fdlv107a fdlv108a fdlv109a fdlv110a sdld102a sdld102d sdld104a sdld104b
+   sdll113a sdll113b sdll137a sdll137b sdll137c sdll137d sdls105a sdls105b sdls106a sdls106b
+   sdls106c sdls106d sdls106e sdls106f sdls106g sdls121a sdls121b sdls121c sdlv122a sdlv122b
+   sdlv125a sdnl102a sdnv102a ssla100a ssla100b ssla100c ssll101c ssll101d ssls130a ssls130b
+   ssls501a sslv134g ssnl118a ssnl502a ssnl502b ssns501a szlz110a tplv103a tplv103b tpna01c
+   ttnl02b wtnp106a wtnp106b wtnp115a wtnp115b zzzz112a zzzz112b zzzz112c zzzz136c zzzz137a
+   zzzz161a zzzz165a zzzz176a zzzz262a zzzz262b
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire + tests passant par COV4V5
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016913 DU 2011-05-12 07:14:06
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    perfe02a plantent sur toutes les plateformes
+FONCTIONNALITE
+   Problème :
+   ----------
+   Ma restitution MED3.0 a cassé le test perfe02a. Je corrige lundi en NEW11, il faudra
+   reporter en NEW10.
+   
+   
+   Solution :
+   ----------
+   Je modifie le com1 de perfe02a pour que les noms des champs à relire soient corrects (pas
+   de "_" terminaux).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perfe02a
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+       C MODIF supervis/aster_utils         lefebvre J-P.LEFEBVRE       146      1      1
+       C MODIF supervis/astermodule         lefebvre J-P.LEFEBVRE      3918      1      1
+       C MODIF supervis/dll_interface       lefebvre J-P.LEFEBVRE        70      1      1
+       C MODIF supervis/dll_register        lefebvre J-P.LEFEBVRE       224      1      1
+       C MODIF supervis/dll_umat            lefebvre J-P.LEFEBVRE       161      1      1
+       C MODIF supervis/dll_yacs            lefebvre J-P.LEFEBVRE       445      1      1
+       C MODIF supervis/dll_zmat            lefebvre J-P.LEFEBVRE       162      1      1
+       C MODIF supervis/fonctions_module    lefebvre J-P.LEFEBVRE       158      2      2
+       C MODIF supervis/python              lefebvre J-P.LEFEBVRE        86      2      2
+       C MODIF supervis/spec_osci           lefebvre J-P.LEFEBVRE       171      1      1
+       C MODIF utilitai/aplext              lefebvre J-P.LEFEBVRE       194      1      1
+       C MODIF utilitai/asterm              lefebvre J-P.LEFEBVRE       393      1      1
+       C MODIF utilitai/cpfile              lefebvre J-P.LEFEBVRE        87      1      1
+       C MODIF utilitai/date                lefebvre J-P.LEFEBVRE        38      1      1
+       C MODIF utilitai/envima              lefebvre J-P.LEFEBVRE       196      1      1
+       C MODIF utilitai/erfcam              lefebvre J-P.LEFEBVRE        33      1      1
+       C MODIF utilitai/faster              lefebvre J-P.LEFEBVRE        35      1      1
+       C MODIF utilitai/gtenv               lefebvre J-P.LEFEBVRE        50      1      1
+       C MODIF utilitai/gtnpro              lefebvre J-P.LEFEBVRE        39      1      1
+       C MODIF utilitai/hancpu              lefebvre J-P.LEFEBVRE        34      1      1
+       C MODIF utilitai/hanfpe              lefebvre J-P.LEFEBVRE        47      1      1
+       C MODIF utilitai/hpalloc             lefebvre J-P.LEFEBVRE        44      1      1
+       C MODIF utilitai/hpdeallc            lefebvre J-P.LEFEBVRE        26      1      1
+       C MODIF utilitai/indik8              lefebvre J-P.LEFEBVRE        53      1      1
+       C MODIF utilitai/iniast              lefebvre J-P.LEFEBVRE        55      1      1
+       C MODIF utilitai/inifpe              lefebvre J-P.LEFEBVRE        70      2      2
+       C MODIF utilitai/inisig              lefebvre J-P.LEFEBVRE       167      1      1
+       C MODIF utilitai/iodr                lefebvre J-P.LEFEBVRE       207      1      1
+       C MODIF utilitai/isdbgj              lefebvre J-P.LEFEBVRE        38      1      1
+       C MODIF utilitai/isinte              lefebvre J-P.LEFEBVRE        38      1      1
+       C MODIF utilitai/ismpi               lefebvre J-P.LEFEBVRE        35      1      1
+       C MODIF utilitai/isomp               lefebvre J-P.LEFEBVRE        35      1      1
+       C MODIF utilitai/issuiv              lefebvre J-P.LEFEBVRE        39      1      1
+       C MODIF utilitai/iverif              lefebvre J-P.LEFEBVRE        38      1      1
+       C MODIF utilitai/kloklo              lefebvre J-P.LEFEBVRE       104      1      1
+       C MODIF utilitai/lsegjv              lefebvre J-P.LEFEBVRE        36      1      1
+       C MODIF utilitai/matfpe              lefebvre J-P.LEFEBVRE        64      1      1
+       C MODIF utilitai/maxbas              lefebvre J-P.LEFEBVRE        36      1      1
+       C MODIF utilitai/mejvdy              lefebvre J-P.LEFEBVRE        35      1      1
+       C MODIF utilitai/mejvst              lefebvre J-P.LEFEBVRE        36      1      1
+       C MODIF utilitai/memdis              lefebvre J-P.LEFEBVRE        53      1      1
+       C MODIF utilitai/memjob              lefebvre J-P.LEFEBVRE        34      1      1
+       C MODIF utilitai/memjvx              lefebvre J-P.LEFEBVRE        37      1      1
+       C MODIF utilitai/mempid              lefebvre J-P.LEFEBVRE        79      1      1
+       C MODIF utilitai/mjvsmo              lefebvre J-P.LEFEBVRE        36      1      1
+       C MODIF utilitai/mjvxmo              lefebvre J-P.LEFEBVRE        35      1      1
+       C MODIF utilitai/mlnbpr              lefebvre J-P.LEFEBVRE        35      1      1
+       C MODIF utilitai/mlnump              lefebvre J-P.LEFEBVRE        34      1      1
+       C MODIF utilitai/modsig              lefebvre J-P.LEFEBVRE       137      1      1
+       C MODIF utilitai/rmfile              lefebvre J-P.LEFEBVRE        73      1      1
+       C MODIF utilitai/sdveri              lefebvre J-P.LEFEBVRE        35      1      1
+       C MODIF utilitai/segjvx              lefebvre J-P.LEFEBVRE        36      1      1
+       C MODIF utilitai/strmov              lefebvre J-P.LEFEBVRE        25      1      1
+       C MODIF utilitai/utclim              lefebvre J-P.LEFEBVRE        37      1      1
+       C MODIF utilitai/utflsh              lefebvre J-P.LEFEBVRE        35      1      1
+       C MODIF utilitai/uttcsm              lefebvre J-P.LEFEBVRE        89      1      1
+       C MODIF utilitai/uttlim              lefebvre J-P.LEFEBVRE        53      1      1
+       C MODIF utilitai/uttrst              lefebvre J-P.LEFEBVRE        37      1      1
+       C MODIF utilitai/vparjv              lefebvre J-P.LEFEBVRE        36      1      1
+ CASTEST AJOUT zzzz289a                      macocco K.MACOCCO          146    146      0
+ CASTEST AJOUT zzzz289b                      macocco K.MACOCCO          146    146      0
+ CASTEST AJOUT zzzz289c                      macocco K.MACOCCO          146    146      0
+ CASTEST MODIF adls102a                      macocco K.MACOCCO          204      5      2
+ CASTEST MODIF efica01a                      macocco K.MACOCCO          289     15      2
+ CASTEST MODIF elsa01a                       macocco K.MACOCCO          224      5      2
+ CASTEST MODIF elsa01b                       macocco K.MACOCCO          233      4      2
+ CASTEST MODIF elsa01c                       macocco K.MACOCCO          256      4      2
+ CASTEST MODIF elsa01d                       macocco K.MACOCCO          268      4      2
+ CASTEST MODIF fdlv100a                      macocco K.MACOCCO          144      6      4
+ CASTEST MODIF fdlv101a                      macocco K.MACOCCO          175      7      3
+ CASTEST MODIF fdlv102a                      macocco K.MACOCCO          474     12      3
+ CASTEST MODIF fdlv102b                      macocco K.MACOCCO          310     11      3
+ CASTEST MODIF fdlv102c                      macocco K.MACOCCO          335     12      4
+ CASTEST MODIF fdlv103a                      macocco K.MACOCCO          221     16      3
+ CASTEST MODIF fdlv104a                      macocco K.MACOCCO          310      2      2
+ CASTEST MODIF fdlv105a                      macocco K.MACOCCO          179      6      4
+ CASTEST MODIF fdlv106a                      macocco K.MACOCCO          626     21      2
+ CASTEST MODIF fdlv107a                      macocco K.MACOCCO          664     29      2
+ CASTEST MODIF fdlv110a                      macocco K.MACOCCO          548     48      3
+ CASTEST MODIF fdlv112b                      macocco K.MACOCCO          466      5      1
+ CASTEST MODIF fdnv100a                      macocco K.MACOCCO          334      7      2
+ CASTEST MODIF mac3c01a                      macocco K.MACOCCO          434      2      2
+ CASTEST MODIF miss01a                       macocco K.MACOCCO          201      1      1
+ CASTEST MODIF miss02a                       macocco K.MACOCCO          542     14      2
+ CASTEST MODIF miss03a                       macocco K.MACOCCO          260     23      2
+ CASTEST MODIF miss04a                       macocco K.MACOCCO          339     15      3
+ CASTEST MODIF miss04b                       macocco K.MACOCCO          475      5      2
+ CASTEST MODIF miss06b                       macocco K.MACOCCO          837     18      1
+ CASTEST MODIF miss06c                       macocco K.MACOCCO          832     16      2
+ CASTEST MODIF miss08a                       macocco K.MACOCCO          383      5      1
+ CASTEST MODIF miss09a                       macocco K.MACOCCO          876      7      2
+ CASTEST MODIF perfe02a                      macocco K.MACOCCO          248      1      1
+ CASTEST MODIF rccm03a                       macocco K.MACOCCO         4172      1      1
+ CASTEST MODIF sdld02a                       macocco K.MACOCCO          355     12      2
+ CASTEST MODIF sdld02b                       macocco K.MACOCCO          644     13      2
+ CASTEST MODIF sdld02c                       macocco K.MACOCCO          341     16      2
+ CASTEST MODIF sdld02d                       macocco K.MACOCCO          354     21      3
+ CASTEST MODIF sdld02e                       macocco K.MACOCCO          679     11      2
+ CASTEST MODIF sdld02f                       macocco K.MACOCCO          360      9      3
+ CASTEST MODIF sdld04a                       macocco K.MACOCCO          624      4      2
+ CASTEST MODIF sdld101a                      macocco K.MACOCCO          496      6      2
+ CASTEST MODIF sdld102a                      macocco K.MACOCCO          908     13      1
+ CASTEST MODIF sdld102b                      macocco K.MACOCCO          480      7      1
+ CASTEST MODIF sdld102c                      macocco K.MACOCCO          429      7      1
+ CASTEST MODIF sdld102d                      macocco K.MACOCCO          367      7      1
+ CASTEST MODIF sdld103a                      macocco K.MACOCCO          622      5      1
+ CASTEST MODIF sdld103b                      macocco K.MACOCCO          423     12      2
+ CASTEST MODIF sdld104a                      macocco K.MACOCCO          303      5      2
+ CASTEST MODIF sdld104b                      macocco K.MACOCCO          313      6      2
+ CASTEST MODIF sdld105a                      macocco K.MACOCCO          279      5      2
+ CASTEST MODIF sdld21a                       macocco K.MACOCCO          827      2      1
+ CASTEST MODIF sdld21b                       macocco K.MACOCCO          693      3      2
+ CASTEST MODIF sdld21c                       macocco K.MACOCCO          376      5      2
+ CASTEST MODIF sdld21d                       macocco K.MACOCCO         1017      2      1
+ CASTEST MODIF sdld22a                       macocco K.MACOCCO          317     13      2
+ CASTEST MODIF sdld22b                       macocco K.MACOCCO          335     25      2
+ CASTEST MODIF sdld23a                       macocco K.MACOCCO          663      9      2
+ CASTEST MODIF sdld25a                       macocco K.MACOCCO          233      7      2
+ CASTEST MODIF sdld27a                       macocco K.MACOCCO          575      7      2
+ CASTEST MODIF sdld27b                       macocco K.MACOCCO          346     15      2
+ CASTEST MODIF sdld27c                       macocco K.MACOCCO          349     11      2
+ CASTEST MODIF sdld27d                       macocco K.MACOCCO          356     13      2
+ CASTEST MODIF sdld27e                       macocco K.MACOCCO          661     21      2
+ CASTEST MODIF sdld29a                       macocco K.MACOCCO          227      6      2
+ CASTEST MODIF sdld301a                      macocco K.MACOCCO          539      9      1
+ CASTEST MODIF sdld301b                      macocco K.MACOCCO          834     10      1
+ CASTEST MODIF sdld30a                       macocco K.MACOCCO         1675     16      1
+ CASTEST MODIF sdld313a                      macocco K.MACOCCO          138     12      2
+ CASTEST MODIF sdld313b                      macocco K.MACOCCO          158     11      4
+ CASTEST MODIF sdld313c                      macocco K.MACOCCO          192     12      2
+ CASTEST MODIF sdld313d                      macocco K.MACOCCO          345     11      3
+ CASTEST MODIF sdld31a                       macocco K.MACOCCO          950      4      1
+ CASTEST MODIF sdld31b                       macocco K.MACOCCO          371      9      3
+ CASTEST MODIF sdld320a                      macocco K.MACOCCO          451     14      2
+ CASTEST MODIF sdld321a                      macocco K.MACOCCO          455      7      2
+ CASTEST MODIF sdld321b                      macocco K.MACOCCO          355      5      1
+ CASTEST MODIF sdld321c                      macocco K.MACOCCO          352      7      2
+ CASTEST MODIF sdld325a                      macocco K.MACOCCO          501      9      1
+ CASTEST MODIF sdld325b                      macocco K.MACOCCO          532      9      1
+ CASTEST MODIF sdld33a                       macocco K.MACOCCO          450     30      2
+ CASTEST MODIF sdld400a                      macocco K.MACOCCO          488     17      2
+ CASTEST MODIF sdll04a                       macocco K.MACOCCO          242      9      2
+ CASTEST MODIF sdll06a                       macocco K.MACOCCO          230      5      2
+ CASTEST MODIF sdll06b                       macocco K.MACOCCO          193      5      2
+ CASTEST MODIF sdll105a                      macocco K.MACOCCO          447      9      4
+ CASTEST MODIF sdll108b                      macocco K.MACOCCO          450      4      1
+ CASTEST MODIF sdll109a                      macocco K.MACOCCO         2090     38      1
+ CASTEST MODIF sdll109b                      macocco K.MACOCCO         1936     44      7
+ CASTEST MODIF sdll109c                      macocco K.MACOCCO         1712     38      1
+ CASTEST MODIF sdll109d                      macocco K.MACOCCO         2092     37      1
+ CASTEST MODIF sdll115a                      macocco K.MACOCCO         1441      8      4
+ CASTEST MODIF sdll115b                      macocco K.MACOCCO          795     14      4
+ CASTEST MODIF sdll118a                      macocco K.MACOCCO          423     10      5
+ CASTEST MODIF sdll118b                      macocco K.MACOCCO          351      7      3
+ CASTEST MODIF sdll119a                      macocco K.MACOCCO          500      9      4
+ CASTEST MODIF sdll119b                      macocco K.MACOCCO          512      9      4
+ CASTEST MODIF sdll120a                      macocco K.MACOCCO          575     17      8
+ CASTEST MODIF sdll121a                      macocco K.MACOCCO          544     32      3
+ CASTEST MODIF sdll123a                      macocco K.MACOCCO          329      9      4
+ CASTEST MODIF sdll123b                      macocco K.MACOCCO          492     10      5
+ CASTEST MODIF sdll123c                      macocco K.MACOCCO          719     35      3
+ CASTEST MODIF sdll123d                      macocco K.MACOCCO          243      8      3
+ CASTEST MODIF sdll123e                      macocco K.MACOCCO          225      8      3
+ CASTEST MODIF sdll123f                      macocco K.MACOCCO          241      8      3
+ CASTEST MODIF sdll124a                      macocco K.MACOCCO          254      9      3
+ CASTEST MODIF sdll125a                      macocco K.MACOCCO          274      8      2
+ CASTEST MODIF sdll125b                      macocco K.MACOCCO          274      8      2
+ CASTEST MODIF sdll126a                      macocco K.MACOCCO          195      8      2
+ CASTEST MODIF sdll126b                      macocco K.MACOCCO          201      8      2
+ CASTEST MODIF sdll126c                      macocco K.MACOCCO          193      8      2
+ CASTEST MODIF sdll126d                      macocco K.MACOCCO          220     11      3
+ CASTEST MODIF sdll128a                      macocco K.MACOCCO          857     38      2
+ CASTEST MODIF sdll129a                      macocco K.MACOCCO          764     37      1
+ CASTEST MODIF sdll137a                      macocco K.MACOCCO          471     22      7
+ CASTEST MODIF sdll137d                      macocco K.MACOCCO          735     27      6
+ CASTEST MODIF sdll138a                      macocco K.MACOCCO          667      9      2
+ CASTEST MODIF sdll140a                      macocco K.MACOCCO          408     10      2
+ CASTEST MODIF sdll141c                      macocco K.MACOCCO          288      8      2
+ CASTEST MODIF sdll141e                      macocco K.MACOCCO          204      9      1
+ CASTEST MODIF sdll15a                       macocco K.MACOCCO          231     17      6
+ CASTEST MODIF sdll23a                       macocco K.MACOCCO          649      5      2
+ CASTEST MODIF sdll23b                       macocco K.MACOCCO          459      3      2
+ CASTEST MODIF sdll23c                       macocco K.MACOCCO          470      3      2
+ CASTEST MODIF sdll507a                      macocco K.MACOCCO          349      8      4
+ CASTEST MODIF sdll508a                      macocco K.MACOCCO          351      8      4
+ CASTEST MODIF sdll508b                      macocco K.MACOCCO          351      8      4
+ CASTEST MODIF sdll508c                      macocco K.MACOCCO          358      6      2
+ CASTEST MODIF sdls03a                       macocco K.MACOCCO          238     12      6
+ CASTEST MODIF sdls03b                       macocco K.MACOCCO          382     21      4
+ CASTEST MODIF sdls112a                      macocco K.MACOCCO          439     14      3
+ CASTEST MODIF sdls112b                      macocco K.MACOCCO          314     15      3
+ CASTEST MODIF sdls119a                      macocco K.MACOCCO          515     25      2
+ CASTEST MODIF sdls121a                      macocco K.MACOCCO          122      1      1
+ CASTEST MODIF sdls121b                      macocco K.MACOCCO          111      1      1
+ CASTEST MODIF sdls121c                      macocco K.MACOCCO          115      1      1
+ CASTEST MODIF sdls139a                      macocco K.MACOCCO          647     27     12
+ CASTEST MODIF sdlv122a                      macocco K.MACOCCO          514      7      3
+ CASTEST MODIF sdlv122b                      macocco K.MACOCCO          257      7      4
+ CASTEST MODIF sdlv128a                      macocco K.MACOCCO          444     12      4
+ CASTEST MODIF sdlv128b                      macocco K.MACOCCO          290     12      4
+ CASTEST MODIF sdlv132a                      macocco K.MACOCCO          602     25      1
+ CASTEST MODIF sdlx100a                      macocco K.MACOCCO          249      7      2
+ CASTEST MODIF sdlx300a                      macocco K.MACOCCO          974      7      1
+ CASTEST MODIF sdlx302a                      macocco K.MACOCCO          397     10      4
+ CASTEST MODIF sdlx400a                      macocco K.MACOCCO          379     10      4
+ CASTEST MODIF sdlx400b                      macocco K.MACOCCO          410     10      4
+ CASTEST MODIF sdlx400c                      macocco K.MACOCCO          380     10      4
+ CASTEST MODIF sdnd102a                      macocco K.MACOCCO          380      9      2
+ CASTEST MODIF sdnd102b                      macocco K.MACOCCO          637     20      1
+ CASTEST MODIF sdnd102c                      macocco K.MACOCCO          252      5      2
+ CASTEST MODIF sdnd102d                      macocco K.MACOCCO          247      5      2
+ CASTEST MODIF sdnd105a                      macocco K.MACOCCO          223      7      2
+ CASTEST MODIF sdnd105b                      macocco K.MACOCCO          220      7      2
+ CASTEST MODIF sdnd106a                      macocco K.MACOCCO          259      5      2
+ CASTEST MODIF sdnd112a                      macocco K.MACOCCO          292      4      1
+ CASTEST MODIF sdnd120a                      macocco K.MACOCCO          280      5      2
+ CASTEST MODIF sdnl102a                      macocco K.MACOCCO          202      9      3
+ CASTEST MODIF sdnl105d                      macocco K.MACOCCO          574      8      2
+ CASTEST MODIF sdnl113a                      macocco K.MACOCCO          331      4      1
+ CASTEST MODIF sdnl132a                      macocco K.MACOCCO          439      6      3
+ CASTEST MODIF sdns01a                       macocco K.MACOCCO          697      6      2
+ CASTEST MODIF sdns01b                       macocco K.MACOCCO          374      7      4
+ CASTEST MODIF sdnv100f                      macocco K.MACOCCO          402      8      3
+ CASTEST MODIF sdnv100j                      macocco K.MACOCCO          291      8      3
+ CASTEST MODIF sdnv104a                      macocco K.MACOCCO          232      6      2
+ CASTEST MODIF sdnv104b                      macocco K.MACOCCO          215      6      3
+ CASTEST MODIF sdnv104c                      macocco K.MACOCCO          244      5      3
+ CASTEST MODIF sdnv104d                      macocco K.MACOCCO          225      5      3
+ CASTEST MODIF sdnv104e                      macocco K.MACOCCO          233      5      3
+ CASTEST MODIF sdnv105b                      macocco K.MACOCCO         1270      4      1
+ CASTEST MODIF sdnv107b                      macocco K.MACOCCO          487     20      3
+ CASTEST MODIF sdnv107c                      macocco K.MACOCCO          935     16      8
+ CASTEST MODIF sensd01a                      macocco K.MACOCCO          252      3      2
+ CASTEST MODIF sensd04a                      macocco K.MACOCCO          267      5      3
+ CASTEST MODIF sensd11b                      macocco K.MACOCCO          218      5      2
+ CASTEST MODIF sensd11d                      macocco K.MACOCCO          219      5      2
+ CASTEST MODIF shll102a                      macocco K.MACOCCO          420      8      2
+ CASTEST MODIF shll103a                      macocco K.MACOCCO         1462      8      2
+ CASTEST MODIF shls200a                      macocco K.MACOCCO          578     14      2
+ CASTEST MODIF ssll100a                      macocco K.MACOCCO          388      8      3
+ CASTEST MODIF ssll100b                      macocco K.MACOCCO          240      8      3
+ CASTEST MODIF ssll101f                      macocco K.MACOCCO          539      6      2
+ CASTEST MODIF ssll101g                      macocco K.MACOCCO          545      6      2
+ CASTEST MODIF sslv111a                      macocco K.MACOCCO          285      5      5
+ CASTEST MODIF sslv111b                      macocco K.MACOCCO          234      7      7
+ CASTEST MODIF sslv111c                      macocco K.MACOCCO          237      5      5
+ CASTEST MODIF sslv111d                      macocco K.MACOCCO          236      5      5
+ CASTEST MODIF sslv111e                      macocco K.MACOCCO          237      5      5
+ CASTEST MODIF sslx100b                      macocco K.MACOCCO          227      8      3
+ CASTEST MODIF sslx100d                      macocco K.MACOCCO          255      7      3
+ CASTEST MODIF sslx101a                      macocco K.MACOCCO          206     10      4
+ CASTEST MODIF sslx101b                      macocco K.MACOCCO          215      7      4
+ CASTEST MODIF sslx200a                      macocco K.MACOCCO          230      8      3
+ CASTEST MODIF ssnl107b                      macocco K.MACOCCO          183      9      3
+ CASTEST MODIF ssnl107c                      macocco K.MACOCCO          188      8      3
+ CASTEST MODIF ssnl107d                      macocco K.MACOCCO          242      8      3
+ CASTEST MODIF ssnl132a                      macocco K.MACOCCO          925     23      3
+ CASTEST MODIF ssnl132b                      macocco K.MACOCCO          975     23      3
+ CASTEST MODIF wtnv132c                      macocco K.MACOCCO          583     75      1
+ CASTEST MODIF zzzz102a                      macocco K.MACOCCO         1545     29      2
+ CASTEST MODIF zzzz108a                      macocco K.MACOCCO         1167     16      1
+ CASTEST MODIF zzzz108b                      macocco K.MACOCCO          329      4      2
+ CASTEST MODIF zzzz186a                      macocco K.MACOCCO           40      1      1
+ CASTEST MODIF zzzz257a                      macocco K.MACOCCO          316      1      1
+ CASTEST MODIF zzzz257b                      macocco K.MACOCCO          323      1      1
+ CASTEST MODIF zzzz257c                      macocco K.MACOCCO          305      1      1
+ CASTEST MODIF zzzz257d                      macocco K.MACOCCO          241      1      1
+ CASTEST MODIF zzzz265a                      macocco K.MACOCCO          277     10      4
+CATALOGU MODIF compelem/phenomene_modelisation__    macocco K.MACOCCO         1727      2      2
+CATALOGU MODIF typelem/gener_me3di3          macocco K.MACOCCO          252      3      3
+CATALOGU MODIF typelem/gener_me3du3          macocco K.MACOCCO          257      4      3
+CATALOGU MODIF typelem/gener_mepli2          macocco K.MACOCCO          238      2      2
+CATALOGU MODIF typelem/gener_meplu2          macocco K.MACOCCO          248      4      3
+CATALOPY MODIF commande/calc_elem            macocco K.MACOCCO          536      3      3
+CATALOPY MODIF commande/lire_resu            macocco K.MACOCCO          296      3      3
+CATALOPY MODIF commande/macro_elas_mult      macocco K.MACOCCO           83      2      2
+CATALOPY MODIF commun/c_nom_cham_into        macocco K.MACOCCO          203      3      3
+ FORTRAN AJOUT algorith/nirm2d               macocco K.MACOCCO          227    227      0
+ FORTRAN AJOUT algorith/nirm3d               macocco K.MACOCCO          216    216      0
+ FORTRAN AJOUT elements/te0124               macocco K.MACOCCO          118    118      0
+ FORTRAN AJOUT elements/te0125               macocco K.MACOCCO          117    117      0
+ FORTRAN AJOUT utilitai/detlsp               macocco K.MACOCCO           79     79      0
+ FORTRAN MODIF algeline/op0032               macocco K.MACOCCO          267     15      2
+ FORTRAN MODIF algeline/op0044               macocco K.MACOCCO          784     11      1
+ FORTRAN MODIF algorith/isfonc               macocco K.MACOCCO          204     21      2
+ FORTRAN MODIF algorith/mestat               macocco K.MACOCCO          274      9      9
+ FORTRAN MODIF algorith/nifn2b               macocco K.MACOCCO          162      8      7
+ FORTRAN MODIF algorith/nifn2c               macocco K.MACOCCO          153      9      7
+ FORTRAN MODIF algorith/nifn3b               macocco K.MACOCCO          156      8      7
+ FORTRAN MODIF algorith/nifn3c               macocco K.MACOCCO          144      9      8
+ FORTRAN MODIF algorith/nipl2b               macocco K.MACOCCO          289      5      4
+ FORTRAN MODIF algorith/nipl2c               macocco K.MACOCCO          277      5      4
+ FORTRAN MODIF algorith/nipl3b               macocco K.MACOCCO          281      5      4
+ FORTRAN MODIF algorith/nipl3c               macocco K.MACOCCO          271      8      5
+ FORTRAN MODIF algorith/nirm2b               macocco K.MACOCCO          202      7      5
+ FORTRAN MODIF algorith/nirm2c               macocco K.MACOCCO          180      7      5
+ FORTRAN MODIF algorith/nirm3b               macocco K.MACOCCO          169      7      5
+ FORTRAN MODIF algorith/nirm3c               macocco K.MACOCCO          156      7      5
+ FORTRAN MODIF algorith/nmfonc               macocco K.MACOCCO          598     54      3
+ FORTRAN MODIF algorith/nmmeng               macocco K.MACOCCO           97     40     10
+ FORTRAN MODIF algorith/op0046               macocco K.MACOCCO          257     17      8
+ FORTRAN MODIF algorith/op0070               macocco K.MACOCCO          574      2      2
+ FORTRAN MODIF algorith/tanbul               macocco K.MACOCCO          142     73      8
+ FORTRAN MODIF calculel/calcop               macocco K.MACOCCO          240      3      3
+ FORTRAN MODIF calculel/meca01               macocco K.MACOCCO          722      4      4
+ FORTRAN MODIF calculel/mecalm               macocco K.MACOCCO         2100      6      6
+ FORTRAN MODIF calculel/mscalm               macocco K.MACOCCO         2227      6      6
+ FORTRAN MODIF elements/massup               macocco K.MACOCCO          206      5      4
+ FORTRAN MODIF elements/te0030               macocco K.MACOCCO          189     10     13
+ FORTRAN MODIF elements/te0048               macocco K.MACOCCO          135      9     16
+ FORTRAN MODIF elements/te0120               macocco K.MACOCCO          108      3      3
+ FORTRAN MODIF elements/te0121               macocco K.MACOCCO          123     17     22
+ FORTRAN MODIF elements/te0215               macocco K.MACOCCO          144     12      8
+ FORTRAN MODIF elements/te0216               macocco K.MACOCCO          136     12      8
+ FORTRAN MODIF elements/te0480               macocco K.MACOCCO          123      6      5
+ FORTRAN MODIF elements/te0481               macocco K.MACOCCO          115     14     20
+ FORTRAN MODIF stbtrias/cov4v5               macocco K.MACOCCO          138      4      4
+ FORTRAN MODIF utilitai/detrsd               macocco K.MACOCCO          662      5      3
+ FORTRAN MODIF utilitai/modopt               macocco K.MACOCCO          168      9      9
+ FORTRAN MODIF utilitai/rscrsd               macocco K.MACOCCO          432      3      3
+FORTRAN90 MODIF petsc/apetsr                  macocco K.MACOCCO          381      9      7
+  PYTHON MODIF Messages/algeline3            macocco K.MACOCCO          452      7      2
+  PYTHON MODIF Messages/factor               macocco K.MACOCCO          509      1      2
+  PYTHON MODIF Stanley/cata_champs           macocco K.MACOCCO          243      3      3
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    8        1195      1195             +1195
+ MODIF :  316      126260      2808     876     +1932
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :  324      127455      4003     876     +3127 

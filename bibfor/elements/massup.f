@@ -2,7 +2,7 @@
      &                  IPOIDS,IDFDE,GEOM,VFF1,IMATUU,CODRET,IGEOM,IVF)
 
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 17/01/2011   AUTEUR SFAYOLLE S.FAYOLLE 
+C MODIF ELEMENTS  DATE 19/05/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -85,13 +85,14 @@ C --------- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
 
       IF (NDIM.EQ.2) THEN
         DO 90 KPG = 1,NPG
+          K = (KPG-1)*NNO
           CALL DFDM2J ( NNO, KPG, IDFDE, GEOM, POIDS )
-          POIDS = POIDS * ZR(IPOIDS+KPG-1)
+          POIDS = ABS(POIDS) * ZR(IPOIDS+KPG-1)
 
          IF ( LTEATT(' ','AXIS','OUI') ) THEN
             R = 0.0D0
             DO 20 I=1,NNO
-               R = R + ZR(IGEOM+2*(I-1))*ZR(IVF+KPG+I-1)
+               R = R + ZR(IGEOM+2*(I-1))*ZR(IVF+K+I-1)
  20         CONTINUE
             POIDS = POIDS*R
          ENDIF
@@ -106,7 +107,7 @@ C --------- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
       ELSEIF (NDIM.EQ.3) THEN
         DO 120 KPG = 1,NPG
           CALL DFDM3J ( NNO, KPG, IDFDE, GEOM, POIDS )
-          POIDS = POIDS * ZR(IPOIDS+KPG-1)
+          POIDS = ABS(POIDS) * ZR(IPOIDS+KPG-1)
 
           DO 110 I = 1,NNO
             DO 100 J = 1,I
@@ -184,7 +185,7 @@ C - PASSAGE DU STOCKAGE RECTANGULAIRE (A) AU STOCKAGE TRIANGULAIRE (ZR)
         DO 200 J = 1,NNO
           DO 190 I = 1,3
             K = K + 1
-            IF (IDEC.EQ.0) THEN 
+            IF (IDEC.EQ.0) THEN
               IDIAG = K* (K+1)/2
             ELSE
               IF (J.LE.NNOS) THEN
