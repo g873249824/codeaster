@@ -1,8 +1,8 @@
-      SUBROUTINE TE0031 ( OPTION , NOMTE )
+      SUBROUTINE TE0031(OPTION,NOMTE)
       IMPLICIT NONE
-      CHARACTER*16        OPTION , NOMTE
-C     ----------------------------------------------------------------
-C MODIF ELEMENTS  DATE 04/04/2011   AUTEUR DESOZA T.DESOZA 
+      CHARACTER*16 OPTION , NOMTE
+C ----------------------------------------------------------------------
+C MODIF ELEMENTS  DATE 24/05/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -21,7 +21,7 @@ C ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 C    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 C ======================================================================
 C
-C     CALCUL DES OPTIONS DES ELEMENTS DE PLAQUE 
+C     CALCUL DES OPTIONS DES ELEMENTS DE PLAQUE
 C          -----------------------------------------------------------
 C                                              TRIANGLE  QUADRANGLE
 C        LINEAIRE          KIRCHOFF  (MINCE)        DKT       DST
@@ -63,7 +63,7 @@ C
       INTEGER      ICOMPO,I1,I2,J,JVECT
       INTEGER      ICHG,ICHN,NCMP,K,JCRET,JFREQ,IACCE
       INTEGER      JMATE,JGEOM,JMATR,JENER,I,JCARA
-      INTEGER      IVECT,NDDL,NVEC,IRET,ICONTP, N1, NI, N2
+      INTEGER      IVECT,NDDL,NVEC,IRET,ICONTP
       INTEGER      ICOU, NBCOU,JNBSPI, IRET1, VALI(2)
       LOGICAL      LCOELA
       CHARACTER*2  CODRE2(33),CODRE1,VAL
@@ -73,8 +73,8 @@ C
 C
       REAL*8        PGL(3,3), XYZL(3,4), BSIGMA(24), EFFGT(32)
       REAL*8        VECLOC(24), ENER(3), MATP(24,24), MATV(300)
-      REAL*8        T2EV(4), T2VE(4), T1VE(9)
-      REAL*8        EPI,EPTOT,R8BID,R8PREM, VALR(2)
+      REAL*8        T2EV(4), T2VE(4)
+      REAL*8        EPI,EPTOT,R8BID,VALR(2)
 C
 C     ---> POUR DKT/DST MATELEM = 3 * 6 DDL = 171 TERMES STOCKAGE SYME
 C     ---> POUR DKQ/DSQ MATELEM = 4 * 6 DDL = 300 TERMES STOCKAGE SYME
@@ -106,7 +106,7 @@ C
         ENDIF
 
 C
-C ---   VERIFICATION DE LA COHERENCE DES INFORMATIONS 
+C ---   VERIFICATION DE LA COHERENCE DES INFORMATIONS
 C ---   PROVENANT DE DEFI_COQU_MULT ET DE AFFE_CARA_ELEM
 C       ----------------------------------
         JNBSPI = 0
@@ -290,11 +290,11 @@ C
              CALL U2MESS('F','ELEMENTS2_71')
            ENDIF
         ENDIF
-        IF ((ZK16(ICOMPO+2) (6:10).EQ.'_REAC') .OR. 
+        IF ((ZK16(ICOMPO+2) (6:10).EQ.'_REAC') .OR.
      &      (ZK16(ICOMPO+2).EQ.'GROT_GDEP') ) THEN
-C            GROT_GDEP CORRESPOND ICI A EULER_ALMANSI   
+C            GROT_GDEP CORRESPOND ICI A EULER_ALMANSI
 
-          IF(ZK16(ICOMPO+2) (6:10).EQ.'_REAC') 
+          IF(ZK16(ICOMPO+2) (6:10).EQ.'_REAC')
      &     CALL U2MESS('A','ELEMENTS2_72')
           DO 40 I = 1,NNO
             I1 = 3* (I-1)
@@ -356,8 +356,8 @@ C     ------------------------------------------
           CALL JEVECH ( 'PCONTRR', 'L', ICONTP )
           IND=6
           CALL DXEFFI ( OPTION, NOMTE, PGL, ZR(ICONTP), IND, EFFINT )
-          CALL DXREPE ( PGL, T2EV, T2VE, T1VE )
-          CALL DXEFR2 ( NPG, T2EV, EFFINT, EFFGT )
+          CALL DXREPE ( PGL, T2EV, T2VE)
+          CALL DXEFR2 ( NPG, T2VE, EFFINT, EFFGT )
           CALL JEVECH ( 'PSIEFNOR', 'E', ICHN   )
           CALL PPGAN2 ( JGANO, 6, EFFGT, ZR(ICHN) )
 C

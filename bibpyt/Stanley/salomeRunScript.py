@@ -1,4 +1,4 @@
-#@ MODIF salomeRunScript Stanley  DATE 28/03/2011   AUTEUR ASSIRE A.ASSIRE 
+#@ MODIF salomeRunScript Stanley  DATE 24/05/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================

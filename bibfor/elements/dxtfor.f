@@ -1,12 +1,11 @@
-      SUBROUTINE DXTFOR ( TYPELE, GLOBAL, XYZL, PGL, FOR, VECL )
+      SUBROUTINE DXTFOR (GLOBAL, XYZL, PGL, FOR, VECL )
       IMPLICIT  NONE
-      REAL*8          XYZL(3,*),PGL(3,*), FOR(6,3), VECL(*)
+      REAL*8          XYZL(3,*),PGL(3,*), FOR(6,*), VECL(*)
       LOGICAL         GLOBAL
-      CHARACTER*8     TYPELE
-C MODIF ELEMENTS  DATE 14/10/2005   AUTEUR CIBHHLV L.VIVAN 
+C MODIF ELEMENTS  DATE 24/05/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR   
@@ -24,7 +23,6 @@ C ======================================================================
 C     ------------------------------------------------------------------
 C     CHARGEMENT FORCE_FACE DES ELEMENTS DE PLAQUE DKT ET DST
 C     ------------------------------------------------------------------
-C     IN  TYPELE : TYPE DE L'ELEMENT
 C     IN  GLOBAL : VARIABLE LOGIQUE DE REPERE GLOBAL OU LOCAL
 C     IN  XYZL   : COORDONNEES LOCALES DES TROIS NOEUDS
 C     IN  PGL    : MATRICE DE PASSAGE GLOBAL - LOCAL
@@ -34,30 +32,31 @@ C     ------------------------------------------------------------------
       INTEGER  I, NNO
       REAL*8   AIRE, C1, C2, L4, L5, L6
       REAL*8   A1, A2, A3, PI, R8PI, TRIGOM
-      REAL*8   FX, FY, CARAT3(21), T2EV(4), T2VE(4), T1VE(9)
+      REAL*8   FX, FY, CARAT3(21), T2EV(4), T2VE(4)
 C     ------------------------------------------------------------------
       NNO = 3
       PI  = R8PI()
 C
 C     ----- CALCUL DES GRANDEURS GEOMETRIQUES SUR LE TRIANGLE ----------
       CALL GTRIA3 ( XYZL, CARAT3 )
-      CALL DXREPE ( PGL, T2EV, T2VE, T1VE )
+      CALL DXREPE ( PGL, T2EV, T2VE)
 C
       IF (.NOT.GLOBAL) THEN
         DO 10 I = 1,NNO
           FX = FOR(1,I)
           FY = FOR(2,I)
-          FOR(1,I) = FX*T2VE(1) + FY*T2VE(3)
-          FOR(2,I) = FX*T2VE(2) + FY*T2VE(4)
+          FOR(1,I) = T2EV(1)*FX + T2EV(3)*FY
+          FOR(2,I) = T2EV(2)*FX + T2EV(4)*FY
           FX = FOR(4,I)
           FY = FOR(5,I)
-          FOR(4,I) = FX*T2VE(1) + FY*T2VE(3)
-          FOR(5,I) = FX*T2VE(2) + FY*T2VE(4)
+          FOR(4,I) = T2EV(1)*FX + T2EV(3)*FY
+          FOR(5,I) = T2EV(2)*FX + T2EV(4)*FY
    10   CONTINUE
       END IF
       L4 = CARAT3(13)
       L5 = CARAT3(14)
       L6 = CARAT3(15)
+C
       AIRE = CARAT3(8)
 C     ---- CALCUL DES ANGLES DU TRIANGLE ---------
       A1 = TRIGOM('ACOS', (L4*L4+L6*L6-L5*L5)/ (2.D0*L4*L6))
@@ -70,6 +69,7 @@ C
       DO 20 I = 1,6*NNO
         VECL(I) = 0.D0
    20 CONTINUE
+C
       C1 = 1.D0/2.D0
       C2 = 1.D0/4.D0
       DO 30 I = 1,6

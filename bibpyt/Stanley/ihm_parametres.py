@@ -1,4 +1,4 @@
-#@ MODIF ihm_parametres Stanley  DATE 15/03/2011   AUTEUR ASSIRE A.ASSIRE 
+#@ MODIF ihm_parametres Stanley  DATE 24/05/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
