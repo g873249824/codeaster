@@ -1,21 +1,21 @@
-#@ MODIF calc_table_ops Macro  DATE 24/08/2010   AUTEUR COURTOIS M.COURTOIS 
+#@ MODIF calc_table_ops Macro  DATE 31/05/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2005  EDF R&D                  WWW.CODE-ASTER.ORG
-# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
-# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
-# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
-# (AT YOUR OPTION) ANY LATER VERSION.                                                  
-#                                                                       
-# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
-# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
-# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
-# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
-#                                                                       
-# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
-# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
-#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 # ======================================================================
 
 # RESPONSABLE COURTOIS M.COURTOIS
@@ -28,12 +28,13 @@ def calc_table_ops(self, TABLE, ACTION, INFO, **args):
    import aster
 
    macro = 'CALC_TABLE'
-   from Accas                 import _F
-   from Cata.cata             import table_sdaster, table_fonction, table_jeveux
-   from Utilitai.Utmess       import  UTMESS
-   from Utilitai              import transpose
-   from Utilitai.Table        import Table, merge
-   from Utilitai.utils        import get_titre_concept
+   from Accas           import _F
+   from Noyau.N_types   import force_list
+   from Cata.cata       import table_sdaster, table_fonction, table_jeveux
+   from Utilitai.Utmess import  UTMESS
+   from Utilitai        import transpose
+   from Utilitai.Table  import Table, merge
+   from Utilitai.utils  import get_titre_concept
 
    ier = 0
    # La macro compte pour 1 dans la numerotation des commandes
@@ -94,20 +95,16 @@ def calc_table_ops(self, TABLE, ACTION, INFO, **args):
       #----------------------------------------------
       # 2. Traitement de EXTR
       if occ['OPERATION'] == 'EXTR':
-         lpar = occ['NOM_PARA']
-         if type(lpar) not in (list, tuple):
-            lpar = [lpar]
+         lpar = force_list(occ['NOM_PARA'])
          for p in lpar:
             if not p in tab.para:
               UTMESS('F','TABLE0_2',valk=[p,TABLE.nom])
-         tab = tab[occ['NOM_PARA']]
-
+         tab = tab[lpar]
+ 
       #----------------------------------------------
       # 3. Traitement de SUPPRIME
       if occ['OPERATION'] == 'SUPPRIME':
-         lpar = occ['NOM_PARA']
-         if type(lpar) not in (list, tuple):
-            lpar = [lpar]
+         lpar = force_list(occ['NOM_PARA'])
          keep = []
          for p in tab.para:
             if not p in lpar:
@@ -133,9 +130,7 @@ def calc_table_ops(self, TABLE, ACTION, INFO, **args):
          tab2 = occ['TABLE'].EXTR_TABLE()
          lpar = []
          if occ.get('NOM_PARA') != None:
-            lpar = occ['NOM_PARA']
-            if type(lpar) not in (list, tuple):
-               lpar = [lpar]
+            lpar = force_list(occ['NOM_PARA'])
             for p in lpar:
                if not p in tab.para:
                   UTMESS('F','TABLE0_2',valk=[p, TABLE.nom])
@@ -157,9 +152,11 @@ def calc_table_ops(self, TABLE, ACTION, INFO, **args):
       #----------------------------------------------
       # 8. Traitement de AJOUT
       if occ['OPERATION'] == 'AJOUT':
-         if len(occ['NOM_PARA']) != len(occ['VALE']):
+         lpar = force_list(occ['NOM_PARA'])
+         lval = force_list(occ['VALE'])
+         if len(lpar) != len(lval):
             UTMESS('F', 'TABLE0_14')
-         dnew = dict(zip(occ['NOM_PARA'], occ['VALE']))
+         dnew = dict(zip(lpar, lval))
          # ajout de la ligne avec vérification des types
          tab.append(dnew)
    

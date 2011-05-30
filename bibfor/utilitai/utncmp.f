@@ -4,9 +4,9 @@
       CHARACTER*(*)       CHAM19 , NOMOBJ
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF UTILITAI  DATE 08/02/2008   AUTEUR MACOCCO K.MACOCCO 
+C MODIF UTILITAI  DATE 31/05/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -47,7 +47,7 @@ C
       INTEGER       IBID, IE, JPRNO, GD, NBEC, NEC, TABEC(10), J,
      &              INO, IEC, ICMP, NCMPMX, JCMP, IAD, KCMP, IGR, MODE,
      &              NNOE, JCELD, NBGREL, IREPE, IMAIL, NBEL, JMOD,
-     &              IMODEL,ILONG,IDESCR
+     &              IMODEL,ILONG,IDESCR,JDESC,NB
       CHARACTER*4   TYCH
       CHARACTER*24 VALK(2)
       CHARACTER*8   K8B, NOMA
@@ -76,21 +76,40 @@ C     ==================================================================
       IF ( TYCH(1:4) .EQ. 'NOEU' ) THEN
          CALL DISMOI('F','NB_NO_MAILLA', NOMA, 'MAILLAGE',NNOE, K8B ,IE)
          CALL DISMOI('F','PROF_CHNO'   , CH19, 'CHAM_NO' ,IBID, PRNO,IE)
-         CALL JEVEUO ( JEXNUM(PRNO//'.PRNO',1), 'L', JPRNO )
-         DO 10 INO = 1 , NNOE
-            DO 12 IEC = 1 , NEC
-               TABEC(IEC)= ZI(JPRNO-1+(INO-1)*(NEC+2)+2+IEC )
- 12         CONTINUE
-            DO 14 ICMP = 1 , NCMPMX
+         IF(PRNO.EQ.' ') THEN
+CAS OU LE CHAMP EST A PROFIL CONSTANT (CHAMP DE GEOMETRIE)
+           CALL JEVEUO ( CH19//'.DESC', 'L', JDESC )
+           NCMP = - ZI(JDESC+1)
+            DO 32 IEC = 1 , NEC
+               TABEC(IEC)= ZI(JDESC+1+IEC)
+ 32         CONTINUE
+            NB = 0
+            DO 34 ICMP = 1 , NCMPMX
                IF ( EXISDG(TABEC,ICMP) ) THEN
-                  DO 16 J = 1 , NCMP
-                     IF ( ZI(JCMP+J-1) .EQ. ICMP ) GOTO 14
- 16               CONTINUE
-                  NCMP = NCMP + 1
-                  ZI(JCMP+NCMP-1) = ICMP
+                  DO 36 J = 1 , NCMP
+                      IF ( ZI(JCMP+J-1) .EQ. ICMP ) GOTO 34
+ 36               CONTINUE
+                  NB = NB + 1
+                  ZI(JCMP+NB-1) = ICMP
                ENDIF
- 14         CONTINUE
- 10      CONTINUE
+ 34         CONTINUE
+         ELSE
+           CALL JEVEUO ( JEXNUM(PRNO//'.PRNO',1), 'L', JPRNO )
+           DO 10 INO = 1 , NNOE
+              DO 12 IEC = 1 , NEC
+                 TABEC(IEC)= ZI(JPRNO-1+(INO-1)*(NEC+2)+2+IEC )
+ 12           CONTINUE
+              DO 14 ICMP = 1 , NCMPMX
+                 IF ( EXISDG(TABEC,ICMP) ) THEN
+                    DO 16 J = 1 , NCMP
+                       IF ( ZI(JCMP+J-1) .EQ. ICMP ) GOTO 14
+ 16                 CONTINUE
+                    NCMP = NCMP + 1
+                    ZI(JCMP+NCMP-1) = ICMP
+                 ENDIF
+ 14           CONTINUE
+ 10        CONTINUE
+         ENDIF
 C
 C     ==================================================================
 C                             C H A M _ E L E M

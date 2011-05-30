@@ -1,0 +1,752 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR granet       GRANET Sylvie          DATE 05/30/2011 - 02:46:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016850 DU 2011-04-27 16:07:24
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Mauvais traitement du flux en modxc3xa9lisation 3D_HH2M
+FONCTIONNALITE
+   Il y a un bug dans te0466 qui entraine un mauvais traitement des CL de Neumann (Flux
+   imposé) pour les modélisations 3D_HH2M*.
+   On corrige l'erreur et on crée 2 cas tests supplémentaires de validation : wtnp120i
+   (3D_HH2MS) et wtnp120j (3D_HH2MD).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.32.120
+VALIDATION
+    passage wtnp120i et wtnp120j
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 05/31/2011 - 08:53:56
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016881 DU 2011-05-04 12:54:53
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    plantage lors de l'execution  de STAT_NON_LINE
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Lors du calcul des seconds membres de rotation sur un élément X-FEM (te0441.), on cherche
+   à récupérer la masse volumique RHO, par appel à RCVALB. Or il n'y a pas de variables de
+   commandes en entrée de la routine calcul.f
+   
+   Solution :
+   ----------
+   
+   Pour les éléments classiques, le te associée est le te0014.f, dans lequel la récupération
+   de RHO se fait par RCVALA, car il n'y pas possible d'avoir un RHO qui dépend de variables
+   de commandes.
+   
+   Pour X-FEM, on fait la même chose.
+   
+   Impact : te0441.f
+   
+   Validation :
+   ------------
+   
+   L'étude fournie est très longue. Déjà, il a fallu changer la syntaxe pour la NEW11.
+   Après 4h de calcul, on plante avec
+   <EXCEPTION> <JEVEUX_42>                                                                  
+         
+        Fichier saturé, le nombre maximum d'enregistrement 62914 de la base VOLATILE est
+   atteint   
+        il faut relancer le calcul en passant une taille maximum de base sur la ligne de
+   commande  
+        argument "-max_base" suivi de la valeur en Mo.          
+   
+   Pour gagner du temps, on utilise GCPC+RENUM='SANS' (car méthode continue) mais ca plante
+   <EXCEPTION> <ALGELINE4_58>                                                  
+     problème dans le préconditionnement de la matrice MATAS par LDLT imcomplet
+     pivot nul à la ligne :  275321                                            
+   
+   On considère toutefois que la correction proposée fonctionne, même si on n'est pas allé
+   jusqu'au bout de l'étude.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    etude fournie
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016984 DU 2011-05-24 07:21:36
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    DEF2 : bug dans la gestion automatique du pas de temps
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   En gestion automatique du pas de temps (DEFI_LIST_INST, METHODE='AUTO') :
+   
+   si on choisit le schéma par défaut d'adaptation du pas de temps (accélération de 100% en
+   cas de 2 pas de temps consécutifs sur lesquels on a fait "peu" d'itérations de Newton),
+   une étude récente, semblable au cas test ssep002b a montré que la condition d'accélération
+   était mal évaluée.
+   
+   On recherchait la vérification de la condition uniquement sur les pas de temps antérieurs
+   qui étaient stockés, et on oubliait ceux qui avaient mené au sous-découpage, car non-stockés.
+   
+   voir image ci-jointe
+   
+   
+   Solution :
+   ----------
+   
+   on ne peut donc pas extraire les infos utiles de l'objet .ITER de la sd_disc car celui-ci
+   ne stocke le nb d'iter de Newton que pour les pas de temps OK (cf diadap.f)
+   Il faut un autre mécanisme.
+   
+   On propose de stocker une information supplémentaire dans la sd_disc.
+   Cette info est le nb de pas de temps 'OK' consécutifs.
+   ce nombre est incrémenté de 1 à convergence si le critère est vérifié.
+   ce nombre est remis à 0 si on rencontre une erreur.
+   ce nombre est remis à 0 après une accélération.
+   On acc-de à ce nombre par la routine utilitaire utdidt.f
+   
+   Remarque :
+   en cas d'activation de boucle enrobant les boucles de Newton (boucle de contact
+   continue....), seule la dernière boucle de Newton servira à la vérification du critère sur
+   le pas de temps.
+   
+   Impact :
+   diadap.f  nmadev.f  nmconv.f  op0028.f  utdidt.f
+   
+   Validation :
+   ssep002b : on vérifie que l'accélération a bien lieu après 2 pas de temps consécutifs
+   'OK', et qu'un re-découpage du pas de temps remet bien le compteur à 0.
+   (voir courbe_inst.png en PJ)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssep002b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016989 DU 2011-05-25 08:06:31
+TYPE express concernant Code_Aster (VERSION 11.1)
+TITRE
+    X-FEM : bug charge de pression en axi
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Lors d'un calcul axisymétrique avec X-FEM, le calcul s'arrete par un call assert dans le
+   te0036 (second membre dû à une pression imposée sur des bords des éléments X-FEM).
+   On se trouve sur un segment coincidant avec l'axe de révolution (donc R = 0) or on vérifie
+   (ligne 298) que R > 0.
+   Cela provient du fait qu'nu chargement de pression est appliquée sur la face sup de la
+   structure, or aster applique une pression nulle sur toutes les éléments de bord non chargés.
+   Et des éléments de bords ont été définis sur l'axe de révolution.
+   
+   
+   
+   Solution :
+   ---------
+   
+   Dans te0036.f, on vérifie juste que R >= 0.
+   
+   En attendant la correction, on a conseillé à l'utilisateur de ne pas mettre dans son
+   modèle les mailles de bords coïncidant avec l'axe de révolution.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017004 DU 2011-05-25 12:54:26
+TYPE express concernant Code_Aster (VERSION 11.1)
+TITRE
+    gestion auto du pas de temps et IMPLEX
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Si on choisit une gestion auto du pas de temps avec le schéma d'adaptation = 'IMPLEX', 
+   et que dans STAT_NON_LINE, on ne choisit pas la résolution avec la méthode IMPL_EX, rien
+   n'alerte l'utilisateur.
+   
+   
+   
+   Solution :
+   ----------
+   
+   Désormais, en gestion auto avec le schéma d'adaptation = 'IMPLEX', on vérifie que la
+   méthode de résolution de STAT_NON_LINE est bien IMPL_EX, sinon, on s'arrete en erreur F
+   avec le message suivant :
+   
+    La gestion automatique du pas de temps (DEFI_LIST_INST/METHODE='AUTO') 
+    avec le schéma IMPLEX (DEFI_LIST_INST/MODE_CALCUL_TPLUS='IMPLEX') nécessite 
+    de traiter la résolution par la méthode IMPLEX (STAT/DYNA_NON_LINE/METHODE='IMPL_EX').
+    Conseil :
+    - Choisissez STAT/DYNA_NON_LINE/METHODE='IMPL_EX'
+    - ou bien choisissez un autre schéma d'adaptation du pas de temps
+   (DEFI_LIST_INST/MODE_CALCUL_TPLUS).
+   
+   
+   impact : diinit.f, nmcrsu.f, mecanonline6.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR elgharib     EL-GHARIB Joumana      DATE 05/31/2011 - 08:53:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017034 DU 2011-05-27 15:20:15
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    OMA : mise a jour des cas tests ssep001 et ssep002 a l'image des tests OM
+FONCTIONNALITE
+   Mise à jour des tests ssep001a,ssep001b, ssep002a et ssep002b à l'image des fichiers
+   outils métiers en V10.
+   
+   J'ai enlevé PAS_MINI=10-7 de DEFI_LIST dans les 4 tests
+   et j'ai mis ITER_GLOB_MAXI=5 au lieu de 10 dans les tests b
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssep001, ssep002
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 05/31/2011 - 08:53:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017025 DU 2011-05-26 15:54:36
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Stanley + Salome + DEPL + une composante + bouton "Sur Deformee"
+FONCTIONNALITE
+   La combinaison Stanley + Salome + DEPL + une composante + bouton "Sur Déformée" ne
+   fonctionnait pas. On corrige en ne prenant pas en compte le bouton "Sur Déformée" dans ce
+   cas précis.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Stanley
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 05/31/2011 - 08:53:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017035 DU 2011-05-27 15:50:11
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    CTC - DIRE_EXCL_FROT ne fonctionne pas
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   En formulation continue, on peut exclure du frottement des noeuds particuliers en les
+   renseignant dans SANS_GROUP_NO_FR pour éviter qu'ils ne provoquent des redondances de CL.
+   
+   Dans les cas de redondance avec des conditions de symétrie, on peut même choisir de
+   n'exclure des noeuds du frottement que dans une seule direction en utilisant le mot-clé
+   DIRE_EXCL_FROT.
+   
+   Cette dernière option ne fonctionne pas bien qu'elle soit testée dans SSNV128R.
+   
+   Analyse
+   =======
+   
+   On a constitué un petit cas-test identique à l'exemple mentionné dans la doc U2.04.04
+   (notice d'utilisation du contact) pour illustrer la fonctionnalité.
+   Sur cet exemple lorsque l'on exclut toutes les directions du frottement (c'est à dire
+   quand on ne précise pas DIRE_EXCL_FROT), tout se passe bien.
+   Si on ajoute DIRE_EXCL_FROT, alors la matrice devient singulière en structure (il existe
+   des lignes de zéro !).
+   
+   Il s'agit d'un bug assez subtile : lorsqu'une seule direction est exclue, on reconstruit
+   un repère local tangent de telle sorte que TAU1 est la direction donnée sous
+   DIRE_EXCL_FROT. Cela permet simplement de supprimer la condition d'adhérence dans les TE
+   en rendant le ddl LAGS_F1 spectateur.
+   
+   Le reste du repère est reconstruit avec la normale (qui elle ne change pas). C'est cette
+   opération qui était mal faite : le repère reconstruit n'était pas direct, la normale
+   devenait extérieure alors qu'elle doit être intérieure !
+   
+   On corrige ce petit bug et on en profite pour ne changer le repère local que sur les
+   noeuds où c'est vraiment nécessaire : avant on le changeait pour tous les noeuds de la
+   maille si au moins un noeud de cette maille était exclu.
+   
+   Validation
+   ==========
+   
+   On restitue le cas simple de la doc U2 avec solution analytique. Ce test sera accompagné
+   d'une documentation succinte.
+   Il s'agit de zzzz292a.
+   
+   V10
+   ===
+   
+   Impact : mmapma.f  mmapre.f  mmexcl.f  mmexfr.f  mmtanr.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.292
+VALIDATION
+    zzzz292a + perso
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroche     DESROCHES Xavier       DATE 05/31/2011 - 08:53:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016967 DU 2011-05-20 07:22:05
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Erreur dans POST_ELEM si CHAR_LIMITE en STA10 et NEW10
+FONCTIONNALITE
+   Les cas tests ssep001b et ssep002b plantent salement dans PECHLI (division non 
+   protégée)si dans POST_ELEM / CHAR_LIMITE on n'utilise pas NUME_ORDRE ou si on 
+   met TOUT_ORDRE='OUI.
+   
+   Le problème se pose au numéro d'ordre 0 car le dénominateur de l'expression de 
+   la charge limite estimée est nul.
+   Cette expression correspond au calcul d'un sup (voir expression R7.07.01 page 
+   11).
+   Dans ce cas-là, il faut mettre à 0 dans pechli le paramètre 'CHAR_LIMI_ESTIMEE' 
+   pour éviter la division par 0.(après accord de FV)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssep001b  ssep002b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016640 DU 2011-03-23 12:29:11
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] Erreur de programmation dans POST_ELEM/MASS_INER
+FONCTIONNALITE
+   Plantage dans POST_ELEM/MASS_INER.
+   L'erreur vient d'un DISMOI qui échoue (charge vide "        ").
+   
+   Le problème vient du fait qu'une charge est vide, ce qui fait planter le 
+   DISMOI dans la mesure où on l'a appelé avec le 1-er argument égal à 'F'.
+   En fait, si on autorise la création de charges vides au niveau de 
+   AFFE_CHAR_MECA, ce qui peut être commode pour les utilisateurs, il faut prendre 
+   en compte ce cas dans les appels à DISMOI.
+   Avant l'appel à DISMOI, on fait un test sur l'existence de l'objet TYPE_CHARGE.
+   S'il n'existe pas, on ne fait pas l'appel à DISMOI (car la charge est vide), ce 
+   qui permet de maintenir l'appel à DISMOI avec 'F' pour les autres charges.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fichiers associés à la fiche
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016774 DU 2011-04-13 09:06:39
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    bug dans POST_RELEVE_T
+FONCTIONNALITE
+   On plante dans POST_RELEVE_T avec le message suivant :
+      !-----------------------------------------------------------!
+      ! <EXCEPTION> <JEVEUX_26>                                   !
+      !                                                           !
+      ! Objet JEVEUX inexistant dans les bases ouvertes : >.PRNO< !
+      !      l'objet n'a pas été créé ou il a été détruit         !
+      !-----------------------------------------------------------!
+   
+   On plante dans la routine utncmp qui calcule le nombre et les noms de 
+   composantes d'un champ.
+   Cette routine n'est pas prévue pour le cas d'un champ à profil constant (sans 
+   prof_chno), ce qui est le cas ici (champ de géométrie).
+   On rajoute donc cette possibilité dans utncmp.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fichiers associxc3xa9s xc3xa0 la fiche
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 05/31/2011 - 08:53:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017010 DU 2011-05-26 08:07:13
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Probleme champs ELEM HEXA27, QUAD9 et TRIA7
+FONCTIONNALITE
+   Problème :
+   ----------
+   Au format MED, Jacques a constaté qu'il y a un problème pour les champs ELEM (et ELNO)
+   lorsqu'ils contiennent des HEXA27, des QUAD9 ou des TRIA7.
+   
+   Le maillage est correctement imprimé par contre le champ se trouve définit sur des HEXA20,
+   des QUAD8 et des TRIA6.
+   
+   
+   Solution :
+   ----------
+   Il reste encore des traces de la modification de HEXA27 en HEXA20, etc. Ces traces sont
+   dans IRCMPR.
+   
+   En supprimant ces traces, on obtient bien des HEXA27 dans des champs en contenant.
+   
+   Pour la validation, Jacques et Isabelle ont visualisé le champ ELEM obtenu sous paravis.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+NB_JOURS_TRAV  : 0.02
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017032 DU 2011-05-27 12:50:11
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Performance du format MED dans Aster
+FONCTIONNALITE
+   Problème :
+   ----------
+   Le suivi des performances a mis en évidence un problème de performance depuis
+   l'introduction de MED3.0 :
+   
+   http://aster-rex.der.edf.fr/arbres/standard/castest/ssnv171c.html
+   
+   
+   Solution :
+   ----------
+   Avec MED2.3, les routines d'IMPR_RESU et de LIRE_RESU avaient pour habitude lorsqu'elles
+   cherchaient une info sur un champ de la redemander à chaque fois que le besoin se faisait
+   sentir.
+   
+   Aujourd'hui, il semble que MED3.0 soit moins performant donc il faut limiter l'usage
+   dispendieux qu'on pouvait en faire.
+   
+   Pour cela, j'ajoute un stockage systématique des infos qu'on pourrait demander au fichier
+   MED (stockage des composantes des champs, du nom des champs, ...).
+   
+   De même, j'ai remarqué dans la routine IRCAM1 qu'il y avait un appel à la routine MED
+   MFDFIN qui était un invariant de boucle. Je le sort donc de la boucle sur les impressions
+   dans laquelle il se trouvait.
+   
+   En opérant ces modifications, le temps de ssnv171c repasse de 55 secondes à 40.
+   
+   
+   Impact :
+   --------
+   IRCAM1, LRMPGA et MDEXCC.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv171c
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 05/31/2011 - 08:53:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017027 DU 2011-05-27 08:31:54
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    CALC_TABLE : plantage sale pour l'operation RENOMME
+FONCTIONNALITE
+   Problème
+   --------
+   
+   Quand on renomme une colonne d'une Table, on s'arrête en erreur 
+   (pas très claire) si le paramètre à renommer n'existe pas sur 
+   toutes les lignes.
+   
+   Correction
+   ----------
+   
+   Il faut simplement de vérifier (sur chaque ligne) qu'il y a une 
+   valeur pour ce paramètre avant de le renommer.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test unitaire
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017028 DU 2011-05-27 08:41:52
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    CALC_TABLE : plantage sale pour l'operation AJOUT_COLONNE
+FONCTIONNALITE
+   Problème
+   --------
+   
+   Les opérations AJOUT_LIGNE et AJOUT_COLONNE plantent si on 
+   n'ajoute qu'une ligne/colonne !
+   
+   Correction
+   ----------
+   
+   C'est la vérification de la cohérence entre le nombre de valeurs 
+   de NOM_PARA et VALE qui échoue. Comme pour les autres opérations, 
+   on force les objets en liste pour vérifier le nombre de valeurs 
+   fournies.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test unitaire
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 05/31/2011 - 08:53:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016937 DU 2011-05-17 07:23:28
+TYPE anomalie concernant Code_Aster (VERSION 10.4)
+TITRE
+    Modele de Hujeux: Anomalie dans la gestion des echecs d'integration locale
+FONCTIONNALITE
+   Fiche comportant deux items:
+   
+   A) Reparer les anomalies relevees par M.Kham et G.Devesa dans le cadre d'un calcul sur la
+   tenue sismique d'un barrage du parc hydraulique d'EDF. 
+   
+   Anomalies relevees:
+   ------------------
+   Le modele multi-mecanismes de Hujeux est integre implicitement suivant un schema de Newton
+   local ou le systeme non lineaire voit le nombre d'equations variait de 9 a 15 equations en
+   fonction du nombre de mecanismes supposes actifs.
+   
+   A-1 - Presentation du chemin classique de l'algorithme d'integration:
+   A-1-a definition du predicteur elastique non lineaire : hujpre.f
+   A-1-b definition du domaine potentiel de mecanismes actifs (variant de 1 à 4 parmi 8):hujpot.f
+   A-1-c resolution du systeme non lineaire local: hujmid.f
+   A-1-d Apres convergence du systeme, controle de l'equilibre plastiquement admissible sur
+   l'ensemble des mecanismes du modele de Hujeux: hujact.f
+   
+   Les erreurs relevees ne se presentent pas dans le cadre presente ci-dessus. On a un echec
+   lors de la resolution local du systeme non lineaire.
+   
+   A-2 - Presentation du 1er chemin suivi lors de l'echec de l'integration locale
+   
+   Lorsque le schema de Newton local diverge, des tests "heuristiques" ont ete introduits au
+   niveau de la routine hujmid.f pour detecter si le domaine potentiel de mecanismes ne peut
+   pas etre modifie et ainsi relance le schema de Newton local sur ce nouvel ensemble. Ce
+   principe de relance de la resolution est neanmoins restreint a 5 tentatives de reconstruction
+   
+   Un test est base sur la presence au cours des iteres de Newton d'etat de traction du sol.
+   Dans ce cas, le systeme non lineaire integre a la tentative suivante le mecanisme
+   elasto-plastique parfait de traction permettant de restreindre les etats de contraintes
+   isotropes par plan a des valeurs strictement negatives.
+   
+   Dans le cas de l'etude couplee HM qui nous interesse, l'activation des mecanismes de
+   traction conduit a un relachement trop brutal des contraintes qui cree par couplage une
+   evolution tres forte sur la pression hydraulique et s'etend alors aux equations
+   hydrauliques. Une instabilite forte se produit dans la structure et le calcul diverge
+   rapidement.
+   
+   Apres analyse du schema algorithmique, une approche "heuristique" differente permet
+   d'eviter un appel aux mecanismes de traction. En comparant la valeur des multiplicateurs
+   plastiques issus du predicteur d'Euler du schema de Newton local, on peut prioriser des
+   mecanismes plastiques par rapport aux autres. L'idee consiste a resoudre le schema local
+   en enlevant le mecanisme ayant une contribution plastique la plus "faible".
+   
+   Apres convergence locale, l'equilibre plastiquement admissible est toujours verifie et
+   assure par la routine hujact.f
+   
+   A-3 2eme anomalies relevee
+   --------------------------
+   Lors du calcul du tir d'Euler comme valeur initiale de l'algorithme de newton local, des
+   precautions sont a prendre quant aux valeurs obtenues pour les variables d'ecrouissage.
+   Ceci peut entrainer par la suite une divergence de l'algorithme de Newton. Une restriction
+   sur l'evolution de la variable de couplage est imposee. Cela permet de retablir une
+   convergence locale de l'algorithme de resolution. 
+   
+   RETOUR SUR LES MODIFICATIONS APPORTEES:
+   ---------------------------------------
+   Les modifications proposees ne modifient en rien les resultats de la base des cas-tests
+   hujeux. La gestion "heuristique" introduite permet de mieux gerer les cas de non
+   convergence locale du modele de Hujeux.
+   L'etude de tenue sismique de la digue etudiee se deroule normalement sur le calcul HM et
+   la meme etude en modelisation HMS a egalement pu etre realisee, avec amelioration de la
+   convergence sur les phases de construction et mise en eau de la digue. 
+   
+   SOURCES IMPACTEES:
+   ------------------
+   hujmid.f, hujiid.f
+   
+   IMPACT DOCUMENTAIRE: R7.01.23
+    
+   PROJET CODHYBAR
+   
+   Impact documentaire supplementaire releve par F.Voldoire
+   
+   * page 18 : dans epsi_plast_volu_total pas d'intervention de  epsi_plas_trac
+   * page 39 :  ajouter en varint : indicateur d’activation (1) ou non (0) des 
+   mécanismes plastiques : en base 2 (1, 10, 11, 100, ...111...)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R7.01.23
+VALIDATION
+    etude
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 05/30/2011 - 02:56:07
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016979 DU 2011-05-23 11:46:18
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TMA : DeltaCad
+TITRE
+    Probleme NOM_CHAM_MED
+FONCTIONNALITE
+   Objectif
+   --------
+   IMPR_RESU format MED sans NOM_CHAM_MED :
+   Dans le cas ou l'utilisateur ne donne pas de NOM_CHAM_MED, on 
+   passe quand meme 
+   en argument un ZK80(JNCMED) dans l'appel a IRECRI de l'OP0039. 
+   Ce passage de 
+   chaine de caracteres peut s'averer dangereux et peut poser des 
+   problemes a 
+   certains compilateurs.
+   
+   Correction
+   ----------
+   Une correction a deja ete effectuee en version NEW11 a travers 
+   la fiche 16910.
+   On a reporte cette correction en NEW10.
+   Les principales modifications ont eu lieu dans les routines 
+   op0039, irecri et
+   irch19.
+   
+   Validation
+   ----------
+   Passage de la liste des cas-tests contenant la commande 
+   IMPR_RESU au format 
+   MED.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cas-tests  IMPR_RESU format MED
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT wtnp120i                       granet S.GRANET           579    579      0
+ CASTEST AJOUT wtnp120j                       granet S.GRANET           579    579      0
+ CASTEST AJOUT zzzz292a                      macocco K.MACOCCO          185    185      0
+ CASTEST MODIF ssep001a                      macocco K.MACOCCO          178      2      3
+ CASTEST MODIF ssep001b                      macocco K.MACOCCO          176      3      4
+ CASTEST MODIF ssep002a                      macocco K.MACOCCO          182      2      3
+ CASTEST MODIF ssep002b                      macocco K.MACOCCO          176      3      4
+ FORTRAN AJOUT algorith/nmadev               macocco K.MACOCCO           98     98      0
+ FORTRAN MODIF algorith/diadap               macocco K.MACOCCO          104     13     27
+ FORTRAN MODIF algorith/diinit               macocco K.MACOCCO          107      2      2
+ FORTRAN MODIF algorith/hujiid               macocco K.MACOCCO          916      5      5
+ FORTRAN MODIF algorith/hujmid               macocco K.MACOCCO          989    160    119
+ FORTRAN MODIF algorith/mmapma               macocco K.MACOCCO          141      6      4
+ FORTRAN MODIF algorith/mmapre               macocco K.MACOCCO          259      5      5
+ FORTRAN MODIF algorith/mmexcl               macocco K.MACOCCO          206     16      4
+ FORTRAN MODIF algorith/mmexfr               macocco K.MACOCCO           88     16      7
+ FORTRAN MODIF algorith/mmtanr               macocco K.MACOCCO           87      7      5
+ FORTRAN MODIF algorith/mmveri               macocco K.MACOCCO          272      5      4
+ FORTRAN MODIF algorith/nmconv               macocco K.MACOCCO          558      5      1
+ FORTRAN MODIF algorith/nmcrsu               macocco K.MACOCCO          249     18      3
+ FORTRAN MODIF algorith/op0028               macocco K.MACOCCO          566      4      3
+ FORTRAN MODIF algorith/pminit               macocco K.MACOCCO          333      6      3
+ FORTRAN MODIF algorith/utdidt               macocco K.MACOCCO          403     20      9
+ FORTRAN MODIF calculel/medome               macocco K.MACOCCO          234      7      3
+ FORTRAN MODIF elements/te0036               macocco K.MACOCCO          525      2      2
+ FORTRAN MODIF elements/te0441               macocco K.MACOCCO          195      3      3
+ FORTRAN MODIF elements/te0466                granet S.GRANET           634      2      2
+ FORTRAN MODIF prepost/ircam1                macocco K.MACOCCO          361     12     15
+ FORTRAN MODIF prepost/irch19                rezette C.REZETTE          183      2      2
+ FORTRAN MODIF prepost/ircmpr                macocco K.MACOCCO          269      2     14
+ FORTRAN MODIF prepost/irecri                rezette C.REZETTE          484      9      3
+ FORTRAN MODIF prepost/lrmpga                macocco K.MACOCCO          323      7     20
+ FORTRAN MODIF prepost/mdexcc                macocco K.MACOCCO          304     97     51
+ FORTRAN MODIF prepost/op0039                rezette C.REZETTE         1023     11      7
+ FORTRAN MODIF utilitai/pechli               macocco K.MACOCCO          198      7      4
+ FORTRAN MODIF utilitai/utncmp               macocco K.MACOCCO          157     22      3
+  PYTHON MODIF Macro/calc_table_ops          macocco K.MACOCCO          190     11     14
+  PYTHON MODIF Messages/contact3             macocco K.MACOCCO          246     10      1
+  PYTHON MODIF Messages/mecanonline6         macocco K.MACOCCO          186     10      1
+  PYTHON MODIF Stanley/salomeVisu            macocco K.MACOCCO          421      5      2
+  PYTHON MODIF Utilitai/Table                macocco K.MACOCCO         1071      2      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    4        1441      1441             +1441
+ MODIF :   37       12994       519     363      +156
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   41       14435      1960     363     +1597 

@@ -1,4 +1,4 @@
-#@ MODIF Table Utilitai  DATE 01/03/2011   AUTEUR COURTOIS M.COURTOIS 
+#@ MODIF Table Utilitai  DATE 31/05/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -68,7 +68,7 @@ class TableBase(object):
       self.para=None
       self.type=None
       self.titr=None
-   
+
    def __repr__(self):
       return self.ReprTable()
    def Croise(self, **kargs):
@@ -104,7 +104,7 @@ class TableBase(object):
          kargs['dform'].update(dform)
       # ajout des options
       kargs.update(opts)
-      
+
       if not kargs.get('PAGINATION'):
          # call the associated driver
          para[FORMAT]['driver'](**kargs)
@@ -258,7 +258,7 @@ class TableBase(object):
       if args['LEGENDE']==None: del args['LEGENDE']
       Graph.AjoutParaCourbe(dicC, args)
       graph.AjoutCourbe(**dicC)
-      
+
       # Surcharge des propriétés du graphique et des axes
       # (bloc quasiment identique dans impr_fonction_ops)
       if args.get('TITRE'):            graph.Titre=args['TITRE']
@@ -274,7 +274,7 @@ class TableBase(object):
       if args.get('ECHELLE_Y'):        graph.Echelle_Y=args['ECHELLE_Y']
       if args.get('GRILLE_X'):         graph.Grille_X=args['GRILLE_X']
       if args.get('GRILLE_Y'):         graph.Grille_Y=args['GRILLE_Y']
-      
+
       try:
          graph.Trace(**args)
       except TypeError:
@@ -321,7 +321,7 @@ class Table(TableBase):
       else:
          self.type = [None]*len(self.para)
       self.titr = titr
-   
+
 # ------------------------------------------------------------------------------
    def copy(self):
       """Retourne une copie de la table.
@@ -397,7 +397,7 @@ class Table(TableBase):
          else:
             row[k_para] = None
          i+=1
-      for j in range(i, len(k_value)): 
+      for j in range(i, len(k_value)):
          self.append({k_para : k_value[j]})
 
 # ------------------------------------------------------------------------------
@@ -680,8 +680,9 @@ class Table(TableBase):
       else:
          self.para[self.para.index(pold)] = pnew
          for lig in self:
-            lig[pnew] = lig[pold]
-            del lig[pold]
+            if lig.get(pold) is not None:
+                lig[pnew] = lig[pold]
+                del lig[pold]
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------

@@ -6,7 +6,7 @@
      &                    LRESU,FORMR,NIVE )
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF PREPOST  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
+C MODIF PREPOST  DATE 30/05/2011   AUTEUR REZETTE C.REZETTE 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -80,7 +80,7 @@ C
 C
       CHARACTER*(*)     CHAM19, NOMSD,NOSIMP,NOPASE, NOMSYM
       CHARACTER*(*)     FORM, NOMO, FORMR, TITRE, NOMCMP(*), PARTIE
-      CHARACTER*(*)     NOMMED
+      CHARACTER*64      NOMMED
       REAL*8            BORSUP, BORINF
       INTEGER           NUMORD,NUORD1,NORDEN,IORDEN,NBCHAM,ICHAM,NBMAT
       INTEGER           NBNOT,NUMNOE(*),NUMMAI(*),NBCMP,NCMP,NBCMDU
