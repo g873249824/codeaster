@@ -1,4 +1,4 @@
-#@ MODIF cata_champs Stanley  DATE 19/05/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF cata_champs Stanley  DATE 09/06/2011   AUTEUR ASSIRE A.ASSIRE 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -181,6 +181,7 @@ class CATA_CHAMPS :
     # contraintes
     self('SIGM_ELNO', 'ELNO',['DEPL'],                      "Contraintes aux noeuds par element en lineaire")
     self('SIPO_ELNO', 'ELNO',['DEPL'],                      "Contraintes aux noeuds par element pour les elements Poutres")
+    self('SIPM_ELNO', 'ELNO',['DEPL'],                      "Contraintes aux noeuds par element pour les elements Poutres")
     self('SITU_ELNO', 'ELNO',[],                            "Etat de contrainte dans un element de tuyau")
     # efforts
     self('EFGE_ELNO', 'ELNO',['DEPL'],                      "Efforts generalises aux noeuds par element")
