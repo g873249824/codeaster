@@ -1,4 +1,4 @@
-#@ MODIF xfem2 Messages  DATE 08/03/2011   AUTEUR MASSIN P.MASSIN 
+#@ MODIF xfem2 Messages  DATE 05/07/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -527,16 +527,6 @@ cata_msg = {
      grille doit être définie par DEFI_GRILLE à partir d'un maillage.
   """),
 
-96 : _("""
-  -> Le champ_no "%(k1)s" donnés sous le mot-clé facteur
-     DEFI_FISS_GRILLE est défini sur le maillage "%(k2)s".
-     Par contre, le modèle grille donnés par MODELE_GRILLE est défini
-     sur le maillage "%(k3)s".
-  -> Risque & Conseil:
-     Veuillez donner un champ_no défini sur le même maillage que celui
-     utilisé pour le modèle grille.
-  """),
-  
 97 : _("""
   -> La localisation de la zone de mise à jour a été utilisé pour la
      détermination de la configuration actuelle des fissures du modèle.
