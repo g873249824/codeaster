@@ -1,7 +1,7 @@
       SUBROUTINE LDSP2(pc,x,y,ierr)
       IMPLICIT NONE
 !           CONFIGURATION MANAGEMENT OF EDF VERSION                  
-!& MODIF LDSP2 PETSC  DATE 29/03/2011   AUTEUR BOITEAU O.BOITEAU 
+!& MODIF LDSP2 PETSC  DATE 02/08/2011   AUTEUR MACOCCO K.MACOCCO 
 ! ================================================================== 
 ! COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG 
 !                                                                    

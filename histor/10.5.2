@@ -1,0 +1,413 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 08/02/2011 - 01:24:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017282 DU 2011-07-11 17:08:53
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    PREDICTION='EXTRAPOL' et AFFE_CHAR_CINE
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Dans le cadre de l'AOM issue17230, on a rencontré des difficultés pour obtenir des
+   résultats stables (modification des résidus et du nombre d'itérations de Newton) dans un
+   calcul d'agrégats.
+   Pensant que le coupable était l'utilisation de conditions aux limites cinématiques
+   (AFFE_CHAR_CINE), nous avons modifié le cas-test SSNV194A qui utilise la prédiction
+   'EXTRAPOL', pour remplacer les CL dualisées par des CL éliminées on obtient alors un échec
+   dans l'intégration de la LdC.
+   
+   Analyse
+   =======
+   
+   Avec Jean-Michel nous avons essayé de comprendre pourquoi, ce qui en ressort :
+   - ce n'est pas un bug des LdC mono-cristallines
+   - on constate (même si c'est difficile à comparer) que le déplacement donné par EXTRAPOL
+   est très différent dès le second pas de temps selon que l'on a des CL dualisées ou éliminées
+   ==> le coupable semblait donc plutôt être la prédiction par extrapolation.
+   
+   Après analyse, il y a effectivement un bug dans le traitement de PREDICTION='EXTRAPOL'
+   avec des conditions AFFE_CHAR_CINE : la projection sur l'espace des conditions aux limites
+   cinématiquement admissibles est mal faite.
+   Le même bug existe donc aussi pour PREDICTION='DEPL_CALCULE'.
+   
+   Pour les CL éliminées on se contentait en effet de remplacer dans le déplacement donné
+   (par DEPL_CALCULE ou EXTRAPOL) les ddls cinématiques par leur valeur imposée.
+   Alors qu'il faut chercher le déplacement delta.u (donc sur *tous* les ddls) qui permet de
+   vérifier les CL sur les ddls cinématiques.
+   En effet la projection sur l'espace des déplacements cinématiquement admissibles peut tout
+   à fait modifier les ddls non contraints par des CL.
+   
+   Correction
+   ==========
+   
+   Impact : nmacin.f(nouveau)  nmassd.f  nmdesc.f  nmprca.f actcin.f(supprimée)
+   
+   À faire en V10 (sauf nmdesc.f).
+   
+   Validation
+   ==========
+   
+   Tous les tests utilisant DEPL_CALCULE ou EXTRAPOL sont OK.
+   J'ajoute à SSNV194A (car il a plus d'une maille) un calcul avec AFFE_CHAR_CINE. Avant
+   correction, le test échoue, maintenant il donne des résultats presque identiques à
+   AFFE_CHAR_MECA. On note un petit écart sur 3 des valeurs testées inférieur à 0.05%. Je
+   choisis donc AUTRE_ASTER comme comparaison.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv194a
+DEJA RESTITUE DANS : 11.0.16
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017274 DU 2011-07-08 15:40:21
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    AR04 Fuite memoire dans l'interface PETSc
+FONCTIONNALITE
+   Express
+   =======
+   
+   Dans le cadre de l'AOM 17230, on a constaté l'augmentation progressive de la mémoire
+   consommée par un calcul Aster utilisant PETSc avec le préconditionneur LDLT_SP.
+   Les gens de la THM ont également constaté cette dérive mémoire.
+   Plus précisément la quantité système VmPeak augmente indéfiniment, cette augmentation
+   provoque à coup sûr l'arrêt des calculs lancés en batch pour cause de limite mémoire atteinte.
+   
+   Analyse
+   =======
+   
+   Il s'agit d'une fuite mémoire dans l'interface PETSc. Une réécriture partielle de
+   l'interface dans un premier temps n'a pas permis de localiser l'erreur.
+   Dans un second temps un cas-test utilisant PETSc et LDLT_SP a été lancé sous Valgrind.
+   Cela a permis de détecter des variables non initialisées et de mettre le doigt par *pure
+   chance* sur une possible fuite mémoire interne à PETSc (sans gravité cependant).
+   
+   Néanmoins en examinant de plus près la fonction PETSc appelée avant cette possible fuite,
+   je me suis rendu compte d'une erreur de programmation (de mon fait) qui existe depuis
+   l'introduction de PETSc dans Aster. C'est cette erreur qui provoque la fuite mémoire.
+   Comme elle a été reprise lors de l'ajout de LDLT_SP cela explique pourquoi la dérive
+   mémoire est encore plus forte.
+   
+   Détails (pour mémoire)
+   ======================
+   
+           call VecCreateSeq(PETSC_COMM_SELF,NEQ,xgth,ierr)
+           CALL ASSERT(ierr.EQ.0)
+           call VecScatterCreateToAll(b,ctx,xgth,ierr)
+           CALL ASSERT(ierr.EQ.0)
+   
+   La fonction VecScatterCreateToAll a besoin en entrée d'un vecteur b et crée à partir de ce
+   dernier un contexte ctx et un vecteur séquentiel xgth.
+   La doc n'étant pas très claire à ce sujet à l'époque (elle a été enrichie depuis) on
+   créait inutilement le vecteur xgth au préalable et on perdait son adresse ensuite.
+   
+   À chaque appel à PETSc la mémoire augmentait donc d'environ 8*NEQ octets (le double avec
+   LDLT_SP).
+   
+   Correction
+   ==========
+   
+   Réécriture partielle de l'interface et correction des variables non init. :
+   crsvpe.f
+   apets1.F  apets2.F  apets3.F  apets4.F  apetsc.F  apetsr.F  ldsp1.F  ldsp2.F
+   
+   Validation
+   ==========
+   
+   Tous les tests PETSc + validation du fait que VmPeak est constant au cours d'un calcul
+   (petsc01e en forcant à faire 100 pas de temps au lieu d'un).
+   
+   Remarque : l'étude de l'AOM 17230 passe désormais dans une classe mpi_4G dès que 4
+   processeurs et plus sont utilisés.
+   
+   V10
+   ===
+   
+   Impact : apetsr.F apets3.F
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    vmpeak+tests petsc
+DEJA RESTITUE DANS : 11.0.16
+NB_JOURS_TRAV  : 2.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017317 DU 2011-07-22 09:28:56
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    LDLT_INC dans PETSc : niveau de remplissage nxc3xa9gatif
+FONCTIONNALITE
+   Express
+   =======
+   
+   Dans issue17274, l'interface PETSc a été partiellement réécrite et des vérifications
+   supplémentaires ont été ajoutées.
+   On se rend compte ainsi compte qu'en commandes éclatées, le nombre de niveaux de la
+   factorisation incomplète passé à PETSc est négatif (-9999). On peut même s'en rendre
+   compte en consultant les .mess :
+   
+   [0]PETSC ERROR: --------------------- Error Message ------------------------------------
+   [0]PETSC ERROR: Argument out of range!
+   [0]PETSC ERROR: negative levels!
+   [0]PETSC ERROR: ------------------------------------------------------------------------
+   
+   Désormais un ASSERT empêche l'exécution de continuer. Il faut donc corriger le petit bug
+   (interversion de 2 valeurs dans la sd_solveur).
+   
+   Impact : op0014.f
+   
+   À faire en V10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    petsc01c
+DEJA RESTITUE DANS : 11.0.16
+NB_JOURS_TRAV  : 0.25
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 08/02/2011 - 01:24:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017296 DU 2011-07-18 09:10:12
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] Impression med incomplxc3xa8te
+FONCTIONNALITE
+   Problème :
+   ----------
+   Un bug a été découvert par un utilisateur d'aster libre. Il a constaté que les impressions
+   au format MED qu'il réalisait étaient incomplètes.
+   
+   
+   Analyse :
+   ---------
+   C'est suite à ma correction de la fiche 16753 que ce bug a été introduit. C'est en fait un
+   test mal fait dans IRMAMA qui conduisait à filtrer trop de mailles du maillage à imprimer.
+   
+   Je corrige donc ce test.
+   
+   La correction est à reporter en version d'exploitation.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.4.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.5
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+DEJA RESTITUE DANS : 11.0.16
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 08/02/2011 - 01:24:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017185 DU 2011-06-22 14:19:57
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    RUPT : bug dans CALC_G si NB_POINT_FOND
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Dans la commande CALC_G, on obtient un G (et/ou des K) faux si toutes les conditions
+   suivantes sont réunies :
+   + modélisation de la fissure par level sets (mot-clé FISSURE) 
+   + répartition uniforme des points le long du fond (mot-clé NB_POINT_FOND)
+   + imposition de la direction tangente au point extremité du fond (mot-clé DTAN_EXTR).
+   
+   Plus précisément, le Gelem (ou Kelem) correspondant à l'avant-dernier champ theta est faux.
+   
+   Cela implique donc des G (ou K) faux :
+   - sur tout le fond de fissure si LISSAGE = 'LEGENDRE'
+   - sur les 3 points extrémités du fond si LISSAGE = 'LAGRANGE'
+   
+   
+   Correction :
+   ------------
+   
+   Le problème vient de l'introduction du mot-clé NB_POINT_FOND.
+   En effet, si ce mot-clé est renseigné, alors on va calculer G uniquement sur des nouveaux
+   points répartis uniformément le long du fond. La routine xrecff.f permet de recalcule les
+   position de ces nouveaux points.
+   Par contre, la base locale en fond de fissure (FISS.BASLOC) n'est pas recalculée !
+   Or on se sert de cette base dans le cas où on impose les direction tangentes du champ
+   theta (routine gcour3.f).
+   Pour la correction liée à DTAN_ORIG, on ne commet pas d'erreur en exploitant la "fausse"
+   base locale, car le 1er point reste le 1er point.
+   Par contre, pour la correction liée à DTAN_EXTR, l'exploitation de la fausse base locale
+   conduit à une correction de la direction erronée.
+   
+   La solution consiste à recalculer la bonne base locale dans xrecff.f, à l'instar du
+   recalcul du bon fond de fissure.
+   
+   impact : gcour3.f, xrecff.f, op0100.f
+   
+   
+   Validation :
+   ------------
+   
+   Le cas test sslv154b valide le dvt.
+   Par ex sur le K1 (K1reference = 7.9788456080287E+05)
+   Avant : max(K1) = 1.0879031894322E+06 (36.0%) et min(K1) = -2.128314872035E+05  (136%) 
+   Apres : max(K1) = 8.3907374213329E+05 ( 5.2%) et min(K1) =  7.9432995131184E+05 (0.45%)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    SSLV154B
+DEJA RESTITUE DANS : 11.0.15
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 08/02/2011 - 01:24:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017259 DU 2011-07-06 14:11:56
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Bug dans pminit.f (CALC_POINT_MAT)
+FONCTIONNALITE
+   La variable ANGEUL est mal initialisée dans pminit, provoquant un débordement de tableau.
+   
+   Il faut
+   CALL R8INIR ( 3, 0.D0, ANGEUL ,1 )
+   Et non
+   CALL R8INIR ( 7, 0.D0, ANGEUL ,1 )
+   
+   La variable XYZGAU est de mauvaise dimension
+   REAL*8 XYZGAU(3)
+   et non
+   REAL*8 XYZGAU
+   
+   Je corrige
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    rien de particulier
+DEJA RESTITUE DANS : 11.0.15
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017148 DU 2011-06-17 08:03:54
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Champs absolus en MULTI-APPUI - OBSERVATION et SUIVI_DDL faux
+FONCTIONNALITE
+   Problématique
+   =============
+   
+   L'OBSERVATION et le SUIVI_DDL donnent des résultats faux pour les champs absolus
+   (DEPL_ABSOLU, VITE_ABSOLU, ACCE_ABSOLU) en multi-appui.
+   
+   En effet, on calcule la valeur actualisée
+   DEPL_ABSOLU = DEPL_RELATIF + DEPL_ENTRAINEMENT
+   au moment de l'ARCHIVAGE (routine NDMAPA)
+   
+   L'OBSERVATION et le SUIVI_DDL interviennent AVANT l'ARCHIVAGE. Donc les valeurs sorties
+   sont nécessairement fausses ! 
+   
+   En déplaçant NDMAPA à la fin du pas de temps (place normale de l'actualisation des
+   champs), sdnd102b devient NOOK.
+   
+   Ce bug illustre un problème d'architecture particulièrement démonstratif: on ne doit faire
+   dans une routine que ce qui est prévu qu'elle fasse. NMARCH _archive_ les champs, on ne
+   doit pas y faire de mise à jour des champs.
+   NMFPAS _actualise_ les champs en pas de temps, on ne doit pas y faire d'ARCHIVAGE.
+   
+   Correction
+   ==========
+   
+   Supprimer la possibilité de faire DEPL_ABSOLU, VITE_ABSOLU, ACCE_ABSOLU en SUIVI_DDL
+   puisque ces champs ne sont actualisés qu'en fin de pas de temps et non à chaque itération
+   de Newton (usage de SUIVI_DDL)
+   OBSERVATION est désormais juste.
+   
+   En V10: la correction peut être lourde pour l'OBSERVATION. Il faut "déplacer" NDMAPA dans
+   NMFPAS.
+   
+   Validation
+   ==========
+   
+   On modifie sdnd102b pour comparer le champ ABSOLU archivé avec le champ ABSOLU observé.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v5.01.102
+VALIDATION
+    sdnd102
+DEJA RESTITUE DANS : 11.0.12
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT sslv154b                      macocco K.MACOCCO          253    253      0
+ CASTEST MODIF sdnd102b                      macocco K.MACOCCO          689     65     13
+ CASTEST MODIF ssnv194a                      macocco K.MACOCCO          327    118      8
+CATALOPY MODIF commun/c_suivi_ddl            macocco K.MACOCCO           69      3      7
+ FORTRAN AJOUT algeline/nmacin               macocco K.MACOCCO           92     92      0
+ FORTRAN AJOUT algorith/ndmapp               macocco K.MACOCCO          110    110      0
+ FORTRAN MODIF algeline/crsvpe               macocco K.MACOCCO          139      7      4
+ FORTRAN MODIF algeline/op0014               macocco K.MACOCCO          323      2      2
+ FORTRAN MODIF algorith/gcour3               macocco K.MACOCCO          353      3      3
+ FORTRAN MODIF algorith/ndarch               macocco K.MACOCCO           84      3      9
+ FORTRAN MODIF algorith/ndcrdy               macocco K.MACOCCO          128     20     16
+ FORTRAN MODIF algorith/ndlect               macocco K.MACOCCO          480     32     23
+ FORTRAN MODIF algorith/ndmapa               macocco K.MACOCCO           88     12     46
+ FORTRAN MODIF algorith/nmarce               macocco K.MACOCCO          216      3      4
+ FORTRAN MODIF algorith/nmassd               macocco K.MACOCCO          167     23     20
+ FORTRAN MODIF algorith/nmcrch               macocco K.MACOCCO          419     23     15
+ FORTRAN MODIF algorith/nmfpas               macocco K.MACOCCO          156     37      3
+ FORTRAN MODIF algorith/nmprca               macocco K.MACOCCO          199     27     45
+ FORTRAN MODIF algorith/op0070               macocco K.MACOCCO          578      5      1
+ FORTRAN MODIF algorith/pminit               macocco K.MACOCCO          343     17      7
+ FORTRAN MODIF algorith/xrecff               macocco K.MACOCCO          180     62     22
+ FORTRAN MODIF calculel/op0100               macocco K.MACOCCO         1106      3      3
+ FORTRAN MODIF prepost/irmama                macocco K.MACOCCO          132      2      2
+ FORTRAN MODIF utilitai/ndynkk               macocco K.MACOCCO          237     12      4
+FORTRAN90 MODIF petsc/apets1                  macocco K.MACOCCO          201      2      2
+FORTRAN90 MODIF petsc/apets2                  macocco K.MACOCCO          233      2      2
+FORTRAN90 MODIF petsc/apets3                  macocco K.MACOCCO          206      1      3
+FORTRAN90 MODIF petsc/apets4                  macocco K.MACOCCO          153      2      2
+FORTRAN90 MODIF petsc/apetsc                  macocco K.MACOCCO          235      2      2
+FORTRAN90 MODIF petsc/apetsr                  macocco K.MACOCCO          379      1      3
+FORTRAN90 MODIF petsc/ldsp1                   macocco K.MACOCCO           81      1      1
+FORTRAN90 MODIF petsc/ldsp2                   macocco K.MACOCCO           85      1      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    3         455       455              +455
+ MODIF :   29        7986       491     273      +218
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   32        8441       946     273      +673 

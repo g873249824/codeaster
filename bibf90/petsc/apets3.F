@@ -1,7 +1,7 @@
       SUBROUTINE APETS3(ACTION,KPTSC)
       IMPLICIT NONE
 !           CONFIGURATION MANAGEMENT OF EDF VERSION                  
-!& MODIF APETS3 PETSC  DATE 04/05/2011   AUTEUR MACOCCO K.MACOCCO 
+!& MODIF APETS3 PETSC  DATE 02/08/2011   AUTEUR MACOCCO K.MACOCCO 
 ! ================================================================== 
 ! COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG 
 !                                                                    
@@ -135,8 +135,6 @@
           NEQ=NSMDI
           call VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE,NEQ,xlocal,
      &                                                             ierr)
-          CALL ASSERT(ierr.EQ.0)
-          call VecCreateSeq(PETSC_COMM_SELF,NEQ,xglobal,ierr)
           CALL ASSERT(ierr.EQ.0)
           call VecScatterCreateToAll(xlocal,xscatt,xglobal,ierr)
           CALL ASSERT(ierr.EQ.0)

@@ -1,9 +1,9 @@
       SUBROUTINE APETS4(KPTSC)
       IMPLICIT NONE
 !           CONFIGURATION MANAGEMENT OF EDF VERSION                  
-!& MODIF APETS4 PETSC  DATE 23/11/2010   AUTEUR DESOZA T.DESOZA 
+!& MODIF APETS4 PETSC  DATE 02/08/2011   AUTEUR MACOCCO K.MACOCCO 
 ! ================================================================== 
-! COPYRIGHT (C) 1991 - 2008  EDF R&D              WWW.CODE-ASTER.ORG 
+! COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG 
 !                                                                    
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR      
 ! MODIFY IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS     

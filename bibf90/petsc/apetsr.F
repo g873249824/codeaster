@@ -1,7 +1,7 @@
       SUBROUTINE APETSR(ACTION,KPTSC,RSOLU,VCINE)
       IMPLICIT NONE
 !           CONFIGURATION MANAGEMENT OF EDF VERSION
-!& MODIF APETSR PETSC  DATE 19/05/2011   AUTEUR MACOCCO K.MACOCCO 
+!& MODIF APETSR PETSC  DATE 02/08/2011   AUTEUR MACOCCO K.MACOCCO 
 ! ==================================================================
 ! COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG
 !
@@ -277,8 +277,6 @@
 !       --- ON DOIT RECONSTRUIRE LA SOLUTION SUR CHAQUE PROC
 !       --- ON UTILISE DANS PETSC UN VECSCATTER
 
-        call VecCreateSeq(PETSC_COMM_SELF,NEQ,xgth,ierr)
-        CALL ASSERT(ierr.EQ.0)
         call VecScatterCreateToAll(b,ctx,xgth,ierr)
         CALL ASSERT(ierr.EQ.0)
         call VecScatterBegin(ctx,b,xgth,INSERT_VALUES,SCATTER_FORWARD,
