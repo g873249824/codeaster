@@ -1,4 +1,4 @@
-#@ MODIF petsc Messages  DATE 29/03/2011   AUTEUR BOITEAU O.BOITEAU 
+#@ MODIF petsc Messages  DATE 13/09/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -122,5 +122,13 @@ Solveur PETSc :
   Plus précisément : le paramètre PCENT_PIVOT choisi automatiquement par le code pour l'appel à MUMPS n'a pas été suffisant.
 
   Conseil : changez de préconditionneur.
+"""),
+
+16 : _("""
+Solveur PETSc :
+  La résolution du système linéaire a abouti mais la solution obtenue ne vérifie pas le critère de convergence.
+  Cela peut arriver lorsque la matrice du système linéaire est mal conditionnée.
+
+  Conseil : utilisez le préconditionneur 'LDLT_SP' ou un solveur direct ('MULT_FRONT' ou 'MUMPS')
 """),
 }

@@ -1,4 +1,4 @@
-#@ MODIF miss_post Miss  DATE 04/05/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF miss_post Miss  DATE 13/09/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -506,6 +506,7 @@ class POST_MISS_TAB(POST_MISS):
         sur les fréquences 'lfreq'."""
         _printDBG("Calcul de la réponse en %s, direction %s" % (gno, dir))
         tfc = 0.
+        to_del = []
         if self.acce_x:
             _repx = RECU_FONCTION(RESU_GENE=self.dyge_x,
                                    NOM_CHAM=cham,
@@ -514,6 +515,7 @@ class POST_MISS_TAB(POST_MISS):
                                    INTERPOL='LIN',
                                    PROL_DROITE='CONSTANT', PROL_GAUCHE='CONSTANT',)
             tfc = _repx.convert('complex') * self.tf_xff + tfc
+            to_del.append(_repx)
         if self.acce_y:
             _repy = RECU_FONCTION(RESU_GENE=self.dyge_y,
                                    NOM_CHAM=cham,
@@ -522,6 +524,7 @@ class POST_MISS_TAB(POST_MISS):
                                    INTERPOL='LIN',
                                    PROL_DROITE='CONSTANT', PROL_GAUCHE='CONSTANT',)
             tfc = _repy.convert('complex') * self.tf_yff + tfc
+            to_del.append(_repy)
         if self.acce_z:
             _repz = RECU_FONCTION(RESU_GENE=self.dyge_z,
                                    NOM_CHAM=cham,
@@ -530,6 +533,7 @@ class POST_MISS_TAB(POST_MISS):
                                    INTERPOL='LIN',
                                    PROL_DROITE='CONSTANT', PROL_GAUCHE='CONSTANT',)
             tfc = _repz.convert('complex') * self.tf_zff + tfc
+            to_del.append(_repz)
 
         tffr = tfc.evalfonc(self.list_freq_DLH)
         tffr.para['NOM_PARA'] = 'FREQ'
@@ -546,7 +550,7 @@ class POST_MISS_TAB(POST_MISS):
                                            NORME=self.param['NORME'],
                                            AMOR_REDUIT=self.param['AMOR_SPEC_OSCI'],
                                            **opts),)
-        DETRUIRE(CONCEPT=_F(NOM=(_repx, _repy, _repz),),)
+        DETRUIRE(CONCEPT=_F(NOM=tuple(to_del),),)
         self.add_line(gno, cham, 'INST', **{ FKEY[dir] : _reptemp.nom })
         self.add_line(gno, cham, 'FREQ', **{ FKEY[dir] : _repfreq.nom })
         self.add_line(gno, cham, 'SPEC_OSCI', **{ FKEY[dir] : _spec.nom })

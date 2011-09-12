@@ -1,7 +1,7 @@
       SUBROUTINE APETS4(KPTSC)
       IMPLICIT NONE
 !           CONFIGURATION MANAGEMENT OF EDF VERSION                  
-!& MODIF APETS4 PETSC  DATE 02/08/2011   AUTEUR MACOCCO K.MACOCCO 
+!& MODIF APETS4 PETSC  DATE 13/09/2011   AUTEUR MACOCCO K.MACOCCO 
 ! ================================================================== 
 ! COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG 
 !                                                                    
@@ -104,17 +104,22 @@
 ! ("BCGS","BICG","CG","CR","GMRES","TFQMR",),defaut="CG" ),
       IF (ALGO.eq.'BCGS') THEN
          call KSPSetType(ksp,KSPBCGS,ierr)
+         CALL ASSERT(ierr.EQ.0)
       ELSEIF (ALGO.eq.'BICG') THEN
          call KSPSetType(ksp,KSPBICG,ierr)
+         CALL ASSERT(ierr.EQ.0)
       ELSEIF (ALGO.eq.'CG') THEN
          call KSPSetType(ksp,KSPCG,ierr)
-         call KSPSetNormType(ksp,KSP_NORM_UNPRECONDITIONED,ierr)
+         CALL ASSERT(ierr.EQ.0)
       ELSEIF (ALGO.eq.'CR') THEN
          call KSPSetType(ksp,KSPCR,ierr)
+         CALL ASSERT(ierr.EQ.0)
       ELSEIF (ALGO.eq.'GMRES') THEN
          call KSPSetType(ksp,KSPGMRES,ierr)
+         CALL ASSERT(ierr.EQ.0)
       ELSEIF (ALGO.eq.'TFQMR') THEN
          call KSPSetType(ksp,KSPTFQMR,ierr)
+         CALL ASSERT(ierr.EQ.0)
       ELSE
          CALL ASSERT(.FALSE.)
       ENDIF
@@ -136,6 +141,7 @@ C     -- nb iter max :
       dtol = PETSC_DEFAULT_DOUBLE_PRECISION
 
       call KSPSetTolerances(ksp,rtol,atol,dtol,maxits,ierr)
+      CALL ASSERT(ierr.EQ.0)
 
 !      call KSPSetFromOptions(ksp,ierr)
 
@@ -144,6 +150,7 @@ C     ---------------------------------
       IF (NIV.GE.2) THEN
          call KSPMonitorSet(ksp,KSPMonitorTrueResidualNorm,
      &               PETSC_NULL_OBJECT,PETSC_NULL_FUNCTION,ierr)
+         CALL ASSERT(ierr.EQ.0)
       ENDIF
 
       CALL JEDEMA()

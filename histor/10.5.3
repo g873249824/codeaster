@@ -1,0 +1,830 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 09/13/2011 - 04:18:35
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017337 DU 2011-07-27 14:33:03
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Recherche d'un DEPL_CALCULE dans un EVOL_NOLI
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Lorsqu'une prédiction de type DEPL_CALCULE est choisie, on doit fournir un EVOL_NOLI pour
+   y lire le champ de déplacement servant de prédicteur à chaque instant de calcul.
+   
+   Lorsque ce champ n'existe pas à un instant de calcul donné mais qu'il est encadré par 2
+   autres instants dans l'EVOL_NOLI fourni, on procède alors à une interpolation linéaire.
+   Dans les autres cas, on doit s'arrêter en erreur (pas de prolongement à droite ni à
+   gauche). En pratique cela veut dire que la liste d'instants calculés du EVOL_NOLI fourni
+   doit englober la liste d'instants du calcul courant.
+   L'arrêt en erreur était bien programmé mais le prolongement à droite et à gauche était
+   aussi activé (prolongement constant), on ne tombait donc jamais dans l'erreur fatale.
+   
+   Correction
+   ==========
+   
+   Le prolongement est maintenant exclu et déclenchera une erreur fatale.
+   
+   Impact : nmprdc.f   À faire en V10
+   
+   !--------------------------------------------------------------------------------------------------------------------------------!
+   ! <F> <MECANONLINE2_27>                                                                  
+                                          !
+   !                                                                                        
+                                          !
+   !  La prédiction par DEPL_CALCULE à l'instant de calcul 11.000000 à partir du concept
+   RESU0 n'a pas pu être construite.          !
+   !  Explications possibles :                                                              
+                                          !
+   !   - le concept ne contient pas de champs de déplacement                                
+                                          !
+   !   - l'instant de calcul demandé est en dehors de l'intervalle des instants calculés dans
+   le concept fourni (il n'y a pas de    !
+   ! prolongement à gauche ni à droite)                                                     
+                                          !
+   !                                                                                        
+                                          !
+   !  Conseil :                                                                             
+                                          !
+   !  - vérifiez que le concept fourni sous le mot-clé EVOL_NOLI contient suffisamment
+   d'instants pour interpoler le champ souhaité !
+   !                                                                                        
+                                          !
+   !                                                                                        
+                                          !
+   ! Cette erreur est fatale. Le code s'arrete.                                             
+                                          !
+   !--------------------------------------------------------------------------------------------------------------------------------!
+   
+   Validation
+   ==========
+   
+   Dans le test ZZZZ237A, après correction une erreur fatale est déclenchée.
+   On modifie le test (EVOL_NOLI trop court) et il reste OK.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz237a
+DEJA RESTITUE DANS : 11.0.17
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017254 DU 2011-07-05 10:48:21
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Anomalie a l'utilisation de MACR_LIGN_COUPE
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Erreur rencontrée sur un calcul d'agrégats à MMC à l'utilisation d'un MACR_LIGN_COUPE :
+   
+   '''
+   Si nous souhaitons récuperer la variable interne V79 ou une de ses composantes (contrainte
+   projetée sur le plan de clivage) projetée sur une ligne via MACR_LIGN_COUP, nous avons une
+   erreur Segmentation Fault (fichier erreur : Error.txt, fichier de commande :
+   2D_100G_OA_B_0.01_Q_poursuite_V79.comm).
+   Pour ce faire, nous avons calculé le champ de toutes les variables internes avec la commande :
+   SIG=CALC_ELEM(reuse =SIG,
+                 MODELE=MO,
+                 RESULTAT=SIG,
+                 OPTION='VARI_ELNO',);
+   
+   puis nous projetons tous les champs sur une ligne :
+   Sig_Cli = MACR_LIGN_COUPE(RESULTAT=SIG,
+   			  NOM_CHAM='VARI_ELNO',		  
+   			  LIGN_COUPE= _F(TYPE = 'SEGMENT', NB_POINTS = 10, COOR_ORIG = (100,500,0), COOR_EXTR =
+   (900,500,0),),);
+   
+   Est-il possible de projeter seulement la variable interne V79?
+   '''
+   
+   Analyse
+   =======
+   
+   Tout d'abord il est possible de ne relever qu'une composante d'un champ par l'utilisation
+   de NOM_CMP : cela corrige le problème.
+   
+   S'agissant de l'erreur de segmentation elle est due en fait à POST_RELEVE_T appelé par
+   MACR_LIGN_COUPE. Lorsqu'on ne précise pas de composantes, la relève sur la ligne demandée
+   est faite sur toutes les composantes (soit 81 ici), or dans POST_RELEVE_T, on trouve dans
+   un sous-programme (rvpara.f) un tableau statique de taille 50 dans lequel les composantes
+   trouvées dans le champ sont écrites.
+   Un écrasement mémoire se produit donc.
+   
+   Correction
+   ==========
+   
+   On stocke désormais les composantes relevées dans un tableau JEVEUX que l'on redimensionne
+   au besoin (taille x2 avec JUVECA). La taille initiale est fixée à 100.
+   
+   À faire en V10. Impact : rvpara.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude jointe
+DEJA RESTITUE DANS : 11.0.17
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017415 DU 2011-08-22 16:06:32
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Bug dans le filtrage NOM_CMP de MACR_LIGN_COUPE
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Suite de issue17254.
+   Dans cette fiche on a corrigé un bug dans POST_RELEVE_T qui faisait planter un
+   MACR_LIGN_COUPE. On a aussi conseillé dans cette même fiche un contournement avant que la
+   correction ne rentre en NEW11 : elle consistait à utiliser le mot-clé NOM_CMP de
+   MACR_LIGN_COUPE.
+   Malheureusement le traitement de NOM_CMP dans MACR_LIGN_COUPE est buggé.
+   
+   Détails
+   =======
+   
+     if m['NOM_CMP']!=None:
+        dictc=getattr(dictb,m['NOM_CMP'][0]).NON_VIDE()
+        lno_c2 = set(dictc.NOEUD.values())
+   
+   Si NOM_CMP ne contient qu'une seule composante alors m['NOM_CMP'] n'est plus un tuple mais
+   une chaîne de caractères et donc [0] correspond à la première lettre de la composante.
+   
+   On ne fait rien en V11 finalement car la fiche issue16749 restituée par Mathieu évitera ce
+   problème à l'avenir.
+   En V10 par contre on corrige ce problème. Impact : macr_lign_coupe_ops.py
+   
+   Validation
+   ==========
+   
+   Les tests utilisant MACR_LIGN_COUPE/NOM_CMP restent OK (3 tests).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    MACR_LIGN_COUPE/NOM_CMP
+DEJA RESTITUE DANS : 11.0.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroche     DESROCHES Xavier       DATE 09/13/2011 - 04:18:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017308 DU 2011-07-20 08:26:14
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    MODI_REPERE avec un champ EPME_ELNO
+FONCTIONNALITE
+   Anomalie :
+   --------
+   Un utilisateur voudrait passer un champ EPME_ELNO en coordonnées cylindriques 
+   avec l'opérateur MODI_REPERE,
+   et a le message suivant :
+   
+      !--------------------------------------------------------------------!
+      ! <EXCEPTION> <ALGORITH2_14>                                         !
+      !                                                                    !
+      ! champ EPME_ELNO non traité par le changement de repère cylindrique !
+      !--------------------------------------------------------------------!
+   
+   ça marche avec un champ EPSP_ELNO.
+   
+   Correction :
+   ----------
+   On ajoute EPME_ELNO ainsi que quelques autres oubliés dans chrpel comme champs 
+   traitables en repère cylindrique.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fichiers associ?s ? la fiche
+DEJA RESTITUE DANS : 11.0.17
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR colombo      COLOMBO Daniele        DATE 09/13/2011 - 04:18:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017264 DU 2011-07-07 09:10:03
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    En NEW11.00.14, le cas-test sslv315d s'arrete en erreur fatale sur Rocks.
+FONCTIONNALITE
+   L'erreur a été introduite avec la fiche 16973 dans l'algorithme de bissection utilisé pour
+   la recherche de la projection sur le fond de la fissure des points du domaine (routine
+   xprvit.f).
+   
+   La position potentielle du point projeté est localisée par deux paramètres: le segment du
+   fond auquel le point projeté appartient et la position du point sur ce segment. Le segment
+   est localisé par le numéro d'un de ses deux points d'extrémité dans la liste des points du
+   fond. En étant les points du fond ordonnés dans la liste selon une abscisse curviligne
+   définie au long du fond, le point d'extrémité utilisé est toujours le premier point
+   rencontré en parcourant le fond selon la direction définie par l'abscisse curviligne. Cela
+   implique que la valeur maximale de l'indice qui localise ce point d'extrémité dans la
+   liste est égale au nombre des points du fond dans la liste (du fond ou du morceau du fond
+   considéré dans le cas de fond formé par plusieurs morceaux) moins 1, c'est-à-dire égale à
+   la valeur de l'indice pour l'avant-dernier point de la liste.
+   
+   Au contraire actuellement cette valeur maximale est prise égale au nombre des points du
+   fond dans la liste, comme calculé à la ligne 515 de xprvit.f:
+   
+   JLIMDX = ZI(JFMULT-1+2*FON)
+   
+   Il peut donc arriver que pendant la recherche du projeté on dépasse la taille du vecteur
+   qui contienne les points du fond de la fissure, ce qui cause l'erreur «floating point error».
+   
+   Il suffit de corriger la valeur maximale de l'indice:
+   
+   JLIMDX = ZI(JFMULT-1+2*FON)-1
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    le cas test lui-mxc3xaame
+DEJA RESTITUE DANS : 11.0.17
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 09/13/2011 - 04:18:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017343 DU 2011-07-28 08:42:03
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Variable non initialisee dans CALC_MISS
+FONCTIONNALITE
+   Dans CALC_MISS, lorsque l'on post-traite en certains lieux 
+   (TYPE_RESU='TABLE'), si le chargement n'est pas fourni dans 
+   les 3 directions, il y a des concepts non initialisés que 
+   l'on cherche à détruire.
+   
+   Les réponses sont récupérées sous forme de fonction dans les 
+   directions pour lesquelles une accélération a été fournie.
+   
+   Cependant, on essaie de DETRUIRE les 3 réponses quoiqu'il 
+   arrive. On corrige cela.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    miss03a
+DEJA RESTITUE DANS : 11.0.17
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 09/13/2011 - 04:18:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016721 DU 2011-04-04 08:29:44
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Volummogramme : soucis avec TYPE_MAILLE
+FONCTIONNALITE
+   Correction dans pevolu.f (manipulation de vecteur jeveux maladroite).
+   On ne gérait pas bien le cas du filtre des mailles renvoyées par RELIEM selon la dimension
+   (2D, 3D).
+   
+   A faire en version 10 aussi, normalement report automatique de la routine, pas de
+   différence V10/V11.
+   
+   Je me suis servi de ssnv137a pour valider. J'y ajoute un POST_ELEM / VOLUMOGRAMME.
+   
+   Je joins pour Phimeca le fichier pevolu.f à livrer en v10 car je le modifie davantage pour
+   réaliser simultanément la fiche d'évolution issue16722.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv137a
+DEJA RESTITUE DANS : 11.0.18
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 09/13/2011 - 04:18:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017445 DU 2011-08-30 13:44:19
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Erreur signe modxc3xa8le DIS_VISC R5.03.17, U4.43.01, V6.08.101
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   Suite à une étude du CIPN (pose d'amortisseurs sismiques), une erreur de signe a été
+   révélée dans la valeur du coef de la loi DIS_VISC (restituée par NECS il y qq temps) et
+   indécelable par le cas-test SSND101 (V6.08.101), qui ne teste que les valeurs maxi sur un
+   cycle sinus.
+   """
+   
+   
+   Résultats faux :
+   ----------------
+   Les éléments discrets visqueux non linéaires DIS_VISC [R3.05.17], disponibles depuis la
+   version 9.0.3 (Fiche 9368) ont été développés avec une convention de signe trompeuse :
+   avec un coefficient positif on obtenait une force propulsive et non pas de rappel comme
+   cela est naturellement attendu pour un amortisseur. Aussi les déplacements des structures
+   comportant de tels éléments discrets étaient excessifs avant la correction apportée, qui
+   consiste à modifier le signe de l'effort induit.
+   
+   
+   Solution :
+   ----------
+   Il est nécessaire de modifier le signe de la force d'amortissement calculée dans la
+   routine DINON2.
+   
+   De plus, on modifie le test ssnd101a pour y ajouter 2 DYNA_NON_LINE. Dans ces deux
+   calculs, on tire sur un SEG2 dont un des noeuds est fixe. Dans un cas, on affecte un
+   amortissement type A_T_D_L et dans l'autre on utilise DIS_VISC avec les mêmes paramètres
+   d'amortissement.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.3
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.17, U4.43.01, V6.08.101
+VALIDATION
+    ssnd101a
+DEJA RESTITUE DANS : 11.0.20
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR granet       GRANET Sylvie          DATE 09/13/2011 - 04:18:37
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017400 DU 2011-08-18 17:00:34
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Plantage SNL avec resi_refe_rela en THM
+FONCTIONNALITE
+   3 bugs ont été trouvés dans la modélisation D_PLAN_HS :
+   
+   
+   - Non prise en compte des CL Neumans (ce qui entrainait des résultats faux): on corrige . 
+   - Correction d'une bug sur RESI_REFE_RELA du au catalogue de la modélisation HS
+   - Non prise en compte du post traitement des flux (te0468 et te0493)
+   
+   On crée le test wtnp127e qui traite ces 3 cas.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.32.127
+VALIDATION
+    wtnp127e
+DEJA RESTITUE DANS : 11.0.19
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroche     DESROCHES Xavier       DATE 09/13/2011 - 04:18:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017248 DU 2011-07-04 14:45:28
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TMA : Necs
+TITRE
+    Grille membranaire et matrice élastique
+FONCTIONNALITE
+   Evolution
+   =========
+   
+   Le but de cette fiche est de permettre l'utilisation du mot-clé 
+   MATRICE='ELASTIQUE' de STAT_NON_LINE avec les éléments GRILLE_MEMBRANE.
+   Actuellement, lorsque l'on utilise cette fonctionnalité, le calcul est 
+   interrompu avec le message :
+   
+   
+   !------------------------------------------------------------------------------
+   <E><CALCULEL2_70>                                                             ! 
+           
+                                                                     
+   !   le parametre: PVARCPR  n'est pas un parametre de l'option: RIGI_MECA  pour 
+   letype_element:MEGMQU4   !                                                      
+            
+               !                                                                   
+              
+   ! Cette erreur sera suivie d'une erreur fatale. 
+   !------------------------------------------------------------------------------
+   
+     
+   Modifications du code
+   =====================
+   on ajoute ZVARCPG  PVARCPR
+   en IN de l'option RIGI_MECA dans le catalogue de commande gener_megrm2.cata 
+   
+   Test de la fonctionnalité
+   =========================
+   Pour tester cette fonctionnalité, on remplace MATRICE='TANGENTE' par
+   MATRICE='ELASTIQUE' dans le cas test hsns102b.
+   Ce changement n'affecte pas les résultats du calcul.
+   
+   Impact documentaire
+   ===================
+   On a ajouté la phrase suivante au résumé de la doc V7.23.102 de la série de cas-
+   tests hsns102 : 
+   "De plus, il teste, dans la modélisation B, la fonctionnalité MATRICE=ELASTIQUE 
+   de STAT_NON_LINE pour les éléments GRILLE_MEMBRANE. "
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V7.23.102
+VALIDATION
+    hsns102b
+DEJA RESTITUE DANS : 11.0.19
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 09/13/2011 - 04:18:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017052 DU 2011-06-01 14:46:45
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    PETSC  GMRES + LDLT_INC => rxc3xa9sultats faux ?
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   '''
+   L'étude jointe est OK avec GMRES + LDLT_SP mais avec LDLT_INC et le RESI_RELA par défaut,
+   la solution est quasiment nulle (ça semble converger trop vite).
+   
+   En relançant le calcul avec RESI_RELA=1.e-11, le calcul est beaucoup plus long (500s) mais
+   il est toujours aussi faux 
+   
+   ! ---- RESULTAT         NUME_ORDRE       NOM_CHAM         NOM_CMP          GROUP_NO
+         RESU             1                DEPL             DZ               X2
+         REFERENCE        LEGENDE          VALE_REF                 VALE_CAL                
+   ERREUR    
+         TOLE
+   NOOK  NON_REGRESSION   XXXX             5.8665149369838E-04      -3.1312013963615E-12    
+   100.0%    
+         1.0E-04%
+   '''
+   
+   Explication
+   ===========
+   
+   Le problème vient effectivement du critère de convergence ou plus précisément de la norme
+   utilisée dans le critère. Dans PETSc on utilise obligatoirement : 
+    o pour les algorithmes autres que 'CG', la norme préconditionnée sqrt( (M^-1 . (b -
+   A.x)).(M^-1 . (b - A.x)) ) (c'est à dire la norme 2 du résidu préconditionné)
+    o pour 'CG', la norme 2 classique : sqrt ( (b - A.x).(b - A.x) )
+   
+   Dans le test joint par Jacques (dérivé de perf001a avec un peu moins d'équations et passé
+   en sous-intégré), j'élimine les conditions aux limites (AFFE_CHAR_CINE), la norme du
+   second membre (c'est à dire le résidu à l'itération 0) vaut alors :
+    o de l'ordre de 1.0E+69 en norme préconditionnée par LDLT_INC/NIVE_REMPLISSAGE=0
+    o de l'ordre de 1.0E+7 en norme non préconditionnée
+   
+   Ainsi en norme préconditionnée, il suffit de faire descendre le résidu sous 1.0E+63 pour
+   converger avec les paramètres par défaut. C'est ce qui se passe avec LDLT_INC alors que
+   dans le même temps, la norme 2 est elle toujours autour de 1.0E+7.
+   
+   La question qui vient à l'esprit est alors : pourquoi la norme préconditionnée est-elle
+   aussi aberrante ? Tout simplement parce que le préconditionneur l'est. En regardant le
+   maillage de plus près, on se rend compte que :
+    o la géométrie creuse du mousqueton fait qu'une dimension (l'épaisseur) est très petite
+   devant les 2 autres
+    o pour mailler cette géométrie avec un nombre raisonnable d'hexaèdres, ces derniers sont
+   très aplatis, leur qualité est donc très mauvaise, la moitié a une qualité proche de 50
+   (une qualité de 1 correspond à un cube)
+    o la conséquence de cette mauvaise qualité est un conditionnement très élevé de la
+   matrice de rigidité (supérieur à 7.E+11 selon MUMPS)
+   
+   Le très mauvais conditionnement de la matrice explique la très mauvaise qualité du
+   préconditionneur : il conduit à une norme préconditionnée très instable (elle passe de
+   1.0E+69 à 1.0E+63 très rapidement alors que la norme 2 réelle ne change pas).
+   
+   Deux chiffres qui montrent que ce type de problème est très dur pour un solveur itératif
+   même avec un préconditionneur plus robuste :
+    o GMRES + MUMPS double précision (avec une petite surcharge) : 2 itérations pour converger
+    o GMRES + MUMPS simple précision (LDLT_SP) : 290 itérations pour converger vers la même
+   solution !
+   
+   Actions
+   =======
+   
+   La norme préconditionnée reste la plus sûre. En effet, la norme non préconditionnée peut
+   aussi donner des résultats faux (pour s'en convaincre il suffit de penser à un second
+   membre très hétérogène, la norme 2 de b n'a plus de sens car elle ne permettra pas de
+   capter les erreurs sur les ddls qui ont "peu de poids"). Je l'ai vérifié sur un cas simple
+   avec 'CG' + 'JACOBI' + AFFE_CHAR_CINE. On la supprime donc pour 'CG' et tous les
+   algorithmes utilisent maintenant la norme préconditionnée.
+   
+   À la fin de chaque résolution réussie, on ajoute cependant une vérification
+   supplémentaire. Elle consiste à vérifier le critère de convergence en norme non
+   préconditionnée mais avec un RESI_RELA différent de celui donné par l'utilisateur : on
+   prend sa racine (faute de quoi ce critère ne serait jamais vérifié).
+   La non-vérification entraîne une erreur fatale.
+   
+   !-----------------------------------------------------------------------------------------------------------------!
+   ! <F> <PETSC_16>                                                                         
+                           !
+   !                                                                                        
+                           !
+   ! Solveur PETSc :                                                                        
+                           !
+   !   La résolution du système linéaire a abouti mais la solution obtenue ne vérifie pas le
+   critère de convergence. !
+   !   Cela peut arriver lorsque la matrice du système linéaire est mal conditionnée.       
+                           !
+   !                                                                                        
+                           !
+   !   Conseil : utilisez le préconditionneur 'LDLT_SP'.                                    
+                           !
+   !                                                                                        
+                           !
+   !                                                                                        
+                           !
+   ! Cette erreur est fatale. Le code s'arrete.                                             
+                           !
+   !-----------------------------------------------------------------------------------------------------------------!
+   
+   Validation
+   ==========
+   
+   Tous les tests PETSc de la base fonctionnent avec la vérification supplémentaire. Le test
+   joint à la fiche issue16597 déclenche bien l'erreur, cette fiche est donc close en même temps.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    petsc*
+DEJA RESTITUE DANS : 11.0.19
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR laverne      LAVERNE Jérôme       DATE 09/13/2011 - 04:18:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016885 DU 2011-05-04 14:57:00
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    JOINT_MECA_RUPT variable interne de post-traitement de la contrainte mxc3xa9canique
+FONCTIONNALITE
+   CONTEXTE :
+   Dans la loi JOINT_MECA_RUPT, suite à l'introduction (cf. fiche 14831) de la variable
+   interne de post-traitement permettant de connaitre la contrainte normale mécanique sans
+   l’influence de pression de fluide on avait écrit (dans lcejmr.f): VIP(11)=SIGMA(1)
+   cela est correct pour les modélisations couplées xxx_JOINT_HYME car la pression est prise
+   en compte à l'échelle de l'EF (puisque celle ci est un ddl)
+   
+   PROBLEME :
+   Mais dans le cas de figure où on est en modélisation méca pur (xxx_JOINT), la pression de
+   fluide peut être donnée par l'utilisateur comme un chargement extérieur via le mot clé
+   PRES_FLUIDE. On a, avant de définir les VI, mentionné que SIGMA(1) = SIGMA(1) -
+   PRES_FLUIDE, donc la VI11 (telle que formulée ci-dessus) prend toujours en compte le fluide.
+   
+   SOLUTION :
+   Dans lcejmr.f on met dans VI11 : 
+   
+         VIP(11) = SIGMA(1) + PRES_FLUIDE
+   
+   afin que cette VI reflète bien la contrainte mécanique sans l'influence du fluide dans le
+   cas d'une modélisation méca pur.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.3.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.3.2
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tests avec loi joint_meca_rupt
+DEJA RESTITUE DANS : 11.0.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017443 DU 2011-08-30 12:08:42
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    VERI_JACOBIEN pour les joints 3D
+FONCTIONNALITE
+   PROBLEME : 
+   ALARME sur des mailles de joint 3D distordues remonté sur le forum : 
+   http://www.code-aster.org/forum2/viewtopic.php?id=15629
+   
+   ANALYSE : 
+   Cette alarme 'CALCULEL_7' vient de l'option VERI_JACOBIEN (vérif d'un jac non nul et de
+   signe identique sur tous les pg) qui a été introduite en 9.3.5 par JP pour tous les EF y
+   compris pour les éléments de joint. L'alarme en question pouvait apparaitre ou pas selon
+   le maillage mais de toute façon, après analyse, le TE0328 de cette option était faux pour
+   les EJ 3D. (Je ne n'avais étonnement jamais rencontré cette alarme)
+   
+   SOLUTION : 
+   Après discussion avec JP nous somme tombé d'accord pour dire que cette option, comme c'est
+   le cas des coques, n'est pas valable pour ce type d'éléments d'épaisseur nulle ou quasiment.
+   Je propose de commenter celle-ci dans le catalogue des EJ3D : gener_mf3d_3.cata et d'y
+   ajouter une remarque explicative.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tous tests avec modxc3xa9lisation 3D_JOINT
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017355 DU 2011-07-29 08:54:20
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    Variable non initialisxc3xa9e dans ORIE_FISSURE
+FONCTIONNALITE
+   CONTEXTE :
+   B. Carrier (post doc THM) a mis dans wtnp125a des éléments linéiques entre les joints 2D 
+   et les mailles massives 2D THM pour imposer des conditions de flux entre le massif et la
+   fissure.
+   
+   PROBLEME :
+   Quand on va chercher à tester les mailles voisines des joints (en dim N) dans la procédure de
+   renumérotation automatique de ces derniers (ORIE_FISSURE) on fait des tests sur toutes les
+   mailles de même dim N possibles mais jamais sur des mailles de dim N-1 qui ne doivent a
+   priori 
+   pas servir à l'opération. Dans la routine conori.f l'appel de contac.f doit sortir
+   l'information 
+   LOREO0 qui indique si la maille a été réorientée dans les routines en dessous. Or, dans le
+   cas de 
+   figure ci-dessus, ce n'est pas le cas : d'où LOREO0 variable non initialisée.
+   
+   SOLUTION : 
+   Je mets LOREO0=.FALSE. dans contac.f si la maille voisine de la maille de joint n'est pas
+   de dim N.
+   Dans ce cas particulier, cela conduit ORIE_FISSURE a ne rien faire.
+   Après cette modification valgrind ne donne plus l'erreur.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tous tests avec ORIE_FISSURE
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 09/13/2011 - 04:18:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017499 DU 2011-09-07 13:51:41
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    CALC_FONC_INTERP, division par zero
+FONCTIONNALITE
+   Problème
+   --------
+   
+   On fait :
+   
+   formule = FORMULE(NOM_PARA=('TEMP','HYDR',), VALE='....')
+   
+   nappe = CALC_FONC_INTERP(FONCTION=formule, NOM_PARA='HYDR',  
+   NOM_PARA_FONC='TEMP',...)
+   
+   CALC_FONC_INTERP s'arrête avec une division par zéro. La 
+   formule fait intervenir 1/TEMP mais les valeurs fournies dans 
+   LIST_PARA_FONC sont toutes non nulles.
+   
+   
+   Correction
+   ----------
+   
+   Il y a en fait une inversion des paramètres lors de la 
+   définition de la formule.
+   Quand on souhaite produire une nappe à partir d'une formule à 
+   deux paramètres,
+   - le premier paramètre de la formule est le paramètre de la 
+   nappe,
+   - le second paramètre de la formule est le paramètre des 
+   fonctions composants la nappe.
+   
+   La nappe est donc produite avec les valeurs de TEMP pour HYDR 
+   et inversement.
+   Le fait de s'appuyer uniquement sur l'ordre des paramètres et 
+   non sur leur nom est un choix dans CALC_FONC_INTERP car cela 
+   permet aussi la surcharge des attributs de la fonction/nappe 
+   produite (changer les NOM_PARA ou NOM_PARA_FONC au passage).
+   
+   Quand il s'agit de fonction, il n'y a pas de confusion 
+   possible : on interpole f(INST) et donnant des valeurs qu'on 
+   appelle TEMP.
+   Pour les nappes/formules à deux paramètres, il y a trop de 
+   risques.
+   
+   De plus, la documentation n'est pas assez précise sur ce 
+   point. L'exemple qui montre comment interpoler une formule à 
+   deux paramètres est incorrect, il commet la même erreur !
+   
+   
+   On propose d'imposer la cohérence des noms de paramètres dans 
+   le cas de l'interpolation de nappes ou formules à deux 
+   paramètres.
+   L'inconvénient est qu'on ne pourra plus renommer les 
+   paramètres avec CALC_FONC_INTERP (on pourra faire une 
+   opération triviale dans CALC_FONCTION si besoin).
+   
+   Dans le cas du jeu de données de l'utilisateur, on aura 
+   dorénavant ce message d'erreur :
+   
+   
+   .  !---------------------------------------------------------
+   ----------------!
+   .  ! <EXCEPTION> <FONCT0_58>. . . . . . . . . . . . . . . . . 
+   . . . . . . .  !
+   .  !. . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   . . . . . . .  !
+   .  ! Erreur lors de la vérification des noms des paramètres.. 
+   . . . . . . .  !
+   .  ! Le nom du premier paramètre de la formule en entrée 
+   (dHYDR) est 'TEMP'. !
+   .  !. . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   . . . . . . .  !
+   .  ! Or vous avez demandé à créer une nappe avec 
+   NOM_PARA='HYDR'.. . . . . . !
+   .  !---------------------------------------------------------
+   ----------------!
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 8.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 8.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : u4.32.01,u4.31.05
+VALIDATION
+    test fourni
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT wtnp127e                      macocco K.MACOCCO          325    325      0
+ CASTEST MODIF hsns102b                      macocco K.MACOCCO          270      4      3
+ CASTEST MODIF ssnd101a                      macocco K.MACOCCO          535    176      5
+ CASTEST MODIF ssnd101b                      macocco K.MACOCCO          309      4      4
+ CASTEST MODIF ssnp142f                      macocco K.MACOCCO          351     13      1
+ CASTEST MODIF zzzz100a                      macocco K.MACOCCO         2034      3      3
+ CASTEST MODIF zzzz237a                      macocco K.MACOCCO          400      2      2
+CATALOGU MODIF typelem/gener_medha2          macocco K.MACOCCO          144      2      2
+CATALOGU MODIF typelem/gener_megrm2          macocco K.MACOCCO          211      2      2
+CATALOGU MODIF typelem/gener_mf3d_3          macocco K.MACOCCO          141      1      2
+ FORTRAN MODIF algorith/chrpel               macocco K.MACOCCO          951      9      3
+ FORTRAN MODIF algorith/contac               macocco K.MACOCCO           89      8      3
+ FORTRAN MODIF algorith/lcejmr               macocco K.MACOCCO          471      3      2
+ FORTRAN MODIF algorith/nmprdc               macocco K.MACOCCO          121      7      6
+ FORTRAN MODIF algorith/xprvit               macocco K.MACOCCO          837      2      2
+ FORTRAN MODIF elements/dinon2               macocco K.MACOCCO          120      5      5
+ FORTRAN MODIF elements/te0468               macocco K.MACOCCO          107      6      5
+ FORTRAN MODIF elements/te0472               macocco K.MACOCCO          470     28      2
+ FORTRAN MODIF elements/te0493               macocco K.MACOCCO          157      8      6
+ FORTRAN MODIF postrele/rvpara               macocco K.MACOCCO          672     54     21
+ FORTRAN MODIF utilitai/op0134               macocco K.MACOCCO          184     32      4
+ FORTRAN MODIF utilitai/pevolu               macocco K.MACOCCO          414     12      8
+FORTRAN90 MODIF petsc/apets4                  macocco K.MACOCCO          160      9      2
+FORTRAN90 MODIF petsc/apetsr                  macocco K.MACOCCO          410     39      8
+  PYTHON MODIF Macro/macr_lign_coupe_ops     macocco K.MACOCCO          987      9      4
+  PYTHON MODIF Messages/fonct0               macocco K.MACOCCO          399     29      2
+  PYTHON MODIF Messages/mecanonline2         macocco K.MACOCCO          111     10      3
+  PYTHON MODIF Messages/petsc                macocco K.MACOCCO          134      9      1
+  PYTHON MODIF Miss/miss_post                macocco K.MACOCCO          617      6      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         325       325              +325
+ MODIF :   28       11806       492     113      +379
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   29       12131       817     113      +704 

@@ -1,4 +1,4 @@
-#@ MODIF macr_lign_coupe_ops Macro  DATE 24/05/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF macr_lign_coupe_ops Macro  DATE 13/09/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -57,10 +57,15 @@ def crea_grp_matiere(self,groupe,newgrp,iocc,m,__remodr,NOM_CHAM,LIGN_COUPE,__ma
 
   # dictc=table (extraite de dictb) contenant uniquement des noeuds dans la matière
   if m['NOM_CMP']!=None:
-     dictc=getattr(dictb,m['NOM_CMP'][0]).NON_VIDE()
-     lno_c2 = set(dictc.NOEUD.values())
+     lnomcmp = m['NOM_CMP']
+     if type(lnomcmp) not in (list, tuple):
+        lnomcmp = [lnomcmp]
+     lno_c2 = set()
+     for comp in lnomcmp:
+        dictc = getattr(dictb, comp).NON_VIDE()
+        lno_c2.update(dictc.NOEUD.values())
   else:# TOUT_CMP='OUI'
-     # on garde uniquement les composantes pour conserver les noeuds où il y a des valeurs
+     # on enlève les colonnes de POST_RELEVE_T pour ne garder que les composantes et NOEUD
      a_suppr = set(['INTITULE', 'RESU', 'NOM_CHAM', 'NUME_ORDRE', 'INST', 'ABSC_CURV', 'COOR_X', 'COOR_Y', 'COOR_Z'])
      new_para = set(dictb.para)
      new_para.difference_update(a_suppr)
