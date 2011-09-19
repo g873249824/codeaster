@@ -5,7 +5,7 @@
       IMPLICIT  NONE
 C ----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF PREPOST  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
+C MODIF PREPOST  DATE 04/10/2011   AUTEUR MACOCCO K.MACOCCO 
 C RESPONSABLE SELLENET N.SELLENET
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -234,7 +234,11 @@ C         DETERMINATION DES NUMEROS D'ORDRE MED : ZI(JNUOM)
       IF(NNU.NE.0)THEN
         CALL WKVECT('&&OP0150_NUMORD_MED','V V I',NPAS,JNUOM)
         DO 242 J=1,NPAS
-              ZI(JNUOM+J-1)=ZI(INUM+2*J-1)
+          IF(ZI(INUM+2*J-1).NE.EDNONO) THEN
+            ZI(JNUOM+J-1)=ZI(INUM+2*J-1)
+          ELSEIF(ZI(INUM+2*(J-1)).NE.EDNONO) THEN
+            ZI(JNUOM+J-1)=ZI(INUM+2*(J-1))
+          ENDIF
 242            CONTINUE
         ENDIF
 
@@ -249,8 +253,7 @@ C       EN SORTIE DE LIRE_RESU SERA STRICTEMENT CROISSANT
         ORDINS = 1
         DO 250 ITPS = 1,NPAS0
            CHANOM = '&&LRFMED.TEMPOR'
-           K64B = '                                '//
-     &'                                '
+           K64B = ' '   
 C
            IF(NNU.NE.0)THEN
               NUMORD = ZI(JNUME+ITPS-1)

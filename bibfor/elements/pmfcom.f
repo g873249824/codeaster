@@ -10,7 +10,7 @@
      &                  MODF,SIGF,VARIP,ISECAN,CODRET)
 
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 04/04/2011   AUTEUR COURTOIS M.COURTOIS 
+C MODIF ELEMENTS  DATE 20/09/2011   AUTEUR CHEIGNON E.CHEIGNON 
 C TOLE CRP_21
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -167,7 +167,7 @@ C ---   BOUCLE COMPORTEMENT SUR CHAQUE FIBRE
             EPSM = DEFM(I)-DEPSTH
             CALL NMCB1D(EP,Y01,Y02,A1,A2,B1,B2,BETA1,BETA2,SIGF1,
      &                  CONTM(I),VARIM(IVARI),EPSM,
-     &                  DEFP(I),MODF(I),SIGF(I),VARIP(IVARI))
+     &                  DEFP(I),MODF(I),SIGF(I),VARIP(IVARI),CRIT)
 20       CONTINUE
 
 

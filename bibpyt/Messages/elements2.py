@@ -1,4 +1,4 @@
-#@ MODIF elements2 Messages  DATE 19/01/2011   AUTEUR MASSIN P.MASSIN 
+#@ MODIF elements2 Messages  DATE 20/09/2011   AUTEUR CHEIGNON E.CHEIGNON 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -48,7 +48,7 @@ cata_msg = {
 """),
 
 37 : _("""
- pas de zero, convergence impossible
+ L'endommagement ne peut pas être supérieur à 1.
 """),
 
 38 : _("""

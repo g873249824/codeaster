@@ -1,0 +1,954 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR voldoire     VOLDOIRE François     DATE 09/20/2011 - 05:48:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017256 DU 2011-07-05 15:35:59
+TYPE anomalie concernant Code_Aster (VERSION 10.6)
+TMA : Necs
+TITRE
+    Labord_1D : correction dichotomie ; remonter parametres algo integration dans COMP_INCR
+FONCTIONNALITE
+   Cette fiche avait pour but de reporter les récents changements apportés à la loi de
+   comportement LABORD_1D : 
+   
+   - remonter des paramètres pour utilisateur 
+   - correction de la résolution par dichotomie
+   
+   Les modifications sont donc les mêmes que pour la fiche 16566 et prennent en compte la
+   correction apportée par la fiche 17263.
+   
+   SOURCES MODIFIEES :
+   
+   pmfcom.f
+   nmcb1d.f
+   nmcb13.f
+   elements2.py
+   
+   CAS TESTS :
+   
+   Quelques valeurs de références des TEST_RESU ont été modifiées dans les fichiers de
+   commande ssns106j.comm et ssns106h.comm.
+   Ces modifications sont en conformité avec la version NEW11.
+   
+   IMPACT DOCUMENTAIRE :
+   
+   aucun : cela a été fait avec le version NEW11
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.7.8
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    SSNL120
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR haelewyn     HAELEWYN Jessica       DATE 10/03/2011 - 02:25:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017517 DU 2011-09-12 11:04:30
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    Retrait de séchage et d'hydratation non pris en compte avec COMP_ELAS
+FONCTIONNALITE
+   Problème :
+   Lors d'un calcul de retrait de dessiccation, on utilise STAT_NON_LINE avec COMP_ELAS. L'unique chargement 
+   est un champ de concentration en eau (AFFE_VARC). Là où on devrait observer des déformations dues au 
+   retrait, les déformations calculées sont nulles.
+   Avec COMP_INCR, le retrait de dessiccation est bien calculé.
+   
+   Dans la routine NMELNL, seule la déformation due à la dilatation thermique est prise en compte. On observe 
+   très bien le problème en remplaçant COMP_INCR par COMP_ELAS dans le cas-test ssla103a.
+   
+   Solution:
+   Les retraits de dessiccation (SECH) et endogène (HYDR) sont ajouté dans COMP_ELAS comme c'est fait pour la 
+   température.
+   Modification de nmelnl.f
+   Le calcul des retraits n'est pas possibles pour le cas de la sensibilité donc un message d'erreur est 
+   ajouté dans sensibilite.py
+   Le castest existant ssla103 pour le retrait de dessication est utilisé pour valider sur COMP_ELAS.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.06.103
+VALIDATION
+    ssla103a et b
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR debonnieres  DE BONNIERES Philippe   DATE 10/04/2011 - 05:38:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017597 DU 2011-09-26 12:36:33
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Report des corrections de issue17275 sur LEMAITRE_IRRA
+FONCTIONNALITE
+   Pour le calcul des déformations des assemblages combustibles on 
+   souhaite mémoriser
+   l'historique du champ d'irradiation vécu par chaque assemblage.
+   
+   Dorénavant, le calcul du champ de fluence au pas courant est obtenu par 
+   la relation :
+   IRRA(propre à l'assemblage) = VI(t-) + (IRRA(t+) - IRRA(t-)),
+   
+   tandis qu'auparavant on écrivait :
+   IRRA(propre à l'assemblage) = IRRA(t+).
+   
+   Dans le cas des simulations avec des conceptions d'assemblages ayant 
+   subi un nombre de
+   cycles différents, les caractéristiques matériaux étaient fausses 
+   (correspondant à un
+   matériau ayant subi plus d'irradiation).
+   
+   Pour les lois DIS_GRICRA, VISC_IRRA_LOG et GRAN_IRRA_LOG, cela a ete 
+   fait par Romeo.
+   
+   pour UMAT et ZMAT, c'est au programmeur de ces lois "utilisateur" de 
+   placer
+   dans les variables internes la fluence atteinte à un instant donné. On 
+   ne
+   peut rien faire de générique dans ce cas (s'il se présente un jour...)
+   
+   Pour IRRAD3M : c'est ok.
+   Pour cette loi de comportement IRRAD n'est pas une fluence mais un 
+   champ de "dpa"
+   (déplacement par atome), l'utilisateur fait l'intégration dans son 
+   fichier de commande.
+   De plus IRRAD est mémorisé dans une variable interne, et on vérifie que 
+   IRRAD ne peut que
+   croître.
+   
+   pour Gatt-Monerie, il n'y a pas de dépendance à la fluence.
+   
+   pour LMARC_IRRA, la fluence est déjà stockée dans les variables
+   internes.
+   
+   pour LEMA_SEUIL, cela ne presente pas d'interet pour l'instant (selon 
+   Sylvain Leclercq).
+   
+   pour la loi LEMAITRE_IRRA, je stocke la fluence dans la seconde 
+   variable interne qui jusqu'à présent était inutilisée.
+   Je modifie pour cela la routine NMVPIR comme indiqué ci-dessus.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.09 U4.51.11
+VALIDATION
+    COMP010E, SSNL109A, SSNL109B, SSNL121A, SSNL121B, SSNL121C, SSNL124A
+DEJA RESTITUE DANS : 11.0.24
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 10/04/2011 - 05:38:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017498 DU 2011-09-07 13:48:17
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    LIRE_RESU format MED : probleme pour la lecture d'un fichier issu de Saturne
+FONCTIONNALITE
+   Problème :
+   ----------
+   Problème à la lecture d'un fichier de résultats MED issue de Code_Saturne.
+   
+   
+   Analyse et solution :
+   ---------------------
+   Le fichier est composé d'un unique champ muni d'une unique composante avec plusieurs pas
+   de temps.
+   
+   Dans MED, il y a deux notions distinctes : la notion de numéro d'ordre et celle de numéro
+   de pas de temps. Pour définir une séquence de calcul au sens MED, il faut donner un des
+   deux nombres (numéro d'ordre ou numéro de pas de temps) ou les deux. Si on ne souhaite
+   n'en donner qu'un, l'autre doit valoir -1.
+   
+   Dans Aster par défaut, lorsqu'on imprime un champ, on donne toujours les deux en faisant
+   en sorte que numéro d'ordre soit égale au numéro de pas de temps. Dans le fichier de
+   Code_Saturne ce n'est pas le cas. On a donc des valeurs pour le numéro d'ordre et -1 pour
+   le numéro de pas de temps.
+   
+   Premier point, aujourd'hui LIRE_RESU se débrouille mal dans ce cas. Il est nécessaire de
+   corriger LRFMED pour faire en sorte que lorsqu'il détecte un -1, il switch automatiquement
+   sur l'autre valeur pour déterminer le numéro d'ordre au sens Aster. Mais ce n'est pas
+   l'unique problème.
+   
+   Le problème suivant vient du fait que les numéros d'ordre présents dans le fichier MED en
+   question sont supérieurs à 999 999 or il n'est pas possible de créer un champ dans une
+   structure de données résultat avec un numéro d'ordre aussi grand (cf. D4.06.09).
+   
+   Dans le fichier qui nous intéresse, il n'y a que 5 numéros d'ordre mais tous supérieurs à
+   999 999. Si, dans les sd_resultat, les notions de numéro de rangement et de numéro d'ordre
+   étaient distinctes, on pourrait facilement relire ce fichier. En effet, on aurait des
+   numéros de rangement qui iraient de 0 à 4 et des numéros d'ordre égaux à ceux relus dans
+   le fichier MED. Or ce n'est pas le cas aujourd'hui. De plus, on utilise le numéro d'ordre
+   pour donner le nom du champ dans la sd_resultat (ex : 'RESU    .001.000001'). On code donc
+   le numéro d'ordre sur 6 caractères.
+   
+   Pour résoudre le problème, il est nécessaire de rendre distinctes les notions de numéro de
+   rangement et de numéro d'ordre. Pour ce faire il faut modifier RSUTCH et RSUTOR.
+   
+   A noter qu'il est nécessaire de modifier MODE_ITER_SIMULT qui fait des RSEXCH sans faire
+   de RSNOCH. Ce qui avec mes modifications n'est plus possible. En effet, c'est RSNOCH qui
+   enrichi réellement la sd_resultat d'un nouveau numéro de rangement. Sans cet
+   enrichissement, RSEXCH renvoit toujours le même nom de champ même si on change le numéro
+   d'ordre donné en paramètre car le nombre de numéro de rangement n'a pas changé.
+   
+   
+   Source modifiées :
+   ------------------
+   lrfmed.f rsutch.f rsutor.f semoco.f semore.f vpstor.f
+   zzzz208a.comm zzzz223a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste compl?te
+DEJA RESTITUE DANS : 11.0.22
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR meunier      MEUNIER Sébastien     DATE 10/04/2011 - 05:38:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017463 DU 2011-09-02 07:13:25
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Bug routine dpvpdi.f
+FONCTIONNALITE
+   Objet de la fiche :
+   ===================
+   
+   Il y a un bug dans la routine dpvpdi.f au niveau du test l.58. Le changement introduit
+   dans la fiche issue15831 n'est pas bon.
+   
+   Cette routine sert à calculer la contribution de la déformation thermique
+   
+   alpha*[(T+ - Tref) - (T- - Tref)]
+   
+   au tenseur des déformations.
+   
+   Si alpha est non nul et qu'au moins une des valeurs T+, T- ou Tref a une valeur finie,
+   c'est que l'utilisateur s'est trompé dans ses données.
+   
+   Le test à faire l.58 est donc :
+   
+    ELSEIF   (((IISNAN(TR).EQ.0).OR.(IISNAN(TD).EQ.0).OR.
+   &         (IISNAN(TF).EQ.0)).AND.(ALPHA.NE.0.D0)) THEN
+     CALL U2MESS('F','CALCULEL_15')
+   
+   La correction est à reporter en STA.
+   
+   Impact doc :
+   ============
+   Je modifie la doc d6.00.01 sur la fonction isnan pour être en cohérence avec la fiche
+   issue9875 :
+   isnan(x) rend un entier=/0 si x est Nan
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : d6.00.01
+VALIDATION
+    test BRGM Darius
+DEJA RESTITUE DANS : 11.0.22
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR massin       MASSIN Patrick         DATE 10/04/2011 - 05:38:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016808 DU 2011-04-21 13:06:40
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Bug potentiel dans XRELL2 et XSELLA
+FONCTIONNALITE
+   Effectivement sans doute un bug de dimensionnement:
+   Dans xrell2, initialisation faite de NOEUD:
+   
+         DO 200 I=1,2*NAR
+           SCORNO(I)=0
+           NOEUD(I)=0
+    200  CONTINUE
+   
+   Idem dans xsella ou on passe :
+   NOEUD(NBNO) à NOEUD(2*NARZ)
+   
+   et où l'on initialise de la même manière
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Cas-tests XFEM
+DEJA RESTITUE DANS : 11.0.22
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 10/04/2011 - 05:38:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017572 DU 2011-09-21 17:14:00
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORMA] Mauvais message d'erreur en cas de dépassement de la courbe de traction
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Dans la formation non-linéaire, on s'est aperçu que le message d'erreur suivant pouvait
+   apparaître lorsque que le prolongement à droite de la courbe de traction était exclus : 
+   
+   !------------------------------------------------------------------------!
+   ! <EXCEPTION> <MODELISA6_60>                                             !
+   !                                                                        !
+   ! Le prolongement à droite étant exclu pour la fonction trac_b,          !
+   !   il n'est pas possible d'extrapoler la fonction R(p) en p = 0.000000. !
+   !------------------------------------------------------------------------!
+   
+   Analyse
+   =======
+   
+   En fait c'est parce que on affiche comme indication la valeur de la déformation plastique
+   cumulée P à cet instant donné alors qu'il faudrait afficher la dernière abscisse de la
+   fonction R(p).
+   
+   On propose donc de modifier le message en conséquence : 
+   
+   il n'est pas possible d'extrapoler la fonction R(p) au delà de p = XXXX.
+   
+   avec XXXX=ZR(JP-1+NBVALE) dans rcfonc.f
+   
+   Impact
+   ======
+   
+   rcfonc.f à faire en V10
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    forma03
+DEJA RESTITUE DANS : 11.0.24
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017539 DU 2011-09-15 08:43:48
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Jacobien negatif dans le calcul d'erreur en thermique
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Sur un calcul d'estimateur d'erreur en thermique sur un parallélépipède maillé en TETRA10 :
+   
+   '''
+   Pourquoi ces messages d'alarme sur un jacobien négatif dans le calcul d'erreur ?
+   Les triangles de peau sont orientés correctement, les tétraèdres ont une qualité comprise
+   entre 1.17 et 2.19, donc très bonne. Je ne comprends pas le message. Erreur réelle ?
+   Message mal émis ?
+   '''
+   
+   Analyse
+   =======
+   
+   Il y a effectivement un bug dans la routine UTJAC pour le calcul du Jacobien en 3D :
+   
+       74	      IDFDK = IDFDE + 1
+       75	      IDFDN = IDFDK + 1
+   ...
+      110	            G(1,J) = G(1,J) + XP * DFRDE
+      111	            G(3,J) = G(3,J) + XP * DFRDK
+      112	            G(2,J) = G(2,J) + XP * DFRDN
+   
+   En 6.3.15 dans issue6115, on a inversé G(2,.) et G(3,.) sans inverser les dérivées des
+   fonctions de forme (DFRDK est la dérivée par rapport à la 2ème composante et elle aide à
+   calculer G(3,.)) pour une raison que je ne comprends pas.
+   En effet on calcule alors le Jacobien comme le déterminant d'une matrice qui n'est pas la
+   matrice Jacobienne mais une matrice identique à une permutation de ligne près (le Jacobien
+   calculé est donc l'opposé du vrai Jacobien).
+   
+   Validation
+   ==========
+   
+   Tous les tests appelant la routine incriminée. Il s'agit essentiellement des estimateurs
+   d'erreur en thermique, THM et quantités d'intérêt.
+   
+   Aucun test n'est cassé car l'information renvoyée par UTJAC (signe du jacobien) n'est
+   jamais utilisée en 3D dans le code :
+   te0003 utjac subr : en 3D on ne s'en sert pas
+   te0377 utjac subr : programmé en 2D uniquement
+   te0378 utjac subr : idem
+   te0382 utjac subr : idem
+   te0497 utjac subr : idem
+   
+   Cependant un test de la base émet désormais cette alarme : il s'agit de TPLL01J.
+   En effet dans ce test les éléments (TETRA10) ont un jacobien négatif (ce qui est donc
+   mauvais car induisant des estimateurs faux) car la numérotation des mailles n'est en
+   accord avec la logique Aster (cf U3.01.00) !
+   
+   Afin de ne pas faire apparaître une telle alarme, on modifie donc le maillage (inversion
+   des 2èmes et 3èmes noeuds) pour renuméroter correctement les tétraèdres afin que leur
+   Jacobien soit > 0.
+   Cela a pour effet de changer la valeur de l'estimateur d'erreur et donc d'impacter
+   l'adaptation. On change donc les valeurs de non-régression sur l'estimateur d'erreur absolu.
+   De plus on augmente le pourcentage de mailles raffinées (passage de 5 à 10%) pour faire en
+   sorte que l'estimateur d'erreur diminue bien là où on le teste (après correction du
+   maillage, l'estimateur d'erreur stagnait ce qui aurait pu surprendre les utilisateurs
+   étudiant ce test à des fins didactiques).
+   
+   V10
+   ===
+   
+   Impact : utjac.f tpll01j.mail tpll01j.comm
+   
+   Résultats faux
+   ==============
+   
+   Il n'y a pas de résultats faux au sens strict. Cependant on a pu calculé des estimateurs
+   d'erreur faux dans la mesure où l'alarme censée prévenir l'utilisateur de jacobiens
+   négatifs n'était pas émise.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout estimateur
+DEJA RESTITUE DANS : 11.0.24
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 10/04/2011 - 05:38:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017559 DU 2011-09-20 07:49:24
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Clarifier le retour de iisnan
+FONCTIONNALITE
+   Problème également soulevé par issue17552.
+   
+   
+   La fonction IISNAN de Code_Aster est un chapeau de la fonction 
+   C "isnan". La spec de isnan dit :
+   
+     int isnan(fpval): Returns nonzero if fpval is not a number
+   
+   Du coup, il est dangereux de tester :
+     IF (IISNAN(ZR(JCELV-1+K)).EQ.1
+   ou :
+     IF (IISNAN(ZR(JCELV-1+K)).GT.0
+   
+   On modifie iisnan pour qu'il retourne 1 si fpval n'est pas un 
+   NaN, et 0 si c'est un NaN.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    erreu06a
+DEJA RESTITUE DANS : 11.0.24
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 10/04/2011 - 05:38:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017324 DU 2011-07-25 16:17:43
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    bug dans schéma adaptif ADAPT_ORDRE2 de DYNA_LINE_TRAN
+FONCTIONNALITE
+   Le schéma en question permet de réduire ou d'augmenter la taille du pas de temps utilisé
+   dans un schéma des différences centrées selon un indicateur d'erreur.
+   Lors d'une boucle de type DO WHILE, on peut itérer pour réduire le pas de temps tant que
+   l'erreur n'est pas acceptable, ce qui donne la série P(1),..,P(n) des pas de temps "tentés".
+   
+   --------------------------------------------
+   
+   Problème :
+   
+   Il existe un nombre maximum d'itération qui fait sortir de la boucle par sécurité. Lorsque
+   ce cas arrive, on réduit le pas de temps par le coefficient de correction, SANS REPASSER
+   dans la boucle d'intégration temporelle et on sauvegarde les résultats calculés pour un
+   pas de temps P(n-1) à un pas de temps P(n)...
+   
+   ---------------------------------------------
+   
+   Solution :
+   
+   Une petite correction est nécessaire pour récupérer le pas de temps précédemment tenté
+   P(n-1) et qui a effectivement été utilisé, uniquement dans le cas où on a atteint le
+   nombre maximum de réduction du pas de temps.
+   
+   ELSE IF (ERR .GT. 1.D0 .AND. NR .GE. NRMAX) THEN
+   DT2 = DT2 * CDP
+   
+   Il suffit de remultiplier par le coefficient de réduction pour récupérer le vrai pas de
+   temps utilisé.
+   
+   -------------------------------------------
+   
+   Impact sur les calculs :
+   
+   Ce bug introduit une erreur uniquement si on utilise DYNA_LINE_TRAN avec le schéma adaptif
+   sur le pas de temps ADAPT_ORDRE2, et uniquement si on atteint la limite de redécoupage.
+   Cette erreur consiste en calculer des grandeurs à T1, et à dire que ces grandeurs sont en
+   fait calculées à T1BIS < T1. Mais comme on est en présence d'un schéma explicite, et que
+   les pas de temps sont déjà extrêmement petits, cette erreur est extrêmement faible. Le
+   cas-test sdld22b (le seul de la base de cas-tests à être dans ce cas) est quasiment
+   inchangé (une erreur passe de 6% à 6,2%, la plupart restant en fait inchangées).
+   On peut reporter ça dans la version précédente du code.
+   
+   
+   Sources :
+   dladap.f
+   
+   Jours travaillés :
+   0.2
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdld22b
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 10/04/2011 - 05:38:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017507 DU 2011-09-08 15:55:15
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Plantage dans FIN(retassage et format_hdf)
+FONCTIONNALITE
+   L'étude, passée en parallèle MPI, s'arrête brutalement dans la commande FIN avec des
+   messages d'erreur émis par le solveur PETSC.
+   
+   Analyse du problème :
+   ===================
+   
+   Après avoir désactivé la détection des signaux par la librairie PETSC, en introduisant un
+   fichier .petscrc contenant la ligne : "-no_signal_handler" sous le compte de lancement de
+   l'étude, on a constaté que l'erreur se produisait dans la routine effectuant un retassage
+   des enregistrements sur la base GLOBALE.
+   Lors de la manipulation des enregistrements du fichier d'accès direct, les objets système
+   caractéristiques de la base ($$CARA) et adresses disque ($$IADD) changeaient d'adresse
+   disque et de longueur, ce qui entrainait un arrêt brutal lors des requêtes sur les objets
+   JEVEUX.
+   Après instrumentation du code, en faisant appel à la routine JEPREG pour suivre le contenu
+   d'un enregistrement particulier (en imprimant le chainage des objets JEVEUX :
+   identificateur de collection, identificateur d'objet simple et longueur du segment de
+   valeurs), la routine de libération de la mémoire dynamique JJLDYN a été identifiée comme
+   étant la source du problème (en faisant appel à la fonction TRACBK systématiquement après
+   chaque impression du chainage des enregistrements). 
+   La routine JJLDYN était appelée lors de l'agrandissement du répertoire de noms de la base
+   GLOBALE (l'exécution génére l'appel de 3172 commandes), lors de cet appel on provoque la
+   libération de tous les segments de valeurs en mémoire marqués X A (accès en lecture seule)
+   ou X D (accès en lecture/écriture). L'écriture sur disque des objets de collection étaient
+   incorrecte, l'identificateur de collection valait 0, d'où la confusion avec les objets
+   systémes. 
+   
+   
+   Corrections effectuées :
+   ========================
+   
+   On corrige l'appel à JXECRO dans JJLDYN :
+   
+   185c185
+   <                       CALL JXECRO ( IC, IADMOC, IADDI, LSV, J, K)
+   ---
+   >                       CALL JXECRO ( IC, IADMOC, IADDI, LSV, 0, K)
+   
+   On ajoute un format d'impression dans la fonction d'impression du contenu des enregistrements.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude fournie avec l'anomalie
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017053 DU 2011-06-01 15:35:23
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] Plantage EXTR_RESU en sdveri='oui'
+FONCTIONNALITE
+   Plantage avec SD_VERI="OUI" avec EXTR_RESU.
+   
+   Analyse du problème :
+   =====================
+   La structure de données engendrée par EXTR_RESU est vide quand le mot clé ARCHIVAGE est
+   absent. La vérification de la SD échoue.
+   
+   Correction apportée :
+   =====================
+   On rend obligatoire le mot clé ARCHIVAGE pour obliger l'utilisateur à désigner les champs
+   à extraire et obtenir une structure de données non vide.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.71.04
+VALIDATION
+    etude fournie avec la fiche
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 10/04/2011 - 05:38:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 015156 DU 2010-06-04 12:53:26
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Reorganisation des tests FORMA
+FONCTIONNALITE
+   Demande :
+   =======
+   Suite à la dernière formation, on s'est aperçu que les tests FORMA n'étaient pas le reflet
+   de ce qui est fait en formation.
+   
+   Évolution :
+   =========
+   Dans cette fiche, on se propose de réorganiser les tests FORMA (et supprimer ce qui est
+   obsolescent).
+   
+   Ce qui donne :
+   forma01 -> forma02
+   forma02 -> forma10 
+   forma04 -> forma20
+   forma05 -> forma21
+   forma06 -> suppr
+   forma08 -> suppr
+   forma09 -> forma30
+   
+   Finalement lorsque chaque responsable de TP de la formation aura restitué son TP on aura :
+   forma01 -> plaque trouée en élasticité + adaptation
+   forma02 -> tuyau en thermoméca et dynamique
+   forma03 -> plaque trouée en plasticité
+   forma04 -> contact
+   forma05 -> rupture 1
+   forma06 -> rupture 2
+   forma07 -> rupture 3
+   forma10 -> trajet de chargement (support au cours)
+   
+   Bien qu'évolution, cette fiche est à faire en 10 car la formation se fait avec cette
+   version (qui est la version d'exploitation) et il nous reste au moins 3 sessions de
+   formation avant de passer à la V11.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v6.03.119 v6.03.120 v6.03.112 v7.20.101 v7.20.100
+VALIDATION
+    passage des tests
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 10/04/2011 - 05:38:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017591 DU 2011-09-23 14:13:44
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    Probleme INDIIS et CALC_G
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   A la ligne 194 d'OP0100, il y a une mauvaise utilisation de la routine INDIIS. Il y a très
+   probablement une inversion d'arguments. On appelle INDISS :
+   
+   INDIIS(ZI(IVEC),NUTROU,LONVEC,1)
+   
+   Je pense que LONVEC et 1 devraient être inversés. Sinon, on cherche la LONVECième
+   occurence de NUTROU dans une liste de longueur 1 qui commence à ZI(IVEC).
+   
+   
+   Solution :
+   ----------
+   
+   Cette recherche est effectutée dans CALC_G, dans le cas ou le chargement provient de
+   MACRO_ELAS_MULT.
+   Le seul test CALC_G + MACRO_ELAS_MULT est le sslp310a, pour lequel LONVEC = 1.
+   
+   On corrige l'appel à INDISS :     
+              IIND=INDIIS(ZI(IVEC),NUTROU,1,LONVEC)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sslp310a
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 10/04/2011 - 05:38:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017554 DU 2011-09-19 13:03:06
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Routine RCVALE tres imprudente. Resultats faux ?
+FONCTIONNALITE
+   Problème :
+   ----------
+   Si un utilisateur définit un paramètre matériau comme une fonction de certains paramètres
+   et si ces paramètres ne sont pas tous fournis lors de l'évaluation de la fonction, la
+   routine RCVALE peut parfois rendre une valeur fantaisiste (non initialisée) sans alerter
+   le programmeur.
+                                                                                            
+                                                                                 
+                                                                                            
+                                                                                 
+   Analyse :
+   ---------
+   Dans la routine RCVALE, on appelle la routine FOINTE pour évaluer les paramètres matériaux
+   qui sont des fonctions.
+   La routine FOINTE est "exemplaire" : selon la valeur du paramètre CODMES='F'/'A', soit
+   elle s'arrete en émettant un message d'erreur clair (paramètre non fourni par exemple),
+   soit elle rend un code retour non nul pour signaler un problème.
+                                                                                            
+                                                                                 
+   Le problème est que RCVALE ne vérifie pas le code retour de FOINTE
+                                                                                            
+                                                                                 
+   Quand on regarde la programmation des routines RCVALA/C (pour les matériaux codés), on
+   voit qu'elles appellent FOINTA pour évaluer les fonctions.
+   La routine FOINTA n'a pas d'argument de type CODMES : si l'évaluation échoue, le code
+   s'arrete.
+                                                                                            
+                                                                                 
+   Ce comportement me semble plus prudent que celui de RCVALE qui transmet l'argument IARRET
+   de RCVALE comme CODMES pour FOINTE.
+   En effet, l'argument IARRET de RCVALE doit plutot etre compris comme :
+      Si le paramètre (réel, complexe ou fonction) n'a pas été fourni par l'utilisateur :
+        si IARRET > 0  => erreur fatale
+        si IARRET = 0  => code retour > 0
+      Si le paramètre est une fonction fournie par l'utilisateur mais que son évaluation échoue :
+        => erreur fatale dans tous les cas
+                                                                                            
+                                                                                 
+                                                                                            
+                                                                                 
+   Correction :
+   ------------
+   On modifie RCVALE pour appeler systématiquement FOINTE avec CODMES='F'.
+   Il n'y a donc plus lieu de tenir compte de son code retour qui doit etre 0.
+                                                                                            
+                                                                                 
+                                                                                            
+                                                                                 
+   Résultats faux ?
+   ----------------
+   Heureusement, la plupart des routines qui appellent RCVALE le font avec un argument IARRET
+   > 0.
+   Dans ce cas, s'il y a un problème lors de l'évaluation de la fonction, le code s'arrete en
+   erreur fatale.
+                                                                                            
+                                                                                 
+   Il existe 8 routines qui appellent RCVALE avec KSTOP=0 avec l'intention de tester le
+   code-retour.
+   Ces 8 routines sont utilisées dans les 4 commandes :
+     CALC_FATIGUE
+     DEFI_GLRC
+     POST_RCCM
+     DEFI_COQU_MULT
+                                                                                            
+                                                                                 
+   Dans ces commandes, il n'y a pas de paramètres possibles pour évaluer les fonctions :
+   INST, TEMP, X, Y, Z  (i.e. rien ne "bouge" !) et c'est pour cela que ces 8 routines
+   appellent RCVALE avec NBPAR=0.
+   Il n'y a donc aucune raison d'utiliser des fonctions et il n'est pas grave d'oublier
+   d'utiliser le code retour de FOINTE puisqu'on ne doit pas y passer !
+                                                                                            
+                                                                                 
+   En résumé, le problème peut se résumer à :
+   Si un utilisateur utilise par erreur des paramètres matériau qui sont de vraies
+   "fonctions" dans les commandes CALC_FATIGUE, DEFI_GLRC, POST_RCCM, DEFI_COQU_MULT, le code
+   ne l'arrete pas en erreur alors qu'il le devrait.
+   Il s'agit donc d'un manque de blindage.
+                                                                                            
+                                                                                 
+   Remarque :
+   ----------
+   J'ai également regardé l'usage de RCVALE dans les macros python : il n'y a pas de
+   problèmes, car tous les appels se font avec KSTOP > 0.
+                                                                                            
+                                                                                 
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  17554
+     rcvale.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    rien de particulier
+NB_JOURS_TRAV  : 0.8
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017557 DU 2011-09-19 17:00:31
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Prevenir erreur blocage affe_char_cine
+FONCTIONNALITE
+   Problème :
+    ----------
+    Si on se trompe dans le nom des composantes bloquées par AFFE_CHAR_CINE et que cela
+   conduit à créer une charge cinématique "vide", la commande AFFE_CHAR_CINE émet une simple
+   alarme (CALCULEL_9) mais si on utilise ensuite STAT_NON_LINE,le plantage est obscur
+   (assert dans nmpcin.f)
+                                                                                            
+                           
+    Analyse :
+    ---------
+    J'ai modifié il y a quelques temps AFFE_CHAR_CINE pour que cette commande puisse produire
+   une structure de donnée vide : l'erreur CALCULEL_9 a été transformée en alarme.
+    Cette évolution est nécessaire pour pouvoir utiliser CAAY.
+                                                                                            
+                           
+    Mais, si cette évolution est suffisante pour utiliser MECA_STATIQUE, elle ne n'est pas
+   pour STAT_NON_LINE.
+    Du coup, pour CAAY, je suis obligé de surcharger la routine liscad.f si je ne veux pas
+   etre arreté.
+                                                                                            
+                           
+    Correction :
+    ------------
+    Je propose de revenir en arrière :
+    CALCULEL_9 : <A> -> <F>  Ce qui facilitera la vie des utilisateurs étourdis d'Aster.
+                                                                                            
+                           
+    En ce qui concerne CAAY, ce n'est pas bien grave car actuellement, CAAY est une surcharge
+   de la STA10.
+                                                                                            
+                           
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  17557
+     chcsur.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fichiers joints
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+       C MODIF utilitai/envima               macocco K.MACOCCO          200      7      3
+ CASTEST AJOUT forma02c                      macocco K.MACOCCO          335    335      0
+ CASTEST AJOUT forma02d                      macocco K.MACOCCO          321    321      0
+ CASTEST AJOUT forma10a                      macocco K.MACOCCO          141    141      0
+ CASTEST AJOUT forma10b                      macocco K.MACOCCO          165    165      0
+ CASTEST AJOUT forma20a                      macocco K.MACOCCO          361    361      0
+ CASTEST AJOUT forma20b                      macocco K.MACOCCO          363    363      0
+ CASTEST AJOUT forma20c                      macocco K.MACOCCO          324    324      0
+ CASTEST AJOUT forma21a                      macocco K.MACOCCO          330    330      0
+ CASTEST AJOUT forma21b                      macocco K.MACOCCO          363    363      0
+ CASTEST AJOUT forma30a                      macocco K.MACOCCO          162    162      0
+ CASTEST AJOUT forma30b                      macocco K.MACOCCO          374    374      0
+ CASTEST MODIF forma02a                      macocco K.MACOCCO          253    227    117
+ CASTEST MODIF forma02b                      macocco K.MACOCCO          275    252    143
+ CASTEST MODIF ssla103a                     haelewyn J.HAELEWYN         254     45      1
+ CASTEST MODIF ssla103b                     haelewyn J.HAELEWYN         260     46      1
+ CASTEST MODIF ssns106h                     cheignon E.CHEIGNON         910      4      4
+ CASTEST MODIF ssns106j                     cheignon E.CHEIGNON        1415      3      3
+ CASTEST MODIF tpll01j                       macocco K.MACOCCO          132     30     24
+ CASTEST MODIF zzzz208a                      macocco K.MACOCCO          534      5      5
+ CASTEST MODIF zzzz223a                      macocco K.MACOCCO          174      3      3
+ CASTEST SUPPR forma01a.comm                 macocco K.MACOCCO          253      0    253
+ CASTEST SUPPR forma01b.comm                 macocco K.MACOCCO          275      0    275
+ CASTEST SUPPR forma01c.comm                 macocco K.MACOCCO          336      0    336
+ CASTEST SUPPR forma01d.comm                 macocco K.MACOCCO          321      0    321
+ CASTEST SUPPR forma04a.comm                 macocco K.MACOCCO          361      0    361
+ CASTEST SUPPR forma04b.comm                 macocco K.MACOCCO          362      0    362
+ CASTEST SUPPR forma04c.comm                 macocco K.MACOCCO          323      0    323
+ CASTEST SUPPR forma05a.comm                 macocco K.MACOCCO          330      0    330
+ CASTEST SUPPR forma05b.comm                 macocco K.MACOCCO          363      0    363
+ CASTEST SUPPR forma06a.comm                 macocco K.MACOCCO           94      0     94
+ CASTEST SUPPR forma06b.comm                 macocco K.MACOCCO          189      0    189
+ CASTEST SUPPR forma08a.comm                 macocco K.MACOCCO          119      0    119
+ CASTEST SUPPR forma08b.comm                 macocco K.MACOCCO          517      0    517
+ CASTEST SUPPR forma09a.comm                 macocco K.MACOCCO          163      0    163
+ CASTEST SUPPR forma09b.comm                 macocco K.MACOCCO          375      0    375
+CATALOPY MODIF commande/extr_resu            macocco K.MACOCCO           76      3      3
+ FORTRAN MODIF algeline/vpstor               macocco K.MACOCCO          375      5      2
+ FORTRAN MODIF algorith/dladap               macocco K.MACOCCO          554      3      2
+ FORTRAN MODIF algorith/dpvpdi               macocco K.MACOCCO           63      4      4
+ FORTRAN MODIF algorith/nmelnl              haelewyn J.HAELEWYN         494     37     37
+ FORTRAN MODIF algorith/nmvpir               macocco K.MACOCCO          555     12      1
+ FORTRAN MODIF algorith/semoco               macocco K.MACOCCO          401      3      2
+ FORTRAN MODIF algorith/semore               macocco K.MACOCCO          471      3      2
+ FORTRAN MODIF algorith/xrell2               macocco K.MACOCCO          380      2      1
+ FORTRAN MODIF algorith/xsella               macocco K.MACOCCO          219      4      3
+ FORTRAN MODIF calculel/op0100               macocco K.MACOCCO         1106      2      2
+ FORTRAN MODIF calculel/utjac                macocco K.MACOCCO          138     11      8
+ FORTRAN MODIF elements/nmcb13              cheignon E.CHEIGNON         118     68     58
+ FORTRAN MODIF elements/nmcb1d              cheignon E.CHEIGNON         142     28     12
+ FORTRAN MODIF elements/pmfcom              cheignon E.CHEIGNON         332      2      2
+ FORTRAN MODIF jeveux/jjldyn                 macocco K.MACOCCO          269      3      3
+ FORTRAN MODIF modelisa/chcsur               macocco K.MACOCCO          150      2      2
+ FORTRAN MODIF modelisa/rcfonc               macocco K.MACOCCO          232      5      5
+ FORTRAN MODIF modelisa/rcvale               macocco K.MACOCCO          170      9      4
+ FORTRAN MODIF prepost/lrfmed                macocco K.MACOCCO          334      6      3
+ FORTRAN MODIF utilitai/rsutch               macocco K.MACOCCO          101      8      3
+ FORTRAN MODIF utilitai/rsutor               macocco K.MACOCCO           69      6      4
+  PYTHON MODIF Messages/elements2           cheignon E.CHEIGNON         217      2      2
+  PYTHON MODIF Messages/sensibilite         haelewyn J.HAELEWYN         206      5      4
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :   11        3239      3239             +3239
+ MODIF :   34       11579       855     473      +382
+ SUPPR :   15        4381              4381     -4381
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   60       19199      4094    4854      -760 
