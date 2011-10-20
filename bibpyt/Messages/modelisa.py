@@ -1,4 +1,4 @@
-#@ MODIF modelisa Messages  DATE 19/01/2011   AUTEUR MASSIN P.MASSIN 
+#@ MODIF modelisa Messages  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -53,6 +53,13 @@ cata_msg = {
 
 7 : _("""
  BARRE : une erreur a été détectée lors de l'affectation des valeurs dans le tampon
+"""),
+
+8 : _("""
+ Vous affectez des caractéristiques de type %(k1)s à la maille %(k2)s qui est pas de ce type.
+
+ Conseil :
+   Vérifier le résultat de la commande AFFE_MODELE pour la maille %(k2)s.
 """),
 
 10 : _("""

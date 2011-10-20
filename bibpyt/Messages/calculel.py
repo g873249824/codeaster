@@ -1,4 +1,4 @@
-#@ MODIF calculel Messages  DATE 08/03/2011   AUTEUR PELLET J.PELLET 
+#@ MODIF calculel Messages  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -125,6 +125,15 @@ Conseil :
     - température
     - température de référence
     - coefficient de dilatation
+"""),
+
+16 : _("""
+Erreur Utilisateur :
+  Le modèle n'a pas pu être trouvé.
+
+Conseils :
+  Il faut soit l'indiquer par le mot-clé MODELE soit qu'il soit présent dans la 
+  structure de données %(k1)s.
 """),
 
 17 : _("""

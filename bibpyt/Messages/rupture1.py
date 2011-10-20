@@ -1,4 +1,4 @@
-#@ MODIF rupture1 Messages  DATE 23/02/2011   AUTEUR BARGELLI R.BARGELLINI 
+#@ MODIF rupture1 Messages  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -362,5 +362,11 @@ Problème dans la dimension du modèle. POST_BORDET ne supporte pas les raccords 2
 58:_("""
 L'utilisation de POST_BORDET n'est possible qu'avec 1 seul MODELE et 1 seul
 CHAM_MATERIAU
+"""),
+
+67:_("""
+Les caractéristiques du matériau ne peuvent dépendre que de la température.
+-> Conseil :
+Veuillez revoir les données du matériau.
 """),
 }

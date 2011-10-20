@@ -1,4 +1,4 @@
-#@ MODIF elements Messages  DATE 04/04/2011   AUTEUR DESOZA T.DESOZA 
+#@ MODIF elements Messages  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -359,9 +359,5 @@ Solution :
    Il faut modifier la catalogue phenomene_modelisation__.cata pour ajouter NBSIGM pour cette modélisation.
 """),
 
-91 : _("""
- Les plaques multi-couches ne permettent pas de tenir compte de l'excentrement dans le calcul du cisaillement transverse.
- Les composantes SIXZ et SIYZ du tenseur de contraintes ont donc été mises à zéro.
-"""),
 
 }

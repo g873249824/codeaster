@@ -1,7 +1,7 @@
       SUBROUTINE MDEXCC ( NOFIMD, IDFIMD, NOCHMD, NBCMPC, NOMCMC,
      &                    EXISTC, NBCMFI, NMCMFI, CODRET )
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF PREPOST  DATE 31/05/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF PREPOST  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -76,7 +76,6 @@ C
       CHARACTER*32                                    ZK32
       CHARACTER*80                                              ZK80
       COMMON  / KVARJE / ZK8(1) , ZK16(1) , ZK24(1) , ZK32(1) , ZK80(1)
-      CHARACTER*32 JEXNUM,JEXNOM
 C
 C -------------- FIN  DECLARATIONS  NORMALISEES  JEVEUX ----------------
 C
@@ -94,8 +93,8 @@ C
       INTEGER LXLGUT
 C
       INTEGER LNOCHM, JNBCHA, JNOCHA, JCMPCH
-      INTEGER IDFIMD, NBCHAM
-      INTEGER IAUX, JAUX, KAUX, IRET
+      INTEGER IDFIMD, NBCHAM, NBCHA2
+      INTEGER IAUX, JAUX, KAUX, IRET, IOUV
       INTEGER ADNCMP, ADUCMP, ADNCMC, ADNCFI, NSEQCA
       LOGICAL FICEXI,DEJOUV
 C
@@ -119,33 +118,56 @@ C 1. ON CREE LES TABLEAUX CONTENANT LE NOMBRE DE CHAMPS, LE NOM
 C     DES CHAMPS ET SES COMPOSANTES
 C====
 C
-      CALL JEEXIN ( NONBCH, IRET )
-      IF ( IRET.EQ.0 ) THEN
 C
 C 1.1 ==> OUVERTURE DU FICHIER S'IL N'EST PAS DEJA OUVERT
 C
-        INQUIRE(FILE=NOFIMD,EXIST=FICEXI)
+      INQUIRE(FILE=NOFIMD,EXIST=FICEXI)
 C
-        IF ( FICEXI ) THEN
-        IF ( IDFIMD.EQ.0 ) THEN
-          CALL MFOUVR ( IDFIMD, NOFIMD, EDLECT, IAUX )
-          DEJOUV = .FALSE.
-        ELSE
-          DEJOUV = .TRUE.
-          IAUX = 0
-        ENDIF
+      IF (.NOT.FICEXI) GOTO 9999
+C
+      IF ( IDFIMD.EQ.0 ) THEN
+        CALL MFOUVR ( IDFIMD, NOFIMD, EDLECT, IOUV )
+        DEJOUV = .FALSE.
+      ELSE
+        DEJOUV = .TRUE.
+        IOUV = 0
+      ENDIF
 C
 C 1.2 ==> SI ON A PU OUVRIR LE FICHIER, ON COMMENCER A LE LIRE
 C
-        IF ( IAUX.EQ.0 ) THEN
+      IF ( IOUV.EQ.0 ) THEN
 C
 C 1.3 ==> LECTURE DU NOMBRE DE CHAMPS
 C
-          CALL MFNCHA ( IDFIMD, NBCHAM, CODRET )
-          IF ( CODRET.NE.0 ) THEN
+        CALL MFNCHA ( IDFIMD, NBCHAM, CODRET )
+        IF ( CODRET.NE.0 ) THEN
             SAUX08='MFNCHA  '
             CALL U2MESG('F','DVP_97',1,SAUX08,1,CODRET,0,0.D0)
+        ENDIF
+        IF ( NBCHAM.LE.0 ) GOTO 30
+C
+        CALL JEEXIN ( NONBCH, IRET )
+        IF ( IRET.NE.0 ) THEN
+C
+C         SI LE VECTEUR EXISTE MAIS QUE LE NOMBRE DE
+C         CHAMP A CHANGE, IL FAUT RE CONSTRUIRE CES
+C         VECTEURS
+          CALL JEVEUO ( NONBCH, 'L', JNBCHA )
+          NBCHA2 = ZI(JNBCHA)
+          IF ( NBCHA2.NE.NBCHAM ) THEN
+            CALL JEVEUO ( NOCMCH, 'L', JCMPCH )
+            DO 999, IAUX = 1,NBCHA2
+              NOMCMP = ZK24( JCMPCH+IAUX-1 )
+              CALL JEDETR(NOMCMP)
+ 999        CONTINUE
+            CALL JEDETR(NONBCH)
+            CALL JEDETR(NONOCH)
+            CALL JEDETR(NOCMCH)
+            IRET = 0
           ENDIF
+        ENDIF
+C
+        IF ( IRET.EQ.0 ) THEN
 C
 C 1.4 ==> ALLOCATION DU TABLEAU CONTENANT : - LE NOMBRE DE CHAMPS
 C                                           - LE NOM DES CHAMPS
@@ -170,8 +192,7 @@ C
      &                   'V V K16', NBCMFI, ADNCMP )
             CALL WKVECT ('&&'//NOMPRO//SAUX08//'U',
      &                   'V V K16', NBCMFI, ADUCMP )
-            SAUX64 = '                                '//
-     &               '                                '
+            SAUX64 = ' '
 C
 C 1.5.1 ==> LECTURE DU NOM DU CHAMP MED ET DE SES COMPOSANTES
 C
@@ -198,27 +219,12 @@ C
   10      CONTINUE
         ENDIF
 C
-C 1.6 ==> FERMETURE DU FICHIER S'IL Y A BESOIN
-C
-        IF ( .NOT.DEJOUV ) THEN
-          CALL MFFERM ( IDFIMD, CODRET )
-          IF ( CODRET.NE.0 ) THEN
-            SAUX08='MFFERM  '
-            CALL U2MESG('F','DVP_97',1,SAUX08,1,CODRET,0,0.D0)
-          ENDIF
-          IDFIMD = 0
-        ENDIF
-        ENDIF
-      ENDIF
-C
 C====
 C 2. LE CHAMP EST-IL PRESENT ?
 C====
 C
 C 2.1. ==> NBCHAM : NOMBRE DE CHAMPS DANS LE FICHIER
 C
-      CALL JEVEUO ( NONBCH, 'L', JNBCHA )
-      NBCHAM = ZI(JNBCHA)
       CALL JEVEUO ( NONOCH, 'L', JNOCHA )
       CALL JEVEUO ( NOCMCH, 'L', JCMPCH )
 C
@@ -228,7 +234,8 @@ C
 C
       DO 22 , IAUX = 1 , NBCHAM
 C
-      SAUX64 = ZK80( JNOCHA+IAUX-1 )
+        SAUX64 = ZK80( JNOCHA+IAUX-1 )
+        NOMCMP = ZK24( JCMPCH+IAUX-1 )
 C
 C 2.2.3. ==> COMPARAISON DU NOM DU CHAMP
 C
@@ -247,7 +254,6 @@ C
 C 2.2.4.1. ==> TRANSFERT DES NOMS DES COMPOSANTES DANS LE TABLEAU
 C              DE SORTIE
 C
-        NOMCMP = ZK24( JCMPCH+IAUX-1 )
         CALL JELIRA ( NOMCMP, 'LONMAX', NBCMFI, K1BID )
         CALL JEVEUO ( NOMCMP, 'L', ADNCMP )
 C
@@ -300,5 +306,22 @@ C 3. LA FIN
 C====
 C
    30 CONTINUE
+C
+C====
+C 4. ==> FERMETURE DU FICHIER S'IL Y A BESOIN
+C====
+C
+        IF ( .NOT.DEJOUV ) THEN
+          CALL MFFERM ( IDFIMD, CODRET )
+          IF ( CODRET.NE.0 ) THEN
+            SAUX08='MFFERM  '
+            CALL U2MESG('F','DVP_97',1,SAUX08,1,CODRET,0,0.D0)
+          ENDIF
+          IDFIMD = 0
+        ENDIF
+      ENDIF
+C
+ 9999 CONTINUE
+C
 C
       END

@@ -1,4 +1,4 @@
-#@ MODIF post_k1_k2_k3_ops Macro  DATE 04/05/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF post_k1_k2_k3_ops Macro  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -1690,30 +1690,74 @@ def post_k1_k2_k3_ops(self,MODELISATION,FOND_FISS,FISSURE,MATER,RESULTAT,
    valr = compor.VALR.get()
    dicmat=dict(zip(valk,valr))
 
+#  PROPRIETES MATERIAUX INDEPENDANTES DE LA TEMPERATURE
+   e  = dicmat['E']
+   nu = dicmat['NU']
+
 #  PROPRIETES MATERIAUX DEPENDANTES DE LA TEMPERATURE
    Tempe3D = False
-   if FOND_FISS and args['EVOL_THER'] : 
-#     on recupere juste le nom du resultat thermique (la température est variable de commande)
-      ndim   = 3
-      Tempe3D=True
-      resuth=S.ljust(args['EVOL_THER'].nom,8).rstrip()
-
-   if dicmat.has_key('TEMP_DEF') and not args['EVOL_THER'] :
-      nompar = ('TEMP',)
-      valpar = (dicmat['TEMP_DEF'],)
-      UTMESS('A','RUPTURE0_6',valr=valpar)
-      nomres=['E','NU']
-      valres,codret = MATER.RCVALE('ELAS',nompar,valpar,nomres,'F')
-      e = valres[0]
-      nu = valres[1]
-      
-
-#   --- PROPRIETES MATERIAUX INDEPENDANTES DE LA TEMPERATURE
-   else :
-      e  = dicmat['E']
-      nu = dicmat['NU']  
    
+   if e==0.0 and nu==0.0 :    
+      list_oper=valk[: len(valk)/2]
+      list_fonc=valk[len(valk)/2 :]    
+#     valk contient les noms des operandes mis dans defi_materiau dans une premiere partie et
+#     et les noms des concepts de type [fonction] (ecrits derriere les operandes) dans une 
+#     une seconde partie  
+
+      try:list_oper.remove("B_ENDOGE")
+      except: ValueError
+      try:list_oper.remove("RHO")     
+      except: ValueError
+      try:list_oper.remove("PRECISIO")
+      except: ValueError
+      try:list_oper.remove("K_DESSIC")
+      except: ValueError      
+      try:list_oper.remove("TEMP_DEF")
+      except: ValueError
+   
+      nom_fonc_e = self.get_concept(list_fonc[list_oper.index("E")])
+      nom_fonc_nu = self.get_concept(list_fonc[list_oper.index("NU")])
+      nom_fonc_e_prol  = nom_fonc_e.PROL.get()[0].strip()
+      nom_fonc_nu_prol = nom_fonc_nu.PROL.get()[0].strip()
+
+#        on verifie que les fonctions dependent bien que de la temperature    
+      if ((nom_fonc_e.Parametres()  ['NOM_PARA']!='TEMP' and nom_fonc_e_prol!='CONSTANT') or
+          (nom_fonc_nu.Parametres() ['NOM_PARA']!='TEMP' and nom_fonc_nu_prol!='CONSTANT')):
+         UTMESS('F','RUPTURE1_67')
+
+      if dicmat.has_key('TEMP_DEF') and not args['EVOL_THER'] :
+         nompar = ('TEMP',)
+         valpar = (dicmat['TEMP_DEF'],)
+         UTMESS('A','RUPTURE0_6',valr=valpar)
+         nomres=['E','NU']
+         valres,codret = MATER.RCVALE('ELAS',nompar,valpar,nomres,'F')
+         
+         if (nom_fonc_e_prol=='CONSTANT'):
+            e  = nom_fonc_e.Ordo()[0]
+         else:
+            e = valres[0]
+
+         if (nom_fonc_nu_prol=='CONSTANT'):
+            nu  = nom_fonc_nu.Ordo()[0]
+         else:
+            nu = valres[1]
+
+
+      if not dicmat.has_key('TEMP_DEF') and not args['EVOL_THER'] :
+         UTMESS('F','RUPTURE0_52')
+     
+
+   if FOND_FISS and args['EVOL_THER'] :
+#      on recupere juste le nom du resultat thermique (la température est variable de commande)
+       ndim   = 3
+       Tempe3D=True
+       resuth=S.ljust(args['EVOL_THER'].nom,8).rstrip()
+
    if not Tempe3D :
+
+      if e==0.0: 
+         UTMESS('F','RUPTURE0_53')
+
       coefd3 = 0.
       coefd  = e * NP.sqrt(2.*pi)
       unmnu2 = 1. - nu**2
@@ -1745,7 +1789,7 @@ def post_k1_k2_k3_ops(self,MODELISATION,FOND_FISS,FISSURE,MATER,RESULTAT,
       else :
          UTMESS('F','RUPTURE0_10')
 
-   assert (ndim == 2 or ndim == 3)     
+   assert (ndim == 2 or ndim == 3)
 
    try :
       TYPE_MAILLAGE  = args['TYPE_MAILLAGE']

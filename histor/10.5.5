@@ -1,0 +1,797 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR corus        CORUS Mathieu          DATE 10/21/2011 - 05:39:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017372 DU 2011-08-03 09:49:24
+TYPE express concernant Code_Aster (VERSION 11.1)
+TITRE
+    MODE_STATIQUE et modele avec des LIAISON_MAILLE
+FONCTIONNALITE
+   Probleme :
+   ----------
+   
+   Encore un bug trouve par Fatou : Quand un macro element possede en interne des liaisons
+   (crees avec LIAISON_MAILLE, par exemple), la recherche des modes d'interface donne des
+   resultats faux. Le probleme vient de l'annulation des Lagranges dans la phase de
+   projection des matrices de masse et de raideur sur le sous espace de recherche. A cette
+   etape, je n'annulle que les lagranges associes aux interfaces, alors qu'il faut en fait
+   annuler tous les lagranges, faute de quoi les energies sont mal estimees.
+   
+   Solution :
+   ----------
+   
+   On annule tous les lagranges dans la routine modint.f, et non pas uniquement ceux associés
+   aux interface.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.2.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.2.3
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    aucune
+DEJA RESTITUE DANS : 11.0.22
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR bodel        BODEL Charles          DATE 10/21/2011 - 05:39:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017226 DU 2011-07-01 08:32:02
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    En NEW11.00.13, le cas-test sdnl136a s'arrete en erreur fatale sur Aster4, Rocks et Calibre 5.
+FONCTIONNALITE
+   En NEW11.00.13, le cas-test sdnl136a s'arrete en erreur fatale sur Aster4, Rocks et 
+   Calibre 5.
+   
+   Diagnostic : il s'agit d'un oubli lors de la restitution de la semaine precedente :
+   passage des mots-cles STOCKAGE et PROFIL de 'DIAG' a 'PLEIN' par defaut dans NUME_DDL_GENE
+    et MACRO_PROJ_BASE (16577). 
+   Dans les cas-tests avec fluide structure, il est indispensable de garder le stockage a
+   'DIAG' sous peine de plantage (il faudra comprendre pourquoi, ce n'est pas normal). 
+   La modifiction des catalogues ayant ete reportee en NEW10, il faut aussi reporter la
+   modification de ce cas-test.
+   
+   Modifie : sdnl136a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdnl136a
+DEJA RESTITUE DANS : 11.0.26
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 10/21/2011 - 05:39:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017614 DU 2011-09-27 16:44:45
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    [FORUM] Repertoire de noms sature dans AFFE_CARA_ELEM/BARRE
+FONCTIONNALITE
+   Dans AFFE_MODELE il existe la règle de surcharge. On peut donc faire :
+   
+   Si 'BARS'  =                 MAILLE3 MAILLE4 MAILLE5 MAILLE6 
+   Si 'BEAMS' = MAILLE1 MAILLE2 MAILLE3 MAILLE4
+   
+   modl = AFFE_MODELE( AFFE = (
+      _F(GROUP_MA = ('BARS',), PHENOMENE = 'MECANIQUE', MODELISATION = 'BARRE'),
+      _F(GROUP_MA = ('BEAMS'), PHENOMENE = 'MECANIQUE', MODELISATION = 'POU_D_E'), ),
+   )
+   Les mailles MAILLE1 MAILLE2 MAILLE3 MAILLE4 sont du type 'POUTRE' 
+   Les mailles MAILLE5 MAILLE6 sont du type 'BARRE'
+   
+   Lorsque l'on fait :
+   cara = AFFE_CARA_ELEM(
+      BARRE   = (_F(GROUP_MA = ('BARS'), ...)
+      POUTRE  = (_F(GROUP_MA = ('BEAMS'), ...),
+   )
+   La commande plante, avec le message ci-dessous, sur la maille MAILLE3 qui est de type
+   'POUTRE' 
+   <EXCEPTION> <JEVEUX1_33>
+   Le répertoire de noms cara    .BARRE est saturé, il faut le redimensionner.
+   
+   
+   Correction :
+   ------------
+   Avant d'affecter les caractéristiques sur l'élément on vérifie que sa modélisation est la
+   bonne.
+   Si ce n'est pas la bonne, on émet le message <F> ci-dessous
+   MODELISA_8 : _("""
+    Vous affectez des caractéristiques de type %(k1)s à la maille %(k2)s qui est pas de ce type.
+   
+    Conseil :
+      Vérifier le résultat de la commande AFFE_MODELE pour la maille %(k2)s.
+   """),
+   
+   
+   Impact :
+   -------
+   modelisa.py    : ajout du message 8
+   op0019         : op d'AFFE_CARA_ELEM, modif des appels à aceaba et aceapo
+   aceapo, aceaba : ajout de la vérification du type de la modélisation
+   
+   
+   Validation :
+   ------------
+   Passage étude forum + test perso
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test perso
+DEJA RESTITUE DANS : 11.0.26
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 10/21/2011 - 05:39:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017609 DU 2011-09-27 14:53:04
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    mise au propre des TP de formation Contact
+FONCTIONNALITE
+   Évolution
+   =========
+   
+   '''
+   Il faudrait migrer le patrimoine pédagogique des TPs vers des objets gérés en
+   configuration (doc dans la GED, tests dans astest).
+   
+   Il existe 1 TP d'exercices pour la formation avancée Contact :
+   
+   Il faudrait faire 2 choses :
+   - créer le test FORMA04 pour capitaliser les fichiers de commandes et de maillage
+   - créer la docs V associées à ce FORMA04 qui contiendraient le texte du document support
+   actuel.
+   '''
+   
+   Détails
+   =======
+   
+   On restitue 3 modélisations du test FORMA04 et sa documentation associée en V10 et en V11 :
+   
+   - FORMA04A : maillage en triangles linéaire, formulation discrète, pression de contact
+   relevée à partir des contraintes
+   
+   - FORMA04B : maillage en triangles quadratique, formulation continue, intégration aux
+   points de Gauss, pression de contact relevée par le ddl LAGS_C
+   
+   - FORMA04C : maillage en quadrangles linéaire, formulation discrète, pression de contact
+   relevée à partir des contraintes
+   
+   Les tests de validation sont fait sur la pression de Hertz (au centre). Les références
+   sont analytiques et doublées d'une non-régression.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v6.04.222
+VALIDATION
+    forma04
+DEJA RESTITUE DANS : 11.0.26
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016732 DU 2011-04-05 07:21:37
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Plaques - Excentrement et cisaillement transverse
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   '''
+   La prise en compte de l'excentrement dans Aster ne semble pas correcte concernant le
+   cisaillement :
+   
+   - en 10.3.22 : on a rajouté une alarme pour les plaques utilisant DEFI_COQU_MULT avec de
+   l'excentrement. En effet les composantes SIXZ et SIYZ du tenseur de contraintes sont alors
+   mal calculées
+   
+   - avec le matériau ELAS_COQUE et de l'excentrement, on observe en réalité le même problème
+   : SIXZ et SIYZ donnent les mêmes valeurs (erronées) que avec DEFI_COQU_MULT
+   
+   - avec ELAS : le cisaillement est déjà faux (cf. issue16729) mais on peut parier que le
+   problème est identique.
+   
+   ==> Il faut s'interroger sur l'influence de l'excentrement vis à vis du CT.
+   '''
+   
+   Analyse
+   =======
+   
+   L'excentrement va faire l'objet d'une validation supplémentaire prochainement.
+   Cependant on précise déjà dans la doc une chose essentielle : l'excentrement n'a aucun
+   influence sur le cisaillement dans Code_Aster, il n'agit en effet qu'en (membrane-)flexion.
+   La superposition de 2 plaques d'épaisseur h/2 excentrées de +h/4 et -h/4 ne permet donc
+   pas de modéliser un "lamellé-collé" : les plaques glissent librement l'une sur l'autre.
+   
+   On revient donc en arrière sur la mise en place d'une alarme dans le cas DEFI_COQU_MULT +
+   excentrement. Les résultats obtenus sur le test SSLS112 par exemple sont parfaitement
+   normaux compte tenu des hypothèses.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.42.01
+VALIDATION
+    perso
+DEJA RESTITUE DANS : 11.0.28
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017683 DU 2011-10-10 15:06:51
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Element Q4G : calcule des efforts gxc3xa9nxc3xa9ralisxc3xa9s
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Problème signalé par Deltacad : 
+   
+   '''
+   Je pense qu'il y a une anomalie dans la routine q4gedg à la ligne 160
+   159          VT(1) = DC(1,1)*BCDF(1) + DC(1,2)*BCDF(2)
+   160          VT(2) = DC(2,1)*BCDF(2) + DC(2,2)*BCDF(2) 
+   '''
+   
+   Analyse
+   =======
+   
+   En effet, il y a une coquille, VT = DC.BCDF et on doit écrire :
+   
+   160          VT(2) = DC(2,1)*BCDF(1) + DC(2,2)*BCDF(2)
+   ..................................^...................
+   
+   Cette erreur existe aussi dans la routine q4gsie.f et q4gcol.f (celle-ci n'est plus
+   appelée en V11 mais l'est encore en V10)
+   
+   J'ai parcouru toutes les matrices et vecteurs calculés pour Q4G et n'ai pas vu d'autre
+   erreur (par rapport à la doc R).
+   
+   Validation et résultats faux
+   ============================
+   
+   Astout Q4G : OK.
+   
+   Cela montre bien le manque de validation de Q4G
+   ==> il y a en effet de vrais résultats faux même s'il faut nuancer.
+   
+   Les efforts tranchants et contraintes de cisaillement étaient mal calculés avec les
+   plaques utilisant le matériau :
+   
+   - ELAS_COQUE (coques orthotropes) avec couplage membrane-cisaillement et flexion-cisaillement
+   - ELAS_COQMU (coques composites, matériau créé par l'opérateur DEFI_COQU_MULT)
+   
+   Dans les autres cas, la matrice élémentaire de comportement en cisaillement étant
+   diagonale (DC(1,2)=DC(2,1)=0), il n'y a pas de différences.
+   
+   Ménage
+   ======
+   
+   On profite de l'occasion pour effacer des routines plus appelées : 
+   
+   dmathl.f dktcol.f dkqcol.f dstcol.f dsqcol.f q4gcol.f 
+   
+   V10
+   ===
+   
+   Ne pas oublier de reporter la correction sur q4gcol.f en V10 (en plus de q4gedg.f et q4gsie.f)
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout
+DEJA RESTITUE DANS : 11.0.28
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 10/21/2011 - 05:39:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017653 DU 2011-10-05 15:45:35
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    EFGE_ELNO plante avec la modxc3xa9lisation DKTG
+FONCTIONNALITE
+   Problème :
+   ----------
+   On peut faire un calcul linéaire (MECA_STATIQUE) avec la modélisation DKTG.
+   Mais si l'on demande en post-traitement le calcul de l'option EFGE_ELNO, on est arreté par
+   le message :
+                                                                                            
+                           
+   !---------------------------------------------------------!
+   ! <E> <CALCULEL2_70>                                      !
+   !  le parametre: PNBSP_I  n'est pas un paramètre de       !
+   !  l'option: EFGE_ELNO  pour le type_element:  MEDKQG4    !
+   !---------------------------------------------------------!
+                                                                                            
+                           
+   Correction :
+   ------------
+   Le problème vient de la routine dxefnt.f qui calcule les efforts dus à la déformation
+   thermique.
+   J'ai modifié cette routine pour qu'elle ne nous arrete plus lorsque le calcul ne dépend
+   pas de la température.
+                                                                                            
+                           
+   Validation :
+   ------------
+   J'ajoute à la fin du test ssls126a un petit calcul MECA_STATIQUE + DKTG + EFGE_ELNO.
+   Les TEST_RESU sont de non-regression.
+                                                                                            
+                           
+   Sources modifiés :
+    dxefnt.f
+    ssls126a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssls126a
+DEJA RESTITUE DANS : 11.0.26
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 10/21/2011 - 05:39:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017610 DU 2011-09-27 15:01:37
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TMA : Phimeca
+TITRE
+    POST_K1_K2_K3 incorrect si E et NU = f(TEMP)
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   La correction de la fiche est 17322 n'est pas complète.
+   
+   Si on modifie le test ascou18b pour utiliser le matériau MAT2 au lieu de MAT :
+                                                                                            
+                           
+   JP1=DEFI_FONCTION(    NOM_PARA='TEMP',
+                              VALE=(  -1000.,           174700.,
+                                      +1000.,           174700., ))
+   JP2=DEFI_CONSTANTE(VALE=0.3)                                                             
+                                                       
+   MAT2=DEFI_MATERIAU(ELAS_FO     =_F( E = JP1, NU = JP2, ),);
+                                                                                            
+   
+   Alors, on se plante encore avec une division par e=0. (comme pour la fiche 17322).
+   
+   Dans la programmation, on voit que si E et NU n'ont pas de prolongement constant à gauche
+   et si E est une
+   fonction de TEMP, mais que TEMP_DEF_ALPHA n'est pas défini, on ne calcule pas E , d'où une
+   division pas zéro.   
+   
+   Le code n'est donc pas assez blindé : on ne sait pas quelle température utiliser pour
+   évaluer les fonctions.
+   
+   
+   
+   Solution :
+   ----------
+   
+   L'utilisateur a la possibilité de renseigner un matériau différent de celui qui lui a
+   servi dans la résolution. Cette configuration n'est pas entièrement blinder. 
+   Effectivement, si l'utilisateur renseigne un second matériau avec une fonction pour le
+   module d'Young et une constante pour le coefficient de Poisson, le code échoue dans une
+   division par 0.0. Car, si les propriétés matériaux sont des fonctions (DEFI_FONCTION) ou
+   des constantes (DEFI_CONSTANTE) alors les valeurs récupérées via la commande
+   sd_compor1('%-8s.%s' % (MATER.nom, phenom)) sont nulles (0.0) et leur type est réel.
+   
+   Ainsi on distingue plusieurs cas si EVOL_THER n'est pas renseigné:
+   - le cas ou l'utilisateur a utilisé ELAS, on s'assure que le module d'Young n'est pas nul.
+   - le cas où l'utilisateur a utilisé ELAS_FO, on s'assure que les deux caractéristiques E
+   et nu sont:
+   -- soit fonction que de la température. Dans ce cas, on demande à l'utilisateur de
+   renseigner TEMP_DEF_ALPHA dans la définition du matériau afin de permettre l'évaluation de
+   la caractéristique à cette température. Le message suivant est alors émis:
+   
+   !-------------------------------------------------------------------------!
+   ! <F> <RUPTURE0_52>                                                       !
+   !                                                                         !
+   ! Vous avez utilisé des paramètres matériaux dépendant de la température. !
+   ! Cependant, 'TEMP_DEF_ALPHA' dans DEFI_MATERIAU n'est pas renseigné.     !
+   ! -> Conseil :                                                            !
+   ! Renseignez une température pour 'TEMP_DEF_ALPHA',                       !
+   ! ou utilisez l'otion 'EVOL_THER' de POST_K1_K2_K3.                       !
+   !                                                                         !
+   !                                                                         !
+   ! Cette erreur est fatale. Le code s'arrête.                              !
+   !-------------------------------------------------------------------------!
+   
+   Si l'utilisateur n'a pas correctement prolongé sa fonction le code s'arrete alors avec le
+   message :
+     
+   !----------------------------------------------------------------------------------------------------!
+      ! <E> <FONCT0_19>                                                                     
+                 !
+      !                                                                                     
+                 !
+      ! On est hors du domaine de définition de la fonction.                                
+                 !
+      ! On ne peut pas interpoler la fonction pour cette abscisse car le prolongement à
+   gauche est exclus. !
+      !    abscisse demandée              : 20.000000                                       
+                 !
+      !    borne inférieure des abscisses : 50.000000                                       
+                 !
+      !                                                                                     
+                 !
+      !   -> Risque & Conseil :                                                             
+                 !
+      !     Voir le mot-clé PROL_GAUCHE des commandes qui créent des fonctions.             
+                 !
+      !                                                                                     
+                 !
+      !                                                                                     
+                 !
+      ! Cette erreur sera suivie d'une erreur fatale.                                       
+                 !
+     
+   !----------------------------------------------------------------------------------------------------!
+   
+   -- soit constante. Dans ce cas, on s'assure que le module d'Young n'est pas nul.
+   
+   
+   Validation :
+   ------------
+   
+   Le cas-test ascou18b modifie a permis de tester les developpements et les différentes
+   configurations. IL n'est cependant pas restitué.
+   Très prochainement, un nouveau cas test (zzzz289) dédié à la validation informatique de
+   POST_K1_K2_K3 sera restitué dans la fiche 14716, et testera aussi la donnée de matériau
+   fonction.
+   
+   Remarques:
+   Si l'utilisateur prend le meme matériau que celui de la resolution, il est arrêté dans fointa.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : u4.82.05
+VALIDATION
+    tests POST_K1_K2_K3
+DEJA RESTITUE DANS : 11.0.26
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 10/21/2011 - 05:39:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016997 DU 2011-05-25 11:22:05
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Objet JEVEUX inexistant dans CALC_ELEM
+FONCTIONNALITE
+   L'utilisateur a créé un résultat avec CREA_RESU mais sans spécifier de MODELE.
+   
+   Lorsqu'il veut utiliser ce résultat dans CALC_ELEM, le code s'arrête salement :
+   objet JEVEUX inexistant ('.MODELE    .LGRF').
+   
+   J'ai transformé en erreur fatale avec le message suivant car le modèle est nécessaire à
+   CALC_ELEM :
+   
+      !----------------------------------------------------------------------------------!
+      ! <EXCEPTION> <CALCULEL_16>                                                        !
+      !                                                                                  !
+      !   Erreur Utilisateur :                                                           !
+      !   Le modèle n'a pas pu être trouvé.                                              !
+      ! Conseils :                                                                       !
+      !   Il faut soit l'indiquer par le mot-clé MODELE soit qu'il soit présent dans la  !
+      !   structure de données RESU.                                                     !
+      !----------------------------------------------------------------------------------!
+   
+   L'utilisateur doit donc soit fournir le modèle sous la forme du mot-clé dans CALC_ELEM (et
+   être sûr de sa cohérence avec le résultat) soit fournir un résultat qui le contient.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude fournie
+DEJA RESTITUE DANS : 11.0.28
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017520 DU 2011-09-12 14:28:56
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Problxc3xa8me dans zzzz120a/b
+FONCTIONNALITE
+   Ce cas-test contient la macro POST_GOUJ directement intégrée dans le .comm.
+   La macro génère un fichier GIBI et en importe un autrei depuis le répertoire datg.
+   
+   Probleme :
+   ----------
+   Lorsque le chemin d'installation d'Aster est long (>72 caractères), ce qui est souvent le
+   cas avec Salome-Meca puisque que le repertoire datg est
+   SALOME-MECA-2011.2/aster/STA10.5/datg, alors le script GIBI se plante salement.
+   
+   Solution :
+   ----------
+   Lorsque l'on écrit les fichiers GIBI, on utilise la commande GIBI "CHAINE" pour découper
+   la chaine de texte qui contient le chemin vers le datg. Ainsi, on s'assure que les lignes
+   du scripts GIBI ne dépassent pas le nombre de caractère autorisé.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz120a et b
+DEJA RESTITUE DANS : 11.0.29
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR haelewyn     HAELEWYN Jessica       DATE 10/21/2011 - 05:39:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017682 DU 2011-10-10 12:28:18
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    BPEL_ACIER
+FONCTIONNALITE
+   Problème :
+   ---------
+   Dans BPEL_ACIER, tous les mots-clés sont facultatifs (catalogues et docs). Cependant, on
+   ne met aucun 
+   paramètre dans BPEL_ACIER, le calcul plante.
+   
+   Solution :
+   ----------
+   
+   Dans la routine de récupération des caractéristiques d'un cable (caelca.f), l'erreur est
+   du à un test qui vérifie si tous les paramètres de BPEL_ACIER ont une valeur. Seul un
+   paramètre n'a pas de valeur par défaut : F_PRG. Ce paramètre n'intervient que si on active
+   la relaxation des aciers.
+   -Il doit être renseigné si le paramètre RELAX_1000 est renseigné -> c'est vérifié dans le
+   catalogue DEFI_MATERIAU
+   -Il ne doit pas être nul -> un autre test vérfie ça
+   
+   Donc le test qui donne l'erreur n'est pas utile, on le supprime dans caelca.f. Le message
+   d'erreur est aussi supprimé dans modelisa2.py.
+   
+   Dans le castest sslv115abc, on peut supprimer la définition des paramètres de BPEL_ACIER
+   qui ne servent à rien.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sslv115abc
+DEJA RESTITUE DANS : 11.0.28
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR fournier     FOURNIER Isabelle      DATE 10/21/2011 - 05:39:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017615 DU 2011-09-27 16:49:56
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    mise au propre des TP de formation base tuyau
+FONCTIONNALITE
+   Demande :
+   =======
+   On souhaite mettre à jour le second TP de la formation "Tuyau coudée en 
+   dynamique - thermo-plasticité".
+   
+   Évolution :
+   =========
+   On livre quatre modélisations pour le test forma02 :
+   - a : tuyau 3D chargement thermomécanque (transitoire thermique et pression)
+   - b : tuyau 3D analyse modale + transitoire et harmonique 
+   - c : tuyau coque chargement pression
+   - d : tuyau poutre dynamique
+   
+   Les valeurs de référence sont des valeurs de non régression.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v7.15.100
+VALIDATION
+    Passage des cas-tests
+DEJA RESTITUE DANS : 11.0.28
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 10/21/2011 - 05:39:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017694 DU 2011-10-12 09:22:00
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    plantage LIRE_RESU
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   La LIRE_RESU plante en lecture d'un résultat en format MED.
+   Le MED est produit par un calcul d'endommagement, calcul sur aster4.
+   La commande a échoué en local et sur aster4.
+   """
+   
+   
+   Analyse :
+   ---------
+   Le plantage est dû à une demande d'allocation fantaisiste faite à JEVEUX. On demande
+   l'allocation d'un tableau beaucoup trop grand et du coup, la calcul plante.
+   
+   La taille donnée à WKVECT est calculée à partir du nombre de points de Gauss et du nombre
+   de mailles. Le nombre qui pose problème est le nombre de points de Gauss. En effet, sur
+   des TRIA6 utilisant FPG3, la routine MED renvoyait 8 points de Gauss. Cela est dû au fait
+   qu'on donnait de mauvaises valeurs pour le numéro d'ordre et le numéro de rangement à la
+   routine MED car ces entiers n'étaient pas encore initialisés.
+   
+   On ne s'en rendait pas compte car avec MED3.0, sur certains appels de routines, on ne peut
+   pas tester le code retour car un code retour différent de 0 n'est pas forcément synonyme
+   de problème.
+   
+   
+   Solution :
+   ----------
+   On initialise le numéro d'ordre et le numéro de rangement dans LRFMED en se basant sur
+   l'instant demandé par l'utilisateur.
+   
+   J'ajoute aussi un LIRE_RESU dans zzzz162a pour vérifier que le problème est bien résolu.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz162a modifie
+DEJA RESTITUE DANS : 11.0.28
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017710 DU 2011-10-13 14:30:20
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    IMPR_RESU format MED
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   J'ai juste ajouté au test PERF004A un impr_resu MED, et cela plante.
+   """
+   
+   
+   Solution :
+   ----------
+   C'est un WKVECT de longueur nul non protégé dans MDEXCC. Je corrige.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+DEJA RESTITUE DANS : 11.0.28
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 10/21/2011 - 05:39:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017613 DU 2011-09-27 16:41:23
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    mise au propre des TP de formation base plaque trouee
+FONCTIONNALITE
+   Demande :
+   =======
+   On souhaite mettre à jour le premier TP de la formation "Plaque trouée en traction en
+   élasticité".
+   
+   Évolution :
+   =========
+   On livre trois modélisation pour le test forma01 :
+   - a : plaque trouée en traction en élasticité
+   - b : plaque trouée en traction en élasticité - adaptation de maillage
+   - c : plaque trouée en traction en élasticité - adaptation de maillage dans une boucle python
+   
+   On teste pour chacune des modélisation, la valeur de SIYY au bord du trou et la valeur de
+   SIXX au bord du trou du coté du bord où l'on tire.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v3.02.326
+VALIDATION
+    passage des tests
+DEJA RESTITUE DANS : 11.0.28
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT forma01a                      macocco K.MACOCCO          109    109      0
+ CASTEST AJOUT forma01b                      macocco K.MACOCCO          194    194      0
+ CASTEST AJOUT forma01c                      macocco K.MACOCCO          222    222      0
+ CASTEST AJOUT forma04a                      macocco K.MACOCCO          178    178      0
+ CASTEST AJOUT forma04b                      macocco K.MACOCCO          182    182      0
+ CASTEST AJOUT forma04c                      macocco K.MACOCCO          181    181      0
+ CASTEST MODIF forma02a                      macocco K.MACOCCO          164    120    209
+ CASTEST MODIF forma02b                      macocco K.MACOCCO           77     43    241
+ CASTEST MODIF forma02c                      macocco K.MACOCCO          104     53    284
+ CASTEST MODIF forma02d                      macocco K.MACOCCO          315     47     53
+ CASTEST MODIF sdll01a                       macocco K.MACOCCO          220      2      2
+ CASTEST MODIF sdll01b                       macocco K.MACOCCO          175      3      3
+ CASTEST MODIF sdll108b                      macocco K.MACOCCO          450      2      2
+ CASTEST MODIF sdll116a                      macocco K.MACOCCO         4990      2      2
+ CASTEST MODIF sdlv111a                      macocco K.MACOCCO          311      6      6
+ CASTEST MODIF sdlv111b                      macocco K.MACOCCO          201      4      4
+ CASTEST MODIF sdnl105c                      macocco K.MACOCCO          628      4      4
+ CASTEST MODIF ssll100a                      macocco K.MACOCCO          388      2      2
+ CASTEST MODIF ssls126a                      macocco K.MACOCCO          334     24      1
+ CASTEST MODIF sslv115a                      macocco K.MACOCCO          221      2      4
+ CASTEST MODIF sslv115b                      macocco K.MACOCCO          209      2      4
+ CASTEST MODIF sslv115c                      macocco K.MACOCCO          206      2      4
+ CASTEST MODIF zzzz120a                      macocco K.MACOCCO          687     14      3
+ CASTEST MODIF zzzz120b                      macocco K.MACOCCO          669     14      3
+ FORTRAN MODIF algorith/modint               macocco K.MACOCCO          479     13     16
+ FORTRAN MODIF algorith/nmcrch               macocco K.MACOCCO          418      3      4
+ FORTRAN MODIF calculel/op0058               macocco K.MACOCCO          155      3      1
+ FORTRAN MODIF elements/dxdmul               macocco K.MACOCCO          191      2      8
+ FORTRAN MODIF elements/dxefnt               macocco K.MACOCCO          167      8      3
+ FORTRAN MODIF elements/q4gcol               macocco K.MACOCCO          185      2      2
+ FORTRAN MODIF elements/q4gedg               macocco K.MACOCCO          220      2      2
+ FORTRAN MODIF elements/q4gsie               macocco K.MACOCCO          224      2      2
+ FORTRAN MODIF modelisa/aceaba               macocco K.MACOCCO          306     14      7
+ FORTRAN MODIF modelisa/aceapo               macocco K.MACOCCO          395     14      8
+ FORTRAN MODIF modelisa/caelca               macocco K.MACOCCO          385      2      7
+ FORTRAN MODIF modelisa/op0019               macocco K.MACOCCO          474     17     14
+ FORTRAN MODIF prepost/lrfmed                macocco K.MACOCCO          352     21      3
+ FORTRAN MODIF prepost/mdexcc                macocco K.MACOCCO          327     51     28
+  PYTHON MODIF Macro/post_k1_k2_k3_ops       macocco K.MACOCCO         2091     54     10
+  PYTHON MODIF Messages/calculel             macocco K.MACOCCO          418     10      1
+  PYTHON MODIF Messages/elements             macocco K.MACOCCO          363      1      5
+  PYTHON MODIF Messages/modelisa             macocco K.MACOCCO          525      8      1
+  PYTHON MODIF Messages/modelisa2            macocco K.MACOCCO          349      7      6
+  PYTHON MODIF Messages/rupture0             macocco K.MACOCCO          570     12      1
+  PYTHON MODIF Messages/rupture1             macocco K.MACOCCO          372      7      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    6        1066      1066             +1066
+ MODIF :   39       19315       599     961      -362
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   45       20381      1665     961      +704 

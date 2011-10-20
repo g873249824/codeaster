@@ -4,7 +4,7 @@
       REAL*8        XYZL(3,*),PGL(3,*), DEPL(*), CDL(*)
       CHARACTER*4   FAMI
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 04/05/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ELEMENTS  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -162,7 +162,7 @@ C         ------ VT = DC.BC.DEPF -------------------------------------
           BCDF(2) = BCDF(2) + BC(2,J)*DEPF(J)
  230    CONTINUE
         VT(1) = DC(1,1)*BCDF(1) + DC(1,2)*BCDF(2)
-        VT(2) = DC(2,1)*BCDF(2) + DC(2,2)*BCDF(2)
+        VT(2) = DC(2,1)*BCDF(1) + DC(2,2)*BCDF(2)
 C         ------ CIST = D1I.VT ( + D2I.LAMBDA SI MULTICOUCHES ) ------
         CIST(1) = D1I(1,1)*VT(1) + D1I(1,2)*VT(2)
         CIST(2) = D1I(2,1)*VT(1) + D1I(2,2)*VT(2)

@@ -1,4 +1,4 @@
-#@ MODIF modelisa2 Messages  DATE 15/02/2011   AUTEUR FLEJOU J-L.FLEJOU 
+#@ MODIF modelisa2 Messages  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -81,7 +81,12 @@ La règle de surcharge est appliquée
  plus petite taille de maille négative ou nulle
 """),
 
-15: _("""
+15: _("""      IF ( .NOT. ( TROUV1 .AND. TROUV2 .AND. TROUV3 .AND. TROUV4 .AND.
+     &             TROUV5 ) ) THEN
+         WRITE(K3CAB,'(I3)') ICABL
+         CALL U2MESK('F','MODELISA2_55',1,K3CAB)
+      ENDIF
+
  groupe de maille GROUP_MA_1= %(k1)s  inexistant dans le maillage  %(k2)s
 """),
 
@@ -222,10 +227,6 @@ Risque & Conseil:
 
 54: _("""
  récupération des caractéristiques du matériau ACIER associé au cable no %(k1)s  : absence de relation de comportement de type <BPEL_ACIER>
-"""),
-
-55: _("""
- récupération des caractéristiques du matériau ACIER associé au cable no %(k1)s , relation de comportement <BPEL_ACIER> : au moins un paramètre indéfini
 """),
 
 56: _("""
