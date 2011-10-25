@@ -1,4 +1,4 @@
-#@ MODIF jeveux1 Messages  DATE 22/02/2011   AUTEUR LEFEBVRE J-P.LEFEBVRE 
+#@ MODIF jeveux1 Messages  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -426,5 +426,10 @@ cata_msg = {
   
 """),
 
+67 : _("""
+
+ La valeur %(i1)d affectée à l'attribut %(k1)s est invalide.
+
+"""),
 
 }

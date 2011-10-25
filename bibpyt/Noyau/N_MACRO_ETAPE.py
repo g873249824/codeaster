@@ -1,9 +1,9 @@
-#@ MODIF N_MACRO_ETAPE Noyau  DATE 23/03/2010   AUTEUR COURTOIS M.COURTOIS 
+#@ MODIF N_MACRO_ETAPE Noyau  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 # RESPONSABLE COURTOIS M.COURTOIS
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2002  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR   
@@ -649,7 +649,9 @@ Le type demande (%s) et le type du concept (%s) devraient etre derives""" %(t,co
          Retourne le contexte tel qu'il est au moment de l'exécution de
          l'étape courante.
       """
-      ctx = self.parent.get_contexte_courant(self)
+      ctx = {}
+      # update car par ricochet on modifierait jdc.current_context
+      ctx.update( self.parent.get_contexte_courant(self) )
       # on peut mettre None car toujours en PAR_LOT='NON', donc la dernière
       ctx.update( self.get_contexte_avant(None) )
       return ctx

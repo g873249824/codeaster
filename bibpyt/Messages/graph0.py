@@ -1,8 +1,8 @@
-#@ MODIF graph0 Messages  DATE 30/06/2010   AUTEUR DELMAS J.DELMAS 
+#@ MODIF graph0 Messages  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2009  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -57,5 +57,17 @@ Le fichier retourné est le fichier '.agr'.
       Bornes des abscisses : [ %(r1)13.6G , %(r2)13.6G ]
       Bornes des ordonnées : [ %(r3)13.6G , %(r4)13.6G ]
 """),
+
+11 : _("""
+   Le fichier '%(k1)s' ne semble pas être au format texte de xmgrace.
+   On ne peut donc pas recalculer les valeurs extrêmes.
+   Le pilote ne permet probablement pas d'imprimer plusieurs
+   graphiques dans le même fichier.
+
+Conseil :
+   N'utilisez pas le mot-clé PILOTE et produisez l'image en
+   utilisant xmgrace.
+"""),
+
 
 }

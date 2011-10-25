@@ -1,4 +1,4 @@
-#@ MODIF calculel2 Messages  DATE 28/03/2011   AUTEUR PELLET J.PELLET 
+#@ MODIF calculel2 Messages  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -388,7 +388,9 @@ Conseils :
 """),
 
 86: _("""
- il faut fournir COMPOR
+ La carte de COMPORTEMENT est absente.
+ Votre résultat a peut-être été produit par LIRE_RESU ou CREA_RESU.
+ Si votre résultat a été produit par LIRE_RESU, il faut renseigner le mot-clé COMP_INCR.
 """),
 
 87: _("""

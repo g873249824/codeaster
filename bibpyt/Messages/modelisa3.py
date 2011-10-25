@@ -1,8 +1,8 @@
-#@ MODIF modelisa3 Messages  DATE 20/07/2010   AUTEUR MAHFOUZ D.MAHFOUZ 
+#@ MODIF modelisa3 Messages  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2006  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -161,9 +161,10 @@ Suggestion :
 """),
 
 32: _("""
- Erreur utilisateur dans CREA_MAILLAGE/MODI_MAILLE :
+ Alarme utilisateur dans CREA_MAILLAGE/MODI_MAILLE :
+  Occurrence du mot clé facteur MODI_MAILLE : %(i1)d.
   Vous avez demandé la transformation de type %(k1)s.
-  Mais il n'y a aucune maille quadratique à transformer.
+  Mais il n'y a aucune maille à transformer.
 """),
 
 35: _("""

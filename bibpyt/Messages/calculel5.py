@@ -1,4 +1,4 @@
-#@ MODIF calculel5 Messages  DATE 18/03/2011   AUTEUR BERARD A.BERARD 
+#@ MODIF calculel5 Messages  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -98,6 +98,10 @@ Alarme utilisateur :
 
 
 
+10: _("""
+Erreur d'utilisation dans la commande CREA_MAILLAGE :
+  Le mot clé MAILLAGE est ici obligatoire.
+"""),
 
 
 11 : _("""

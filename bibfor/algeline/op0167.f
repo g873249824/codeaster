@@ -2,9 +2,9 @@
       IMPLICIT NONE
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGELINE  DATE 19/10/2010   AUTEUR DELMAS J.DELMAS 
+C MODIF ALGELINE  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -80,7 +80,6 @@ C     ------------------------------------------------------------------
       CALL INFNIV(IFM,NIV)
 
       CALL GETRES(NOMAOU,TYPCON,NOMCMD)
-      CALL GETVID(' ','MAILLAGE',1,1,1,NOMAIN,NN1)
 
 C ----------------------------------------------------------------------
 C               TRAITEMENT DU MOT CLE "ECLA_PG"
@@ -102,6 +101,10 @@ C ----------------------------------------------------------------------
         GOTO 350
 
       ENDIF
+
+      CALL GETVID(' ','MAILLAGE',1,1,1,NOMAIN,NN1)
+      IF (NN1.EQ.0) CALL U2MESS('F','CALCULEL5_10')
+
 
 C ----------------------------------------------------------------------
 C          TRAITEMENT DU MOT CLE "CREA_FISS"
@@ -398,6 +401,7 @@ C
 C
         IAD=1
         DO 60 IOCC=1,NBMOMA
+          CALL GETVTX('MODI_MAILLE','OPTION',IOCC,1,1,OPTION,N1)
           ZI(JIAD+IOCC-1)=1
           CALL GETVTX('MODI_MAILLE','PREF_NOEUD',IOCC,1,0,K8B,N1)
           IF (N1.NE.0) THEN
@@ -411,7 +415,8 @@ C
           CALL PALIM2('MODI_MAILLE',IOCC,NOMAIN,MOMANU,MOMANO,
      &                ZI(JIAD+IOCC-1))
           IF (ZI(JIAD+IOCC-1)-1.LE.0) THEN
-            CALL U2MESG('F','MODELISA3_32',1,OPTION,0,0,0,0.D0)
+            CALL U2MESG('A','MODELISA3_32',1,OPTION,1,IOCC,0,0.D0)
+            GOTO 60
           ENDIF
 
           CALL WKVECT(LISI,'V V I',ZI(JIAD+IOCC-1)-1,JLII)
@@ -442,7 +447,6 @@ C LES AUTRES SE TROUVENT EN INCREMENTANT
 
           IF (NIV.GE.1) THEN
             WRITE (IFM,9000)IOCC
-            CALL GETVTX('MODI_MAILLE','OPTION',IOCC,1,1,OPTION,N1)
             IF (OPTION.EQ.'TRIA6_7') THEN
               WRITE (IFM,9010)ZI(JIAD+IOCC-1)-1,'TRIA6','TRIA7'
             ELSEIF (OPTION.EQ.'QUAD8_9') THEN
@@ -452,7 +456,6 @@ C LES AUTRES SE TROUVENT EN INCREMENTANT
             ENDIF
           ENDIF
    60   CONTINUE
-C
 
         CALL JEVEUO(MOMUTO,'L',JMOMTU)
         CALL JEVEUO(MOMOTO,'L',JMOMTO)

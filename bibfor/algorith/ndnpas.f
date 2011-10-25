@@ -2,7 +2,7 @@
      &                  SDDYNA,RESOCO,VALINC,SOLALG)
 C     
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 17/01/2011   AUTEUR ABBAS M.ABBAS 
+C MODIF ALGORITH  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -341,7 +341,7 @@ C
             COEFV(3) = DELTAT
             COEFA(1) = ZERO
             COEFA(2) = ZERO
-            COEFA(3) = ZERO            
+            COEFA(3) = UN            
           ENDIF
         ELSE
           CALL ASSERT(.FALSE.)  

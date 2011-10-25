@@ -1,4 +1,4 @@
-#@ MODIF algorith7 Messages  DATE 18/01/2011   AUTEUR PROIX J-M.PROIX 
+#@ MODIF algorith7 Messages  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -180,6 +180,11 @@ cata_msg = {
 
 82 : _("""
  loi de comportement avec irradiation, le paramètre phi/K.PHI_ZERO+L vaut 0. Dans ces conditions le paramètre BETA doit être positif ou nul
+"""),
+
+83 : _("""
+ Vous utilisez le modèle BETON_UMLV_FP avec un modèle d'endommagement.
+ Attention, la mise à jour des contraintes sera faite suivant les déformations totales et non pas suivant un schéma incrémental.
 """),
 
 96 : _("""

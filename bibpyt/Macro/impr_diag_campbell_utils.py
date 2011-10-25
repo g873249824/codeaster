@@ -1,8 +1,8 @@
-#@ MODIF impr_diag_campbell_utils Macro  DATE 09/11/2010   AUTEUR TORKHANI M.TORKHANI 
+#@ MODIF impr_diag_campbell_utils Macro  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -531,7 +531,7 @@ def CALC_PREC(self,Mf,NFREQ_f,L_GR_NOEUD, typ_prec) :
                 
                 if typ_prec == 1 : 
                     #Sens parcours pour un noeud
-                    preces  = dy_r*dz_i-dy_i*dz_r ;
+                    preces  = -(dy_r*dz_i-dy_i*dz_r) ;
                     #Sens de precession dominant dans une mode
                     if preces >0:
                         sens1=sens1+ dy_m + dz_m;
@@ -543,7 +543,7 @@ def CALC_PREC(self,Mf,NFREQ_f,L_GR_NOEUD, typ_prec) :
                     if lk > modul1:
                         # demi diagonale
                         modul1=lk
-                        preces  = dy_r*dz_i-dy_i*dz_r ; 
+                        preces  = -(dy_r*dz_i-dy_i*dz_r) ; 
                         if preces >0:
                             sens1=modul1;
                         elif preces <0:             
