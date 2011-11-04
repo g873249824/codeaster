@@ -1,8 +1,9 @@
-      SUBROUTINE TE0008 ( OPTION , NOMTE )
+      SUBROUTINE TE0008(OPTION,NOMTE )
+C
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 14/12/2010   AUTEUR PELLET J.PELLET 
+C MODIF ELEMENTS  DATE 04/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -17,66 +18,76 @@ C YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
 C ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 C    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 C ======================================================================
-      IMPLICIT REAL*8 (A-H,O-Z)
-      CHARACTER*16        OPTION , NOMTE
+C
+      IMPLICIT      NONE
+      CHARACTER*16  OPTION,NOMTE
+C
 C ----------------------------------------------------------------------
-C FONCTION REALISEE:  CALCUL DE L'OPTION FORC_NODA
 C
-C    - ARGUMENTS:
-C        DONNEES:      OPTION       -->  OPTION DE CALCUL
-C                      NOMTE        -->  NOM DU TYPE ELEMENT
-C --------- DEBUT DECLARATIONS NORMALISEES  JEVEUX ---------------------
-      CHARACTER*32       JEXNUM , JEXNOM , JEXR8 , JEXATR
-      INTEGER            ZI
-      COMMON  / IVARJE / ZI(1)
-      REAL*8             ZR
-      COMMON  / RVARJE / ZR(1)
-      COMPLEX*16         ZC
-      COMMON  / CVARJE / ZC(1)
-      LOGICAL            ZL
-      COMMON  / LVARJE / ZL(1)
-      CHARACTER*8        ZK8
-      CHARACTER*16                ZK16
-      CHARACTER*24                          ZK24
-      CHARACTER*32                                    ZK32
-      CHARACTER*80                                              ZK80
-      COMMON  / KVARJE / ZK8(1) , ZK16(1) , ZK24(1) , ZK32(1) , ZK80(1)
-C --------- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
-      REAL*8             NHARM, BSIGM(81),GEO(81),SIGTMP(162),FTEMP(81)
-      INTEGER            NBSIGM
-C DEB ------------------------------------------------------------------
-      CALL ELREF4(' ','RIGI',NDIM,NNO,NNOS,NPG1,IPOIDS,IVF,IDFDE,JGANO)
+C ELEMENTS ISOPARAMETRIQUES 2D ET 3D
 C
-C --- INITIALISATIONS :
-C     -----------------
+C CALCUL DES OPTIONS FORC_NODA ET REFE_FORC_NODA
+C
+C ----------------------------------------------------------------------
+C
+C
+C IN  OPTION : OPTION DE CALCUL
+C IN  NOMTE  : NOM DU TYPE ELEMENT
+C
+C -------------- DEBUT DECLARATIONS NORMALISEES  JEVEUX ----------------
+C
+      INTEGER ZI
+      COMMON /IVARJE/ ZI(1)
+      REAL*8 ZR
+      COMMON /RVARJE/ ZR(1)
+      COMPLEX*16 ZC
+      COMMON /CVARJE/ ZC(1)
+      LOGICAL ZL
+      COMMON /LVARJE/ ZL(1)
+      CHARACTER*8 ZK8
+      CHARACTER*16 ZK16
+      CHARACTER*24 ZK24
+      CHARACTER*32 ZK32
+      CHARACTER*80 ZK80
+      COMMON /KVARJE/ ZK8(1),ZK16(1),ZK24(1),ZK32(1),ZK80(1)
+C
+C -------------- FIN  DECLARATIONS  NORMALISEES  JEVEUX ----------------
+C
+      REAL*8    ZERO,SIGREF
+      REAL*8    NHARM, BSIGM(81),GEO(81),SIGTMP(162),FTEMP(81)
+      INTEGER   NBSIG,NDIM,NNO,NNOS,NPG1
+      INTEGER   IPOIDS,IVF,IDFDE,JGANO
+      INTEGER   IGEOM,IVECTU
+      INTEGER   IDEPL,ICOMP,ICONTM
+      INTEGER   I,J,IRETD,IRETC
+      INTEGER   NBSIGM
+C
+C ----------------------------------------------------------------------
+C
+      CALL ELREF4(' '   ,'RIGI',NDIM  ,NNO   ,NNOS  ,
+     &            NPG1  ,IPOIDS,IVF   ,IDFDE ,JGANO )
+C
+C --- INITIALISATIONS
+C
       ZERO  = 0.0D0
       NHARM = ZERO
 C
-C ---- NOMBRE DE CONTRAINTES ASSOCIE A L'ELEMENT
-C      -----------------------------------------
+C --- NOMBRE DE CONTRAINTES ASSOCIE A L'ELEMENT
+C
       NBSIG = NBSIGM()
 C
-C ---- PARAMETRES EN ENTREE
-C      --------------------
-C ----     COORDONNEES DES CONNECTIVITES
-      CALL JEVECH('PGEOMER','L',IGEOM)
-
-C         CHAMPS POUR LA REACTUALISATION DE LA GEOMETRIE
-      DO 30 I = 1,NDIM*NNO
-         GEO(I)  =ZR(IGEOM-1+I)
-30    CONTINUE
-
+C --- PARAMETRE EN SORTIE: VECTEUR DES FORCES INTERNES (BT*SIGMA)
 C
-C ---- PARAMETRES EN SORTIE
-C      --------------------
-C ----     VECTEUR DES FORCES INTERNES (BT*SIGMA)
       CALL JEVECH('PVECTUR','E',IVECTU)
-
-C ---- CALCUL DE FORC_NODA
-
+C
+C --- PARAMETRE EN ENTREE: GEROMETRIE 
+C
+      CALL JEVECH('PGEOMER','L',IGEOM)
+      DO 30 I = 1,NDIM*NNO
+         GEO(I)  = ZR(IGEOM-1+I)
+30    CONTINUE
+C
       IF (OPTION.EQ.'FORC_NODA') THEN
-C      --------------------
-
         CALL TECACH('ONN','PDEPLMR',1,IDEPL,IRETD)
         CALL TECACH('ONN','PCOMPOR',1,ICOMP,IRETC)
         IF ((IRETD.EQ.0).AND.(IRETC.EQ.0)) THEN

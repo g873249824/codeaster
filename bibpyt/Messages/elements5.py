@@ -1,4 +1,4 @@
-#@ MODIF elements5 Messages  DATE 28/02/2011   AUTEUR BARGELLI R.BARGELLINI 
+#@ MODIF elements5 Messages  DATE 04/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -29,11 +29,6 @@ cata_msg = {
 
 3 : _("""
  tuyau : le nombre de secteurs est limite a  %(i1)d
-"""),
-
-8 : _("""
- Vous voulez utiliser l'indicateur de convergence RESI_REFE_RELA mais vous n'avez pas
- renseigné le mot-clé %(k1)s .
 """),
 
 9 : _("""

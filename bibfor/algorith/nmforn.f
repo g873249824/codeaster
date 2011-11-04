@@ -1,9 +1,8 @@
-      SUBROUTINE NMFORN(NDIM,NNO1,NNO2,NPG,IW,VFF1,VFF2,IDFDE1,
-     &                  MAT,IDFDE2,GEOM,TYPMOD,REFE,VECT)
-
+      SUBROUTINE NMFORN(NDIM  ,NNO1  ,NNO2  ,NPG   ,IW    ,
+     &                  VFF1  ,VFF2  ,IDFDE1,GEOM  ,VECT  )
 C            
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 15/02/2011   AUTEUR FLEJOU J-L.FLEJOU 
+C MODIF ALGORITH  DATE 04/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -22,13 +21,11 @@ C   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 C ======================================================================
 C 
        IMPLICIT NONE
-
-       CHARACTER*8   TYPMOD(*)
-       INTEGER NDIM,NNO1,NNO2,NPG,IDFDE1,IDFDE2,IW,MAT
+       INTEGER NDIM,NNO1,NNO2,NPG,IDFDE1,IW
        REAL*8  VFF1(NNO1,NPG),VFF2(NNO2,NPG)
        REAL*8  GEOM(NDIM,NNO1)
-       REAL*8  REFE(2)
        REAL*8  VECT(*)
+C
 C ---------------------------------------------------------------------
 C
 C     FORC_NODA POUR GRAD_VARI (2D ET 3D)
@@ -49,13 +46,12 @@ C OUT VECT    : FORCES INTERIEURES    (RAPH_MECA   ET FULL_MECA_*)
 C ---------------------------------------------------------------------
 C      
       LOGICAL GRAND,AXI
-      INTEGER IBID,NDDL,NDIMSI,G,N,I,KL,KK
+      INTEGER NDDL,NDIMSI,G,N,I,KL,KK
       INTEGER IU(3*27),IA(8)
       REAL*8  DFDI1(27,3)
-      REAL*8  AV,AG,BP
       REAL*8  R,WG,B(6,3,27)
-      REAL*8  SIGMA(6),T1,SIGREF,VARREF
-      REAL*8  R8DOT,R8VIDE,NMTAEF
+      REAL*8  T1,SIGREF,VARREF
+C
 C ---------------------------------------------------------------------
 C
 C - INITIALISATION
@@ -65,12 +61,11 @@ C - INITIALISATION
       NDDL   = NNO1*NDIM + NNO2
       NDIMSI = 2*NDIM
 
-      SIGREF = REFE(1)
-      IF (REFE(2).EQ.R8VIDE()) THEN
-        VARREF = 1.D0
-      ELSE
-        VARREF = REFE(2)
-      END IF
+C
+C --- VALEURS DE REFERENCE POUR REFE_FORC_NODA
+C
+      CALL TEREFE('SIGM_REFE','MECA_GRADVARI',SIGREF)
+      CALL TEREFE('VARI_REFE','MECA_GRADVARI',VARREF)
 
       CALL R8INIR(NDDL,0.D0,VECT,1)
       

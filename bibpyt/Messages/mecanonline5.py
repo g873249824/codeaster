@@ -1,4 +1,4 @@
-#@ MODIF mecanonline5 Messages  DATE 28/02/2011   AUTEUR ABBAS M.ABBAS 
+#@ MODIF mecanonline5 Messages  DATE 04/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -170,6 +170,10 @@ La recherche linéaire est incompatible avec le pilotage de type DDL_IMPO.
 La recherche linéaire de type PILOTAGE nécessite de faire du pilotage (présence du mot-clef facteur PILOTAGE).
 """),
 
+36 : _("""
+La prédiction de type EXTRAPOL ou DEPL_CALCULE est incompatible avec le pilotage.
+"""),
+
 43 : _("""
   -> Les paramètres RHO_MIN et RHO_MAX sont identiques.
 """),
@@ -216,10 +220,9 @@ Il faut préciser un concept EVOL_NOLI en prédiction de type 'DEPL_CALCULE'
         Critere RESI_COMP_RELA interdit en dynamique. Utiliser un autre critere de convergence 
 """),  
 
-54 : _("""
-  Vous voulez utiliser l'indicateur de convergence RESI_REFE_RELA et une modélisation 
-  GRAD_VARI mais vous n'avez pas renseigné le mot-clé %(k1)s .  
+55 : _(u"""
+  Vous utilisez l'indicateur de convergence RESI_REFE_RELA et une modélisation %(k1)s.
+  Vous devez renseigner la valeur de référence %(k2)s dans CONVERGENCE.
 """),
-
 
 }

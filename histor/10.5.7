@@ -1,0 +1,463 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 11/04/2011 - 05:17:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017640 DU 2011-10-04 07:59:10
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [Forum] Anomalie PROJ_CHAMP('ELGA')
+FONCTIONNALITE
+   Problème :
+   ----------
+   Quand on projette PROJ_CHAMP / METHODE='ECLA_PG' les résultats de la projection sont faux
+   en 3D.
+                                                                                            
+                                                                                                
+                                                                                            
+                                                                                                
+   Corrections :
+   -------------
+   1) La routine pjcoor.f me semble dangereuse. Je la "blinde" en vérifiant certaines
+   propriétés par des ASSSERT.
+   
+   2) Le problème essentiel se trouve dans la routine pjma2p.f : on allouait l'objet
+   COORDO.VALE de longueur 4*NBNO (au lieu de 3*NBNO) et on le remplissait mal.
+      Dans l'ancienne version de pjma2p, je ne comprends pas l'instruction J2=J2+1 du bloc :
+         11         CONTINUE
+                    J2=J2+1
+         21       CONTINUE
+                                                                                            
+                                                                                                
+      Après examen de la routine avec Nicolas tardieu, nous sommes convaincus que :
+        En 2D, c'est sans doute bon (2 incompréhensions se compensent !)
+        En 3D, c'est toujours faux
+                                                                                            
+                                                                                                
+      Mais alors, pourquoi le test zzzz271a (2D et 3D) est-il OK ?
+      La raison en est que le maillage de départ est très grossier et il est composé de
+   TETRA4 (1 seul point de gauss).
+      Du coup, la projection 'ECLA_PG' ne peut pas etre très précise et on a donné une assez
+   grande tolérance sur la valeur testée.
+                                                                                            
+                                                                                                
+      J'ai modifié le test pour raffiner le maillage 3D de départ (3 raffinements de Homard).
+                                                                                            
+                                                                                                
+      Si je teste les 8 points de Gauss de la maille M272 du maillage d'arrivée, j'obtiens
+   jusqu'à 30% d'erreur :
+    OK   ANALYTIQUE   2.83094          2.8888888888889  2.05%            2.5%
+    OK   ANALYTIQUE   1.16906          1.1480323058978  1.8%             2.0%
+    OK   ANALYTIQUE   2.83094          2.8888888888889  2.05%            2.5%
+    OK   ANALYTIQUE   1.16906          1.1480323058978  1.8%             2.0%
+    OK   ANALYTIQUE   1.197169         1.2016668277004  0.376%           6.5%
+   NOOK  ANALYTIQUE   1.197169         1.5554983172226  29.9%            6.5%
+   NOOK  ANALYTIQUE   1.197169         1.0455625        12.7%            6.5%
+    OK   ANALYTIQUE   1.197169         1.212625         1.29%            6.5%
+                                                                                            
+                                                                                                
+     Après correction, on obtient :
+    OK   ANALYTIQUE   2.83094          2.8888888888889  2.05%            2.5%
+    OK   ANALYTIQUE   1.16906          1.1480323058978  1.8%             2.0%
+    OK   ANALYTIQUE   2.83094          2.8888888888889  2.05%            2.5%
+    OK   ANALYTIQUE   1.16906          1.1480323058978  1.8%             2.0%
+    OK   ANALYTIQUE   1.197169         1.212625         1.29%            6.5%
+    OK   ANALYTIQUE   1.197169         1.212625         1.29%            6.5%
+    OK   ANALYTIQUE   1.197169         1.1974375        0.0224%          6.5%
+    OK   ANALYTIQUE   1.197169         1.2000574516679  0.241%           6.5%
+                                                                                            
+                                                                                                
+                                                                                            
+                                                                                                
+                                                                                            
+                                                                                                
+   Validation :
+   ------------
+   1) Sur l'étude jointe, j'ai vérifié que les valeurs projetées sur les 8 points de Gauss
+   d'une maille linéaire sont bien celles d'un des 27 points de Gauss de la maille
+   quadratique correspondante.
+   2) Modification du test zzzz271a : maillage plus fin + test des 8 points de Gauss
+                                                                                            
+                                                                                                
+                                                                                            
+                                                                                                
+   Resultats faux :
+   ----------------
+   PROJ_CHAMP / METHODE='ECLA_PG' donne en général des résultats faux en 3D.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  17640
+     pjcorr.f  pjelco.f  pjelga.f  pjma1p.f  pjma2p.f
+     zzzz271a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz271a
+DEJA RESTITUE DANS : 11.0.30
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 11/04/2011 - 05:17:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017750 DU 2011-10-19 11:27:09
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] Option QUAD_LINE
+FONCTIONNALITE
+   Problème :
+   ----------
+   Le post http://www.code-aster.org/forum2/viewtopic.php?id=15826 montre qu'il y a un
+   problème dans la routine CMQLNM.
+   
+   Je ne pense pas qu'il y ait vraiment de bug mais plutôt qu'il manque un message d'erreur.
+   
+   
+   Solution :
+   ----------
+   Ce problème se manifeste lorsqu'on fait un CREA_MAILLAGE avec l'option QUAD_LINE.
+   
+   Dans le cas considéré, l'utilisateur donne une liste de mailles à transformer en mailles
+   linéaires malheureusement, tous les noeuds qu'il serait possible de supprimer
+   appartiennent à des mailles qui elles restent quadratiques donc ces noeuds ne sont pas
+   supprimables.
+   
+   A la fin, on se retrouve sans aucun noeud à supprimer, ce qui provoque un plantage assez sale.
+   
+   La solution consiste donc à faire comme dans l'appelant de CMQLNM (qui vérifie que dans la
+   liste donnée existent bien des mailles quadratiques) : émettre une erreur F pour signaler
+   que l'opération demandée par l'utilisateur n'est pas possible faute de noeuds à supprimer.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+DEJA RESTITUE DANS : 11.0.30
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 11/04/2011 - 05:17:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016805 DU 2011-04-21 07:50:40
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Calcul avec RESI_REFE_RELA faussement convergxc3xa9 (en 3D au moins)
+FONCTIONNALITE
+   Probleme
+   ========
+   
+   Anomalie repérée par Martin en travaillant sur la fiche d'évolution issue16760
+   
+   Les paramètres du critère de convergence RESI_REFE_RELA ne sont pas correctement vérifiés
+   par Aster. Ceci peut aboutir à de sérieux problèmes, avec des résultats faussement
+   convergés sans alarme ni erreur.
+   
+   Les paramètres de RESI_REFE_RELA sont SIGM_REFE, FORC_REFE, VARI_REFE, EPSI_REFE, etc...
+   Le catalogue de commande vérifie simplement que si RESI_REFE_RELA est présent, *au moins
+   un* de ces paramètres est présent.
+   
+   Dans les TE, ces paramètres sont lus pour le calcul de l'option REFE_FORC_NODA sans
+   vérifier systématiquement que la valeur a été effectivement rentrée par l'utilisateur.
+   Certains TE (bons élèves) vérifient systématiquement *_REFE différent de R8VIDE, d'autres
+   jamais.
+   On croyait que le fait de mettre R8VIDE() déclencherait un FPE et donc une erreur fatale
+   qui suffisait à nous protéger mais:
+   - ça n'empêche pas certaines opérations arithmétiques, c'est R8NNEM() qui l'empêche
+   - est inefficace quand la valeur est simplement affectée, sans calcul (cas des éléments de
+   structure par exemple)
+   
+   Solution(s)
+   ===========
+   
+   Si on remplace R8VIDE() par R8NNEM() (qui lui, provoque une erreur numérique si on fait
+   des opérations avec), un seul cas-test est cassé: ssnp307a
+   
+   En testant tous les R8NNEM(), on pourrait s'arrêter sympathiquement en disant à
+   l'utilisateur qu'il ne donne pas les bons *_REFE au vu de sa modélisation.
+   Mais, on ne pourra pas dire lesquels on attendrait pour ne pas planter car la carte
+   d'entrée est réduite en mode_local dans le catalogue de l'élément.
+   
+   Pour la V11, on propose une solution très amie de l'utilisateur par l'émission d'un
+   message d'erreur propre et clair:
+   
+   55 : _(u"""
+     Vous utilisez l'indicateur de convergence RESI_REFE_RELA et une modélisation %(k1)s.
+     Vous devez renseigner la valeur de référence %(k2)s dans CONVERGENCE.
+   """),
+   
+   Le principe a été de développer une routine utilitaire terefe.f , appelable dans les TE et
+   qui va vérifier la concordance entre la modélisation et la présence du bon paramètre *_REFE.
+   
+   Il y a bcp d'impacts: 17 TE sont concernés, plus quatre sous-routines appelés dans les TE.
+   
+   Validation
+   ----------
+   
+   Tous les cas-tests qui utilisent RESI_REFE_RELA
+   Un seul cas-test est cassé: ssnp307a.
+   En effet, on n'oblige pas l'utilisateur à entrer VARI_REFE dans les modélisations
+   GRADVARI. Si l'utilisateur ne le renseigne pas, on met 1 par défaut. Comme on teste sa
+   valeur à R8VIDE dans le TE. Remplacer par R8NNEM -> FPE.
+   Ce n'est pas un bug.
+   Par précaution, j'impose aux utilisateurs de renseigner VARI_REFE pour ces modélisations
+   et le code ne choisit pas "1" à sa place.
+   
+   
+   Avec la nouvelle version, On a le message suivant:
+     
+   !-----------------------------------------------------------------------------------------------!
+      ! <F> <MECANONLINE5_55>                                                               
+            !
+      !                                                                                     
+            !
+      !   Vous utilisez l'indicateur de convergence RESI_REFE_RELA et une modélisation
+   MECA_GRADVARI. !
+      !   Vous devez renseigner la valeur de référence VARI_REFE dans CONVERGENCE.          
+            !
+      !                                                                                     
+            !
+      !                                                                                     
+            !
+      ! This error is fatal. The program is stopping.                                       
+            !
+     
+   !-----------------------------------------------------------------------------------------------!
+    On corrige (VARI_REFE=1 dans ssnp307)
+    
+   
+   Cas particuliers
+   ----------------
+   
+   Pour la THM, on a préféré harmoniser les catalogues d'éléments en mettant systématiquement
+   le même mode local pour tous les éléments:
+   EREFCO   = PREC     ELEM__         (SIGM     FHYDR1   FHYDR2   FTHERM)
+   En effet, un seul TE (le te0600) calcule tous les éléments, ce serait trop compliqué de
+   faire les cas particuliers dans TEREFE.F
+   
+   Pour XFEM, l'option RESI_FORC_NODA (pour le calcul de RESI_REFE_RELA) est désactivée. On
+   met -1 dans tous les catalogues XFEM.
+   
+   RESU_FAUX
+   ---------
+   
+   En 10 et en 11
+   L'utilisation de l'option RESI_REFE_RELA pour les éléments 3D, les discrets, les poutres,
+   les coques 3d peut donner un lieu à un résultat faux si l'utilisateur n'a pas renseigné le
+   bon *_REFE dans CONVERGENCE.
+   En pratique, le risque est faible: les *_REFE sont initialisés à R8VIDE et on prend le
+   maximum des composantes. R8VIDE étant très grand, on risque surtout de ne pas converger.
+   Mais si l'utilisateur a mis un RESI_REFE_RELA faible, le produit peut être petit et donc
+   converger vers un résultat faux.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.0.16
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tous les cas-tests utilisant RESI_REFE_RELA
+DEJA RESTITUE DANS : 11.0.30
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017573 DU 2011-09-21 17:24:31
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORMA] Pilotage incompatible avec EXTRAPOL et DEPL_CALCULE
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Dans la formation on s'est aperçu que le pilotage était incompatible avec
+   PREDICTION='EXTRAPOL' (et DEPL_CALCULEE logiquement).
+   
+   
+   Solution
+   ========
+   
+   L'explication est que l'on ne résout dans ces types de prédiction que
+   K*u1=f1 (pour rendre cinématiquement admissible u1) et non la partie K*u_pilo=f_pilo.
+   
+   On interdit donc le pilotage avec ces deux types de prédictions.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.03
+VALIDATION
+    liste restreinte
+DEJA RESTITUE DANS : 11.0.30
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 11/04/2011 - 05:17:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017241 DU 2011-07-01 14:59:38
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Perte de convergence inexpliquxc3xa9e xc3xa0 partir de STA10.4
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   '''
+   Les deux traces d'exécution jointes (pression_500hypercolv10.3.mess et
+   pression_500hypercolv10.5.mess) sont deux exécutions de la même étude ; l'une en v10.3,
+   converge en quelques itérations de Newton à chaque pas de chargement,  l'autre en v10.5 a
+   besoin de plus d'itérations dans les derniers pas, et même de plusieurs redécoupages sur
+   le dernier.
+   '''
+   
+   Analyse
+   =======
+   
+   Et bien parfois on a de la chance ! Un déboggeur (et un peu de chance donc) m'a permis de
+   voir qu'un des calculs que j'avais relancé bouclait dans la routine rrkk4 (soit
+   intégration par RUNGE_KUTTA pour VMIS_POU_LINE) :
+   
+   desoza@cn010:/tmp/716534$ gdb ./asteru 16116
+   GNU gdb 6.8-debian
+   ...
+   (gdb) where
+   #0  0x0000000001782624 in rrkk4_ ()
+   #1  0x00000000014fdf57 in rungek_ ()
+   #2  0x00000000014bacc5 in nmvmpk_ ()
+   #3  0x0000000000ec987f in nmvmpo_ ()
+   #4  0x0000000000977890 in te0247_ ()
+   
+   Du coup je me suis intéressé aux poutres dans le calcul et plus particulièrement au
+   comportement VMIS_POU_LINE. Résultat :
+   - avant la 10.3.1, l'algorithme d'intégration du comportement par défaut était 'IMPLICITE'
+   (un Newton dans le cas de VMIS_POU_LINE)
+   - après la 10.3.1, on a supprimé le choix d'un algorithme par défaut, c'est le catalogue
+   de la LdC qui le détermine (le premier dans la liste des algos possibles). Or pour
+   VMIS_POU_LINE, le premier de la liste est 'RUNGE_KUTTA' !
+   
+   Du coup on intégrait différemment la LdC poutre et visiblement sur la fin du transitoire
+   ça convergeait moins bien. En rétablissant une intégration implicite (ALGO_INTE='NEWTON'),
+   on retrouve les résultats de la 10.3.
+   
+   Conclusion
+   ==========
+   
+   Comme les comportements VMIS_POU_* vont être résorbés (au profit des multifibres, cf.
+   issue15655), je ne prends pas la peine de changer le catalogue de ces lois.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude jointe
+DEJA RESTITUE DANS : 11.0.30
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF zzzz271a                      macocco K.MACOCCO          306     44     21
+CATALOGU MODIF typelem/gener_ej3d_hm         macocco K.MACOCCO          151      2      2
+CATALOGU MODIF typelem/gener_me3a62          macocco K.MACOCCO          177      2      2
+CATALOGU MODIF typelem/gener_me3a64          macocco K.MACOCCO          180      2      2
+CATALOGU MODIF typelem/gener_me_xh           macocco K.MACOCCO          339      2      6
+CATALOGU MODIF typelem/gener_me_xhc          macocco K.MACOCCO          349      2      6
+CATALOGU MODIF typelem/gener_me_xhc_xh       macocco K.MACOCCO          191      1      1
+CATALOGU MODIF typelem/gener_me_xhh          macocco K.MACOCCO          355      2      6
+CATALOGU MODIF typelem/gener_me_xht          macocco K.MACOCCO          337      2      6
+CATALOGU MODIF typelem/gener_me_xt           macocco K.MACOCCO          337      2      6
+CATALOGU MODIF typelem/gener_me_xtc          macocco K.MACOCCO          339      2      6
+CATALOGU MODIF typelem/gener_meaa62          macocco K.MACOCCO          162      2      2
+CATALOGU MODIF typelem/gener_meaa64          macocco K.MACOCCO          165      2      2
+CATALOGU MODIF typelem/gener_meax1_xh        macocco K.MACOCCO           85      1      1
+CATALOGU MODIF typelem/gener_meax1_xht       macocco K.MACOCCO           85      1      1
+CATALOGU MODIF typelem/gener_meax1_xt        macocco K.MACOCCO           84      1      1
+CATALOGU MODIF typelem/gener_meax_2_xh       macocco K.MACOCCO          307      2      6
+CATALOGU MODIF typelem/gener_meax_2_xht      macocco K.MACOCCO          290      2      6
+CATALOGU MODIF typelem/gener_meax_2_xt       macocco K.MACOCCO          286      2      6
+CATALOGU MODIF typelem/gener_mecpl2_xh       macocco K.MACOCCO          323      2      6
+CATALOGU MODIF typelem/gener_mecpl2_xhc      macocco K.MACOCCO          328      2      6
+CATALOGU MODIF typelem/gener_mecpl2_xhh      macocco K.MACOCCO          319      2      6
+CATALOGU MODIF typelem/gener_mecpl2_xht      macocco K.MACOCCO          303      2      6
+CATALOGU MODIF typelem/gener_mecpl2_xt       macocco K.MACOCCO          298      2      6
+CATALOGU MODIF typelem/gener_mecpl2_xtc      macocco K.MACOCCO          286      2      6
+CATALOGU MODIF typelem/gener_meda62          macocco K.MACOCCO          162      2      2
+CATALOGU MODIF typelem/gener_meda64          macocco K.MACOCCO          165      2      2
+CATALOGU MODIF typelem/gener_medha2          macocco K.MACOCCO          144      2      2
+CATALOGU MODIF typelem/gener_medpl1_xh       macocco K.MACOCCO           84      2      2
+CATALOGU MODIF typelem/gener_medpl1_xhh      macocco K.MACOCCO          100      2      2
+CATALOGU MODIF typelem/gener_medpl1_xht      macocco K.MACOCCO           84      2      2
+CATALOGU MODIF typelem/gener_medpl1_xt       macocco K.MACOCCO           83      2      2
+CATALOGU MODIF typelem/gener_medpl2_xh       macocco K.MACOCCO          318      2      6
+CATALOGU MODIF typelem/gener_medpl2_xhc      macocco K.MACOCCO          326      2      6
+CATALOGU MODIF typelem/gener_medpl2_xhc_xh    macocco K.MACOCCO          219      1      1
+CATALOGU MODIF typelem/gener_medpl2_xhh      macocco K.MACOCCO          320      2      6
+CATALOGU MODIF typelem/gener_medpl2_xht      macocco K.MACOCCO          298      2      6
+CATALOGU MODIF typelem/gener_medpl2_xt       macocco K.MACOCCO          296      2      6
+CATALOGU MODIF typelem/gener_medpl2_xtc      macocco K.MACOCCO          285      2      6
+CATALOGU MODIF typelem/gener_meh33           macocco K.MACOCCO          150      2      2
+ FORTRAN AJOUT elements/terefe               macocco K.MACOCCO          166    166      0
+ FORTRAN MODIF algorith/exfonc               macocco K.MACOCCO          290     15      2
+ FORTRAN MODIF algorith/nmdocn               macocco K.MACOCCO          189     13     13
+ FORTRAN MODIF algorith/nmfonc               macocco K.MACOCCO          608     15      5
+ FORTRAN MODIF algorith/nmfore               macocco K.MACOCCO          106     15     27
+ FORTRAN MODIF algorith/nmforn               macocco K.MACOCCO           99     13     18
+ FORTRAN MODIF algorith/nminit               macocco K.MACOCCO          274      5      4
+ FORTRAN MODIF algorith/pjelga               macocco K.MACOCCO          121      6     12
+ FORTRAN MODIF algorith/refthm               macocco K.MACOCCO          152     13     16
+ FORTRAN MODIF calculel/pjcorr               macocco K.MACOCCO          200     12     17
+ FORTRAN MODIF calculel/pjelco               macocco K.MACOCCO           68      8     23
+ FORTRAN MODIF calculel/pjma1p               macocco K.MACOCCO           87      2     11
+ FORTRAN MODIF calculel/pjma2p               macocco K.MACOCCO          260     36     45
+ FORTRAN MODIF calculel/te0164               macocco K.MACOCCO           99      6      6
+ FORTRAN MODIF calculel/te0169               macocco K.MACOCCO          106      6      6
+ FORTRAN MODIF elements/forngr               macocco K.MACOCCO          524      6      4
+ FORTRAN MODIF elements/fornpd               macocco K.MACOCCO          245      5      4
+ FORTRAN MODIF elements/te0008               macocco K.MACOCCO          141     50     39
+ FORTRAN MODIF elements/te0039               macocco K.MACOCCO          639     20     13
+ FORTRAN MODIF elements/te0156               macocco K.MACOCCO          110      5      5
+ FORTRAN MODIF elements/te0323               macocco K.MACOCCO           74      6      9
+ FORTRAN MODIF elements/te0347               macocco K.MACOCCO          353      7      6
+ FORTRAN MODIF elements/te0361               macocco K.MACOCCO          101      4      5
+ FORTRAN MODIF elements/te0393               macocco K.MACOCCO          182      8      7
+ FORTRAN MODIF elements/te0395               macocco K.MACOCCO          124      5      5
+ FORTRAN MODIF elements/te0456               macocco K.MACOCCO           94      6     12
+ FORTRAN MODIF elements/te0508               macocco K.MACOCCO          118      5      8
+ FORTRAN MODIF elements/te0517               macocco K.MACOCCO          355      8      6
+ FORTRAN MODIF elements/te0542               macocco K.MACOCCO          112      3     13
+ FORTRAN MODIF elements/te0561               macocco K.MACOCCO          116      3      8
+ FORTRAN MODIF elements/te0600               macocco K.MACOCCO          438      2      4
+ FORTRAN MODIF elements/tuforc               macocco K.MACOCCO          457      5      5
+ FORTRAN MODIF prepost/cmqlnm                macocco K.MACOCCO          183      5      2
+  PYTHON MODIF Comportement/vmis_pou_flejou    macocco K.MACOCCO           36      3      4
+  PYTHON MODIF Comportement/vmis_pou_line    macocco K.MACOCCO           37      3      3
+  PYTHON MODIF Messages/algorith10           macocco K.MACOCCO          271      1     13
+  PYTHON MODIF Messages/elements5            macocco K.MACOCCO          226      1      6
+  PYTHON MODIF Messages/mecanonline5         macocco K.MACOCCO          228      8      5
+  PYTHON MODIF Messages/modelisa4            macocco K.MACOCCO          420      7      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         166       166              +166
+ MODIF :   78       17659       458     571      -113
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   79       17825       624     571       +53 

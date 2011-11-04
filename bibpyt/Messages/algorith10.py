@@ -1,4 +1,4 @@
-#@ MODIF algorith10 Messages  DATE 01/03/2011   AUTEUR CORUS M.CORUS 
+#@ MODIF algorith10 Messages  DATE 04/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -91,18 +91,6 @@ cata_msg = {
 
 36 : _("""
  il manque SIGM_REFE
-"""),
-
-37 : _("""
- il manque RESI_HYD1_REFE
-"""),
-
-38 : _("""
- il manque RESI_HYD2_REFE
-"""),
-
-39 : _("""
- il manque RESI_THER_REFE
 """),
 
 40 : _("""
