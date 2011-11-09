@@ -4,7 +4,7 @@
       IMPLICIT NONE
 C-----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF MODELISA  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF MODELISA  DATE 09/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -82,7 +82,7 @@ C     ----- DEBUT COMMUNS NORMALISES  JEVEUX  --------------------------
       CHARACTER*32                                    ZK32
       CHARACTER*80                                              ZK80
       COMMON  / KVARJE / ZK8(1) , ZK16(1) , ZK24(1) , ZK32(1) , ZK80(1)
-      CHARACTER*32 JEXNOM, JEXNUM, JEXATR
+      CHARACTER*32 JEXNOM
 C     ----- FIN   COMMUNS NORMALISES  JEVEUX  --------------------------
 C
 C ARGUMENTS
@@ -278,13 +278,17 @@ C
 C
   41  CONTINUE
       IF ( ( RH1000.LT.0.0D0 ) .OR. ( MU0 .LT.0.0D0 ) .OR.
-     &     ( FPRG .LE.0.0D0 ) .OR. ( FRCO.LT.0.0D0 ) .OR.
+     &     ( FRCO.LT.0.0D0 ) .OR.
      &     ( FRLI  .LT.0.0D0 ) ) THEN
          WRITE(K3CAB,'(I3)') ICABL
          CALL U2MESK('F','MODELISA2_56',1,K3CAB)
       ENDIF
 C
       IF ( RH1000.EQ.0.0D0 ) RELAX = .FALSE.
+      IF ( RELAX .AND. FPRG.LE.0.0D0) THEN
+          WRITE(K3CAB,'(I3)') ICABL
+          CALL U2MESK('F','MODELISA2_55',1,K3CAB)
+      ENDIF
 C
 C%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 C 3   RECUPERATION DE L'AIRE DE LA SECTION DROITE DU CABLE

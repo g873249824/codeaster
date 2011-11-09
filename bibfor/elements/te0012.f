@@ -2,7 +2,7 @@
       IMPLICIT   NONE
 C.......................................................................
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 13/01/2011   AUTEUR PELLET J.PELLET 
+C MODIF ELEMENTS  DATE 09/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -68,12 +68,7 @@ C --- FIN DECLARATIONS NORMALISEES JEVEUX ------------------------------
       INTEGER      MECANI(5),PRESS1(7),PRESS2(7),TEMPE(5),IBI,IDEC
 C.......................................................................
 
-      CALL ELREF1(ELREFE)
-      IF (ELREFE.EQ.'HE8') THEN
-        FAMI = 'RIGI'
-      ELSE
-        FAMI = 'MASS'
-      END IF
+      FAMI='MASS'
       CALL ELREF4(' ',FAMI,NDIM,NNO,NNOS,NPG,IPOIDS,IVF,IDFDE,JGANO)
       NDDL = 3*NNO
       NVEC = NDDL* (NDDL+1)/2
@@ -203,7 +198,7 @@ C PASSAGE DU STOCKAGE RECTANGULAIRE (A) AU STOCKAGE TRIANGULAIRE (ZR)
         DO 200 J = 1,NNO
           DO 190 I = 1,3
             K = K + 1
-            IF (IDEC.EQ.0) THEN 
+            IF (IDEC.EQ.0) THEN
               IDIAG = K* (K+1)/2
             ELSE
               IF (J.LE.NNOS) THEN
@@ -212,7 +207,7 @@ C PASSAGE DU STOCKAGE RECTANGULAIRE (A) AU STOCKAGE TRIANGULAIRE (ZR)
                 K2 = K+IDEC*NNOS
               ENDIF
               IDIAG = K2* (K2+1)/2
-            ENDIF            
+            ENDIF
             ZR(IMATUU+IDIAG-1) = A(I,I,J,J)*ALFA
   190     CONTINUE
   200   CONTINUE

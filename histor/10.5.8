@@ -1,0 +1,689 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 11/09/2011 - 06:01:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 014579 DU 2010-02-08 15:49:34
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    CTC6 - Problxc3xa8mes de performances avec DEFI_CONTACT
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   '''
+   Avec la création de DEFI_CONTACT, un certain nombre de cas-tests se sont pris une bonne
+   claque au niveau des perfs.
+   C'est le cas (par exemple) de ssnv128l (lagrangien avec frottement)
+   A première vue, il y a un problème dans l'élimination automatique des pivots nuls. La
+   nouvelle version voit trop de pivots nuls, les élimine à tort, ce qui rend la convergence
+   deux fois plus lente (deux fois plus d'itérations de contact, trois fois plus d'itérations
+   de NEwton)
+   '''
+   
+   Analyse
+   =======
+   
+   En 11.0.25, la dégradation des tests ne touche plus que les tests utilisant
+   ALGO_FROT='LAGRANGIEN'. C'est à dire ceux qui résolvent le frottement exactement par
+   dualisation.
+   Ce qui a été identifié comme problématique est la perte des statuts de frottement d'un
+   appariement à un autre. En effet, depuis DEFI_CONTACT, on gère 3 paquets de liaisons :
+   
+   - NESMAX : le nombre potentiel max de liaisons a priori
+   - NBLIAI : le nombre potentiel max effectif de liaisons, c'est à dire que l'on a retiré
+   les noeuds faisant partie de SANS_GROUP_NO et ceux qui se projettent en dehors des
+   surfaces (TOLE_PROJ_EXT)
+   - NBLIAC : le nombre de liaisons actives
+   
+   Avant il n'y avait pas de distinction entre le premier paquet et le second, du coup le
+   transfert de l'état de frottement était naturel. Maintenant il faut gérer ce changement
+   dynamique et notamment l'indirection entre ces 2 paquets.
+   
+   Pour éviter un coût calcul trop important, on choisit l'approche suivante :
+   
+   - On ajoute 2 nouveaux objets à la SD de résolution du contact '.STFR' et '.STF0'
+   ==> '.STFR' le statut de frottement courant avant un nouvel appariement
+   ==> '.STF0' le statut de frottement convergé à la fin d'un pas de temps
+   
+   - avant un appariement (routine CFSVFR appelée dans NMCOFR), on sauvegarde l'état de
+   frottement dans '.STFR'
+   
+   - après un appariement (routine CFINAL, lorsque l'on a réactualisé), on restaure l'état de
+   frottement, à partir de '.STF0' si c'est le premier appariement d'un pas de temps, à
+   partir de '.STFR' sinon
+   ==> cette distinction permet de gérer l'éventuel redécoupage du pas de temps et donc
+   l'écrasement du contenu de '.STFR'
+   
+   - après convergence (routine CFSVFR appelée par CFDECO), on sauvegarde l'état de contact
+   convergé dans '.STF0'
+   
+   Validation
+   ==========
+   
+   Sur les 26 tests utilisant ALGO_FROT='LAGRANGIEN' :
+   
+   - 2 sont NOOK : ssnv128a, ssnv505h
+   - 24 sont OK 
+   
+   ssnv128a : léger changement sur une valeur de déplacement en 'NON_REGRESSION', on change
+   la valeur de référence
+   
+   ssnv505h : contact entre 2 poutres, sur un calcul utilisant COULOMB=0 (c'est à dire en
+   fait sans contact), on trouvait une valeur différente en formulation 'DISCRETE' et
+   'CONTINUE', ce n'est désormais plus le cas. On change la valeur de référence.
+   
+   Performances
+   ============
+   
+   Avant
+   
+   sdnv104d     OK                   252.47     9.10   261.57   276.33
+   sdnv105a     <A>_ALARM            698.66    17.24   715.90   738.82
+   sdnv105c     <A>_ALARM            557.98    10.91   568.89   596.21
+   
+   Après
+   
+   sdnv104d     <A>_ALARM            126.08     4.26   130.34   135.26
+   sdnv105a     <A>_ALARM            406.00    14.36   420.36   421.28
+   sdnv105c     <A>_ALARM            570.28    13.45   583.73   604.01
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout
+DEJA RESTITUE DANS : 11.0.26
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 11/09/2011 - 06:01:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017826 DU 2011-11-02 13:11:40
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Message d'erreur erronxc3xa9 et mauvaise xc3xa9valuation du critxc3xa8re d'appel xc3xa0 la libxc3xa9ration des objets
+FONCTIONNALITE
+   Problème : 
+   ========
+   Valeurs affichées dans le message d'erreur JEVEUX_62 incohérentes et impossibilité
+   d'allouer de la mémoire en libérant des objets JEVEUX.
+   
+   Solution : 
+   ========
+   Lors de la détection d'un manque de mémoire, JEVEUX peut être conduit à imprimer la liste
+   des objets en mémoire (segmentation mémoire) avant d'émettre le message d'erreur en
+   question. Malheureusement, l'appel à la fonction d'impression de la segmentation mémoire
+   JEIMPM fait aussi appel à une routine de débuggage JXVERI qui elle-même fait des
+   allocations, et qui force les libérations, d'où les valeurs affichées incohérentes.
+   
+   On corrige donc la routine JJALLS, en sauvegardant les valeurs à afficher avant l'appel à
+   JEIMPM. On conserve l'appel à JXVERI dans JEIMPM, mais on le déplace en fin de routine
+   après les impressions d'occupation de la mémoire.
+   
+   La routine JJALLS fait appel à la routine de libération des objets en mémoire JJLDYN tout
+   d'abord en essayant de libérer uniquement les objets ne nécessitant pas d'écriture sur
+   disque, puis si cela ne suffit pas, tous les objets pouvant être déchargés. Le critère
+   pour effectuer le second appel était faux : on comparait une valeur en octets et une
+   valeur en entier. On pouvait donc s'arrêter en erreur par manque de place mémoire, alors
+   qu'il était possible de libérer des segments de valeurs. 
+   
+   L'anomalie a été mise en évidence sur une étude du projet OMARISI, les corrections ont été
+   validées sur cette même étude (52000 secondes) qui peut passer en classe q4G_200h en
+   activant la réactualisation de la limite mémoire JEVEUX.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude OMARISI
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017859 DU 2011-11-07 11:51:18
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Valeur incorrecte pour l'attribut de longueur de l'objet syst?me JEVEUX d?crivant l'usage des enregistrements de la base
+FONCTIONNALITE
+   Problème :
+   ========
+   Dans le cadre de la fiche issue17757, une erreur dans l'affectation de l'attribut de
+   longueur de l'objet système $$USADI a été constatée. Cet objet est utilisé pour décrire
+   l'usage de chaque enregistrement.
+   
+   Cet objet devrait être de longueur 3 fois le nombre d'enregistrements maximum (384000 dans
+   l'étude associée à la fiche), or son attribut de longueur est affecté à 2 fois le nombre
+   maximum d'enregistrements (256000). L'erreur se produit uniquement lorsque l'on passe le
+   paramètre -max_base sur la ligne de commande pour aller au-delà des 48 Go par défaut. 
+   
+   Correction :
+   ==========
+   
+   On corrige la routine JEINIF pour affecter correctement l'attribut de longueur.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    etude associ?e ? la fiche 17757
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR haelewyn     HAELEWYN Jessica       DATE 11/09/2011 - 06:01:43
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017770 DU 2011-10-20 14:52:08
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    En NEW11.0.28, les cas-tests sslv115a,b et c s'arrxc3xaatent en erreur fatale sur Calibre5.
+FONCTIONNALITE
+   Problème:
+   Les cas tests sslv115a,b,c s'arrêtent en erreur fatale seulement sur Calibre5.
+   
+   
+   Solution:
+   Un des paramètres est testé or il n'est pas initialisé puisqu'il n'est pas utilisé dans ce cas test. D'où 
+   l'erreur présente seulement sur Calibre 5.
+   Je change les tests pour ne tester ce paramètre que lorsque c'est necessaire.
+   modification de caelca.f et modelisa2.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sslv115abc
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 11/09/2011 - 06:01:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017806 DU 2011-10-27 08:34:14
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    SIMU_POINT_MAT + VARC('SECH')
+FONCTIONNALITE
+   Correction anomalie liee fiche 16148
+   ------------------------------------
+   Il n'est pas possible d'utiliser la variable de commande 'SECH' dans SIMU_POINT_MAT.Lors
+   de la creation d'un champ (CREA_CHAMP) ou d'un resultat (CREA_RESU), la proceduremise en
+   place actuellement ne tient pas compte du fait qu'il n'existe pas de champ du type
+   'NOEU_SECH_R' ou champ 'SECH'. 
+   
+   Pour remedier au probleme, il faut creer une condition dans le fichier
+   simu_point_mat_ops.py pour gerer ce fait. 
+   Le type et nom du champ à allouer sont 'NOEU_TEMP_R' et 'TEMP'
+   
+   IMPACT SOURCE:
+   --------------
+   simu_point_mat_ops.py
+   
+   VALIDATION:
+   -----------
+   Nouvelle modelisation du cas-test COMP003: 
+   [V6.07.103] - COMP003B: TEST COMPORTEMENT SUR BETON_UMLV_FP
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.07.103
+VALIDATION
+    COMP003
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR bottoni      BOTTONI Marina         DATE 11/09/2011 - 06:01:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016670 DU 2011-03-28 15:30:40
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    ENDO_ISOT_BETON
+FONCTIONNALITE
+   En testant la prise en compte de la variation des coefficients d'élasticité avec la
+   température
+   (dans le cadre de la fiche 16191), nous ne sommes pas parvenus à obtenir des résultats
+   corrects
+   avec ENDO_ISOT_BETON.
+   
+   En regardant de plus près, la routine RCVALB n'était pas appelée correctement dans LCEIB1,
+   routine qui initialise les paramètres de la loi :
+   
+   1) la température, qui est une variable de commande, était donnée en entrée à RCVALB aussi
+   comme paramètre.
+   Comme les paramètres ont la priorité sur les variables de commande, c'était comme si la
+   température ne variait pas.
+   2) Les entrées KPG, KSP de RCVALB avaient la valeur fixe de 1 (même température sur tous
+   les PdG de l'élément).
+   
+   On a donc modifié l'appel à RCVALB de façon conséquente, à présent le test passe OK, nous
+   le restituons avec le nom "comp011e". Un astout pour tous le cas-test qui impliquent
+   ENDO_ISOT_BETON donne OK.
+   
+   --> On aura des résultats faux dans toutes les études effectuées jusqu'au présent, qui
+   demandent un variation des 
+   coefficients élastiques (E, ALPHA) avec la température pour la loi ENDO_ISOT_BETON.
+   
+   
+   Une opération de ménage dans les routines de la loi a aussi été nécessaire :
+   - les déformations thermiques étaient calculées parfois avec VERIFT (TP, TM), parfois par
+   formules... nous avons donc uniformisé avec VERIFT partout.
+   - beaucoup de variables dummy éliminées
+   - lignes inutiles ou répétées, aussi éliminées
+   
+   Routines impactées par le ménage, en plus que LCEIB1 : LCLDSB, LCDSBE, EIBEX, LCEIGV
+   (routines ENDO_ISOT_BETON en locale, grad_epsi, implex, grad_vari).
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.07.111
+VALIDATION
+    comp011e
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 11/09/2011 - 06:01:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017842 DU 2011-11-03 18:45:43
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    rxc3xa9sultats faux avec RELA_EFFO_VITE (DYNA_TRAN_MODAL) depuis la 7.3.9
+FONCTIONNALITE
+   Lorsqu'en 7.3.9, on a renommé les structures de données pour éviter des conflits avec les
+   noms de concepts, la routine mdrevi a été oubliée.
+   Cette routine sert à initialiser un type de comportement non linéaire spécifique à
+   DYNA_TRAN_MODAL, nommé RELA_EFFO_VITE, liant effort en un noeud et vitesse en ce point.
+   
+   Depuis il y avait une possibilité de résultat faux lorsqu'on utilisait ce type de relation.
+   Heureusement cette fonctionnalité est tombée en désuétude et n'est plus employée.
+   
+   On s'est aperçu du problème en bouchant un trou de validation (fiche 17171).
+   La validation se fait en étendant le test SDLD34 - lâcher d'un masse-ressort - au cas amorti.
+   On simule l'amortissement modal par une loi effort/vitesse linéaire.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.3.9
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.3.9
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v2.01.34
+VALIDATION
+    SDLD34b
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 11/09/2011 - 06:01:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017849 DU 2011-11-04 09:07:38
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] message d'erreur propre dans AFFE_CHAR_THER/ECHANGE_PAROI en cas de mod?le h?t?rog?ne
+FONCTIONNALITE
+   Correction en v10 et v11, pour blindage, préalable au traitement propre du problème dans
+   issue17833 :
+   
+   Dans la routine paligi.f, recherche du TYPE_ELEM associé aux mailles de couplage.
+   On teste les 3 cas possibles (3D, PL, AX), mais il faut arrêter par un message d'erreur
+   propre dans le ELSE/ENDIF final. C'est le cas quand le modèle est hétérogène en dimension.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    nxc3xa9ant
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 11/09/2011 - 06:01:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017529 DU 2011-09-14 09:45:08
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    MN06 Validation des elements "assumed-strain" HEXS8
+FONCTIONNALITE
+   Problème :
+   
+   Les éléments  "assumed-strain" HEXS8 souffrent d'un défaut de validation.
+   Voila les tests où ils apparaissent :
+   hsnv125g : un seul EF
+   perfe01a : un seul EF
+   sdnv103a : un seul EF
+   sdnv103c : un seul EF
+   sdnv103g : un seul EF
+   ssnd105b : un seul EF
+   ssnv196a : plusieurs EF mais en élasticité
+   
+   
+   Analyse :
+   
+   1) On propose de restituer 3 nouvelles modélisations :
+   
+   SSNP123C et SSNP123D : plaque entaillée élastoplastique en traction quasistatique. 
+   Les modélisations A et B sont en 2D_PLAN_SI et 2D_PLAN_INCO. On réalise leurs équivalents
+   en 3D_SI et 3D_INCO. Les modélisations *_INCO servent de référence pour les modélisations
+   *_SI. On obtient de très bons résultats.
+   
+   SDNV103J : impact d'une barre de taylor élastoplastique.
+   On rajoute une modélisation en 3D_SI avec des éléments HEXS8, ceci afin de valider le
+   comportement de ces éléments en dynamique.
+   
+   2) Mauvaise intégration de la matrice de masse pour les éléments HEXA8 sous intégrés
+   
+   Par ailleurs, un bug fortran a été découvert. Lors du calcul de l'accélération initiale,
+   il est nécessaire de construire et d'inverser la matrice de masse. Or, on prend à tort la
+   famille de points de Gauss de la matrice de rigidité (1 seul point de Gauss), ce qui
+   conduit à une matrice de masse non inversible. Il suffit de prendre la famille de points
+   de gauss donnée dans le catalogue pour la masse (8 points de Gauss) et tout rentre dans
+   l'ordre. 
+   Le calcul affiche un message d'alarme en mettant les termes d'accélération à 0. Cela peut
+   donc donner des résultats faux si on réalise un calcul en dynamique où l'accélération
+   initiale serait non nulle.
+   
+   Impact doc :
+   SSNP123
+   SDNV103
+   Les doc sont écrites, mais impossible de les soumettre puisqu'elles sont en cours
+   d'édition respectivement par M. ABBAS (SDNV103) et Lina DJEKHIANE (SSNP123). 
+   
+   Impact fortran :
+   TE0012
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.03.123, V5.03.103
+VALIDATION
+    cas-tests
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 11/09/2011 - 06:01:45
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017769 DU 2011-10-20 14:47:33
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW11.0.28, le cas-test ssnv128r s'arrxc3xaate en erreur fatale sur Rocks et Calibre5.
+FONCTIONNALITE
+   Problème
+   ========
+   
+   En NEW11.0.28, le cas-test ssnv128r s'arrête en erreur fatale sur Rocks et Calibre5.
+   
+   TITRE : PLAQUE AVEC CONTACT ET FROTTEMENT SUR UN PLAN RIGIDE
+   
+   Le test est modifié en 11.0.28 par la fiche issue10533
+   
+   Solution
+   ========
+   
+   Pas de rapport direct avec le travail sur les perf. de la méthode continue.
+   
+   Il y a un bug dans SANS_GROUP_NO_FR (si ! si ! )
+   Dans mmexfr.f:
+   l85: il y a CALL DCOPY(3,TAU2FR,2,TAU2,1) au lieu de CALL DCOPY(3,TAU2FR,1,TAU2,1)
+   
+   Bizarrement, les BLAS de CALIBRE5 n'ont pas le même comportement que sur ASTER4
+   
+   A faire en 10
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017810 DU 2011-10-27 13:56:22
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW11.0.30, le cas-test sdnv103e s'arrxc3xaate en erreur fatale sur Aster4, Rocks Calibre5 et Calibre7.
+FONCTIONNALITE
+   Probleme
+   ========
+   
+   En NEW11.0.30, le cas-test sdnv103e s'arrête en erreur fatale sur Aster4, Rocks Calibre5
+   et Calibre7.
+   
+   TITRE : IMPACT D UNE BARRE DE TAYLOR ELASTOPLASTIQUE
+   
+   Le problème est "probablement" causé par la restitution de la fiche 17721 de J-P. Lefebvre. 
+   
+   Solution
+   ========
+   
+   Le problème vient effectivement de l'issue17721.
+   Ce cas-test valide le cas où il n'y a pas de charge -> on crée un objet de longueur nulle
+   (LISCHA//'.INFC').
+   On blinde ascima pour ce cas.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdnv103e
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 11/09/2011 - 06:01:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017848 DU 2011-11-04 08:59:40
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    NOOK sur DEPL en debug JEVEUX
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   '''
+   Les tests ssnv128a, ssnp307a, sdnv104d et a sont NOOK sur le DEPL en debug JEVEUX.
+   '''
+   
+   Analyse
+   =======
+   
+   Pour les tests ssnv128a, sdnv104a et d ainsi que sdnv105a (ce dernier dans issue17847), il
+   s'agit d'une petite coquille dans CFJEIN.
+   En effet pour l'algo de Lagrangien avec frottement en 2D, il y a une petite glute (qu'il
+   faudra comprendre) et qui modifie le glissement pour le remettre à zéro à chaque premier
+   appariement or le JEVEUO est en lecture.
+   
+   Pour le test ssnp307a, il s'agit d'un bug dans NMMAJI/MAJOUR pour la mise à jour du
+   déplacement avec les modélisations *_GVNO (endommagement aux noeuds).
+   En effet on passe à MAJOUR un tableau JEVEUX en lecture alors qu'il est modifié (il s'agit
+   de DDEPLA).
+   
+   V10
+   ===
+   
+   Il faut faire seulement la modif pour les modélisatins *_GVNO.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tests en erreur
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 11/09/2011 - 06:01:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017429 DU 2011-08-26 07:02:20
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    TUYAU_3M (SEG4) Calcul de VMIS (SITQ_ELNO )
+FONCTIONNALITE
+   Problème :
+   =========
+   
+   Cette fiche fait suite a un problème "NOOK" rencontré lors du développement de la fiche
+   d'évolution 16651 "Calcul du taux de triaxialite". Pour les cas-tests ssnl106e et ssnl128c
+   qui utilise des TUYAU_3M (SEG4) les résultats sont faux pour la composante VMIS
+   associé a la grandeur SITQ_ELNO. En effet, il y a une anomalie dans la routine te0597 : on
+   ne tient pas compte du nombre de composantes qui est différent entre EPTQ_ELNO et
+   SITQ_ELNO : on trouve toujours 0. Pour corriger, il faudrait soit ne garder dans les
+   catalogues des éléments tuyau que la composante VMIS (et la composante INVA2 pour les
+   déformations équivalentes), soit modifier la programmation de TE0597, ainsi que celle du
+   calcul de SIEQ_ELGA, car la composante TRSIG est également fausse.
+   
+   Solution :
+   =========
+   
+   Comme dans le cas du chantier POST ces options sont remplacées par les options
+   génériques SIEQ_ELNO, EPEQ_ELNO, on supprime tout simplement les options SITQ_ELNO et
+   EPTQ_ELNO (cf. fiche 16950) en version 11.
+   
+   De plus en version 10, il faut interdire ces options (par un -1 dans les catalogues des
+   éléments tuyau) car les résultats sont faux (mais c'est décelable car on trouve toujours 0).
+   
+   Les tests impactés sont : ssnl106d, ssnl106e, ssnl121c, ssnl128c.
+   
+   On y remplace SITQ_ELNO par SIEQ_ELGA, et EPTQ_ELNO par EPEQ_ELGA, et les résultats sont
+   OK (en V11).
+   Au passage on ajoute EPEQ_* et SIEQ_* dans POST_CHAMP / EXTR_TUYAU.
+   Par contre il restera à faire l'évolution dans TE0330 pour caluler SIEQ_ELNO et EPEQ_ELNO
+   
+   En v10 il faut simplement supprimer SITQ et EPTQ des 4 tests ssnl106d, ssnl106e, ssnl121c, 
+   ssnl128c.
+   
+   Les docs sont celles de CALC_ELEM et CALC_CHAMP
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.81.01, U4.81.04, D0.04.04
+VALIDATION
+    4 tests
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 11/09/2011 - 06:01:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017547 DU 2011-09-16 14:25:49
+TYPE anomalie concernant Code_Aster (VERSION 10.6)
+TITRE
+    En NEW10.5.3, le cas-test ssnv182h s'arrxc3xaate en NO_RESU_FILE sur Rocks.
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   En NEW10.5.3, le cas-test ssnv182h s'arrête en NO_RESU_FILE sur Rocks.
+   
+   
+   Solution :
+   ----------
+   
+   En 10.5.6 le test re-fonctionne.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv182h
+DEJA RESTITUE DANS : 11.0.32
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT comp003b                      macocco K.MACOCCO          230    230      0
+ CASTEST AJOUT comp011e                      macocco K.MACOCCO           99     99      0
+ CASTEST AJOUT sdld34b                       macocco K.MACOCCO          165    165      0
+ CASTEST AJOUT sdnv103j                      macocco K.MACOCCO          230    230      0
+ CASTEST AJOUT ssnp123c                      macocco K.MACOCCO          237    237      0
+ CASTEST AJOUT ssnp123d                      macocco K.MACOCCO          239    239      0
+ CASTEST MODIF ssnl106d                      macocco K.MACOCCO          334      2     20
+ CASTEST MODIF ssnl106e                      macocco K.MACOCCO          310      2     22
+ CASTEST MODIF ssnl121c                      macocco K.MACOCCO          443      2     22
+ CASTEST MODIF ssnl128c                      macocco K.MACOCCO          516      2     20
+ CASTEST MODIF ssnp307a                      macocco K.MACOCCO          144      3      2
+ CASTEST MODIF ssnv128a                      macocco K.MACOCCO          497      3      3
+ CASTEST MODIF ssnv505h                      macocco K.MACOCCO          472      2      2
+CATALOGU MODIF typelem/gener_metu61          macocco K.MACOCCO          282      5      7
+CATALOGU MODIF typelem/met3seg3              macocco K.MACOCCO          276      5      7
+CATALOGU MODIF typelem/met3seg4              macocco K.MACOCCO          273      5      7
+ FORTRAN AJOUT algorith/cfsvfr               macocco K.MACOCCO          125    125      0
+ FORTRAN MODIF algorith/ascima               macocco K.MACOCCO          123      4      2
+ FORTRAN MODIF algorith/cfcrli               macocco K.MACOCCO          234     18      5
+ FORTRAN MODIF algorith/cfdeco               macocco K.MACOCCO           96     14      4
+ FORTRAN MODIF algorith/cfinig               macocco K.MACOCCO           65      5     53
+ FORTRAN MODIF algorith/cfinit               macocco K.MACOCCO          193      7      4
+ FORTRAN MODIF algorith/cfjein               macocco K.MACOCCO          487     42     29
+ FORTRAN MODIF algorith/cfmxpo               macocco K.MACOCCO          108      2      2
+ FORTRAN MODIF algorith/eibex                macocco K.MACOCCO          383      8     23
+ FORTRAN MODIF algorith/lcdsbe               macocco K.MACOCCO          372      6      6
+ FORTRAN MODIF algorith/lceib1               macocco K.MACOCCO          161     13     31
+ FORTRAN MODIF algorith/lceigv               macocco K.MACOCCO          451      9     14
+ FORTRAN MODIF algorith/lcldsb               macocco K.MACOCCO          455      8     19
+ FORTRAN MODIF algorith/mdrevi               macocco K.MACOCCO          160      4      4
+ FORTRAN MODIF algorith/mmexfr               macocco K.MACOCCO           88      2      2
+ FORTRAN MODIF algorith/nmcofr               macocco K.MACOCCO          148      9      2
+ FORTRAN MODIF algorith/nmctcg               macocco K.MACOCCO          113      4      6
+ FORTRAN MODIF algorith/nmible               macocco K.MACOCCO          200      3      3
+ FORTRAN MODIF algorith/nmmaji               macocco K.MACOCCO           98      2      2
+ FORTRAN MODIF elements/te0012               macocco K.MACOCCO          298      2      7
+ FORTRAN MODIF jeveux/jeimpm                 macocco K.MACOCCO          253      6      4
+ FORTRAN MODIF jeveux/jeinif                 macocco K.MACOCCO          620      3      3
+ FORTRAN MODIF jeveux/jjalls                 macocco K.MACOCCO          521      7      7
+ FORTRAN MODIF modelisa/caelca               macocco K.MACOCCO          389      7      3
+ FORTRAN MODIF modelisa/paligi               macocco K.MACOCCO          139      3      2
+  PYTHON MODIF Macro/simu_point_mat_ops      macocco K.MACOCCO          711     23      1
+  PYTHON MODIF Messages/mecanonline5         macocco K.MACOCCO          228      2      2
+  PYTHON MODIF Messages/modelisa2            macocco K.MACOCCO          353      5      1
+  PYTHON MODIF Messages/modelisa6            macocco K.MACOCCO          383      6      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    7        1325      1325             +1325
+ MODIF :   38       11377       255     354       -99
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   45       12702      1580     354     +1226 

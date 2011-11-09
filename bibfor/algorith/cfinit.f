@@ -2,7 +2,7 @@
      &                  SDDYNA,SDDISC,VALINC)
 C
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 19/01/2011   AUTEUR MASSIN P.MASSIN 
+C MODIF ALGORITH  DATE 09/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -68,7 +68,7 @@ C
 C ---------------- FIN DECLARATIONS NORMALISEES JEVEUX -----------------
 C
       INTEGER      NTPC,IPC,INCRUN
-      LOGICAL      LREAC(2)
+      LOGICAL      LREAC(3)
       CHARACTER*24 CLREAC
       INTEGER      JCLREA
       INTEGER      CFMMVD,CFDISI
@@ -117,9 +117,11 @@ C ----- PARAMETRES DE REACTUALISATION GEOMETRIQUE
 C  
         LREAC(1) = .TRUE.
         LREAC(2) = .FALSE.
+        LREAC(3) = .TRUE.
         IF (CFDISL(DEFICO,'REAC_GEOM_SANS')) THEN
           IF (NUMINS.NE.1) THEN
             LREAC(1) = .FALSE.
+            LREAC(3) = .FALSE.
           ENDIF
         ENDIF        
 C 
@@ -130,8 +132,9 @@ C
 C
 C ----- SAUVEGARDE
 C        
-        ZL(JCLREA+1-1) = LREAC(1)
-        ZL(JCLREA+2-1) = LREAC(2)                               
+        ZL(JCLREA-1+1) = LREAC(1)
+        ZL(JCLREA-1+2) = LREAC(2)
+        ZL(JCLREA-1+3) = LREAC(3)
       ENDIF 
 C          
       IF (LELTC) THEN

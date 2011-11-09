@@ -3,7 +3,7 @@
      &             VIP,TAMPON,TYPMOD,ICOMP,NVI,DSIDEP,CODRET)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 28/02/2011   AUTEUR BARGELLI R.BARGELLINI 
+C MODIF ALGORITH  DATE 09/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -50,10 +50,10 @@ C                 1   -> VALEUR DE L'ENDOMMAGEMENT
 C                 2   -> DD/DT
 C OUT DSIDEP  : MATRICE TANGENTE
 C ----------------------------------------------------------------------
-      LOGICAL     RAPH, TANG, COUP
+      LOGICAL     RAPH, TANG
 
       INTEGER     NDIMSI, K, L, I, J, M, N, T(3,3)
-      INTEGER     NVI, ICOMP, CODRET,IRET, IISNAN
+      INTEGER     NVI, ICOMP, CODRET,IRET
 
       REAL*8      EPS(6),  TREPS, SIGEL(6)
       REAL*8      RAC2, SIGM(6)
@@ -64,8 +64,7 @@ C ----------------------------------------------------------------------
       REAL*8      LAMBDA, DEUXMU, GAMMA
       REAL*8      SEUIL, DDOT, TAMPON(*), ANGMAS(3)
       REAL*8      TM,TP,TREF,SREF,SECHM,HYDRM,EPSTHE(2),KDESS,BENDO
-      REAL*8       KRON(6), ALPHA,SECHP,HYDRP
-      CHARACTER*2 CERR
+      REAL*8       KRON(6), SECHP,HYDRP
       DATA        KRON/1.D0,1.D0,1.D0,0.D0,0.D0,0.D0/
 C      PARAMETER   (RIGMIN = 0.00001)
 C ----------------------------------------------------------------------
@@ -95,8 +94,6 @@ C
       RAPH = OPTION .EQ. 'RAPH_MECA'
       TANG = OPTION .EQ. 'RIGI_MECA_IMPLEX'
       CODRET = 0
-C      couplage fluage-endommagement non autorisé en impl-ex      
-      COUP = .FALSE. 
 C
 C -- RECUPERATIOIN DES VARIABLES INTERNES
 C
@@ -109,11 +106,10 @@ C
       NDIMSI = 2*NDIM
       RAC2=SQRT(2.D0)
 
-C      CALL CISOLI(FAMI,NDIM,IMATE,COMPOR,EPSM,
-C     &            T,LAMBDA,DEUXMU,GAMMA,SEUIL)
-      CALL LCEIB1 (FAMI,IMATE, COMPOR, NDIM, EPSM, TM,TREF,SREF,
-     &             SECHM,HYDRM,T, LAMBDA, DEUXMU,EPSTHE, KDESS, 
-     &            BENDO, GAMMA, SEUIL,COUP)
+      CALL LCEIB1 (FAMI,KPG,KSP,IMATE,COMPOR,NDIM,EPSM,
+     &             SREF,SECHM,HYDRM,T, LAMBDA,DEUXMU,EPSTHE,
+     &             KDESS,BENDO,GAMMA,SEUIL)
+
 
 C
 C -- MAJ DES DEFORMATIONS ET PASSAGE AUX DEFORMATIONS REELLES 3D
@@ -125,17 +121,6 @@ C
      &                       - BENDO *  HYDRM  )     * KRON(K)
 40      CONTINUE
       ELSEIF (RAPH) THEN
-        IF (IISNAN(TP).EQ.0) THEN
-          CALL RCVALB(FAMI,KPG,KSP,'+',IMATE,' ','ELAS',1,'TEMP',
-     &               0.D0,1,'ALPHA',ALPHA,CERR, ' ')
-          IF ((IISNAN(TREF).EQ.1).OR.(CERR.NE.'OK'))  THEN
-            CALL U2MESS('F','CALCULEL_15')
-          ELSE
-            EPSTHE(2) =ALPHA * (TP - TREF)
-          ENDIF
-        ELSE
-          EPSTHE(2) = 0.D0        
-        ENDIF 
 
         DO 10 K = 1, NDIMSI
           EPS(K) = EPSM(K) + DEPS(K) 

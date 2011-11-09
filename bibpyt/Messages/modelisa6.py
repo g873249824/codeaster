@@ -1,4 +1,4 @@
-#@ MODIF modelisa6 Messages  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF modelisa6 Messages  DATE 09/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -74,6 +74,11 @@ cata_msg = {
 13 : _("""
  les %(i1)d noeuds imprimés ci-dessus n'appartiennent pas au modèle (c'est à dire qu'ils ne portent aucun degré de liberté) et pourtant ils ont ete affectés dans le mot-clé facteur : %(k1)s
 """),
+
+14 : _("""
+Pour le chargement thermique ECHANGE_PAROI, le modèle fourni doit être homogène en dimension : 3D, 2D ou AXIS.
+"""),
+
 
 
 17 : _("""
