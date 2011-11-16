@@ -1,7 +1,7 @@
       SUBROUTINE OP0010()
 C
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 05/07/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ALGORITH  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -586,7 +586,7 @@ C-----------------------------------------------------------------------
       ISOZRO = '&&OP0010.ISOZRO'
 
       IF (METHOD.EQ.'SIMPLEXE') THEN
-         CALL XPRREI(DNOMA,FISS,NOESOM,NORESI,DCNSLN,DCNSLT,
+         CALL XPRREI(DNOMA,FISS,FISPRE,NOESOM,NORESI,DCNSLN,DCNSLT,
      &               DGRLN,DELTAT,LCMIN,'LN',ISOZRO,DCNXIN,NODTOR,
      &               ELETOR,LIGGRD)
       ENDIF
@@ -632,7 +632,7 @@ C-----------------------------------------------------------------------
       ENDIF
 
       IF (METHOD.EQ.'SIMPLEXE') THEN
-         CALL XPRREI(DNOMA,FISS,NOESOM,NORESI,DCNSLT,DCNSLT,
+         CALL XPRREI(DNOMA,FISS,FISPRE,NOESOM,NORESI,DCNSLN,DCNSLT,
      &               DGRLT,DELTAT,LCMIN,'LT',ISOZRO,DCNXIN,NODTOR,
      &               ELETOR,LIGGRD)
       ENDIF

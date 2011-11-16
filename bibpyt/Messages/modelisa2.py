@@ -1,4 +1,4 @@
-#@ MODIF modelisa2 Messages  DATE 09/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF modelisa2 Messages  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -229,7 +229,7 @@ Risque & Conseil:
  récupération des caractéristiques du matériau ACIER associé au cable no %(k1)s  : absence de relation de comportement de type <BPEL_ACIER>
 """),
 
-55: _(u"""
+55: _("""
  récupération des caractéristiques du matériau ACIER associé au cable no %(k1)s , relation de comportement <BPEL_ACIER> : Le paramètre F_PRG doit être positif et non nul
  """),
 

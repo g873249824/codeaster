@@ -1,7 +1,7 @@
       SUBROUTINE TEREFE(NOMREF,TYPELE,VALREF)
 C
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 04/11/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ELEMENTS  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -67,16 +67,16 @@ C
       IF     (NOMREF.EQ.'SIGM_REFE') THEN
         IF (TYPELE.EQ.'MECA_ISO') THEN
           INDEX  = 1
-        ELSEIF (TYPELE.EQ.'THM_JOINT') THEN 
+        ELSEIF (TYPELE.EQ.'THM_JOINT') THEN
           INDEX  = 1
-        ELSEIF (TYPELE.EQ.'MECA_INTERFACE') THEN 
+        ELSEIF (TYPELE.EQ.'MECA_INTERFACE') THEN
           INDEX  = 1
         ELSEIF (TYPELE.EQ.'MECA_COQUE3D') THEN
           INDEX  = 1
         ELSEIF (TYPELE.EQ.'MECA_GRADVARI') THEN
           INDEX  = 1
         ELSEIF (TYPELE.EQ.'MECA_TUYAU') THEN
-          INDEX  = 1 
+          INDEX  = 1
         ELSEIF (TYPELE.EQ.'THM') THEN
           INDEX  = 1
         ELSEIF (TYPELE.EQ.'MECA_INCO') THEN
@@ -97,7 +97,7 @@ C
           CALL ASSERT(.FALSE.)
         ENDIF
       ELSEIF (NOMREF.EQ.'FLUX_HYD1_REFE') THEN
-        IF (TYPELE.EQ.'THM_JOINT') THEN 
+        IF (TYPELE.EQ.'THM_JOINT') THEN
           INDEX  = 2
         ELSEIF (TYPELE.EQ.'THM') THEN
           INDEX  = 2
@@ -120,16 +120,16 @@ C
         IF (TYPELE.EQ.'MECA_DISCRET') THEN
           INDEX  = 1
         ELSEIF (TYPELE.EQ.'MECA_BARRE') THEN
-          INDEX  = 1        
+          INDEX  = 1
         ELSEIF (TYPELE.EQ.'MECA_CABLE') THEN
-          INDEX  = 1        
+          INDEX  = 1
         ELSEIF (TYPELE.EQ.'MECA_POULIE') THEN
           INDEX  = 1
         ELSEIF (TYPELE.EQ.'MECA_POUTRE') THEN
           INDEX  = 1
         ELSE
           CALL ASSERT(.FALSE.)
-        ENDIF  
+        ENDIF
       ELSEIF (NOMREF.EQ.'MOMENT_REFE') THEN
         IF (TYPELE.EQ.'MECA_DISCRET') THEN
           INDEX  = 2
@@ -137,10 +137,10 @@ C
           INDEX  = 2
         ELSE
           CALL ASSERT(.FALSE.)
-        ENDIF   
+        ENDIF
       ELSEIF (NOMREF.EQ.'DEPL_REFE') THEN
-        IF (TYPELE.EQ.'MECA_INTERFACE') THEN 
-          INDEX  = 2  
+        IF (TYPELE.EQ.'MECA_INTERFACE') THEN
+          INDEX  = 2
         ELSE
           CALL ASSERT(.FALSE.)
         ENDIF
@@ -156,8 +156,13 @@ C
 C
       VAL   = ZR(JVREFE+INDEX-1)
       IF (IISNAN(VAL).EQ.1) THEN
+        IF ((NOMREF.EQ.'EFFORT_REFE').OR.
+     &      (NOMREF.EQ.'MOMENT_REFE')) THEN
+          KMESS(2) = 'FORC_REFE'
+        ELSE
+          KMESS(2) = NOMREF
+        ENDIF
         KMESS(1) = TYPELE
-        KMESS(2) = NOMREF
         CALL U2MESK('F','MECANONLINE5_55',2,KMESS)
       ELSE
         VALREF = VAL

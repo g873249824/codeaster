@@ -1,4 +1,4 @@
-#@ MODIF calculel5 Messages  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calculel5 Messages  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -276,11 +276,19 @@ PROJ_CHAMP (ou LIAISON_MAILLE) :
 """),
 
 54 : _("""
- La maille %(k1)s doit etre une maille de peau de type QUAD ou TRIA
- car on est en 3D et elle est de type %(k2)s.
+ Aucune maille de peau n'a été fournie.
+ 
+ Vous devez renseigner le mot-clé MAILLE/GROUP_MA en donnant une liste de mailles ou 
+ un groupe de maille contenant des mailles de peau.
 """),
 
-
+55 : _("""
+ En 3D, les mailles de peau doivent être de type QUAD ou TRIA.
+ Or la maille %(k1)s est de type %(k2)s.
+ 
+ Vous devez renseigner le mot-clé MAILLE/GROUP_MA en donnant une liste de mailles ou 
+ un groupe de maille contenant des mailles de peau de type QUAD ou TRIA.
+"""),
 
 56 : _("""
  La combinaison 'fonction multiplicatrice' et 'chargement de type fonction' n'est pas autorisée car

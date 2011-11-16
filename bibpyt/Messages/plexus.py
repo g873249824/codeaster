@@ -1,4 +1,4 @@
-#@ MODIF plexus Messages  DATE 15/02/2011   AUTEUR ASSIRE A.ASSIRE 
+#@ MODIF plexus Messages  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -63,4 +63,13 @@ Le fichier MED contenant les résultats d'Europlexus est introuvable.
 L'exécution d'Europlexus s'est probablement mal déroulée
 """), 
 
+15 : _("""En présence du mot-clé %(k1)s dans AFFE_CARA_ELEM
+le mot-clé %(k2)s devrait être présent dans CALC_EUROPLEXUS.
+
+"""), 
+
+16 : _("""En présence du mot-clé %(k1)s dans CALC_EUROPLEXUS
+le mot-clé %(k2)s est obligatoire dans AFFE_CARA_ELEM.
+
+"""), 
 }

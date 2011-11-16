@@ -2,7 +2,7 @@
      &                  NBORDR,MODELE,MATE,CARA,NCHAR,CTYP)
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF CALCULEL  DATE 19/05/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF CALCULEL  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
 C TOLE CRP_20
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -150,6 +150,8 @@ C               123456789012345678901234
       BLAN24 = '                        '
       LESOPT='&&'//NOMPRO//'.LES_OPTION'
       NH=0
+      NBCHRE=0
+      IOCC=0
       CHAMGD=BLAN24
       CHGEOM=BLAN24
       CHTEMP=BLAN24
@@ -273,11 +275,11 @@ C     ON VERIFIE QUE CARA_ELEM, NIVE_COUCHE ET NUME_COUCHE ONT ETE
 C     RENSEIGNES POUR LES COQUES
 C=======================================================================
       EXIPLA=.FALSE.
-      CALL DISMOI('F','EXI_COQ1D',MODELE,'MODELE',IBID,K8B,IERD)
+      CALL DISMOI('F','EXI_COQ1D',LIGREL,'LIGREL',IBID,K8B,IERD)
       IF (K8B(1:3).EQ.'OUI')EXIPLA=.TRUE.
-      CALL DISMOI('F','EXI_COQ3D',MODELE,'MODELE',IBID,K8B,IERD)
+      CALL DISMOI('F','EXI_COQ3D',LIGREL,'LIGREL',IBID,K8B,IERD)
       IF (K8B(1:3).EQ.'OUI')EXIPLA=.TRUE.
-      CALL DISMOI('F','EXI_PLAQUE',MODELE,'MODELE',IBID,K8B,IERD)
+      CALL DISMOI('F','EXI_PLAQUE',LIGREL,'LIGREL',IBID,K8B,IERD)
       IF (K8B(1:3).EQ.'OUI')EXIPLA=.TRUE.
       IF (EXIPLA) THEN
         CALL GETVID(' ','CARA_ELEM',1,1,1,K8B,N1)
@@ -883,8 +885,9 @@ C    ------------------------------------------------------------------
 
 
             ELSEIF (OPTION.EQ.'SIEQ_ELNO') THEN
-              IF (TYSD.EQ.'FOURIER_ELAS') CALL U2MESK('F',
-     &            'CALCULEL6_83',1,OPTION)
+              IF (TYSD.EQ.'FOURIER_ELAS') THEN
+                CALL U2MESK('F','CALCULEL6_83',1,OPTION)
+              ENDIF
               CALL RSEXCH(RESUCO,'SIEF_ELGA',IORDR,CHSIG,IRET1)
               CALL RSEXCH(RESUCO,'SICO_ELNO',IORDR,CHSIC,IRET3)
               CALL RSEXCH(RESUCO,'SIGM_ELNO',IORDR,CHSIC,IRET4)
