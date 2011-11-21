@@ -1,0 +1,311 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 11/22/2011 - 05:54:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017915 DU 2011-11-15 17:54:14
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    IMPR_RESU+MED+RESTREINT Pb doc + CHAM_NO_S vide
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   Dans mon étude j'ai du contact et à la fin de mon étude je souhaite faire des
+   IMPR_RESU/RESTREINT sur différents groupes de mailles. Comme j'ai du contact, il existe
+   donc la SD VALE_CONT sur les zones de contact. Pas de chance je fais des
+   IMPR_RESU/RESTREINT sur des groupes de mailles volumiques, j'ai donc un CHAM_NO_S vide sur
+   ces mailles ==> plantage
+   
+   REMARQUES : Anomalies dans la doc IMPR_RESU/MED/RESTREINT :
+   - on dit que le mot clef MODELE est obligatoire si RESTREINT est présent, dans l'exemple
+   (10 lignes en dessous) MODELE n'est pas donné !!
+   - on dit "L'utilisateur n'a le droit qu'à une seule occurrence du mot clé facteur RESU",
+   dans l'exemple (10 lignes en dessous) il y a 2 occurrences !!
+   """
+   
+   
+   Analyse :
+   ---------
+   Effectivement le fortran derrière le mot-clé RESTREINT n'est pas permisif. Si la
+   restriction d'un champ n'est pas possible, on plante.
+   
+   
+   Solution :
+   ----------
+   Je modifie quelques routines pour qu'elles sachent gérer le cas où le champ restreint
+   devient vide.
+   
+   Dans ce cas, on émet une alarme pour prévenir l'utilisateur et on n'ajoute pas le champ en
+   question à la structure de données résultat restreinte. Le message émis est le suivant :
+   """
+    <A> <CALCULEL4_7>
+    La restriction du champ SIEF_ELGA n'a pas été possible à tous les numéros
+    d'ordre. Il ne sera donc pas imprimé dans le fichier MED.
+    Cela peut se produire lorsque le mot-clé RESTREINT est utilisé
+    et que le champ n'existe pas sur les entités géométriques sur
+    lesquelles on tente de le restreindre.
+   """
+   
+   Je doit aussi modifier la doc pour qu'elle prenne en compte les remarques.
+   
+   
+   Impacts :
+   ---------
+   rdtces.f rdtchp.f rdtres.f
+   calculel4.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.05.21
+VALIDATION
+    ssnv128w + IMPR_RESU restreint
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 11/22/2011 - 05:54:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017911 DU 2011-11-15 07:39:10
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    AFFE_CHAR_THER - ECHANGE PAROI RESU_FAUX
+FONCTIONNALITE
+   Je confirme le bug.
+   
+   L'intérêt de la répétitivité cyclique des ddls (en thermique comme en mécanique) peut se
+   comprendre : ce sont ces mêmes mots-clés (ANGL_NAUT, CENTRE) qu'on retrouve dans les
+   chargements LIAISON_GROUP et LIAISON_MAIL. On peut typiquement les employer pour modéliser
+   un unique secteur de structure à symétrie de rotation (toutes machines tournantes).
+   
+   Mais dans ce cas, on a toujours continuité de la matière d'un secteur à l'autre. Donc pour
+   la thermique, égalité de température entre noeuds symétriquement appariés.
+   
+   Je n'arrive pas à me figurer la situation d'une structure à symétrie cyclique qui aurait -
+   entre chaque bloc - un "insterstice" où se développerait un échange thermique fluide.
+   
+   Bref, c'est n'importe quoi et il est salutaire de supprimer cette fonctionnalité inutile
+   et bugguée.
+   
+   Je propose de livrer la résorption uniquement en v11 (nous vivons avec cette
+   fonctionnalité depuis - au moins - la version 4, pas la peine de s'acharner en v10).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.44.02
+VALIDATION
+    nxc3xa9ant
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR zentner      ZENTNER Irmela         DATE 11/22/2011 - 05:54:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017172 DU 2011-06-21 13:14:21
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    DYNA_ALEA_MODA / EXCIT / NOEUD  > résultats FAUX en général
+FONCTIONNALITE
+   -----------------------------------------------------
+   Je propose de corriger les bugs revelés par Jacques selon ses indications:
+   
+   *) La programmation de reseci.f est fausse si la maille IMAI1 n'est pas en première
+   position dans la carte cara_elem.CARGENPO.
+      En effet, la grandeur CAGNPO a plus de 30 CMPS et donc 2 entiers codés. La formule :
+        IEC1 = ZI(IAD1-1+3+2* (INASMX)+INECGD* (IASS1-1)+1)
+        avec INECGD=1 est fausse dès que INASMX > 1
+        Il faut écrire : INECGD=2
+                                                                                            
+                                                          
+   *) la programmation de preflx.f est TOUJOURS fausse :
+           CALL JELIRA(K24BD1,'NUTIOC',INBMAI,KBID)
+           DO 307 IMAI1=1,INBMAI
+             ... on regarde si IMAI1 contient le noeud cherché :
+             if (trouvé) goto 309
+    307    CONTINUE
+    309    CONTINUE
+    Pour la collection maillage.CONNEX, l'attribut NUTIOC
+   vaut toujours 0. Il faut utiliser NMAXOC.
+   
+   -----------------------------------------------------
+   Quant à la question de la résorption ou de travaux de pérennisation plus importants, je
+   pense que c'est une question à traiter à part.
+   Les fonctionnalités EXCIT: SOUR_PRESS, SOUR_FORC, SOUR_DEBI_MASS, SOUR_DEBI_VOLU sont
+   propres aux calculs fluide_structure.
+   Ces fonctionnalités ne sont pas très testées et peu utilisées. Il semble que l'opérateur
+   DYNA_SPEC_MODAL permet également de faire ce type de calculs et est utilisé par MFEE (à
+   vérifier avec Charles). La doc U4 de DYNA_SPEC_MODAL est assez pauvre et ne donne pas
+   beaucoup d'indications.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdll105
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 11/22/2011 - 05:54:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017942 DU 2011-11-21 13:32:11
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Liste de NOEUD dans MACR_SPECTRE
+FONCTIONNALITE
+   Bug dans MACR_SPECTRE :
+   
+   La boucle sur la constitution de la liste des noeuds constituant le plancher était
+   défectueuse pour le cas où le plancher est donné par une liste de NOEUDS (et non de GROUP_NO).
+   
+   Les cas tests validant MACR_SPECTRE (SDLL148A, MISS01A, MISS05A) utilisaient tous
+   GROUP_NO. Je modifie SDLL148A pour constituer une liste de noeuds de planchers par les
+   deux voies possibles.
+   
+   Correction livrée cette semaine en versions 10 et 11 :
+   - modification de macr_spectre_ops.py
+   - modification de sdll138a.comm
+   
+   Pour débloquer l'utilisateur en attendant la correction : grouper les noeuds dans un
+   groupe, puis utiliser celui-ci dans MACR_SPECTRE.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdll138a
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 11/22/2011 - 05:54:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017245 DU 2011-07-04 09:27:31
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TMA : Necs
+TITRE
+    Syntaxe DYNA_TRAN_MODAL
+FONCTIONNALITE
+   Description du problème:
+   =======================
+   
+   Lorsque l'on utilise l'opérateur DYNA_TRAN_MODAL avec l'option CORR_STAT='OUI', on doit
+   donner les données MODE_CORR, D_FONC_DT et D_FONC_DT2
+   
+   Si on ne renseigne pas le mot clé MODE_CORR, on obtient les messages suivants au cours
+   de calcul : 
+   
+      !-----------------------------------------------!
+      ! <E> <ALGORITH13_47>                           !
+      !                                               !
+      !  il manque les modes corrigés                 !
+      !                                               !
+      !                                               !
+      ! Cette erreur sera suivie d'une erreur fatale. !
+      !-----------------------------------------------!
+      
+      
+      !--------------------------------------------!
+      ! <F> <CATAMESS_6>                           !
+      !                                            !
+      !  Fin à la suite de message(s) <E>          !
+      !                                            !
+      !                                            !
+      ! Cette erreur est fatale. Le code s'arrete. !
+      !--------------------------------------------!
+   
+   De la même manière, si on ne renseigne pas D_FONC_DT et D_FONC_DT2, le calcul s'arrête
+   mais cette fois-ci avec un message bien moins clair :
+   
+      !----------------------------------------------------------------!
+      ! <F> <JEVEUX_26>                                                !
+      !                                                                !
+      !      Objet JEVEUX inexistant dans les bases ouvertes : >.PROL< !
+      !      l'objet n'a pas été créé ou il a été détruit              !
+      !                                                                !
+      !                                                                !
+      ! Cette erreur est fatale. Le code s'arrete.                     !
+      !----------------------------------------------------------------!
+   
+   
+   Or la doc U4.53.21 (DYNA_TRAN_MODAL), ainsi que le catapy de la commande, étaient imprécis
+   sur ce point : ils laissaient entendre que ces mots clefs étaient facultatifs lors d'une
+   correction statique, ce qui n'est pas le cas.
+   C'était en particulier peu évident pour  D_FONCT_DT et D_FONC_DT2, qui demandent
+   respectivement la dérivée et la dérivée seconde de la fonction multiplicatrice du
+   chargement (FONC_MULT sous le mot clef facteur EXCIT). En effet ces fonctions servent à
+   corriger la vitesse et l'accélération en sortie de DYNA_TRAN_MODAL. Or la vitesse et
+   l'accélération sont des résultats systématiques de DYNA_TRAN_MODAL.
+   
+   
+   Solution:
+   ========
+   
+   On clarifie le catapy de DYNA_TAN_MODAL (et DYNA_VIBRA).
+   Dans dyna_tran_modal.capy et dyna_vibra.capy, on rend les 3 mots-clefs MOD_CORR,
+   D_FONC_DT, D_FONC_DT2 obligatoires à l'intérieur du bloc b_corr_stat, lorsqu'il est activé
+   par la présence de CORR_STAT='OUI'.
+   
+   Sources impactéés: dyna_tran_modal.capy et dyna_vibra.capy
+   
+   On modifie aussi la doc de DYNA_TRAN_MODAL [U4.53.21] pour l'expliquer (et aussi celle de
+   DYNA_VIBRA lorsqu'elle sera disponible).
+   
+   Validation:
+   ==========
+   
+   cas tests privés :
+   Les cas s'arrêtent en erreur de syntaxe avec ces modifications comme on le souhaitait.
+   On ne crée volontairement pas de nouveau cas test avec erreur de syntaxe.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.53.21
+VALIDATION
+    sans objet
+DEJA RESTITUE DANS : 11.0.32
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdll138a                      macocco K.MACOCCO          670      4      2
+CATALOPY MODIF commande/affe_char_ther       macocco K.MACOCCO          206      2      4
+CATALOPY MODIF commande/affe_char_ther_f     macocco K.MACOCCO          192      2      4
+CATALOPY MODIF commande/dyna_tran_modal      macocco K.MACOCCO          268      5      5
+ FORTRAN MODIF algorith/preflx               macocco K.MACOCCO          303      3      3
+ FORTRAN MODIF algorith/reseci               macocco K.MACOCCO          132      3      3
+ FORTRAN MODIF calculel/rdtces               macocco K.MACOCCO          177     14      4
+ FORTRAN MODIF calculel/rdtchp               macocco K.MACOCCO          120     12      9
+ FORTRAN MODIF calculel/rdtres               macocco K.MACOCCO          254     14      6
+ FORTRAN MODIF modelisa/caechp               macocco K.MACOCCO          132      4     14
+ FORTRAN MODIF modelisa/patrma               macocco K.MACOCCO          228     11     12
+  PYTHON MODIF Macro/macr_spectre_ops        macocco K.MACOCCO          362      3      3
+  PYTHON MODIF Messages/calculel4            macocco K.MACOCCO          392      8      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   13        3436        85      70       +15
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   13        3436        85      70       +15 

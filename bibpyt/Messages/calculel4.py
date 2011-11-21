@@ -1,4 +1,4 @@
-#@ MODIF calculel4 Messages  DATE 08/03/2011   AUTEUR PELLET J.PELLET 
+#@ MODIF calculel4 Messages  DATE 22/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -77,6 +77,13 @@ Erreur utilisateur (ou programmeur) :
     - ce n'est pas la meme grandeur sous-jacente.
 """),
 
+7 : _("""
+ La restriction du champ %(k1)s n'a pas été possible à tous les numéros
+ d'ordre. Il ne sera donc pas imprimé dans le fichier MED.
+ Cela peut se produire lorsque le mot-clé RESTREINT est utilisé
+ et que le champ n'existe pas sur les entités géométriques sur
+ lesquelles on tente de le restreindre.
+"""),
 
 8 : _("""
  le resultat  %(k1)s  n'existe pas
