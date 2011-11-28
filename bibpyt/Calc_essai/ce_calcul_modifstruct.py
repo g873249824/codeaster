@@ -1,8 +1,8 @@
-#@ MODIF ce_calcul_modifstruct Calc_essai  DATE 14/12/2010   AUTEUR PELLET J.PELLET 
+#@ MODIF ce_calcul_modifstruct Calc_essai  DATE 29/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -592,27 +592,37 @@ class CalcEssaiModifStruct:
 
         clear_concept( self.i_deplint )
         self.i_deplint = None
-        __DEPINT=PROJ_CHAMP(METHODE='COLOCATION',
-                            RESULTAT=self.i_deplpr,
-                            MODELE_1=self.support_modele.obj,
-                            MODELE_2=self.i_modlint,
-                            NOM_CHAM='DEPL',
-                            TOUT_ORDRE='OUI',
-                            NUME_DDL=self.i_numint,
-                            );
+        try:
+            __DEPINT=PROJ_CHAMP(METHODE='COLLOCATION',
+                                RESULTAT=self.i_deplpr,
+                                MODELE_1=self.support_modele.obj,
+                                MODELE_2=self.i_modlint,
+                                NOM_CHAM='DEPL',
+                                TOUT_ORDRE='OUI',
+                                NUME_DDL=self.i_numint,
+                                );
+        except aster.error,err :
+            message = "ERREUR ASTER : " + mess.GetText('I',err.id_message, err.valk, err.vali, err.valr)
+            self.mess.disp_mess( message)
+            return            
         self.i_deplint = ModeMeca(None,__DEPINT.nom,__DEPINT)
 
         clear_concept( self.i_deplxint )
         self.i_deplxint = None
         # CHAMP DE DEPL AUX INTERFACES SUR LE MODELE COUPLE
-        __DPXINT=PROJ_CHAMP(METHODE='COLOCATION',
-                            RESULTAT=self.modes_couple.obj,
-                            MODELE_1=self.cpl.modele,
-                            MODELE_2=self.i_modlint,
-                            NOM_CHAM='DEPL',
-                            TOUT_ORDRE='OUI',
-                            NUME_DDL=self.i_numint,
-                            );
+        try:
+            __DPXINT=PROJ_CHAMP(METHODE='COLLOCATION',
+                                RESULTAT=self.modes_couple.obj,
+                                MODELE_1=self.cpl.modele,
+                                MODELE_2=self.i_modlint,
+                                NOM_CHAM='DEPL',
+                                TOUT_ORDRE='OUI',
+                                NUME_DDL=self.i_numint,
+                                );
+        except aster.error,err :
+            message = "ERREUR ASTER : " + mess.GetText('I',err.id_message, err.valk, err.vali, err.valr)
+            self.mess.disp_mess( message)
+            return            
         self.i_deplxint = ModeMeca(None,__DPXINT.nom,__DPXINT)
 
         # INDICATEUR DE PROXIMITE DES MODES
@@ -852,7 +862,7 @@ class CopyModelMeca:
 
         if not mater:
             raise RuntimeError("MODELE est un attribut facultatif de AFFE_MATERIAU \n"
-                                  "mais nécessaire pour cette méthode!"
+                               "mais necessaire pour cette methode!"
                                )
         for args, sd in mater:
             args = convert_args( args, self.concepts )

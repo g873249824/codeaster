@@ -1,8 +1,8 @@
-#@ MODIF cata_ce Calc_essai  DATE 14/12/2010   AUTEUR PELLET J.PELLET 
+#@ MODIF cata_ce Calc_essai  DATE 29/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: utf-8 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -117,7 +117,7 @@ class ModeMeca(Resultat):
 
         try:
             self.get_nom_cham()
-        except AttributeError:
+        except:
             pass
 
         #self.show_linked_concepts()

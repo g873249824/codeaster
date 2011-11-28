@@ -1,8 +1,8 @@
-#@ MODIF outils_ihm Calc_essai  DATE 14/12/2010   AUTEUR PELLET J.PELLET 
+#@ MODIF outils_ihm Calc_essai  DATE 29/11/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -1335,8 +1335,7 @@ class DispFRFDialogue(Toplevel):
                                             NOEUD = noeud,
                                             NOM_CMP = ddl )
                     except aster.error,err:
-                        message = "ERREUR ASTER : " + mess.GetText('I',err.id_message, err.valk, err.vali, err.valr)
-                        self.mess.disp_mess( message) 
+                        message = "ERREUR ASTER, COLONNE " +str(ind+1)+" : " + mess.GetText('I',err.id_message, err.valk, err.vali, err.valr) 
                         return
 
                     fonc_py = __fonc.convert('complex')
@@ -1367,29 +1366,30 @@ def sort_compo_key(compo_key):
     """Retourne l'indice du DDL par rapport au modèle."""
     return ORDERED_DDL_PATTERN.index(compo_key.strip())
 
-def find_composantes(grp_noeuds, noeuds_def, mess = None):
-    """Retourne les composantes du déplacement (DX, DY...DRZ) 
+def find_composantes(grp_noeuds, noeuds_def, nb_no, mess = None):
+    """Retourne les composantes du déplacement (DX, DY...DRZ)
     pour chaque groupe de noeuds. Les noeuds sont définis par
     leur indice provenant du maillage."""
     composantes = {}
 
     if not grp_noeuds:
         return None
-    
+
+    # nb_ecod : nombre d'entier pour coder les DDL de deplacement.
+    nb_ecod = len(noeuds_def)/nb_no
     for grp, noeud_idxs in grp_noeuds.items():
         grp_comp = set()
         for noeud_idx in noeud_idxs:
-            k = (noeud_idx - 1) * 4
-            for i in range(4):
+            k = (noeud_idx - 1) * 5
+            for i in range(5):
                 comp_bits = noeuds_def[k + i]
                 for j in range(1, 31):
                     if comp_bits & 1<<j:
                         idx = 30*i + j - 1
                         grp_comp.add(DEPL_R[idx])
         composantes[grp] = grp_comp
-    
-    return composantes
 
+    return composantes
 
 class _SelectionBase(Frame):
 
@@ -1474,7 +1474,7 @@ class SelectionNoeuds(_SelectionBase):
         _SelectionBase.__init__(self, root, title, **kwargs)
         if self.chgt_rep:
             self.chgt_rep.set_type_sel("Groupe de noeuds: %s.")
-        
+
     def set_modele_maillage(self, modl, maillage):
         """groupno = {'grno1':(1,3,4,5),'grno2':(2,6,7)...}
            PRNM decrit les ddl portes par les noeuds du modele
@@ -1482,23 +1482,25 @@ class SelectionNoeuds(_SelectionBase):
         """
         noeuds_def = modl.MODELE.PRNM.get()
         groupno = maillage.GROUPENO.get()
-        composantes = find_composantes(groupno, noeuds_def)
+        nos = maillage.NOMNOE.get()
+        nb_no = len(nos)
+        composantes = find_composantes(groupno, noeuds_def, nb_no)
         self.display_comp(composantes)
 
 
 class SelectionMailles(_SelectionBase):
-    
+
     def __init__(self, root, title, **kwargs):
         _SelectionBase.__init__(self, root, title, **kwargs)
         if self.chgt_rep:
             self.chgt_rep.set_type_sel("Groupe de mailles: %s.")
-        
+
     def set_modele_maillage(self, modl, maillage):
         noeuds_def = modl.MODELE.PRNM.get()
         groupma = maillage.GROUPEMA.get()
         mailles_def = maillage.CONNEX.get()
-        
-        groupno = {} 
+
+        groupno = {}
         for grp, mailles in groupma.items():
             noeuds = []
             groupno[grp] = noeuds
@@ -1506,9 +1508,10 @@ class SelectionMailles(_SelectionBase):
                 for nod in mailles_def[maille]:
                     if nod not in noeuds:
                         noeuds.append(nod)
-        composantes = find_composantes(groupno, noeuds_def)
+        nos = maillage.NOMNOE.get()
+        nb_no = len(nos)
+        composantes = find_composantes(groupno, noeuds_def, nb_no)
         self.display_comp(composantes)
-
 
 
 
@@ -1648,24 +1651,23 @@ class XmgrManager:
         self.xmgr_nb += 1
         xmgr = CalcEssaiXmgr(self.xmgr_nb)
         self.xmgr_list.append(xmgr)
-        
-        xmgr.Titre('Courbe', 'Sous_titre')
-        xmgr.Axe_x('Fréquence')
-        xmgr.Axe_y('Amplitude')
-        
-        for ordo, leg in zip(ordonnees, legende):
-            cbr = Courbe(abscisses, ordo)
+
+        xmgr.Titre("Courbe", "Sous_titre")
+        xmgr.Axe_x("Frequence")
+        xmgr.Axe_y("Amplitude")
+
+        for absc, ordo, leg in zip(abscisses, ordonnees, legende):
+            cbr = Courbe(absc, ordo)
             xmgr.Courbe(cbr,leg)
-        
+
         xmgr.Ech_x(self.echelle_dict[ech_x])
         xmgr.Ech_y(self.echelle_dict[ech_y])
-    
+
     def fermer(self):
         """Enlève les fichiers temporaires utlisés
         pour les graphiques et les pipe avec Xmgrace."""
         for xmgr in self.xmgr_list:
             xmgr.Fermer()
-
 
     
 #-------------------------------------------------------------------------------

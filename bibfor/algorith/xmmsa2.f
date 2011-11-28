@@ -12,7 +12,7 @@
       CHARACTER*8 JOB
 
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 23/02/2011   AUTEUR MASSIN P.MASSIN 
+C MODIF ALGORITH  DATE 28/11/2011   AUTEUR TARDIEU N.TARDIEU 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -141,10 +141,10 @@ C
            AM2D(2)=AM(2)              
            DAM2D(1)=DAM(1)
            DAM2D(2)=DAM(2)
-           IF(RELA.EQ.1.D0) THEN
+           IF(NINT(RELA).EQ.1) THEN
              CALL LCEJEX('RIGI',IPGF,1,2,IMATE,OPTION,
      &                    AM2D,DAM2D,SIGMA,DSID2D,VIM,VIP)
-           ELSE IF(RELA.EQ.2.D0) THEN
+           ELSE IF(NINT(RELA).EQ.2) THEN
              CALL LCEJLI('RIGI',IPGF,1,2,IMATE,OPTION,
      &                    AM2D,DAM2D,SIGMA,DSID2D,VIM,VIP)
            ENDIF             
@@ -153,10 +153,10 @@ C
            DSIDEP(2,1)=DSID2D(2,1)
            DSIDEP(2,2)=DSID2D(2,2)
          ELSE IF (NDIM.EQ.3) THEN
-           IF(RELA.EQ.1.D0) THEN  
+           IF(NINT(RELA).EQ.1) THEN  
              CALL LCEJEX('RIGI',IPGF,1,3,IMATE,OPTION,
      &                    AM,DAM,SIGMA,DSIDEP,VIM,VIP)
-           ELSE IF(RELA.EQ.2.D0) THEN
+           ELSE IF(NINT(RELA).EQ.2) THEN
              CALL LCEJLI('RIGI',IPGF,1,3,IMATE,OPTION,
      &                    AM,DAM,SIGMA,DSIDEP,VIM,VIP)             
            ENDIF
