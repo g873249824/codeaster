@@ -5,9 +5,9 @@
         IMPLICIT NONE
 C       ================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 20/09/2010   AUTEUR FLEJOU J-L.FLEJOU 
+C MODIF ALGORITH  DATE 21/12/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -231,6 +231,7 @@ C UN POINT DE GAUSS EST 5 AU MAXIMUM. 126=5*24+6
         CHARACTER*8     MOD    ,     TYPMA,   TYPMOD(*)
         CHARACTER*16    COMP(*),     OPT,        LOI, CPMONO(5*NMAT+1)
         CHARACTER*3     MATCST
+        LOGICAL RESI,RIGI
 C       ----------------------------------------------------------------
         COMMON /TDIM/   NDT  , NDI
 C       ----------------------------------------------------------------
@@ -245,6 +246,8 @@ C
       LOI      = COMP(1)
       MOD      = TYPMOD(1)
       DT       = TIMEF - TIMED
+      RESI   = OPT(1:9).EQ.'RAPH_MECA' .OR. OPT(1:9).EQ.'FULL_MECA'
+      RIGI   = OPT(1:9).EQ.'RIGI_MECA' .OR. OPT(1:9).EQ.'FULL_MECA'
 C
 C --  OPTION SUPPRIMEE CAR TYPMA EST IMPOSE SUIVANT QUE L'ON EST EN
 C --  PLASTCITE OU VISCOPLASTICITE. TYPMA EST DEFINI DANS LCMATE
@@ -301,7 +304,7 @@ C     ----------------------------------------------------------------
 C     OPTIONS 'FULL_MECA' ET 'RAPH_MECA' = CALCUL DE SIG(T+DT)
 C     ----------------------------------------------------------------
 C
-      IF ( OPT .EQ. 'RAPH_MECA' .OR. OPT .EQ. 'FULL_MECA' ) THEN
+      IF ( RESI ) THEN
 C --     INTEGRATION ELASTIQUE SUR DT
          CALL LCELAS(LOI, MOD , NMAT, MATERD, MATERF, MATCST,
      &               NVI, DEPS, SIGD, VIND,   SIGF,   VINF,
@@ -349,7 +352,7 @@ C       EVALUATION DU JACOBIEN DSDE A (T+DT) POUR 'FULL_MECA'
 C       ET CALCUL ELASTIQUE    ET   A (T)    POUR 'RIGI_MECA_TANG'
 C       ----------------------------------------------------------------
 C
-      IF ( OPT .EQ. 'RIGI_MECA_TANG' .OR. OPT .EQ. 'FULL_MECA' ) THEN
+      IF ( RIGI ) THEN
          IF ( OPT .EQ. 'RIGI_MECA_TANG' ) THEN
             IF (ETATD.EQ.'ELASTIC'.OR.LOI.EQ.'LAIGLE') THEN
                CALL LCJELA ( LOI  , MOD , NMAT, MATERD, VIND, DSDE)
@@ -381,7 +384,7 @@ C ---                          DU DEVIATEUR ELASTIQUE
                ENDIF
             ENDIF
 C
-         ELSEIF ( OPT .EQ . 'FULL_MECA' ) THEN
+         ELSEIF ( OPT(1:9) .EQ . 'FULL_MECA' ) THEN
             IF  ( ETATF .EQ. 'ELASTIC' ) THEN
                CALL LCJELA ( LOI  , MOD , NMAT, MATERF, VINF, DSDE)
             ELSEIF ( ETATF .EQ. 'PLASTIC' ) THEN

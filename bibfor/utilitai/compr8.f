@@ -7,9 +7,9 @@
       CHARACTER*2  COMP
 
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF UTILITAI  DATE 01/02/2010   AUTEUR GENIAUT S.GENIAUT 
+C MODIF UTILITAI  DATE 21/12/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2009  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -36,14 +36,14 @@ C     A = B EN RELATIF  <=> |A-B| <= EPS.MIN(|A|,|B|)
 C     A <= B EN ABSOLU  <=> A <= B + EPS
 C     A <= B EN RELATIF <=> A <= B + EPS.MIN(|A|,|B|)
 C
-C     A < B EN ABSOLU   <=> A <= B - EPS
-C     A < B EN RELATIF  <=> A <= B - EPS.MIN(|A|,|B|)
+C     A < B EN ABSOLU   <=> A < B - EPS
+C     A < B EN RELATIF  <=> A < B - EPS.MIN(|A|,|B|)
 C
 C     A >= B EN ABSOLU  <=> A >= B - EPS
 C     A >= B EN RELATIF <=> A >= B - EPS.MIN(|A|,|B|)
 C
-C     A > B EN ABSOLU   <=> A >= B + EPS
-C     A > B EN RELATIF  <=> A >= B + EPS.MIN(|A|,|B|)
+C     A > B EN ABSOLU   <=> A > B + EPS
+C     A > B EN RELATIF  <=> A > B + EPS.MIN(|A|,|B|)
 C
 C ----------------------------------------------------------------------
 C
@@ -85,7 +85,7 @@ C     --------------------
 
       ELSEIF (COMP.EQ.'LT') THEN
 
-        IF (A.LE.B-TOLE) COMPR8=.TRUE.
+        IF (A.LT.B-TOLE) COMPR8=.TRUE.
 
       ELSEIF (COMP.EQ.'GE') THEN
 
@@ -93,7 +93,7 @@ C     --------------------
 
       ELSEIF (COMP.EQ.'GT') THEN
 
-        IF (A.GE.B+TOLE) COMPR8=.TRUE.
+        IF (A.GT.B+TOLE) COMPR8=.TRUE.
         
       ELSE
 

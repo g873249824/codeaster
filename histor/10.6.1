@@ -1,0 +1,769 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 12/21/2011 - 11:55:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017978 DU 2011-11-28 12:38:28
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Rxc3xa9xc3xa9crire le prxc3xa9conditionneur de DIRICHLET pour GCP
+FONCTIONNALITE
+   Évolution
+   =========
+   
+   À l'occasion de la réécriture partielle de la routine réalisant le préconditionnement
+   'DIRICHLET' pour l'algorithme 'GCP' de DEFI_CONTACT, on propose également quelques
+   améliorations.
+   Pour rappel le préconditionnement de 'GCP' consiste à résoudre un problème d'optimisation
+   sous contraintes égalités. La résolution de ce problème est faite en appliquant un
+   gradient conjugué sur le complément de Schur du problème.
+   
+   Détails
+   =======
+   
+   1. Les 4 tableaux automatiques utilisés dans la routine sont supprimés et remplacés par 
+   3 vecteurs JEVEUX créés dans la structure de résolution du contact (RESOCO).
+   ==> on évitera ainsi des comportements hasardeux de l'algorithme qui pouvait écraser la pile
+   
+   2. On passe de 4 objets (résidu, direction de recherche, déplacement et jeu) à 3 objets :
+   le jeu est supprimé car dans un gradient conjugué on peut tirer parti d'une identité pour
+   s'en passer.
+   ==> on économise donc un peu de mémoire et en opérations (plus de calcul de A.du)
+   
+   3. Un bug est également corrigé dans le préconditionneur (à reporter en V10) : on
+   confondait direction de descente et résidu pour la détermination du pas d'avancée.
+   ==> la correction fait gagner des itérations de GCP (normal, le préconditionneur est alors
+   meilleur)
+   
+   4. Dans le préconditionneur on utilisait un "restart" toutes les 20 itérations du gradient
+   conjugué : la direction de recherche était alors ré-initialisée au gradient courant (qui
+   est le résidu).
+   En supprimant cette remise à zéro, on obtient une convergence plus rapide (cela est peut
+   être du à la correction de 3.).
+   
+   5. Enfin, on propose une évolution sur l'appel du préconditionneur lorsque
+   PRE_COND='DIRICHLET' est sélectionné.
+   Le constat est le suivant : les premières itérations de GCP, le résidu (jeu) diminue
+   sensiblement de la même manière que le préconditionneur est utilisé ou pas (cf. image
+   jointe). Comme le préconditionneur coûte cher, on perd donc beaucoup de temps.
+   L'idée est donc la suivante : activer le préconditionneur dans un voisinage de la
+   solution, plus précisément lorsque le résidu initial a été suffisamment divisé.
+   
+   Pour cela, on propose de détourner le mot-clé COEF_RESI. Au lieu de fixer un critère de
+   convergence pour le préconditionneur (ce qui sur quelques tests ne semble pas très utile),
+   on propose plutôt d'activer le préconditionneur quand le résidu descend en dessous de
+   (résidu_init/COEF_RESI).
+   Par défaut COEF_RESI = -1.0. Lorsque COEF_RESI<=0, on active tout le temps le PC.
+   
+   Validation
+   ==========
+   
+   Un astout multi-machines des tests GCP a été effectué.
+   Pour valider le nouveau critère d'activation du préconditionneur, on modifie SSNA102E avec
+   PRE_COND='DIRICHLET' et COEF_RESI=1.0E-3. Le temps du test reste le même, le nombre
+   d'itérations est diminué. Par rapport à l'ancien mode, on a divisé le temps par un facteur 10.
+   
+   V10
+   ===
+   
+   En V10, il faut corriger pregcp.f pour corriger l'inversion GRAD<=>DIRECH, ligne 199.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.44.11,U2.04.04
+VALIDATION
+    tous tests GCP
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017827 DU 2011-11-02 15:31:34
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Vérifier que les surfaces esclaves sont disjointes en formulation continue
+FONCTIONNALITE
+   Évolution
+   =========
+   
+   On vérifie désormais dans DEFI_CONTACT si les surfaces esclaves sont disjointes 2 à 2.
+   
+   Si ce n'est pas le cas :
+   - en formulation discrète, on émet un alarme sauf si les nœuds communs aux surfaces sont
+   dans SANS_GROUP_NO
+   - en formulation continue, on déclenche une erreur fatale (une exception est faite pour la
+   fonctionnalité RACCORD_LINE_QUAD mais cette dernière sera prochainement supprimée).
+   
+   Explications
+   ============
+   
+   En formulation discrète, la présence de nœuds communs à 2 surfaces esclaves n'empêche pas
+   le calcul : elle peut entraîner des relations linéaires surabondantes (et donc une matrice
+   de contact singulière) mais si le calcul marche, les conditions de contact seront vérifiées.
+   
+   Ce n'est pas le cas en formulation continue. Comme un seul degré de liberté de pression
+   est rajouté en chaque nœud de contact, il n'est pas possible d'imposer 2 conditions de
+   contact en ce nœud (sans parler de frottement). Ceci est vrai même si une seule des
+   conditions n'est vérifiée à la fois car en formulation continue, un nœud qui n'est pas en
+   contact donne quand même lieu à l'écriture d'une relation linéaire (lambda=0).
+   L'utilisation de SANS_GROUP_NO ne permet pas de contourner le problème car l'élimination
+   est faite au niveau élémentaire et on se retrouve dans le cas précédent.
+   
+   Validation
+   ==========
+   
+   Un astout des tests de contact donne ceci :
+   
+   SSNV504A
+   SSNV504B
+   ==> ces tests en formulation discrète émettent l'alarme. Elle est ignorée par un IGNORE_ALARM.
+   
+   SSNV504I
+   SSNV504J
+   ==> ces tests sont les pendants des 2 premiers en formulation continue. Ils s'arrêtent en
+   erreur fatale. On constate effectivement que sur le premier test en 2D AXIS, le nœud
+   commun aux 2 surfaces esclaves ne vérifie plus le contact (il interpénètre).
+   Pour pallier à ce problème, on adopte la technique suivante :
+   - inversion des surfaces maîtres et esclaves sur la 2ème zone de contact
+   - activation de la réactualisation automatique et du lissage pour que cette dernière marche
+   
+   Après ces corrections, les tests fonctionnent sans problème. On en profite pour pousser
+   SSNV504J (test 3D) jusqu'à la fin du chargement et décommenter les TEST_RESU qui s'y
+   rapportent.
+   Le test passe alors de 10s à 60s sur Aster4. Le para est à 210s.
+   
+   ZZZZ262A
+   ZZZZ262B
+   Il s'agit d'une étude de robinet (ancien test de performance) qui émet l'alarme en
+   formulation discrète. Elle est ignorée.
+   
+   V10
+   ===
+   
+   Impact : cfnodb.f, contact2.py + tests (ssnv504abij, zzzz262ab)
+   
+   Résultats faux : en formulation continue lorsqu'un nœud était commun à 2 surfaces
+   esclaves, il interpénétrait, le contact était donc mal résolu.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.04.504,U4.44.11,U2.04.04
+VALIDATION
+    astout
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018117 DU 2011-12-19 08:26:00
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Quelques coquilles pour le contact discret dans MECA_NON_LINE
+FONCTIONNALITE
+   Express
+   =======
+   
+   On corrige quelques erreurs frappant le contact discret dans MECA_NON_LINE.
+   
+   cfinig.f : routine servant à sauter la prédiction en contact discret dès la 
+   seconde itération géométrique (on ne fait que des corrections). On supprime la 
+   routine qui ne sert plus à rien.
+   
+   ndthet.f : routine permettant de construire le résidu en dynamique pour les 
+   schémas KRENK et THETA_METHODE. Les forces de contact ou de liaison unilatérale 
+   étaient comptées 2 fois ce qui empêchait toute convergence avec ces schémas dès 
+   que le contact était actif.
+   
+   Ces corrections sont à reporter en V10. Il n'y a pas de résultats faux, au pire on 
+   ne convergeait pas.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perso
+DEJA RESTITUE DANS : 11.1.2
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 12/21/2011 - 11:55:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017946 DU 2011-11-22 07:59:11
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    X-FEM : erreur si MECA_STATIQUE
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   [Forum : http://www.code-aster.org/forum2/viewtopic.php?pid=31631#p31631]
+   
+   Avant la v11.0.22, X-FEM n'est pas compatible avec MECA_STATIQUE. La doc est très claire
+   sur ce point.
+   Mais aucun message d'alarme ou d'erreur n'est émis si on le fait qd même.
+   
+   
+   Solution :
+   ----------
+   
+   Désormais, on plante avec le message suivant :
+   Erreur utilisateur :
+     Le modèle %(k1)s est un modèle X-FEM. Or la méthode X-FEM n'est pas 
+     compatible avec la commande MECA_STATIQUE avec cette version de Code_Aster. 
+     Conseils :
+       - Soit utiliser la commande STAT_NON_LINE (plus générale),
+       - Soit utiliser la version 11 de Code_Aster.
+   
+   impact (uniquement en V10) :
+   nmdome.f, calculel3.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perso
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 12/21/2011 - 11:55:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016800 DU 2011-04-20 14:37:45
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    PROJ_CHAMP('ELGA') : co?t ?lev? et alarmes intempestives
+FONCTIONNALITE
+   Problème :
+   ----------
+   Un utilisateur de PROJ_CHAMP / METHODE='ECLA_PG' se plaint :
+                                                                                            
+                                                                                            
+                          
+   1) Il obtient une alarme injustifiée (projection d'un modèle sur lui-meme) :
+     <A> <CALCULEL5_7>
+     Alarme utilisateur :
+       Vous utilisez la commande PROJ_CHAMP ou un mot clé nécessitant de "projeter"
+       des noeuds sur des mailles (par exemple LIAISON_MAIL).
+       L'un des noeuds (N3) du maillage (&&PJELC2) a été projeté à une distance D non nulle
+   significative.
+       (D>10% de la taille de la maille la plus proche (M1) du maillage (&&PJELC1)).
+                                                                                            
+                                                                                            
+                          
+   2) Le temps d'exécution de PROJ_CHAMP est élevé (par rapport au cout du calcul) :
+    * STAT_NON_LINE            :       5.35 :       0.60 :       5.95 :       5.96 *
+    * PROJ_CHAMP               :      48.66 :       1.15 :      49.81 :      49.90 *
+                                                                                            
+                                                                                            
+                          
+                                                                                            
+                                                                                            
+                          
+    Analyse :
+    ---------
+    Avec la version actuelle (11.0.34), le test s'arrete en erreur fatale dans la routine
+   pjcorr.f
+                                                                                            
+                                                                                            
+                          
+    On s'aperçoit que le problème surgit pour le 9ème point de Gauss du 1er HEXA20.
+                                                                                            
+                                                                                            
+                          
+    La source du problème est la routine pjligr.f qui fabrique (je n'ai pas compris pourquoi)
+   un ligrel dont les éléments sont (en dur !) ceux des modélisations 'C_PLAN' (en 2D) ou
+   '3D' (en 3D).
+    Ici, la modélisation est '3D_INCO' qui n'a que 8 points de Gauss sur les HEXA20 et non
+   pas 27 pour la modélisation '3D'. D'où le plantage pour le 9ème point de Gauss.
+                                                                                            
+                                                                                            
+                          
+                                                                                            
+                                                                                            
+                          
+    Correction :
+    ------------
+    Je modifie la routine pjma2p.f pour qu'elle n'appelle plus pjligr.f (qui peut donc etre
+   supprimée ainsi que pjtyma.f).
+    Je me contente de "filtrer" le ligrel du modele "2" pour ne conserver que les éléments
+   ayant la bonne dimension (2 ou 3).
+    Une fois cette correction effectuée, l'unique test de PROJ_CHAMP / ECLA_PG (zzzz271a) est
+   encore OK et l'étude jointe va au bout avec une projection qui semble raisonnable.
+                                                                                            
+                                                                                            
+                          
+    Retour sur les plaintes initiales :
+    -----------------------------------
+    1) Il n'y a plus d'alarme CALCULEL5_7
+    2) Le temps CPU de PROJ_CHAMP n'a rien d'anormal (sur ce petit test)
+    On obtient maintenant (pour l'étude fournie) et sur mon poste calibre5 :
+    * STAT_NON_LINE            :       1.90 :       1.12 :       3.02 :       3.16 *
+    * PROJ_CHAMP               :       0.37 :       0.23 :       0.60 :       0.61 *
+                                                                                            
+                                                                                            
+                          
+    NEW10 :
+    -------
+    La fonctionnalité PROJ_CHAMP/ METHODE='ECLA_PG' est encore manifestement trop "immature"
+   (un seul test et sans doute aucun utilisateur).
+    Je propose donc de la résorber.
+                                                                                            
+                                                                                            
+                          
+    Impact documentaire :
+    ---------------------
+    Je profite de cette correction pour compléter un peu la doc D4.06.30 (sd_corresp_2_mailla) :
+      * correction : COLOCATION -> COLLOCATION
+      * description succinte des 2 objets propres à la méthode 'ECLA_PG' : .PJEF_MP et .PJEF_EL
+                                                                                            
+                                                                                            
+                          
+    Détails :
+    ---------
+    1) utilisation de utflm2.f dans utflmd.f
+    2) "enjolivage" de quelques routines de PROJ_CHAMP/ ECLA_PG
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  16800
+     copisd.f  detrsd.f  op0166.f  pjelco.f  pjelga.f  pjligr.f
+     pjma1p.f  pjma2p.f  pjtyco.f  pjtyma.f  utflm2.f  utflmd.f
+     calculel3.py            sd_corresp_2_mailla.py
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : D4.06.30
+VALIDATION
+    ?tude jointe
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 12/21/2011 - 11:55:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017918 DU 2011-11-16 11:56:41
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    [FORUM] ASSERT dans calcul MONOCRISTAL
+FONCTIONNALITE
+   Pb : 
+   Réf : http://www.code-aster.org/forum2/viewtopic.php?id=16044
+   Dans le calcul joint issu du forum, on tombe dans un CALL ASSERT(.FALSE.) avec un calcul
+   utilisant le comportement MONOCRISTAL.
+   
+   Analyse de TdS :
+   En regardant le fortran et en comparant avec un cas-test, j'ai l'impression que c'est
+   parce que l'utilisateur a oublié des mot-clés dans DEFI_COMPOR (en l'occurrence ELAS,
+   ECRO_ISOT et ECRO_CINE).
+   En effet ces mot-clés sont facultatifs selon le catalogue. Pourtant la doc de DEFI_COMPOR
+   semble dire le contraire (losange noir).
+   
+   En effet, les mots-clés ECRO_ISOT et ECRO_CINE sont obligatoires quand l'écoulement est
+   MONO_VISC1.
+   La doc a raison. Je modifie donc le catalogue de DEFI_COMPOR.
+   
+   L'étude passe alors mais avec MATRICE=TANGENTE (au lieu de ELASTIQUE).
+   Pour que cela passe avec MATRICE=ELASTIQUE, je modifie aussi PLASTI et REDECE, en
+   remplaçant tous les
+   
+   IF (OPTION.EQ.'FULL_MECA') par IF(OPTION(1:9).EQ.'FULL_MECA')
+   
+   car dans le cas présent, à la première itération du premier pas, l'option est FULL_MECA_ELAS.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test monocristal + etude jointe
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018042 DU 2011-12-08 08:15:31
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    CORR_ACIER faux en C_PLAN
+FONCTIONNALITE
+   Pour le comportement CORR_ACIER, il est possible, d'après le catalogue et la doc,
+   d'utiliser des modélisations en contraintes planes (C_PLAN, DKT, COQUE_3D,...)
+   Or on s'apercoit vite que dans le fortran, on ignore purement et simplement les
+   contraintes planes !
+   Et bizarrement, il y a un test qui met en oeuvre CORR_ACIER et COQUE_3D : ssnl127e. En
+   voici les résultats :
+   
+   Les contraintes SIZZ sont aussi importantes que SIXX ! 
+   
+    CHAMP PAR ELEMENT AUX POINTS DE GAUSS DE NOM SYMBOLIQUE  SIEF_ELGA             
+    NUMERO D'ORDRE: 1 INST:  2.00000E-04                                                  
+   SIXX           |       SIYY     |        SIZZ    
+   4.395604396E+08|-1.490116119E-07| 1.318681319E+08
+   4.395604396E+08|-1.192092896E-07| 1.318681319E+08
+   4.395604396E+08|-7.450580597E-08| 1.318681319E+08
+   4.395604396E+08|-2.980232239E-08| 1.318681319E+08
+   
+   et d'ailleurs les TEST_RESU donnent des valeurs éloignées de la référence (ces valeurs
+   sont reprises dans la doc sans aucun commentaire). Par exemple !
+   RESULTAT         NUME_ORDRE       NOM_CHAM         NOM_CMP          MAILLE
+   REST2            28               EFGE_ELNO        NXX              M1    
+   REFERENCE        LEGENDE          VALE_REF         VALE_CAL         ERREUR
+   NON_REGRESSION   XXXX             21451.6          22797.721859991  6.28% 
+   
+   
+   Je corrige en enlevant C_PLAN du catalogue de CORR_ACIER (et de la doc U4.51.11) et en
+   introduisant
+   ALGO_C_PLAN='DEBORST' dans le test SSNL127E. Les résultats sont alors :
+          SIXX    |        SIYY    |        SIZZ    
+   4.000000000E+08|-1.490116119E-08| 0.000000000E+00
+   4.000000000E+08| 1.490116119E-08| 0.000000000E+00
+   4.000000000E+08|-2.980232239E-08| 0.000000000E+00
+   4.000000000E+08|-9.792191642E-08|-1.490116119E-08
+   4.000000000E+08|-8.302075522E-08|-1.490116119E-08
+   
+   RESULTAT         NUME_ORDRE       NOM_CHAM         NOM_CMP          MAILLE 
+   REST2            34               EFGE_ELNO        NXX              M1     
+   REFERENCE        LEGENDE          VALE_REF         VALE_CAL         ERREUR 
+   NON_REGRESSION   XXXX             21451.6          21454.920593063  0.0155%
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2.23
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.2.23
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.11, V6.02.127
+VALIDATION
+    ssnl127e
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 12/21/2011 - 11:55:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018030 DU 2011-12-06 15:22:07
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    Bug dans la gestion auto du pas de temps si instant =0
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   En cas de gestion automatique du pas de temps (DEFI_LIST_INST / DEFI_LIST / METHODE =
+   'AUTO') :
+   
+   Si un instant courant vaut 0 et que la liste des instants de passages obligatoires
+   contient aussi 0, alors le test pour connaitre le prochain instant de passage obligatoire
+   plante.
+   on compare les 2 réels (A > B) comme suit : A >= B + tole avec tole = 10e-12*min(|A|,|B|).
+   
+   
+   Solution :
+   ----------
+   
+   Il faut faire la comparaison strictement :
+   A > B + tole avec tole = 10e-12*min(|A|,|B|).
+   
+   impact : compr8.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test perso
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 12/21/2011 - 11:55:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017950 DU 2011-11-22 10:21:30
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Stanley : Anomalie SIEF_ELGA
+FONCTIONNALITE
+   Problème :
+   ----------
+   Quand on utilise Stanley pour visualiser un champ SIEF_ELGA avec Gmsh, on essaye
+   d'utiliser MACR_ECLA_PG.
+   Mais si le champ a des sous-points, ceux ci sont ignorés dans MACR_ECLA_PG.
+                                                                                            
+                           
+   S'il n'y a QUE des éléments à sous-points dans le modèle, le champ à visualiser est vide,
+   ce qui se traduit par une erreur peu compréhensible :
+                                                                                            
+                           
+          !----------------------------------------------------------------!
+          ! <A> <STANLEY_38>                                               !
+          !                                                                !
+          ! Stanley - Erreur lors de l'appel à la commande Aster:          !
+          !                                                                !
+          ! Une erreur est intervenue. L'operation a ete annulee.          !
+          ! Raison:                                                        !
+          ! La valeur 0 affectée à l'attribut LONMAX est invalide.         !
+          !----------------------------------------------------------------!
+                                                                                            
+                           
+                                                                                            
+                           
+   Correction :
+   ------------
+   On vérifie maintenant que le champ "réduit" sur les éléments n'ayant pas de sous-points
+   n'est pas vide.
+   S'il est vide, on émet le message CALCULEL2_40 (voir ci-dessous).
+                                                                                            
+                           
+   On rétablit un message d'information préventif (prepost_36) qui aide à mieux comprendre le
+   message d'erreur.
+                                                                                            
+                           
+   Au total, l'utilisateur peut voir dans le fichier message :
+                                                                                            
+                           
+    Le champ de:  SIEF_R  a des éléments ayant des sous-points.
+    Ces éléments ne seront pas traités.
+                                                                                            
+                           
+   !-------------------------------------------------------------------------------------------------------------------------!
+   !.<F>.<CALCULEL2_40>......................................................................................................!
+   !.........................................................................................................................!
+   !.Erreur.:................................................................................................................!
+   !..Après.avoir.retiré.tous.les.éléments.à.sous-points.du.champ.RESU.....015.000000.(grandeur:.SIEF_R),.celui-ci.est.vide..!
+   !.........................................................................................................................!
+   !.........................................................................................................................!
+   !.Cette.erreur.est.fatale..Le.code.s'arrête...............................................................................!
+   !-------------------------------------------------------------------------------------------------------------------------!
+   .
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  17950
+     celcel.f  eclpgc.f
+     calculel2.py  prepost.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test fourni
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 12/21/2011 - 11:55:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018023 DU 2011-12-02 15:43:33
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Pour ceux qui confondent donn?es et r?sultats !
+FONCTIONNALITE
+   Quand on construit le paquet aster-full, on retire les tests dont 
+   la visibilité est restreinte, et ceux dont les données (fichier de 
+   maillage) sont trop gros (sinon le tgz deviendrait très lourd, les 
+   maillages de certains perf0xx dépassant les 500 Mo).
+   
+   Le maillage semble nécessaire dans les calculs (!), en revanche, on 
+   ne relit pas toujours des champs. On s'aperçoit que quelques 
+   fichiers MED contient plus que nécessaire.
+   
+   Il n'y a que zzzz272a qui est scandaleux :
+   - tpna01d : on supprime les champs
+   - zzzz121e.mmed est petit
+   - zzzz141a fait du EXEC_LOGICIEL_MAILLAGE
+   - zzzz272a : on supprime les champs
+   
+   tpna01d.mmed passe de 1.5 Mo à 600 ko.
+   zzzz272a.mmed passe de 125 Mo à 270 ko.
+   
+   
+   
+   + Hors sujet
+   ------------
+   
+   mfchac.F ne compile plus avec l'option _USE_MED_SHORT_INT.
+   On le corrige.
+   V10 pour cette correction.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ras
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR granet       GRANET Sylvie          DATE 12/21/2011 - 11:55:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018046 DU 2011-12-09 12:37:26
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Probleme avec Drucker-Prager
+FONCTIONNALITE
+   Dans la routine dpvpdi.f, la variable DEPS (variable locale out représentant l'incrément
+   de déformation mécanique, soit la déformation totale moins la partie thermique)
+   n'est pas initialisée : je l'initialise aux
+   valeurs de déformation totale. 
+   Je simplifie également les tests dans la routine : 
+   le "IF ALPHA .EQ. O est en effet inutile.
+   
+   Remarque : Dans le cas où les variables de commande de thermiques étaient absentes, les
+   résultats étaient susceptibles d'être faux.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.7
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.7
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage des cas test Drxc3xbccker Prager
+DEJA RESTITUE DANS : 11.1.2
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR debonnieres  DE BONNIERES Philippe   DATE 12/21/2011 - 11:55:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017941 DU 2011-11-21 10:37:06
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Pb dans la programmation de la loi LEMA_SEUIL
+FONCTIONNALITE
+   Je corrige ici une erreur dans le calcul et l'affectation du flux pour 
+   la loi LEMA_SEUIL dans la routine NMVPIR :
+   
+   ancienne programmation (lignes 326 et 327)
+   UNSURK = (COEINT(1)*FLUPHI*2.D0)/SQRT(3.D0)
+   FLUPHI = IRRAP
+   
+   
+   nouvelle programmation (lignes 326 et 327)
+   FLUPHI = (IRRAP-IRRAM)/DELTAT
+   UNSURK = (COEINT(1)*FLUPHI*2.D0)/SQRT(3.D0)
+   
+   
+   Je modifie Ã©galement les fichiers de commande des tests COMP010C, 
+   SSNA104B et SSNV179A pour que cela fonctionne.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.3.27
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.3.27
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.08, U4.43.01
+VALIDATION
+    COMP010C, SSNA104B, SSNV179A
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR torkhani     TORKHANI Mohamed       DATE 12/13/2011 - 10:00:08
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017381 DU 2011-08-08 12:50:33
+TYPE evolution concernant Documentation (VERSION )
+TITRE
+    ODYMAT : documentation U2 calcul de rotor avec Aster
+FONCTIONNALITE
+   Une doc U2 générale est produite pour aider l'utilisateur à mettre en oeuvre des calculs de machines 
+   tournantes dans Code_Aster.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : u2.06.32
+VALIDATION
+    doc U2
+NB_JOURS_TRAV  : 10.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018016 DU 2011-12-01 17:00:29
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    En NEW10.5.11, le cas-test sdll141b  s'arrxc3xaate en erreur fatale sur CALIBRE7.
+FONCTIONNALITE
+   Cette fiche est identique à la fiche 17579 (survenue lors du portage de la NEW11 en calibre 7). 
+   Pour rappel, le problème est le suivant : le seuil de tolérance pour la norme d'erreur relative du mode 
+   numéro 29 passe de 2e-3 à 2.1e-3. Il s'agit d'un problème récurrent lors de la résolution des problèmes 
+   modaux avec gyroscopie. 
+   Comme pour la fiche 17579, et en attendant une solution portant sur les solveurs modaux, je me contente dans 
+   cette fiche de relâcher la tolérance (je la fais passer de 2e-3 à 5e-3 pour éviter que le test ne récidive).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdll141b
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF comp010c                      macocco K.MACOCCO          224      7      7
+ CASTEST MODIF sdll141b                     torkhani M.TORKHANI         186      3      3
+ CASTEST MODIF sslv131a                      macocco K.MACOCCO          360      1      1
+ CASTEST MODIF ssna104b                      macocco K.MACOCCO          149     17      5
+ CASTEST MODIF ssnl127e                      macocco K.MACOCCO          394     10      4
+ CASTEST MODIF ssnv115a                      macocco K.MACOCCO          245      1      1
+ CASTEST MODIF ssnv179a                      macocco K.MACOCCO          239     15      7
+ CASTEST MODIF ssnv504a                      macocco K.MACOCCO          327      3      3
+ CASTEST MODIF ssnv504b                      macocco K.MACOCCO          277      3      3
+ CASTEST MODIF ssnv504i                      macocco K.MACOCCO          211      5      6
+ CASTEST MODIF ssnv504j                      macocco K.MACOCCO          297     35     10
+ CASTEST MODIF szlz105a                      macocco K.MACOCCO          366      1      1
+ CASTEST MODIF tpll01b                       macocco K.MACOCCO          182      1      1
+ CASTEST MODIF zzzz262a                      macocco K.MACOCCO          626      2      2
+ CASTEST MODIF zzzz262b                      macocco K.MACOCCO          638      2      2
+ CASTEST SUPPR zzzz271a.comm                 macocco K.MACOCCO          306      0    306
+CATALOPY MODIF commande/defi_compor          macocco K.MACOCCO          112      3      3
+CATALOPY MODIF commande/proj_champ           macocco K.MACOCCO          288      3      3
+FORTRAN90 MODIF echange/mfchac                macocco K.MACOCCO           49      3      3
+ FORTRAN MODIF algorith/dpvpdi               macocco K.MACOCCO           67     10      6
+ FORTRAN MODIF algorith/ndthet               macocco K.MACOCCO          192      2     21
+ FORTRAN MODIF algorith/nmdome               macocco K.MACOCCO          187      8      2
+ FORTRAN MODIF algorith/nmvpir               macocco K.MACOCCO          555      2      2
+ FORTRAN MODIF algorith/plasti               macocco K.MACOCCO          438      8      5
+ FORTRAN MODIF algorith/pregcp               macocco K.MACOCCO          267      3      3
+ FORTRAN MODIF algorith/redece               macocco K.MACOCCO          272      6      6
+ FORTRAN MODIF calculel/celcel               macocco K.MACOCCO          216     17     12
+ FORTRAN MODIF calculel/eclpgc               macocco K.MACOCCO          271      4      3
+ FORTRAN MODIF modelisa/cfnodb               macocco K.MACOCCO          232     98     17
+ FORTRAN MODIF utilitai/compr8               macocco K.MACOCCO          105      8      8
+  PYTHON MODIF Comportement/corr_acier       macocco K.MACOCCO           38      3      3
+  PYTHON MODIF Messages/calculel2            macocco K.MACOCCO          434      5      5
+  PYTHON MODIF Messages/calculel3            macocco K.MACOCCO          496      9      1
+  PYTHON MODIF Messages/contact2             macocco K.MACOCCO           85     13      1
+  PYTHON MODIF Messages/prepost              macocco K.MACOCCO          235      2      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   34        9260       313     162      +151
+ SUPPR :    1         306               306      -306
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   35        9566       313     468      -155 

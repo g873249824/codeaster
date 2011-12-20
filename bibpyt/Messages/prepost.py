@@ -1,4 +1,4 @@
-#@ MODIF prepost Messages  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
+#@ MODIF prepost Messages  DATE 21/12/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -96,7 +96,7 @@ cata_msg = {
 """),
 
 36 : _("""
- le champ de:  %(k1)s  a des éléments ayant des sous-points.
+ Le champ de:  %(k1)s  a des éléments ayant des sous-points.
  ces éléments ne seront pas traités.
 """),
 

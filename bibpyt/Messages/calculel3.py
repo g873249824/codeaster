@@ -1,4 +1,4 @@
-#@ MODIF calculel3 Messages  DATE 02/02/2011   AUTEUR PELLET J.PELLET 
+#@ MODIF calculel3 Messages  DATE 21/12/2011   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -319,6 +319,14 @@ Erreur utilisateur dans CALC_ELEM:
 """),
 
 
+56 : _("""
+Erreur utilisateur :
+  Le modèle %(k1)s est un modèle X-FEM. Or la méthode X-FEM n'est pas 
+  compatible avec la commande MECA_STATIQUE avec cette version de Code_Aster. 
+  Conseils :
+    - Soit utiliser la commande STAT_NON_LINE (plus générale),
+    - Soit utiliser la version 11 de Code_Aster.
+"""),
 
 
 

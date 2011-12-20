@@ -5,9 +5,9 @@
         IMPLICIT NONE
 C       ================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 18/05/2010   AUTEUR PROIX J-M.PROIX 
+C MODIF ALGORITH  DATE 21/12/2011   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -226,8 +226,8 @@ C --       INITIALISATION DES VARIABLES POUR LE REDECOUPAGE DU PAS
                 DELTAT = (TIMEF - TIMED) / NPAL
                 TF = TD + DELTAT
                 TF1=TF
-                IF ( OPT .EQ. 'RIGI_MECA_TANG'
-     &                  .OR. OPT .EQ. 'FULL_MECA' )
+                IF ( OPT(1:9) .EQ. 'RIGI_MECA'
+     &                  .OR. OPT(1:9) .EQ. 'FULL_MECA' )
      &                  CALL LCINMA ( 0.D0 , DSDE )
                 CALL LCEQVE ( EPSDT     , EPS            )
                 CALL LCEQVE ( DEPST     , DEPS           )
@@ -255,8 +255,8 @@ C
 
             IF ( IRTET.GT.0 ) GOTO (1,2), IRTET
 C
-            IF ( OPT .EQ. 'RIGI_MECA_TANG'
-     &               .OR. OPT .EQ. 'FULL_MECA' ) THEN
+            IF ( OPT(1:9) .EQ. 'RIGI_MECA'
+     &               .OR. OPT(1:9) .EQ. 'FULL_MECA' ) THEN
                 CALL LCPRSM ( 1.D0/NPAL , DSDELO , DSDELO   )
                 CALL LCSOMA ( DSDE    , DSDELO , DSDE      )
             ENDIF
