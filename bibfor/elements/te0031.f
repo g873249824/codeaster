@@ -2,10 +2,10 @@
       IMPLICIT NONE
       CHARACTER*16 OPTION , NOMTE
 C ----------------------------------------------------------------------
-C MODIF ELEMENTS  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ELEMENTS  DATE 11/01/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -65,7 +65,7 @@ C
       INTEGER      JMATE,JGEOM,JMATR,JENER,I,JCARA
       INTEGER      IVECT,NDDL,NVEC,IRET,ICONTP,LGPG1,LGPG2
       INTEGER      ICOU, NBCOU,JNBSPI, IRET1, VALI(2)
-      LOGICAL      LCOELA
+      LOGICAL      LCQHOM
       CHARACTER*2  CODRE2(33),CODRE1,VAL
       CHARACTER*3  NUM
       CHARACTER*8  NOMRES
@@ -91,18 +91,23 @@ C DEB ------------------------------------------------------------------
 C
       CALL ELREF4(' ','RIGI',NDIM,NNO,NNOS,NPG,IPOIDS,IVF,IDFDX,JGANO)
 C
-      LCOELA = .FALSE.
+      LCQHOM = .FALSE.
       IF ( OPTION.EQ.'FULL_MECA'      .OR.
      &     OPTION.EQ.'RAPH_MECA'      .OR.
      &     OPTION(1:9).EQ.'RIGI_MECA' ) THEN
 
         CALL JEVECH('PMATERC','L',JMATE)
 
+C
+C ---	COQUE HOMOGENEISEE ?
+C
         IF ( OPTION.EQ.'FULL_MECA'      .OR.
-     &     OPTION.EQ.'RAPH_MECA'      .OR.
-     &     OPTION.EQ.'RIGI_MECA_TANG') THEN
+     &       OPTION.EQ.'RAPH_MECA'      .OR.
+     &       OPTION.EQ.'RIGI_MECA_TANG') THEN
           CALL RCCOMA(ZI(JMATE),'ELAS',PHENOM,CODRE2)
-          IF (PHENOM.EQ.'ELAS_COQUE') LCOELA = .TRUE.
+          IF (PHENOM.EQ.'ELAS_COQUE'.OR.PHENOM.EQ.'ELAS_COQMU') THEN
+            LCQHOM = .TRUE.
+          ENDIF
         ENDIF
 
 C
@@ -286,16 +291,18 @@ C
         CALL JEVECH('PDEPLPR','L',JDEPR)
         CALL JEVECH('PCOMPOR','L',ICOMPO)
         IF ( ZK16(ICOMPO+3) .EQ. 'COMP_ELAS' ) THEN
-           IF (.NOT.LCOELA) THEN
-             CALL U2MESS('F','ELEMENTS2_71')
-           ENDIF
+          CALL U2MESS('F','ELEMENTS2_71')
+        ENDIF
+        IF (LCQHOM) THEN
+          CALL U2MESS('F','ELEMENTS2_75')
         ENDIF
         IF ((ZK16(ICOMPO+2) (6:10).EQ.'_REAC') .OR.
      &      (ZK16(ICOMPO+2).EQ.'GROT_GDEP') ) THEN
 C            GROT_GDEP CORRESPOND ICI A EULER_ALMANSI
 
-          IF(ZK16(ICOMPO+2) (6:10).EQ.'_REAC')
-     &     CALL U2MESS('A','ELEMENTS2_72')
+          IF(ZK16(ICOMPO+2) (6:10).EQ.'_REAC') THEN
+            CALL U2MESS('A','ELEMENTS2_72')
+          ENDIF
           DO 40 I = 1,NNO
             I1 = 3* (I-1)
             I2 = 6* (I-1)
@@ -319,19 +326,11 @@ C
         CALL UTPVGL(NNO,6,PGL,ZR(JDEPR),DUL)
 C
         IF (NOMTE.EQ.'MEDKTR3') THEN
-          IF (ZK16(ICOMPO+3) (1:9).EQ.'COMP_INCR') THEN
             CALL DKTNLI ( NOMTE, OPTION, XYZL, UML, DUL, VECLOC,
      &                    MATLOC, PGL, CODRET )
-          ELSE
-            CALL U2MESK('F','ELEMENTS2_73',1,ZK16(ICOMPO+3))
-          ENDIF
         ELSE IF (NOMTE.EQ.'MEDKQU4 ') THEN
-          IF (ZK16(ICOMPO+3) (1:9).EQ.'COMP_INCR') THEN
-            CALL DKTNLI ( NOMTE, OPTION, XYZL, UML, DUL, VECLOC,
+          CALL DKTNLI ( NOMTE, OPTION, XYZL, UML, DUL, VECLOC,
      &                    MATLOC, PGL, CODRET )
-          ELSE
-            CALL U2MESK('F','ELEMENTS2_73',1,ZK16(ICOMPO+3))
-          ENDIF
         ELSE
           CALL U2MESK('F','ELEMENTS2_74',1,NOMTE)
         END IF

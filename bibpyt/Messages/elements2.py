@@ -1,8 +1,8 @@
-#@ MODIF elements2 Messages  DATE 20/09/2011   AUTEUR CHEIGNON E.CHEIGNON 
+#@ MODIF elements2 Messages  DATE 11/01/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -167,11 +167,15 @@ cata_msg = {
 """),
 
 73 : _("""
- comportement non traite:  %(k1)s
+ Seule la loi de comportement ELAS est autorisée avec la déformation GROT_GDEP en modélisation DKT.
 """),
 
 74 : _("""
   %(k1)s  non implante.
+"""),
+
+75 : _("""
+  Les matériaux de coque homogénéisées (ELAS_COQUE ou DEFI_COQU_MULT) sont interdits en non-linéaire.
 """),
 
 76 : _("""

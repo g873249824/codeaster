@@ -1,0 +1,518 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 01/11/2012 - 10:14:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018052 DU 2011-12-12 12:09:38
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    DKT + GROT_GDEP + VMIS_ISOT_LINE
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   '''
+   Quand on fait un calcul avec des DKT en DEFORMATION = GROT_GDEP et RELATION =
+   VMIS_ISOT_LINE, aster plante salement.
+   
+   En fait un message d'erreur est prévu pour dire que ce cas n'est pas traité par le code,
+   mais dans dktnli la ligne 197 ne passe pas :
+   
+   197         WRITE(MESS,'(A16) AVEC (A16)') ZK16(ICOMPO),ZK16(ICOMPO+2)
+   198         CALL U2MESK('F','ELEMENTS2_73',1,MESS)
+   ne passe pas.
+   '''
+   
+   Correction
+   ==========
+   
+   On remplace le message par une erreur plus claire. Ce message était aussi appelé lorsque
+   l'on utilisait COMP_ELAS (interdit en DKT), j'en crée un nouveau.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    nxc3xa9ant
+DEJA RESTITUE DANS : 11.1.2
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 01/11/2012 - 10:14:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018024 DU 2011-12-05 08:07:26
+TYPE express concernant Code_Aster (VERSION 9.1)
+TITRE
+    Le mot clxc3xa9 PROL_ZERO de la commande PROJ_CHAMP ne fonctionne pas pour les cham_elem
+FONCTIONNALITE
+   Problème :
+   ----------
+   Le mot clé PROL_ZERO de la commande PROJ_CHAMP ne fonctionne pas comme il le devrait pour
+   les champs par éléments.
+                                                                                            
+                           
+   Si on impose PROL_ZERO='NON' lors de la projection d'un cham_elem ELNO (CH1):
+                                                                                            
+                           
+   CH2A=PROJ_CHAMP(CHAM_GD=CH1,METHODE='COLLOCATION', MODELE_1=MO1, MODELE_2=MO2,
+   PROL_ZERO='NON',
+                    VIS_A_VIS=  _F(GROUP_MA_1='CARR1',GROUP_MA_2='CARR1', CAS_FIGURE='2D'))
+                                                                                            
+                           
+   le champ CH2A est quand meme prolongé par zéro sur le complémentaire de 'CARR1'
+                                                                                            
+                           
+                                                                                            
+                           
+   Analyse :
+   ---------
+   Il y a 2 bugs dans la routine cesprj.f:
+                                                                                            
+                           
+   1) La protection PROL_ZERO='NON' n'est correctement programmée que dans le cas où les
+   noeuds ne portent pas tous les memes composantes (ec qui est rare). Si un noeud ne porte
+   aucune composante il est prolongé par "zéro" !
+                                                                                            
+                           
+   2) En cas de problème lié à PROL_ZERO='NON', le code émet une alarme au lieu de s'arreter
+   en erreur Fatale.
+                                                                                            
+                           
+   Correction :
+   ------------
+   On corrige les 2 problèmes de la routine cesprj.f.
+                                                                                            
+                           
+   Si maintenant, on oublie le mot clé PROL_ZERO='OUI', on obtient le message suivant :
+   !----------------------------------------------------------------------------!
+   !.<A>.<CALCULEL_58>..........................................................!
+   !............................................................................!
+   !.Erreur.lors.de.la.fabrication.d'un.cham_elem.:.............................!
+   !..Il.manque.la.composante.:.HYDR..sur.la.maille.:.M11.......................!
+   !..Champ.:.CH2A..............................................................!
+   !............................................................................!
+   !.Risques.et.conseils.:......................................................!
+   !..Si.cette.erreur.se.produit.lors.de.l'exécution.de.la.commande.PROJ_CHAMP,.!
+   !..il.est.possible.de.poursuivre.le.calcul.en.choisissant.PROL_ZERO='OUI'....!
+   !............................................................................!
+   !............................................................................!
+   !.Ceci.est.une.alarme..Si.vous.ne.comprenez.pas.le.sens.de.cette.............!
+   !.alarme,.vous.pouvez.obtenir.des.résultats.inattendus.!.....................!
+   !----------------------------------------------------------------------------!
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  18024
+     cesprj.f
+     calculel.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+DEJA RESTITUE DANS : 11.1.1
+NB_JOURS_TRAV  : 0.4
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018069 DU 2011-12-13 16:51:37
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Suite correction fiche 18024
+FONCTIONNALITE
+   Problème :
+   ----------
+   Lors de la restitution de la fiche 18024, je me suis aperçu que la correction de
+   PROJ_CHAMP pour le problème de PROL_ZERO modifie très fortement les résultats du test
+   zzzz215c (40% de modification pour le déplacement DX du point testé).
+                                                                                            
+                                                                             
+   Les questions à éclaircir sont :
+     * N'y a-t-il pas un autre problème "caché" ?
+     * Y-a-t-il eu des résultats faux avec PROJ_CHAMP ?
+     * Quelles modifications faut-il reporter en NEW10 ?
+                                                                                            
+                                                                             
+                                                                                            
+                                                                             
+   Analyse :
+   ---------
+   Les modifications apportées par la fiche 18024 sont celles des routines :
+     * cesprj :
+        Si un noeud N2 tombe dans une maille qui ne porte aucune valeur, on lui affectait une
+   valeur 0.
+        Ce n'est plus le cas.
+     * cesces :
+        Quand un transforme un cham_elem_s / ELNO en cham_elem_s / ELEM, on ne fait
+   maintenant la moyenne arithmétique des valeurs des noeuds que si TOUS les noeuds portent
+   une valeur.
+                                                                                            
+                                                                             
+   Suite à ces 2 corrections, le champ de pression projeté est maintenant bien nul sur les 2
+   faces (Face2 et Face4) ce qui n'était pas le cas jusqu'à présent.
+   Sur les 4 autres faces (celles qui sont réellement soumises à la pression du fluide), la
+   pression projetée est la meme.
+   On peut le voir sur le fichier joint (pression.jpg).
+                                                                                            
+                                                                             
+   La variation du déplacement est donc bien liée au fait que jusqu'à présent, la pression
+   appliquée sur 4 faces du cube, "bavait" sur la 1ère rangée des éléments des 2 faces non
+   chargées.
+   La variation est importante (40% sur le point testé) car le chargement de pression est
+   très chahuté (voir ci-dessous "Evolution proposée").
+                                                                                            
+                                                                             
+                                                                                            
+                                                                             
+   Résultats faux :
+   ----------------
+   Soit une structure formée de 2 zones : A et B
+   Soit 2 maillages diférents (M1 et M2) de cette structure respectant ces 2 zones.
+   Soit un champ "ELEM" défini sur la zone A et non-défini sur B (ch1)
+   Si on projette ch1 de M1 vers M2 (et que l'on conserve la valeur par défaut PROL_ZERO='NON') :
+     1) les mailles de M2 de la zone B sont mises à zéro (ce qui n'est pas normal)
+     2) les mailles de M2 de la zone B qui "touchent" les mailles de A sont affectées par une
+   valeur non nulle (la "trace" du champ sur la frontière).
+                                                                                            
+                                                                             
+   Si c'est un champ de pression que l'on projette (comme dans le test zzzz215c), le
+   prolongement par zéro n'est pas grave (il est neutre mécaniquement).
+   La "pollution" de B par A est plus embetante (cest elle qui nous a obligé à changer les
+   valeurs de référence du test), mais elle ne concerne que la rangée d'éléments touchant la
+   frontière. Si le maillage est fin, l'effet est limité.
+                                                                                            
+                                                                             
+   Version 10 :
+   ------------
+   Il faut reporter en version 10 les corrections de la fiche 18024. Les fichiers concernés
+   sont :
+     cesprj.f
+     cesces.f
+     calculel.py
+     zzzz215c.comm
+                                                                                            
+                                                                             
+                                                                                            
+                                                                             
+   Evolution proposée :
+   --------------------
+   Dans le test zzzz215c, on s'est aperçu que le champ de pression lu est très variable en
+   espace.
+   Pour faire la projection de ce champ ELEM (1 valeur par maille), on passe par des
+   cham_elem / ELNO
+   Après projection, le cham_elem ELNO est moyenné pour obtenir une valeur par maille.
+   Quand on fait cette moyenne, on s'aperçoit que sur certaines mailles, les valeurs portées
+   par les 3 noeuds (des TRIA3) sont TRES différentes, ce qui traduit le fait que les
+   maillages utilisés sont trop grossiers.
+                                                                                            
+                                                                             
+   J'ai développé une nouvelle subroutine (cesver.f) qui est appelée par PROJ_CHAMP pour les
+   cham_elem / ELEM si INFO=2.
+   Cette routine émet une alarme lorsque la variation du champ sur une maille (avant moyenne)
+   est supérieure à 10% du "max" global des valeurs du champ.
+                                                                                            
+                                                                             
+   Pour le test zzzz215c, pour le 3eme pas de temps, l'alarme dit :
+                                                                                            
+                                                                             
+   !--------------------------------------------------------------------------------------------------!
+   !.<A>.<CALCULEL_18>................................................................................!
+   !..................................................................................................!
+   !..Le.modèle.est.peut-être.trop.grossier.:.........................................................!
+   !....Sur.la.maille.M134.et.pour.la.composante.PRES.de.la.grandeur.PRES_R,..........................!
+   !....il.y.a.une.variation.entre.les.points.de.la.maille.de.930.223667..............................!
+   !....alors.que,.globalement,.les.valeurs.du.champ.ne.dépassent.pas.647.571222.(en.valeur.absolue)..!
+   !....Cela.fait.une.variation.sur.la.maille.supérieure.à.143.648086%................................!
+   !--------------------------------------------------------------------------------------------------!
+    
+   Liste des fichiers impactés par la correction de la fiche:  18069
+     cesprj.f  cesver.f
+     calculel.py
+     zzzz215c.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz215c
+DEJA RESTITUE DANS : 11.1.4
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018060 DU 2011-12-13 08:13:31
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    ssls135 a NOOK sur aster4 en version couverture de code
+FONCTIONNALITE
+   Problème:
+   ---------
+   Le test ssls135a est NOOK avec la version "code coverage"
+                                                                                            
+                           
+   Analyse :
+   ---------
+   Le problème vient de la correction d'une anomalie récente (17825) (FORCE_COQUE "fonction").
+                                                                                            
+                           
+   On a ajouté dans la routine te0032 des lignes du genre :
+               CALL UTPVGL ( 1 , 6 , PGL , FOR(1,1) , FOR(1,1) )
+               CALL UTPVGL ( 1 , 6 , PGL , FOR(1,2) , FOR(1,2) )
+               CALL UTPVGL ( 1 , 6 , PGL , FOR(1,3) , FOR(1,3) )
+                                                                                            
+                           
+   Mais la routine UTPVLG (changement de repère) ne permet pas de modifier "en place" un
+   vecteur : il faut toujours utiliser 2 arguments différents : 1 vecteur "in" et 1 vecteur
+   "out".
+                                                                                            
+                           
+   Avec les options de compilation "code coverage", l'effet de bord est visible (résultats
+   faux !), en revanche, avec les options de compilation "nodebug", une forme de miracle nous
+   protège.
+                                                                                            
+                           
+   Correction:
+   -----------
+   Dans la routine te0032.f on dédouble l'argument FOR.
+                                                                                            
+                           
+   Validation :
+   ------------
+   Après correction, le test ssls135a est OK avec la version "code coverage".
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  18060
+     te0032.f  utpvgl.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssls135a
+DEJA RESTITUE DANS : 11.1.4
+NB_JOURS_TRAV  : 0.4
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 01/11/2012 - 10:14:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018036 DU 2011-12-07 15:17:46
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    Chargement PESANTEUR en entrxc3xa9e de certaines options
+FONCTIONNALITE
+   Problème :
+   Le chargement de PESANTEUR est en ENTRÉE de certaines options (RIGI_MECA, au hasard). Si
+   c'est justifié, on fait des choses potentiellement fausses.
+   Exemple: la routine MECHPE permet de récupérer le chargement de pesanteur que l'on va
+   passer à CALCUL.
+   Or, elle prend le dernier qu'elle trouve, ce qui implicitement signifie un champ de
+   pesanteur uniforme sur le modèle, alors qu'il est possible d'avoir plusieurs champs de
+   pesanteur.
+   
+   ----------------------
+   
+   Analyse :
+   La pesanteur (et la rotation qui joue souvent un rôle similaire de force volumique) est
+   utilisée dans différents TE.
+   1)Pour ceux qui calculent un vrai second membre CHAR_MECA_PESA_R (ou ROTA_R), pas de
+   problème : on récupère la bonne pesanteur sur les bons grels. 
+   2) Une protection est déjà présente pour certains cas (RIGI_MECA_RO, CALC_G).
+   3) Un cas pose problème : RIGI_MECA et FORC_NODA avec des éléments 2D de couplage
+   pesanteur - surface libre
+   d'un fluide, seuls éléments ayant besoin de la pesanteur. 
+   Potentiellement, il y a des résultats faux, mais c'est très improbale que cela soit arrivé
+   (il faut une modélisation 2D_FLUI_PESA + plusieurs pesanteurs).
+   
+   ----------------------
+   
+   Solution :
+   On propose d'interdire l'utilisation de plusieurs chargements de pesanteur en présence des
+   seuls éléments qui posent problème, avec le message d'erreur suivant :
+   
+   Il est impossible d'utiliser plusieurs chargements de pesanteur en présence d'éléments de
+   couplage pesanteur - surface libre d'un fluide (modélisation '2D_FLUI_PESA').
+   
+   ----------------------
+   
+   Impact fortran :
+   MECHPE.F MERIME.F MERIMP.F VECHDE.F VEFNME.F
+   
+   ----------------------
+   
+   Validation : aucune
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.1.9
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    nxc3xa9ant
+DEJA RESTITUE DANS : 11.1.4
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 01/11/2012 - 10:14:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018155 DU 2012-01-04 14:08:09
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    DEFI_LIST_INST : bug gestion auto du pas de temps en contact methode continue
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   [Forum : http://www.code-aster.org/forum2/viewtopic.php?id=16235]
+   
+   En gestion automatique du pas de temps (DEFI_LIST_INST / DEFI_LIST / METHODE='AUTO'), avec
+   utilisation de la méthode continue, il se peut que le pas de temps n'accelere pas, meme si
+   le critere d'adaptation est vérifié (ici 2 feux verts successifs).
+   
+   
+   
+   Solution :
+   ----------
+   
+   Tout d'abord, il faut souligner la particularité de la gestion automatique du pas de temps
+   en présence de la méthode continue de contact.
+   A chaque convergence de Newton (nmconv.f), on regarde si on a converge en assez peu
+   d'iterations de Newton pour activer un feu vert. Dans le cas présent, si on fait 3
+   itérations de géométrie dans la méthode continue, on peut avoir 3 feux verts successifs au
+   sein du même pas de temps. Alors que normalement, au bout de 2 feux verts, on doit
+   accelerer et remettre le compteur de feux verts à 0.
+   Ainsi, lorsque l'on regarde le nombre de feux verts a la fin de ce pas de temps, on en
+   trouve 3.
+   Ce cas n'etait pas traité (diadap.f).
+   
+   Désormais :
+   si le nb de feux verts < nb de feux verts seuil (2 par défaut) alors on accélère pas [cela
+   n'a pas changé]
+   si le nb de feux verts >= nb feux verts seuil (2 par défaut) alors on accélère
+   
+   
+   impact :
+   diadap.f
+   
+   Remarque :
+   la gestion automatique associée à un re-découpage en cas de DIVE_RESI permet un gain de
+   30% sur le temps de calcul 
+   (2880 s contre elle 4350 s), voir courbe en PJ
+   
+   en gestion manuelle et seulement 1450 en gestion auto)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    etude fournie
+DEJA RESTITUE DANS : 11.1.4
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 01/11/2012 - 01:45:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018160 DU 2012-01-05 09:43:38
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    LIRE_RESU et LIRE_CHAMP pas tres performant
+FONCTIONNALITE
+   Problème :
+   ----------
+   Charles s'est rendu compte que LIRE_RESU et LIRE_CHAMP au format MED sont vraiment très
+   sous-performant. De ce fait, il lui est totalement impossible de relire un champ ayant
+   15000 pas de temps. Sa dernière tentative de relecture a planté au bout de 12 heures sur
+   aster4.
+   
+   Il faut corriger.
+   
+   
+   Analyse et solution :
+   ---------------------
+   Ce qui prend du temps, ce sont les routines MED MFDNVP, MFDNPF et MFDCSI.
+   
+   Pour les deux premières, la solution consiste à appeler d'autres routines MED plus rapides
+   (MFDONV et MFDONP). Rien qu'en faisant cela, on passe d'un temps d'execution de plus de 12
+   heures à 130 secondes. Pour y arriver certaines adaptations du source sont nécessaires
+   (recherche du numéro d'itérateur du maillge sur lequel repose le champ ainsi que son nom).
+   
+   Pour la dernière (MFDCSI), il faut éviter les appels à cette routine. Dans ce cas, c'est
+   possible, on peut stocker les infos une fois pour toute au premier passage. Avec cette
+   modification, on passe à 110 secondes pour la relecture des 15000 pas de temps.
+   
+   Remarque : Une fiche dans le bugtracker MED a été émise pour signaler ces problèmes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    etude utilisateur
+DEJA RESTITUE DANS : 11.1.4
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdll14c                      sellenet N.SELLENET         165      6      4
+ CASTEST MODIF zzzz215c                      macocco K.MACOCCO          127     18     48
+ FORTRAN AJOUT prepost/lrvema               sellenet N.SELLENET         211    211      0
+ FORTRAN MODIF algorith/diadap               macocco K.MACOCCO          107      6      3
+ FORTRAN MODIF algorith/merimp               macocco K.MACOCCO          332      3      3
+ FORTRAN MODIF algorith/vechde               macocco K.MACOCCO          553      3      3
+ FORTRAN MODIF algorith/vefnme               macocco K.MACOCCO          298      3      3
+ FORTRAN MODIF calculel/cesces               macocco K.MACOCCO          366      8      4
+ FORTRAN MODIF calculel/cesprj               macocco K.MACOCCO          263      3      2
+ FORTRAN MODIF calculel/mechpe               macocco K.MACOCCO           84     52      5
+ FORTRAN MODIF calculel/merime               macocco K.MACOCCO          247      3      3
+ FORTRAN MODIF elements/dktnli               macocco K.MACOCCO          479      3      4
+ FORTRAN MODIF elements/te0031               macocco K.MACOCCO          414     15     16
+ FORTRAN MODIF elements/te0032               macocco K.MACOCCO          278     20     19
+ FORTRAN MODIF prepost/ircam1               sellenet N.SELLENET         364     15     12
+ FORTRAN MODIF prepost/lrceme               sellenet N.SELLENET         301      4      4
+ FORTRAN MODIF prepost/lrcmle               sellenet N.SELLENET         123      9      6
+ FORTRAN MODIF prepost/lrmpga               sellenet N.SELLENET         319     14     18
+ FORTRAN MODIF prepost/lrvemo               sellenet N.SELLENET          89     11    150
+ FORTRAN MODIF prepost/mdchii               sellenet N.SELLENET         319     33      9
+ FORTRAN MODIF prepost/mdchin               sellenet N.SELLENET         110      7      2
+ FORTRAN MODIF prepost/mdexcv               sellenet N.SELLENET         139      9      7
+ FORTRAN MODIF utilifor/utpvgl               macocco K.MACOCCO           65      4      2
+ FORTRAN MODIF utilitai/op0150              sellenet N.SELLENET         482     13      5
+ FORTRAN MODIF utilitai/op0192              sellenet N.SELLENET         337      5      3
+FORTRAN90 MODIF echange/mfnnop               sellenet N.SELLENET          54      8      8
+FORTRAN90 MODIF echange/mfnpdt               sellenet N.SELLENET          47      4      4
+FORTRAN90 MODIF echange/mfprlo               sellenet N.SELLENET          50     11     10
+  PYTHON MODIF Messages/calculel             macocco K.MACOCCO          424      8      2
+  PYTHON MODIF Messages/calculel4            macocco K.MACOCCO          398      8      2
+  PYTHON MODIF Messages/elements2            macocco K.MACOCCO          221      7      3
+  PYTHON MODIF Messages/med                 sellenet N.SELLENET         556      2      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         211       211              +211
+ MODIF :   31        8111       315     366       -51
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   32        8322       526     366      +160 

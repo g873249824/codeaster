@@ -1,8 +1,8 @@
-#@ MODIF calculel4 Messages  DATE 22/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calculel4 Messages  DATE 11/01/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -134,6 +134,12 @@ Erreur utilisateur (ou programmeur) :
 15 : _("""
  Erreur d'utilisation (CREA_RESU/PREP_VRC.) :
    Le modèle associé au CARA_ELEM (%(k1)s) est différent de celui fourni à la commande.
+"""),
+
+
+19 : _("""
+ Il est impossible d'utiliser plusieurs chargements de pesanteur en présence d'éléments de 
+ couplage pesanteur - surface libre d'un fluide (modélisation '2D_FLUI_PESA').
 """),
 
 

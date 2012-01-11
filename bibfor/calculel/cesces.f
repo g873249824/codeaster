@@ -1,8 +1,8 @@
       SUBROUTINE CESCES(CESA,TYPCES,CESMOZ,MNOGAZ,CELFPZ,BASE,CESB)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF CALCULEL  DATE 08/02/2008   AUTEUR MACOCCO K.MACOCCO 
+C MODIF CALCULEL  DATE 11/01/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -81,7 +81,7 @@ C     ------------------------------------------------------------------
       CHARACTER*4 TYPCE1
       CHARACTER*8 MA,NOMGD
       CHARACTER*3 TSCA
-      CHARACTER*19 CES1,CESMOD,CES2,MNOGA,MGANO
+      CHARACTER*19 CES1,CESMOD,CES2,MNOGA
       CHARACTER*24 CELFPG
       REAL*8 VR,V1R
       COMPLEX*16 VC,V1C
@@ -305,6 +305,7 @@ C     ------------------------------------------------------
         DO 170,IMA = 1,NBMA
           NBPT1 = ZI(JCES1D-1+5+4* (IMA-1)+1)
           NBSP1 = ZI(JCES1D-1+5+4* (IMA-1)+2)
+          IF ((NBPT1*NBSP1).EQ.0) GOTO 170
 
           DO 160 ICMP = 1,NCMP
             DO 150,ISP = 1,NBSP1
@@ -324,7 +325,10 @@ C     ------------------------------------------------------
                   VC = VC + ZC(JCES1V-1+IAD1)
                 ENDIF
   140         CONTINUE
-              IF (NBV.GT.0) THEN
+
+C             -- ON N'AFFECTE DE VALEUR A LA MAILLE QUE SI TOUS
+C                LES POINTS ONT CONTRIBUE :
+              IF (NBV.EQ.NBPT1) THEN
                 CALL CESEXI('C',JCESD,JCESL,IMA,1,ISP,ICMP,IAD)
                 CALL ASSERT(IAD.LT.0)
                 ZL(JCESL-1-IAD) = .TRUE.
