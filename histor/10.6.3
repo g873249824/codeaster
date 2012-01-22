@@ -1,0 +1,763 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 01/23/2012 - 11:27:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017612 DU 2011-09-27 16:24:31
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    mise au propre des TP de formation avancee plaque trouee
+FONCTIONNALITE
+   Réorganisation des TP de formation en non-linéaire.
+   
+   
+   FORMA03A: calcul purement élastique avec STAT_NON_LINE (sert de référence)
+   FORMA03B: calcul élasto-plastique avant al charge limite (charge puis décharge)
+   FORMA03C: calcul élasto-plastique après la charge limite (pilotage)
+   FORMA03D: recalage VMIS_CIN1_CHAB (MACR_RECAL)
+   
+   Maillage refait sous SALOME 6.3.0: le même pour els quatre modélisaitons + script Python
+   servant à les générer.
+   Ré-écriture complète de v6.03.114
+   
+   Je passe RESPONSABLE sur les cas-tests.
+   
+   NB: la doc V6.03.114 n'est pas standard par rapport aux doc V habituelles puisqu'il s'agit
+   d'une doc de formation
+   NB2: il faut encore que j'impacte en V10 (en particulier la doc puisque les
+   fonctionnalités ont bougé entre les deux versions)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v6.03.114
+VALIDATION
+    forma03
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 02/08/2012 - 10:32:02
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018265 DU 2012-01-23 13:37:18
+TYPE anomalie concernant Code_Aster (VERSION 10.6)
+TITRE
+    Calcul de FLUX_ELNO inexact en COQUE thermique
+FONCTIONNALITE
+   Problème:
+   ---------
+   Quand on calcule FLUX_ELNO pour les QUAD4 de la modélisation 'COQUE' du phenomene 'THERMIQUE',
+   La valeur du 4ème noeud des éléments est fausse.
+                                                                                            
+                                                                                          
+   Le problème ne se produit pas toujours.
+   Il se produit au moins sur calibre5 avec la version nodebug pour les versions STA10 et NEW11
+                                                                                            
+                                                                                          
+   Correction :
+   ------------
+   La routine te0109 calcule FLUX_ELGA et FLUX_ELNO pour tous les éléments de coque thermique.
+   Dans cette routine, il y a plusieurs boucles de 1 à 3 (en dur) mais c'est normal : on
+   boucle sur les 3 coordonnées de l'espace ou sur les 3 composantes du flux.
+                                                                                            
+                                                                                          
+   Le problème est que le tableau FLUPG est dimensionné à 9 : 3 PG * 3 CMP
+   alors que la routine peut théoriquement traiter des éléments ayant jusqu'à 9 points de Gauss.
+                                                                                            
+                                                                                          
+   Lorsque l'on corrige la dimension de FLUPG : 9 -> 9*3 le problème disparait.
+   
+   Résultats faux :
+   ----------------
+   Les résultats sont faux si on calcule FLUX_ELGA ou FLUX_ELNO pour tous les éléments de
+   coque thermique (modélisation 'COQUE') sauf pour les triangles à 3 noeuds (et 3 points de
+   Gauss).
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  18265
+     te0109.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude jointe
+DEJA RESTITUE DANS : 11.1.8
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 02/08/2012 - 10:32:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018261 DU 2012-01-20 15:00:12
+TYPE anomalie concernant Code_Aster (VERSION 10.6)
+TITRE
+    Plantage dans le calcul de SIRO_ELEM
+FONCTIONNALITE
+   Problème :
+   ========
+   Le calcul associé à la fiche s'arrête pendant le calcul de SIRO_ELEM si l'instant initial
+   en dans la liste d'instant.
+   
+   Correction :
+   ==========
+   On s'arrête dans le te0411 dans un ASSERT car DELTA doit être strictement positif. On se
+   protège ainsi car on prend la racine de DELTA ensuite.
+   
+   On calcule DELTA comme la différence entre des composantes des contraintes. Or dans ce
+   cas,à l'instant initial, le champ de contrainte est nul et donc DELTA aussi.
+   
+   La condition de l'ASSERT est trop restrictive. DELTA doit être positif ou égal à zéro.
+   
+   207c207
+   <       CALL ASSERT(DELTA.GT.0.D0)
+   ---
+   >       CALL ASSERT(DELTA.GE.0.D0)
+   
+   Impacts :
+   =======
+   te0411.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de l'etude
+DEJA RESTITUE DANS : 11.1.7
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR ferte        Ferte Guilhem          DATE 02/08/2012 - 10:32:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018254 DU 2012-01-20 09:19:19
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    routine ABSCVL : bug eventuel ?
+FONCTIONNALITE
+   Il y a une coquille dans la routine ABSCVL qui calcule l'abscisse curviligne du moeud
+   milieu d'une facette de contact dans le cas d'éléments quadratiques X-FEM 2D.
+   
+   On avait :
+         TABELT(3)=ZR(JTABAR+2*NDIM+K)
+   Il faut lire :
+         TABELT(3)=ZR(JTABAR-1+2*NDIM+K)
+   On doit évidemment rentrer la coordonnée du noeud milieu dans la direction K comme les
+   noeuds précédents et non la direction K+1. Cela ne s'est pas vu car il s'agit d'une
+   solution "de repli" dans le cas d'interfaces X-FEM trés courbées relativement à la taille
+   du maillage, et qu'aucun test de la base n'est dans ce cas (les maillages ne sont pas trop
+   grossiers dans les zones avec interfaces courbées).
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.26
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.26
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    non regression
+DEJA RESTITUE DANS : 11.1.7
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 02/08/2012 - 10:32:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018195 DU 2012-01-11 15:06:16
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    JEVEUX : interdire l'acc?s par JEXNUM/JEXNOM sur les objets simples vecteurs
+FONCTIONNALITE
+   L'appel aux fonctions jeveux sur un objet simple avec les fonctions JEXNUM ou JEXNOM ne produit pas 
+   d'erreur, le numéro ou le nom d'objet de collection est ignoré et l'adresse renvoyée est toujours 
+   positionnée au début du segment de valeurs. 
+   
+   La correction proposée consiste à tester le genre de l'objet simple dans le cas où l'appel est effectué avec 
+   la fonction JEXNUM ou JEXNOM. Si le genre n'est pas N (répertoire de noms) un message d'erreur <F> est émis 
+   :  
+     
+      !--------------------------------------------------------------------------------------------------------
+   -----------------------------!
+      ! <F> <JEVEUX1_68>                                                                                                                    
+   !
+      !                                                                                                                                     
+   !
+      !  L'accès à  l'objet simple MACRO1  .MAEL_RAID_VALE par la fonction JEXNOM ou JEXNUM est invalide. Il 
+   faut que l'objet simple soit de !
+      ! genre rÃ©pertoire de noms.                                                                                                           
+   !
+      !                                                                                                                                     
+   !
+      !                                                                                                                                     
+   !
+      ! Cette erreur est fatale. Le code s'arrÃªte.                                                                                          
+   !
+      !--------------------------------------------------------------------------------------------------------
+   -----------------------------!
+   
+   On corrige plusieurs routines qui font des appels jeveux avec la fonction JEXNOM ou JEXNUM, voici les appels 
+   détectés lors du passage de la liste restreinte : 
+      ddllag.f
+   60c60
+   <       CALL JEVEUO(NOMNU(1:19)//'.DEEQ','L',IADEEQ)
+   ---
+   >       CALL JEVEUO(JEXNOM(NOMNU(1:19)//'.DEEQ','&MAILLA'),'L',IADEEQ)
+   op0027.f
+   164,165c164,165
+   <           CALL JEVEUO(NOMMAT//'.MAEL_RAID_VALE','L',IAK)
+   <           CALL JEVEUO(NOMRES//'.MAEL_RAID_VALE','E',IADR)
+   ---
+   >           CALL JEVEUO(JEXNUM(NOMMAT//'.MAEL_RAID_VALE',1),'L',IAK)
+   >           CALL JEVEUO(JEXNUM(NOMRES//'.MAEL_RAID_VALE',1),'E',IADR)
+   175c175
+   <            CALL JEVEUO(NOMMAT//'.MAEL_RAID_VALE','L',IAK)
+   ---
+   >            CALL JEVEUO(JEXNUM(NOMMAT//'.MAEL_RAID_VALE',1),'L',IAK)
+   220c220
+   <           CALL JEVEUO(NOMMAT//'.MAEL_AMOR_VALE','L',IAK)
+   ---
+   >           CALL JEVEUO(JEXNUM(NOMMAT//'.MAEL_AMOR_VALE',1),'L',IAK)
+   235c235
+   <            CALL JEVEUO(NOMMAT//'.MAEL_AMOR_VALE','L',IAK)
+   ---
+   >            CALL JEVEUO(JEXNUM(NOMMAT//'.MAEL_AMOR_VALE',1),'L',IAK)
+   rvtamo.f
+   141,142c141,142
+   <          CALL JEVEUO ( NOMACC, 'L', ADRACC )
+   <          CALL JEVEUO ( NOMVAL, 'L', ADRVAL )
+   ---
+   >          CALL JEVEUO ( JEXNUM(NOMACC,IOCC), 'L', ADRACC )
+   >          CALL JEVEUO ( JEXNUM(NOMVAL,IOCC), 'L', ADRVAL )
+   rvtaso.f
+   125,126c125,126
+   <          CALL JEVEUO ( NOMACC, 'L', ADRACC )
+   <          CALL JEVEUO ( NOMVAL, 'L', ADRVAL )
+   ---
+   >          CALL JEVEUO ( JEXNUM(NOMACC,IOCC), 'L', ADRACC )
+   >          CALL JEVEUO ( JEXNUM(NOMVAL,IOCC), 'L', ADRVAL )
+   rvtec2.f
+   147,148c147,148
+   <          CALL JEVEUO ( NOMACC, 'L', ADRACC )
+   <          CALL JEVEUO ( NOMVAL, 'L', ADRVAL )
+   ---
+   >          CALL JEVEUO ( JEXNUM(NOMACC,IOCC), 'L', ADRACC )
+   >          CALL JEVEUO ( JEXNUM(NOMVAL,IOCC), 'L', ADRVAL )
+   rvtecn.f
+   147,148c147,148
+   <          CALL JEVEUO ( NOMACC, 'L', ADRACC )
+   <          CALL JEVEUO ( NOMVAL, 'L', ADRVAL )
+   ---
+   >          CALL JEVEUO ( JEXNUM(NOMACC,IOCC), 'L', ADRACC )
+   >          CALL JEVEUO ( JEXNUM(NOMVAL,IOCC), 'L', ADRVAL )
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+DEJA RESTITUE DANS : 11.1.5
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 02/08/2012 - 10:32:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018194 DU 2012-01-11 12:17:53
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Erreur dans la commande DEFI_FICHIER et compilateur GNU Fortran 4.6.1
+FONCTIONNALITE
+   Sur les distributions récentes (Ubuntu 11.10 Oneiric Ocelot) le compilateur gfortan est en version 4.6.1 et 
+   de 
+   nombreux tests de la version STA11.1 s'arrêtent avec un message d'erreur lors de l'écriture sur les unités 
+   logiques Fortran. 
+   
+   Par exemple, le test comp001c s'arrêt avec le diagnostic ABNORMAL ABORT et le fichier output contient le 
+   message : 
+   
+   At line 130 of file /opt/aster/STA11.1/bibfor/supervis/op9999.f (unit = 8, file = 'fort.8')
+   Fortran runtime error: Sequential READ or WRITE not allowed after EOF marker, possibly use REWIND or 
+   BACKSPACE
+   
+   Le problème se situe dans la routine ULPOSI qui permet de se positionner à la fin d'un fichier ASCII. 
+   Jusqu'alors il suffisait d'utiliser les instructions 
+   ...
+    201    CONTINUE
+           IF ( IEND .LE. 0 ) THEN
+             READ (UNIT,*,END=301)
+             GOTO 201
+           ENDIF
+    301    CONTINUE
+   
+   Il n'y avait aucune difficulté à reprendre les écritures sur UNIT; avec le compilateur GNU 4.6.1 il est 
+   nécessaire d'insérer un BACKSPACE UNIT.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tous les tests plantant sous oneiric ocelot
+DEJA RESTITUE DANS : 11.1.5
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 02/08/2012 - 10:32:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018124 DU 2011-12-20 09:50:06
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    R?sultats faux pour PROJ_CHAMP / ECLA_PG pour FPG27, FPG21 et FPG15
+FONCTIONNALITE
+   Problème :
+   ----------
+   PROJ_CHAMP / METHODE='ECLA_PG' donne parfois des résultats FAUX.
+                                                                                            
+                                                                        
+                                                                                            
+                                                                        
+   Correction :
+   ------------
+   Le problème a été observé avec PROJ_CHAMP / METHODE='ECLA_PG' mais le bug concerne aussi
+   la programmation de MACR_ECLA_PG (visualisation).
+   La routine bugguée est ecla3d.f
+                                                                                            
+                                                                        
+   Il y a 3 schémas de points de Gauss pour lesquels le découpage en sous-éléments est
+   incorrect :
+     HEXA  / FPG27
+     PENTA / FPG21
+     TETRA / FPG15
+                                                                                            
+                                                                        
+   Les éléments sont bien découpés en sous-éléments mais on n'associe pas les bons
+   sous-éléments aux bons points de Gauss.
+   Il y a permutation entre les points de Gauss d'une maille.
+                                                                                            
+                                                                        
+                                                                                            
+                                                                        
+   Détails :
+   ---------
+   A l'occasion de la mise au point d'un nouveau test, je propose également 2 petites
+   corrections dans :
+    * pjcoor.f
+    * eclpgm.f
+                                                                                            
+                                                                        
+                                                                                            
+                                                                        
+   Validation :
+   ------------
+   Pour valider plus sérieusement la programmation des routines ecla3d.f et ecla2d.f,
+   j'ajoute un nouveau test zzzz306.
+   Ce test (avec ses différentes modélisations) valide à peu près tous les schémas de points
+   de Gauss programmés pour ECLA_PG :
+                                                                                            
+                                                                        
+     2D :
+        triangle :
+          'FPG3'
+          'FPG6'
+                                                                                            
+                                                                        
+       quadrangle :
+          'FPG4'
+          'FPG9'
+                                                                                            
+                                                                        
+     3D :
+        hexaedre :
+          'FPG8'
+          'FPG27'
+                                                                                            
+                                                                        
+        tetraedre :
+          'FPG4'
+          'FPG15'
+                                                                                            
+                                                                        
+        pentaedre :
+          'FPG6'
+          'FPG21'
+                                                                                            
+                                                                        
+                                                                                            
+                                                                        
+   Résultats "un peu" faux :
+   -------------------------
+   MACR_ECLA_PG ou PROJ_CHAMP + METHODE='ECLA_PG' pour les 3 schémas :
+     HEXA  / FPG27
+     PENTA / FPG21
+     TETRA / FPG15
+                                                                                            
+                                                                        
+   Les résultats sont "un peu" faux car il s'agit d'une permutation des valeurs au sein des
+   mailles.
+   Si le maillage est "fin", les différents points de Gauss d'une maille portent des valeurs
+   voisines et la permutation n'est pas très grave.
+   C'est une sorte d'erreur en "h".
+                                                                                            
+                                                                        
+                                                                                            
+                                                                        
+                                                                                            
+                                                                        
+   Impact documentaire :
+   ---------------------
+   V1.01.306 : nouveau test zzzz306
+                                                                                            
+                                                                        
+   NEW10 :
+   -------
+   La fonctionnalité PROJ_CHAMP / ECLA_PG a été supprimée en version 10.
+   Mais la routine corrigée (ecla3d.f) est utilisée pour MACR_ECLA_PG.
+   Il faut donc reporter la correction de cette routine.
+                                                                                            
+                                                                        
+   Reporter les modifications de :
+   * ecla3d.f
+   * eclpgm.f
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  18124
+     ecla3d.f  eclpgm.f  pjcorr.f  pjma2p.f
+     calculel5.py
+     zzzz306a.comm  zzzz306b.comm  zzzz306c.comm  zzzz306d.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.306
+VALIDATION
+    zzzz306a,b,c,d
+DEJA RESTITUE DANS : 11.1.5
+NB_JOURS_TRAV  : 2.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 02/08/2012 - 10:32:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018049 DU 2011-12-09 15:45:26
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Prxc3xa9dicteurs incorrects en cas de redxc3xa9coupe
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Lors du travail dans le projet SALADYN, la détection de la collision a été activée sur le
+   bloc qui tombe (sdnv105).
+   On a alors constaté une bizarrerie: la collision est bien détectée, le code redécoupe
+   alors le pas de temps comme prévu, par contre, le déplacement et la vitesse du point ont
+   un comportement pas physique.
+   Par contre, quand on découpe "à la main" le pas de temps (sans EVENT_DRIVEN de type
+   COLLISION), tout se passe bien.
+   
+   Solution
+   ========
+   
+   Le problème ne vient ni du contact, ni de la gestion de la collision, mais d'une erreur
+   dans la prédiction en dynamique.
+   Le problème survient donc dès lors qu'on redécoupe le pas de temps (quelque soit
+   l'événement, y compris, par exemple, une matrice singulière ou une mauvaise intégration de
+   la LdC).
+   
+   Dans ndpred, on calcule les prédicteurs, or on a :
+   IF (PREMIE) THEN
+     CALL COPISD('CHAMP_GD','V',DEPMOI,DEPKM1)
+     CALL COPISD('CHAMP_GD','V',VITMOI,VITKM1)
+     CALL COPISD('CHAMP_GD','V',ACCMOI,ACCKM1)   
+   ELSE      
+     CALL COPISD('CHAMP_GD','V',DEPPLU,DEPKM1)
+     CALL COPISD('CHAMP_GD','V',VITPLU,VITKM1)
+     CALL COPISD('CHAMP_GD','V',ACCPLU,ACCKM1)
+   ENDIF
+   
+   PREMIE = premier pas de temps. C'est faux. DEPPLU, VITPLU et ACCPLU sont les quantités à
+   la fin du pas de temps précédent NON DECOUPE. Leurs valeurs n'a donc rien à voir avec leq
+   quantités au début de ce pas de temps APRES DECOUPE.
+   On devrait avoir (tout simplement):
+   CALL COPISD('CHAMP_GD','V',DEPMOI,DEPKM1)
+   CALL COPISD('CHAMP_GD','V',VITMOI,VITKM1)
+   CALL COPISD('CHAMP_GD','V',ACCMOI,ACCKM1)
+   
+   Résultats faux ?
+   ================
+   
+   Une mauvaise prédiction n'amène pas forcément des résultats faux mais à une convergence
+   éventuellement plus lente. 
+   Dans ce cas, c'est faux parce qu'on regarde des déplacements de moins d'un dixième de micron.
+   Les résultats ne sont pas FAUX mais peuvent être IMPRECIS.
+   
+   Cadre du déclenchement du résultat FAUX ("IMPRECIS"):
+   - Dynamique (schémas de Newmark)
+   - Activation de la découpe du pas de temps
+   - Dynamique non-régulière (chocs essentiellement) ou critère de convergence très serré
+   (RESI_GLOB_RELA inférieur à 10-8)
+   
+   Validation
+   ==========
+   
+   Sur tous les cas-tests de dynamique. Deux sont cassés:
+   1/ sdnv103g: NOOK sur des valeurs de non-régression. Sur la source externe, on se
+   rapproche de la solution externe
+   2/ sdnv103i: détection d'un bug sur la validation de la fonctionnalité "adaptation du
+   coefficient de pénalisation en fonction de la pénétration": bouclage infini sur le même
+   pas de temps. Il n'y a pas de protection dans op0070 contre ce problème. On émet une
+   nouvelle fiche pour ce problème (issue18271)
+   
+   
+   A faire en V10
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste complxc3xa8te dyna_non_line
+DEJA RESTITUE DANS : 11.1.7
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 02/08/2012 - 10:32:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018015 DU 2011-12-01 16:57:18
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : Phimeca
+TITRE
+    En NEW10.5.11, le cas-test sdll136a  s'arrête en erreur fatale sur CALIBRE7.
+FONCTIONNALITE
+   En NEW10.5.11, le cas-test sdll136a  s'arrête en erreur fatale sur CALIBRE7.
+   Le passage de Valgrind n'a rien decellé d'anormal. 
+   
+   Il faut dire que ce test n'est autre que le cas-test sdnl136a en version 11.
+   La correction réalisée 17704 pour corriger ce cas-test en 11 a servi de correction
+   "temporaire". Celle-ci consiste à une division du pas de temps par deux.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage du test
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroche     DESROCHES Xavier       DATE 02/08/2012 - 10:32:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017940 DU 2011-11-21 10:32:09
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Plantage dans AFFE_CHAR_MECA/FACE_IMPO
+FONCTIONNALITE
+   ANOMALIE:
+   --------
+   Lors de l'affectation de conditions aux limites par AFFE_CHAR_MECA/FACE_IMPO, on 
+   obtient un plantage du code si les deux conditions suivantes sont vérifiées:
+   - on exclue de l'affectation à la fois de groupes de mailles et de groups de nœuds par 
+   les mots-clé SANS_GROUP_NO et SANS_GROUP_MA
+   - les groups spécifiés par SANS_GROUP_NO et SANS_GROUP_MA ont des nœuds en commun
+   
+   On obtient une erreur jeveux:
+   
+      !---------------------------------------------------------------!
+      ! <EXCEPTION> <JEVEUX1_35>                                      !
+      !                                                               !
+      !  Le nom N1 existe déjà dans le répertoire de noms KNDIF2.PN2. !
+      !---------------------------------------------------------------!
+   
+   CORRECTION:
+   ----------
+   
+   Dans la routine CAFACI, on se contentait d'ajouter les 2 listes de noeuds à supprimer 
+   sans vérifier s'il y avait des doublons. Le plantage est du au fait que ces listes 
+   servent à créer un pointeur de nom, et qu'on cherche à rentrer 2 fois le même nom s'il 
+   y a un doublon.
+   On vérifie donc que les noeuds de la liste 2 ne figurent pas dans la liste 1 avant de 
+   les ajouter.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    fichiers associ?s ? la fiche
+DEJA RESTITUE DANS : 11.1.5
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR laverne      LAVERNE Jérôme       DATE 02/08/2012 - 10:32:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018159 DU 2012-01-05 09:39:25
+TYPE express concernant Code_Aster (VERSION 10.6)
+TITRE
+    3D_JOINT_HYME : Bug dans l'extrapolation des champs aux noeuds (options xxx_elno)
+FONCTIONNALITE
+   Les options d'extrapolation aux nœuds par élément SIEF_ELNO et VARI_ELNO (te0122) pour les
+   éléments finis de la modélisation 3D_JOINT_HYME étaient mal calculées. 
+   Le bug est résolu pour les penta15 et les hexa20 : modification du te0122. 
+   La validation est réalisée visuellement d'une part et en ajoutant des test_resu sur des
+   valeurs nodales issues de VARI_ELNO dans ssnp118t et ssnp118u d'autre part.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.3.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnp118t,ssnp118u
+DEJA RESTITUE DANS : 11.1.5
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 02/08/2012 - 10:32:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018183 DU 2012-01-09 15:03:35
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    DYNA_VIBRA - Chargements incompatibles
+FONCTIONNALITE
+   Probleme
+   ========
+   
+   En modélisation harmonique (ex- DYNA_LINE_HARM), il n'est pas possible dans le Fortran de
+   mettre simultanément un chargement de type VECT_ASSE et un chargement standard
+   (AFFE_CHAR_MECA): dans l'OP0060 on fait
+   
+   IF (LVECAS) THEN
+   -> traitement VECT_ASSE
+   ELSE
+   -> traitement CHARGES standards
+   ENDIF
+   
+   Or, rien ne l'interdit (ni dans le catalogue, ni dans le Fortran).
+   
+   Solution
+   ========  
+   
+   Dans le cadre de la fiche issue17958, on blinde avec un message explicite.
+   1 : _(u"""
+    On ne peut pas avoir simultanément une charge de type VECT_ASSE et une charge du type CHARGE.
+   """),
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+DEJA RESTITUE DANS : 11.1.5
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 02/08/2012 - 10:32:06
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018350 DU 2012-02-06 10:13:42
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    C_PLAN abusif pouir VISC_ISOT_* et HOEK_BROWN
+FONCTIONNALITE
+   Suite à la fiche 18013 (MN11 Menage dans les mot-cles lies a DEBORST) on s'est aperçu que
+   dans 3 catalogues de comportements, il est indiqué abusivement  C_PLAN.
+   
+   Or ces comportements ne sont pas programmés en contraintes planes. Il s'agit de :
+   
+   VISC_ISOT_LINE
+   VISC_ISOT_TRAC
+   HOEK_BROWN
+   
+   On supprime donc C_PLAN de ces catalogues.
+   
+   Pour les comportements VISC_ISOT_*, si un  utilisateur choisissait C_PLAN, il était arrêté.
+   
+   Par contre, pour Hoek et Brown, il y a un risque de résultats faux (pas de vérification
+   dans le fortran).
+   
+   La doc U4.51.11 était fausse seulement pour HOEK et BROWN
+   
+   En résumé, c'était faux si on ne mettait pas DEBORST : le comportement était alors résolu
+   en ignorant la condition SIZZ=0
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.4.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.4.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.51.11
+VALIDATION
+    aucune
+DEJA RESTITUE DANS : 11.1.8
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF forma03a                        abbas M.ABBAS            147     89     27
+ CASTEST MODIF forma03b                        abbas M.ABBAS            405    262    199
+ CASTEST MODIF forma03c                        abbas M.ABBAS            308    236     90
+ CASTEST MODIF forma03d                        abbas M.ABBAS            339     38     30
+ CASTEST MODIF sdll136a                      macocco K.MACOCCO          653      3      3
+ CASTEST MODIF ssnp118t                      macocco K.MACOCCO          409     50      2
+ CASTEST MODIF ssnp118u                      macocco K.MACOCCO          406     51      2
+ FORTRAN MODIF algorith/abscvl               macocco K.MACOCCO          110      3      3
+ FORTRAN MODIF algorith/ndnpas               macocco K.MACOCCO          591      3      3
+ FORTRAN MODIF algorith/ndpred               macocco K.MACOCCO          204      5     18
+ FORTRAN MODIF algorith/op0027               macocco K.MACOCCO          247     15     15
+ FORTRAN MODIF algorith/op0060               macocco K.MACOCCO          743      6      3
+ FORTRAN MODIF calculel/ecla3d               macocco K.MACOCCO         1006     77     88
+ FORTRAN MODIF calculel/eclpgm               macocco K.MACOCCO          397      4      7
+ FORTRAN MODIF elements/te0109               macocco K.MACOCCO          243      3      4
+ FORTRAN MODIF elements/te0122               macocco K.MACOCCO          216     21     14
+ FORTRAN MODIF elements/te0411               macocco K.MACOCCO          266      3      3
+ FORTRAN MODIF modelisa/cafaci               macocco K.MACOCCO          490     15     14
+ FORTRAN MODIF postrele/rvtamo               macocco K.MACOCCO          273      4      4
+ FORTRAN MODIF postrele/rvtaso               macocco K.MACOCCO          237      4      4
+ FORTRAN MODIF postrele/rvtec0               macocco K.MACOCCO          403      4      4
+ FORTRAN MODIF postrele/rvtec2               macocco K.MACOCCO          306      4      4
+ FORTRAN MODIF postrele/rvtecn               macocco K.MACOCCO          308      4      4
+ FORTRAN MODIF utilitai/ddllag               macocco K.MACOCCO           81      3      3
+ FORTRAN MODIF utilitai/ulposi               macocco K.MACOCCO           96      3      2
+  PYTHON MODIF Comportement/hoek_brown       macocco K.MACOCCO           40      3      3
+  PYTHON MODIF Comportement/visc_isot_line    macocco K.MACOCCO           38      3      3
+  PYTHON MODIF Comportement/visc_isot_trac    macocco K.MACOCCO           38      3      3
+  PYTHON MODIF Messages/calculel5            macocco K.MACOCCO          388      2     16
+  PYTHON MODIF Messages/charges              macocco K.MACOCCO           82      7      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   30        9470       928     577      +351
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   30        9470       928     577      +351 

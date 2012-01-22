@@ -1,9 +1,9 @@
-# MODIF  DATE 14/12/2010   AUTEUR PROIX J-M.PROIX 
+# MODIF  DATE 08/02/2012   AUTEUR MACOCCO K.MACOCCO 
 # TITRE TEST DE LA LOI JOINT_MECA_RUPT SUR LES ELEMENTS DE JOINT HYME PENTA6
 # ssnp118u.para = tps_job 60 mem_job 64Mo ncpus 1 liste_test S
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -96,6 +96,11 @@ MA=DEFI_GROUP(reuse =MA,
                               _F(NOEUD=('NO1','NO3','NO7','NS1','NS2','NS3'),
                                 NOM='GAUCHE',),
                                ),);
+
+MA=MODI_MAILLAGE(reuse =MA,
+                   MAILLAGE=MA,
+                   ORIE_FISSURE=_F(GROUP_MA='G_DEG'),
+                   INFO=2)
 
 MO=AFFE_MODELE(
 
@@ -209,6 +214,17 @@ U_HM=STAT_NON_LINE(
 # POST TRAITEMENT MODE I PURE
 #-----------------------------------------------------------------------------------
 
+U_HM=CALC_ELEM(reuse =U_HM,
+                RESULTAT=U_HM,
+                OPTION='SIEF_ELNO'
+                );
+
+U_HM=CALC_NO(reuse =U_HM,
+             RESULTAT=U_HM,
+             OPTION='SIEF_NOEU',
+             MAILLE='PRISMDEG'
+             );
+
 # CALCUL DE LA FORCE NODALE
 U_HM=CALC_NO(reuse =U_HM,
             RESULTAT=U_HM,
@@ -321,6 +337,39 @@ TEST_RESU (
       NOM_CMP   = 'PRE1',
       VALE      = press,
       NOEUD     = 'NS15',
+      INST      = insfin,
+      ),
+    )
+  )
+
+# TEST DE LA PRESSION VIA SIGN ET L'INTERPOLATION GAUSS -> NOEUD
+# REMARQUE : A L'INSTANT FINAL LA CONTRAINTE MECA EST NULLE, IL NE RESTE 
+# QUE LA CONTRIBUTION DE LA PRESSION HYDRAULIQUE -press.
+
+TEST_RESU (
+  RESU = (
+    _F(
+      REFERENCE = 'ANALYTIQUE',
+      RESULTAT  = U_HM,
+      NOM_CHAM  = 'SIEF_NOEU',
+      NOM_CMP   = 'SIGN',
+      VALE      = -press,
+      NOEUD     = 'NS15',
+      INST      = insfin,
+      ),
+    )
+  )
+
+# TEST DE LA PRESSION VIA SIGN ET L'INTERPOLATION GAUSS -> NOEUD
+TEST_RESU (
+  RESU = (
+    _F(
+      REFERENCE = 'ANALYTIQUE',
+      RESULTAT  = U_HM,
+      NOM_CHAM  = 'SIEF_NOEU',
+      NOM_CMP   = 'SIGN',
+      VALE      = -press,
+      NOEUD     = 'NO6',
       INST      = insfin,
       ),
     )

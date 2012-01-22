@@ -1,8 +1,8 @@
-#@ MODIF charges Messages  DATE 14/03/2011   AUTEUR ABBAS M.ABBAS 
+#@ MODIF charges Messages  DATE 08/02/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -30,6 +30,11 @@ La charge <%(k1)s> a été utilisée plus d'une fois dans EXCIT: il faut la supprim
 2 : _("""
 Il n'y a aucune charge dans le mot-clef facteur EXCIT. Ce n'est pas possible avec STAT_NON_LINE.
 """),
+
+3 : _("""
+ On ne peut pas avoir simultanément une charge de type VECT_ASSE et une charge du type CHARGE.
+"""),
+
 
 22 : _("""
 La charge <%(k1)s> n'est pas mécanique.

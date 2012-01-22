@@ -1,8 +1,8 @@
-#@ MODIF calculel5 Messages  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calculel5 Messages  DATE 08/02/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -170,20 +170,6 @@ Erreur Utilisateur dans PROJ_CHAMP (ou LIAISON_MAILLE) :
  Votre modèle contient un type d'élément non supporté par la commande.
  Faites une demande d'évolution.
 """),
-
-
-
-
-
-32: _("""
-Erreur Utilisateur dans PROJ_CHAMP (ou LIAISON_MAILLE) :
- Pour le modele  %(k1)s  on ne peut pas visualiser ensemble plusieurs champs ELGA (%(k2)s,  ...)
- car les familles de points de Gauss sont differentes
-"""),
-
-
-
-
 
 33 : _("""
 PROJ_CHAMP (ou LIAISON_MAILLE) :
