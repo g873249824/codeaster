@@ -3,7 +3,7 @@
      &                 OPTION, PARAM)
 C
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF PREPOST  DATE 11/01/2012   AUTEUR SELLENET N.SELLENET 
+C MODIF PREPOST  DATE 29/02/2012   AUTEUR MACOCCO K.MACOCCO 
 C RESPONSABLE SELLENET N.SELLENET
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -257,7 +257,7 @@ C
 C                 VERIFICATION DU NOMBRE DE PG ASTER/MED
 C                 COMPARAISON DES COORDONNEES DES PG ASTER/MED
                   CALL WKVECT('&&LRMPGA_PERMUT','V V I',NBPG,JPERM)
-                  CALL LRVCPG(IDFIMD,NBPG,ZI(JNGALU+J-1),DIME,
+                  CALL LRVCPG(IDFIMD,NBPG,ZI(JNGALU+J-1),
      &                   ELREF,ZK8(JTYMED+J-1),FAPG,NLOC,ZI(JPERM),
      &                   NUTYMA,CODRET)
                   NBPGM = ZI(JNGALU+J-1)

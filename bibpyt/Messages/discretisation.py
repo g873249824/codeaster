@@ -1,8 +1,8 @@
-#@ MODIF discretisation Messages  DATE 28/02/2011   AUTEUR BARGELLI R.BARGELLINI 
+#@ MODIF discretisation Messages  DATE 29/02/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -103,7 +103,9 @@ La liste d'instants n'est pas strictement croissante.
 """),
 
 89 : _("""
-Instant initial introuvable dans la liste d'instants (LIST_INST).
+L'instant initial est introuvable dans la liste d'instants (LIST_INST).
+Risque & Conseil :
+   Vérifiez le mot-clé INST_INIT (ou NUME_INST_INIT), en tenant compte de la précision (mot-clé PRECISION).
 """),
 
 90 : _("""
@@ -111,7 +113,7 @@ Instant final introuvable dans la liste d'instants (LIST_INST).
 """),
 
 92 : _("""
- NUME_INST_INIT plus grand que NUME_INST_FIN
+On ne peut faire le calcul car l'instant final donné est égal au dernier instant stocké dans la structure de données RESULTAT. Il n'y a qu'un incrément disponible alors qu'il faut au moins deux pas de temps dans les opérateurs non-linéaires.  
 """),
 
 93: _("""
@@ -119,14 +121,9 @@ Instant final introuvable dans la liste d'instants (LIST_INST).
 """),
 
 94 : _("""
-  -> Le numto d'ordre correspondant à l'instant final de calcul NUME_INST_FIN
-     n'appartient pas à la liste des numéros d'ordre.
-     Dans ce cas, Aster considère pour numéro d'ordre final, le dernier de
-     la liste fournie.
-  -> Risque & Conseil :
-     Afin d'éviter des pertes de résultats, assurez-vous que le numéro d'ordre
-     associé à l'instant NUME_INST_FIN appartienne bien à la liste des numéros
-     d'ordre.
+L'instant final est introuvable dans la liste d'instants (LIST_INST).
+Risque & Conseil :
+   Vérifiez le mot-clé INST_FIN (ou NUME_INST_FIN), en tenant compte de la précision (mot-clé PRECISION).
 """),
 
 99 : _("""
