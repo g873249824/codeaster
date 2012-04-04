@@ -1,9 +1,9 @@
         SUBROUTINE FGRAIN (PIC,NPIC,ITRV,NCYC,SIGMIN,SIGMAX)
 C       ================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF PREPOST  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF PREPOST  DATE 04/04/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -31,13 +31,17 @@ C       ----------------------------------------------------------------
         IMPLICIT REAL*8 (A-H,O-Z)
         REAL*8          PIC(*), X, Y,E1,E2,E3,SIGMAX(*),SIGMIN(*)
         REAL*8          R1,R2,RD,RAD
-        INTEGER         NPIC,  NCYC, IPIC,   ITRV(*) ,NPICB
+        INTEGER         NPIC,  NCYC,   ITRV(*) ,NPICB
         LOGICAL         LRESI, CYCZER
 C       ----------------------------------------------------------------
         LRESI = .FALSE.
         NPICB = NPIC
         CYCZER = .TRUE.
-        
+
+C     --- RECUPERATION DU NIVEAU D'IMPRESSION ---
+
+        CALL INFNIV(IFM,NIV)
+
         DO 20 I=1,NPICB
          ITRV(I) = I
  20     CONTINUE
@@ -134,7 +138,24 @@ C -- ON ELIMINE RN
           LRESI = .TRUE.
           GOTO 1
         ENDIF
-  200   CONTINUE
-  999   CONTINUE
 C
+C     --- IMPRESSION DES PICS EXTRAITS DE LA FONCTION ----
+      IF (NIV.EQ.2) THEN
+        WRITE (IFM,*)
+        WRITE (IFM,'(1X,A)') 'PICS APRES LE COMPTAGE RAINFLOW'
+        WRITE (IFM,*)
+        WRITE (6,*) 'NOMBRE DE CYCLES = ', NCYC
+        WRITE (IFM,*)
+        WRITE (IFM,'(1X,A)') '     CHARGEMENT_MAX     CHARGEMENT_MIN'
+        WRITE (IFM,*)
+        WRITE (IFM,'(2(1X,E18.6))') (SIGMAX(I),SIGMIN(I),I=1,NCYC)
+C         DO 106 I=1,NCYC
+C             WRITE (IFM,'(2(1X,E18.6))'), SIGMAX(I),SIGMIN(I)
+C 106     CONTINUE 
+
+      END IF
+
+999     CONTINUE
+
+
          END

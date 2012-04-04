@@ -1,0 +1,520 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR siavelis     SIAVELIS Maximilien    DATE 04/04/2012 - 01:42:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018449 DU 2012-02-22 16:55:28
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    X-FEM : r?sultats faux avec bi-materiau et COMP_INCR
+FONCTIONNALITE
+   Il est possible avec X-FEM de définir un matériau différent de part et d'autre de la discontinuité.
+   Cela fonctionne avec COMP_ELAS (voir cas test ssnv209) mais pas avec COMP_INCR (on obtient des résultats faux).
+   
+   Le problème est dans l'appel à NMCOMP qui se fait avec la famille et le point de gauss du sous élément alors
+   que pour connaitre l'emplacement du point par rapport à la discontinuité, le champ neutre de la level set est
+   interpolé à partir des noeuds de l'élément parent.
+   
+   SOLUTION :
+   Il faut utliser la famille et le point de gauss dans l'élément parent :
+   
+   < CALL NMCOMP('RIGI',KPG,1,2,TYPMOD,IMATE,COMPOR,CRIT,
+   > CALL NMCOMP('XFEM',IDECPG+KPG,1,2,TYPMOD,IMATE,COMPOR,CRIT,
+   
+   On valide l'approche en passant le cas test ssnv209c de COMP_ELAS à COMP_INCR
+   
+   IMPACT : xnmgr.cata xnmgr2.cata xnmgr3.cata xnmpl.f xnmpl2.f xnmpl3.f, ssnv209c
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.2.14
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.2
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.04.209
+VALIDATION
+    ssnv209
+DEJA RESTITUE DANS : 11.1.13
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018450 DU 2012-02-22 17:08:26
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    X-FEM : bug jonction dans DEFI_FISS_XFEM
+FONCTIONNALITE
+   Lors de la définition d'un branchement avec le mot clé JONCTION dans l'opérateur DEFI_FISS_XFEM, on obtient parfois des 
+   écrasements mémoire dans la routine xinlsj.
+   
+   SOLUTION :
+   La structure '&&XINLSJ.LICMP' est sous-dimensionée, on corrige en modifiant et en déplaçant la ligne :
+   < CALL WKVECT('&&XINLSJ.LICMP' ,'G V K8' ,2*NFISS,JNCMP)
+   > CALL WKVECT('&&XINLSJ.LICMP' ,'V V K8' ,2*NFISS,JNCMP)
+   
+   On en profite pour déclarer les vecteurs '&&XINLSJ.LICMP' et '&&XINLSJ.FISS' en volatile plutôt qu'en global car ils sont détruits à la fin 
+   de la routine. En faisant un grep dans le fortran X-FEM, il n'y a a priori pas d'autre endroit où on appelle wkvect en global pour des 
+   vecteurs temporaires.
+   
+   IMPACT : xinlsj.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.3.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.3.3
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv511 ssnv512 ssnv513
+DEJA RESTITUE DANS : 11.1.13
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018469 DU 2012-02-27 16:17:06
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    X-FEM : bug dimension du maillage dans PROPA_XFEM
+FONCTIONNALITE
+   On plante salement dans PROPA_XFEM en 2D avec un maillage gmsh.
+   
+   EXPLICATION :
+   On récupère ndim=3 au lieu de ndim=2 dans l'op0010.
+   
+   SOLUTION :
+   il faut récupérer la dimension avec DISMOI et non NOMA//'.DIME' :
+   < CALL JEVEUO(NOMA//'.DIME','L',JDIME)
+   < NDIM  = ZI(JDIME-1+6)
+   > DISMOI('F','DIM_GEOM',NOMA,'MAILLAGE',NDIM,K8BID,IRET)
+   En effet dans le cas ou la composante Z existe mais est nulle pour tous les noeuds, DISMOI retourne ndim=2.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test perso + cas tests X-FEM
+DEJA RESTITUE DANS : 11.1.13
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tran         TRAN Van-xuan          DATE 04/04/2012 - 01:42:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018540 DU 2012-03-13 14:23:58
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    FATIGUE: ordre de prise encompte de facteur de multiplication et du seuil dans POST_FATIGUE uniaxial
+FONCTIONNALITE
+   Contexte:
+   =========
+   
+   Pour POST_FATIGUE, option Uni-axial, il y a 2 mot-clés K_seuil et K_t (facteur de multiplication). K_seuil 
+   est utilisé pour enlever des cycles dont l'amplitude est très failble pendant le comptage. K_t est utilisée 
+   pour amplifier le chargement lorqu'on a la concentration de contrainte/déformation.
+   
+   Actuallement, Code_Aster applique d'abord K_seuil et puis K_t qui n'est pas logique. On veut que 
+   l'application de K_t avant de filtrer par le seuil.
+   
+   Saïd également veut afficher les max et les mins de tous les cycles apres le comptage rainflow.
+     
+   Impact fortran:
+   ===============
+   fgpeak, fgrain, pofaun
+   
+   Impact document:
+   ===============*
+   U4.83.01: ajout une note pour expliquer l'ordre de calcul K_t et K_seuil
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.83.01
+VALIDATION
+    U4.83.01
+DEJA RESTITUE DANS : 11.1.15
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 04/04/2012 - 01:42:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018580 DU 2012-03-19 13:35:08
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    CALC_EUROPLEXUS : plantage d'un calcul avec LANCEMENT='OUI'
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   Je rencontre un plantage avec LANCEMENT='OUI' pour un cas où LANCEMENT='NON' produit des
+   fichiers .epx et .msh valables pour un lancement manuel d'EPX.
+   
+   Voir le fichier joint pour un arrêt  <F>_ABNORMAL_ABORT
+   """
+   
+   
+   Analyse :
+   ---------
+   Le problème se produit sur un LIRE_CHAMP de CALC_EUROPLEXUS qui se trouve dans un "try...
+   except".
+   
+   A priori, l'erreur MED_37 détectée par Aster devrait être interceptée.
+   
+   Malheureusement, en plus de l'erreur MED_37, on a une segmentation violation qui se
+   produit. Cette erreur là ne peut pas être interceptée.
+   
+   Après avoir accusé successivement CALC_EUROPLEXUS, le superviseur et JEVEUX, j'ai
+   finalement constaté qu'il y a un très vieux bug dans la routine LRMPGA utilisée par
+   LIRE_CHAMP et LIRE_RESU.
+   
+   Dans cette routine, on souhaite remplir un tableau alloué à la taille du nombre de mailles
+   du maillage. Pour ce faire, on fait une boucle sur les GREL. Or il peut y avoir des GREL
+   de mailles tardives qui ont des numéros négatifs. LRMPGA ne vérifie rien, en conséquence,
+   on cartonne la mémoire.
+   
+   On plante donc dans JEDETV avant que CALC_EUROPLEXUS ait pu reprendre la main.
+   
+   
+   Solution :
+   ----------
+   On corrige LRMPGA pour qu'il ne prenne plus en compte les mailles tardives.
+   
+   Avec ce correctif, la relecture des champs venant d'Europlexus se passe sans problème.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+DEJA RESTITUE DANS : 11.1.15
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 04/04/2012 - 01:42:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018509 DU 2012-03-06 11:49:13
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    AFFE_CHAR_XXX_F + LIAISON_DDL : le second membre n'est pas normalisxc3xa9 quand il s'agit d'une fonction
+FONCTIONNALITE
+   Problème :
+   ----------
+   E. Cheignon a remarqué qu'AFFE_CHAR_MECA_F engendre parfois des relations 
+   linéaires fausses.
+   Ce qui entraine des résultats faux !
+                                                                                            
+                                                                  
+   Analyse :
+   ---------
+   Il manque en effet une ligne dans la routine afrela.f pour remettre RCOEF=1. 
+   quand le
+   second membre est de type "fonction" :
+         ELSE IF (TYPVAL.EQ.'FONC') THEN
+   C       -- ON ALARME SI LRCOEF EST TROP DIFFERENT DE 1.
+           IF ((RCOEF.GT.1.D3) .OR. (RCOEF.LT.1.D-3))
+        &     CALL U2MESS('A','MODELISA_99')
+   C       -- ON NE PEUT PAS "DIVISER" LE SECOND MEMBRE (FONCTION) !
+           RCOEF=1.D0     <--- ligne manquante !!!
+         END IF
+                                                                                            
+                                                                  
+   Cette erreur existe apparemment depuis toujours.
+                                                                                            
+                                                                  
+   Correction :
+   ------------
+   Je corrige afrela.f pour ajouter RCOEF=1.D0
+                                                                                            
+                                                                  
+   Détail :
+   --------
+   J'en profite pour remettre l'alarme MODELISA_99 supprimée par erreur (voir fiche 
+   18531).
+   Cette alarme explique qu'il y a un danger quand on écrit une relation linéaire 
+   avec un
+   second membre "fonction" si les coefficients du 1er membre (réels) sont très 
+   différents de
+   1. :
+                                                                                            
+                                                                  
+   !--------------------------------------------------------------------------------
+   -----------------------------------------------------!
+   !.<A>.
+   <MODELISA_99>....................................................................
+   ...............................................!
+   !................................................................................
+   .....................................................!
+   !.Problème.:.....................................................................
+   .....................................................!
+   !...Une.relation.linéaire.entre.ddls.a.un.second.membre.de.type."fonction".......
+   .....................................................!
+   !...On.ne.peut.pas.la.normaliser.
+   (afin.que.son.plus.grand.coefficient.soit.1.).car.on.ne.sait.pas."diviser".une.fo
+   nction.par.un.réel..!
+   !................................................................................
+   .....................................................!
+   !...Le.plus.grand.coefficient.de.la.relation.est.très.différent.de.1...(<1.d-
+   3.ou.>.1.d3).............................................!
+   !...Cette.équation.(non-
+   normalisée).peut.conduire.à.des.difficultés.numériques.lors.de.la.résolution.des.
+   systèmes.linéaires...........!
+   !................................................................................
+   .....................................................!
+   !.Conseil.:......................................................................
+   .....................................................!
+   !...Utilisez.le.solveur.Mumps.afin.de.contrôler.la.qualité.de.la.résolutions.des.
+   systèmes.linéaires...................................!
+   !--------------------------------------------------------------------------------
+   -----------------------------------------------------!
+                                                                                            
+                                                                  
+   Résultats faux :
+   ----------------
+   Malheureusement, cette erreur conduit systématiquement a des résultats faux.
+   Les conditions de résultats faux sont :
+      * Utilisation d'AFFE_CHAR_MECA_F (ou AFFE_CHAR_THER_F) avec le mot-clé 
+   LIAISON_DDL (ou
+   LIAISON_GROUP ou LIAISON_OBLIQUE)
+      * Le second membre de la liaison entre ddls (mot-clé COEF_IMPO) est une 
+   fonction
+   différente de 0.
+      * Le plus grand coefficient de la liaison entre dlls (mot-clé COEF_MULT) est 
+   différent
+   de 1.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  18509
+     afrela.f
+     modelisa.py
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude fournie
+DEJA RESTITUE DANS : 11.1.13
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 04/04/2012 - 01:42:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018466 DU 2012-02-27 08:35:32
+TYPE express concernant Code_Aster (VERSION 11.2)
+TITRE
+    X-FEM : bug POST_MAIL_XFEM si aucun groupe de mailles
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Encore un bug dans POST_MAIL_XFEM si aucun groupes de mailles n'est défini
+   dans le maillage (cf. 16839)
+   
+   
+   Solution :
+   ----------
+   
+   Il faut correctement initialiser le .GROUPEMA du nouveau maillage en tenant compte du
+   .GROUPEMA du maillage initial et aussi du nombre de fonds de fissure (car depuis la
+   restitution de la fiche 13676 en 10.3.15, on crée des groupes de mailles représentant le
+   fond de fissure)
+   
+   impact :
+   xpodim.f et xpomax.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test perso
+DEJA RESTITUE DANS : 11.1.12
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR durand       DURAND Christophe      DATE 04/04/2012 - 01:42:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018584 DU 2012-03-20 13:59:13
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    modification test de performance PERF011
+FONCTIONNALITE
+   Je le modifie le test de performance PERF011 (v10 et v11) pour lui donner un caractère
+   plus général.
+   
+   Valeurs de non-régression légèrement modifiées.
+   PERF011A : livré en versions 10 et 11.
+   PERF011B : livré en 10_impi et 11_impi.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.273
+VALIDATION
+    nxc3xa9ant
+DEJA RESTITUE DANS : 11.1.15
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 04/04/2012 - 01:42:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018617 DU 2012-03-23 17:14:44
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    Coquille dans creaco.f (DEFI_PART_FETI)
+FONCTIONNALITE
+   Dans la routine creaco.f, on trouve :
+   
+   IF ( ZI(MABORD+ZI(RENUM2-1+ZI(TEMP-1+J)-1)) .EQ. 0) THEN
+   
+   au lieu de :
+   
+   IF ( ZI(MABORD+ZI(RENUM2-1+ZI(TEMP-1+J))-1) .EQ. 0) THEN
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test FETI
+DEJA RESTITUE DANS : 11.1.15
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 04/04/2012 - 01:42:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018409 DU 2012-02-14 15:28:22
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme avec AFFE_VARC / VALE_REF (routine nmvcmx.f)
+FONCTIONNALITE
+   Problème:
+   ---------
+   Etienne Cheignon a remarqué que parfois dans la routine nmvcmx.f, on utilise des adresses
+   invalides (<0).
+                                                                                            
+                           
+   Correction :
+   ------------
+   Effectivement, la programmation de la routine nmvcmx est imprudente lorsqu'une variable de
+   commande n'existe pas sur certaines mailles : on cherche quand meme à lire la valeur de
+   référence de cette variable !
+   Il faut modifier le début de la boucle 40 pour ne pas traiter les mailles non affectées
+   par la variable de commande de la boucle 10.
+                                                                                            
+                           
+   Validation : rien
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  18409
+     nmvcmx.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    rien de particulier
+DEJA RESTITUE DANS : 11.1.12
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018539 DU 2012-03-13 09:22:45
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    11 Tests NOOK suite fiche 18509
+FONCTIONNALITE
+   Problème :
+   ----------
+   Suite à la correction de la fiche 18509 11 tests sont devenus NOOK :
+                                                                                            
+                           
+   ssla200a  ssla200b  sslp200a  sslp200b  sslp201a  sslp201b
+   sslv200a  sslv200b  ttna200a  ttnp200a  wtnv113j
+                                                                                            
+                           
+   Analyse :
+   ------------
+   Dans ces tests (de non-regression), on utilise des fonctionnalités donnant des résultats
+   faux :
+   / AFFE_CHAR_THER_F + LIAISON_DDL (avec coefficients de la relation > 1.)
+   / AFFE_CHAR_MECA_F + LIAISON_DDL (avec coefficients de la relation > 1.)
+   / AFFE_CHAR_MECA_F + LIAISON_GROUP (avec coefficients de la relation > 1.)
+   / AFFE_CHAR_MECA_F + LIAISON_OBLIQUE (=> coefficients de la relation < 1.)
+                                                                                            
+                           
+   Correction :
+   ------------
+   Comme ces tests sont tous des tests de pure non-régression, je ne me pose pas de question
+   et je remplace toutes les valeurs attendues par les nouvelles valeurs obtenues.
+   Au passage, je réduits la précision de ces tests : 1.e-9 
+   
+   Resultats faux : voir réponse à la fiche 18509.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tests incrimin?s
+DEJA RESTITUE DANS : 11.1.13
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF perf011a                      macocco K.MACOCCO          213     25    399
+ CASTEST MODIF perf011b                      macocco K.MACOCCO          216     23    397
+ CASTEST MODIF ssla200a                      macocco K.MACOCCO         1328    162    163
+ CASTEST MODIF ssla200b                      macocco K.MACOCCO         1362    254    251
+ CASTEST MODIF sslp200a                      macocco K.MACOCCO         1474    162    157
+ CASTEST MODIF sslp200b                      macocco K.MACOCCO         1291    126    126
+ CASTEST MODIF sslp201a                      macocco K.MACOCCO         1217    107    107
+ CASTEST MODIF sslp201b                      macocco K.MACOCCO         1213    116    116
+ CASTEST MODIF sslv200a                      macocco K.MACOCCO         1101    152    152
+ CASTEST MODIF sslv200b                      macocco K.MACOCCO         1061    130    130
+ CASTEST MODIF ssnv209c                      macocco K.MACOCCO          485      3      3
+ CASTEST MODIF ttna200a                      macocco K.MACOCCO          620     16     16
+ CASTEST MODIF ttnp200a                      macocco K.MACOCCO          615     39     38
+ CASTEST MODIF wtnv113j                      macocco K.MACOCCO          382      3      3
+ FORTRAN MODIF algorith/nmvcmx               macocco K.MACOCCO          175      9      4
+ FORTRAN MODIF algorith/op0010               macocco K.MACOCCO          850      4      5
+ FORTRAN MODIF algorith/xinlsj               macocco K.MACOCCO          201      4      4
+ FORTRAN MODIF algorith/xnmgr                macocco K.MACOCCO          214      4      4
+ FORTRAN MODIF algorith/xnmgr2               macocco K.MACOCCO          426      5      5
+ FORTRAN MODIF algorith/xnmgr3               macocco K.MACOCCO          443      5      5
+ FORTRAN MODIF algorith/xnmpl                macocco K.MACOCCO          215      4      4
+ FORTRAN MODIF algorith/xnmpl2               macocco K.MACOCCO          423      5      5
+ FORTRAN MODIF algorith/xnmpl3               macocco K.MACOCCO          389      5      5
+ FORTRAN MODIF modelisa/afrela               macocco K.MACOCCO          428      6      4
+ FORTRAN MODIF prepost/fgpeak                macocco K.MACOCCO          114      6      6
+ FORTRAN MODIF prepost/fgrain                macocco K.MACOCCO          161     26      5
+ FORTRAN MODIF prepost/lrmpga                macocco K.MACOCCO          321      3      1
+ FORTRAN MODIF prepost/pofaun                macocco K.MACOCCO          280     13     10
+ FORTRAN MODIF prepost/xpodim                macocco K.MACOCCO          322     16     17
+ FORTRAN MODIF prepost/xpomax                macocco K.MACOCCO          534      6      3
+ FORTRAN MODIF utilitai/creaco               macocco K.MACOCCO          527      5      5
+  PYTHON MODIF Messages/modelisa             macocco K.MACOCCO          539     16      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   32       19140      1460    2152      -692
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   32       19140      1460    2152      -692 
