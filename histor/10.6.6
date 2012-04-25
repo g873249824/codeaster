@@ -1,0 +1,615 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 03/08/2012 - 08:47:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018442 DU 2012-02-22 14:18:48
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW11.01.10, le cas-test hsnv101c s?arr?te en erreur fatale sur Aster4, Rocks, Calibre5 et Calibre7.
+FONCTIONNALITE
+   Problème
+   ========
+   
+   En NEW11.01.10 et NEW10.06.04, le cas-test hsnv101c s’arrête en erreur fatale sur Aster4,
+   Rocks, Calibre5
+   et Calibre7. 
+   
+   Le problème est lié à la fiche issue18412.
+   
+   Solution
+   ========
+   
+   La transformation de l'alarme DISCRETISATION_94 en erreur fatale casse le test.
+   Il suffit de modifier  NUME_INST_FIN=140 en NUME_INST_FIN=70 pour corriger
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    hsnv101c
+DEJA RESTITUE DANS : 11.1.11
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 04/24/2012 - 05:28:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018622 DU 2012-03-27 15:59:30
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Archivage dans STAT_NON_LINE
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Lorsqu'on demande l'archivage pour un seul instant (uniquement pour le paramètre INST dans
+   ARCHIVAGE et avec une seule valeur), tous les instants sont archivés.
+   
+   
+   Solution
+   ========
+   
+   Probleme dans la routine nmcrit.f. Il y avait une vilaine glute :
+   
+   IF (NBINST.EQ.1) THEN
+     LSELEC = .TRUE.
+   ELSE
+   ...
+   ENDIF
+    
+   Dès lors qu'il n'y a qu'un seule instant dans la liste, on dit que tous les instants sont OK !
+   Cette glute date de l'époque où la thermique partageait des routines avec STAT_NON_LINE
+   sans en partager tous les concepts. Effectivement, en thermique, il était possible de
+   n'avoir qu'un seul instant: un calcul stationnaire. 
+   Désormais, tout est commun: SD, routines d'accès et catalogue CAPY. Cette glute n'a plus
+   lieu d'être. On corrige NMCRIT.
+   
+   A faire en V10 (routine identique en V10)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+DEJA RESTITUE DANS : 11.1.18
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017838 DU 2011-11-03 17:07:02
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Incompatibilite du pilotage RESIDU et des charges AFFE_CHAR_CINE
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Le pilotage du chargement requiert un critère de sélection de la solution lorsqu'il y en a
+   plusieurs.
+   Parmi ces critères, SELECTION = 'RESIDU' sélectionne la solution dont le résidu est
+   minimal(la mieux convergée des deux). Malheureusement, le calcul du résidu n'opère pas de
+   traitement particulier, à tort, en présence de chargements cinématiques AFFE_CHAR_CINE. Il
+   vaudrait mieux utiliser la même routine que pour l'estimation de la convergence.
+   
+   Cette anomalie ne conduit pas en revanche à des résultats faux mais peut nuire à la
+   convergence.
+   
+   
+   Solution
+   ========
+   
+   On traite le résidu d'Équilibre en pilotage de la même manière que le Newton général, en
+   excluant les degrés de liberté concernant par les chargements cinématiques.
+   
+   Impacts: nmpilr.f, nmrepl.f et nmcere.f
+   Validation: on modifie ssnv157a et ssnv175a pour que les chargements soient de type
+   AFFE_CHAR_CINE. Ca ne change rien à la convergence (avant et après correction).
+   Malheureusement, je n'ai pas trouvé des cas-test discriminant (qui échoue sans surcharge).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv175a,ssnv157a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017955 DU 2011-11-23 13:00:55
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    AFFE_CHAR_MECA - LIAISON_COQUE
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Il n'y a pas de protection dans le catalogue sur la nécessité de présence de certains
+   mots-clefs (GROUPES) pour l'option LIAISON_COQUE.
+   Du coup, on est arrêté dans le fortran.
+   
+   Solution
+   ========
+   
+   On ajoute une règle dans affe_char_meca.py et affe_char_meca_f.py:
+    regles=(AU_MOINS_UN('GROUP_MA_1','MAILLE_1','GROUP_MA_2','MAILLE_2',
+                                  'GROUP_NO_1','NOEUD_1','GROUP_NO_2','NOEUD_2',),),
+   
+   Impacts: pamano.f, affe_char_meca.py, affe_char_meca_f.py, modelisa6.py (suppression du
+   message)
+   Validation: LE cas-test qui valide LIAISON_COQUE
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdlx03b
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017966 DU 2011-11-24 12:50:03
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    NMFONC et IMPLEX
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Dans STAT_NON_LINE, le tableau FONACT est initialisé dans NMINI0et  rempli dans NMINIT/NMFONC.
+   
+   Or il est utilisé par NMINIT/NMCHAP pour IMPLEX qui est appelé avant NMINIT/NMFONC donc
+   avant d'avoir été rempli.
+   
+   Solution
+   ========
+   
+   Il est inutile de créer un nom de champ "SIGEXT" (pour IMPLEX) dans le cas de la
+   sensibiltié, car il y a peu de chance qu'onf asse un jour de la sensibilité avec IMPLEX.
+   On supprime l'appel CALL NMNSLE(SDSENS,NRPASE,'SIGEXT',SIGEXT) dans NMCHAP
+   
+   Impacts: nmchap.f et nminit.f (car FONACT ne doit pas être passé en paramètre de NMCHAP)
+   
+   A faire en v10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018308 DU 2012-01-30 12:12:11
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Couverture de code : DEFI_LIST_INST
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Suite à la réorganisation des TP de formation en non-linéaire, via la fiche issue17612 en 
+   version 11.1.6, le test de couverture montre que les fonctionnalités suivantes ne sont 
+   pas testées :
+   DEFI_LIST_INST      DEFI_LIST           PAS_MAXI
+   DEFI_LIST_INST      DEFI_LIST           VALE
+   En effet, forma03c a été modifié.
+   
+   Solution
+   ========
+   
+   On ajoute un deuxième STAT_NON_LINE sur la partie "calcul avant charge limite", en mode de
+   gestion automatique du pas de temps:
+   
+   # DISCRETISATION EN TEMPS
+   TFIN  = 243.0;
+   
+   # EN GESTION AUTOMATIQUE, ON IMPOSE SEULEMENT LE 1ER PAS DE TEMPS
+   DEFAUTO=DEFI_LIST_INST(DEFI_LIST=_F(METHODE='AUTO',
+                                        VALE=(0., 50., TFIN),
+                                        PAS_MINI=1.e-6,
+                                        PAS_MAXI=100.)
+                         )
+   
+   A répercuter en v10 (formation !)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v6.03.114
+VALIDATION
+    forma03
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 04/24/2012 - 05:28:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018629 DU 2012-03-28 11:17:57
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    Appels rxc3xa9cursifs de messages
+FONCTIONNALITE
+   Problème :
+   ========
+   
+   Dans certains cas de figure, l'appel à un message d'erreur ou d'alarme peut conduire à l'appel 
+   de fonctions Jeveux qui appelent elles-mêmes des messages d'alarme. Dans l'étude proposée, lors 
+   de l'appel au message d'erreur, JEVEUX voulait émettre une alarme concernant le remplissage de 
+   la base Volatile.  
+   
+   Solution proposée :
+   =================
+   
+   Dans la fonction u2mesg.f, qui teste si l'appel est récursif, on décide si c'est le cas 
+   d'émettre le message CATAMESS_55 et de sortir directement de la routine sans effectuer d'autres 
+   instructions et sans faire appel à la fonction JEFINI. Cela permet maintenant de s'arrêter 
+   proprement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude fournie
+DEJA RESTITUE DANS : 11.1.17
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018521 DU 2012-03-08 08:14:23
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Passage en med 3.0.5 et hdf 5.1.8.x
+FONCTIONNALITE
+   La dernière version med-3.0.5rc2 fonctionne correctement sur les plates-formes 64 bits, une version 
+   rc3 est attendue pour corriger un problème de passage de tests à l'installation. On ajoute l'option 
+   --enable-check23 à la construction pour optimiser les performances.
+   
+   La version HDF est maintenant la version 5-1.8.8. Deux fonctions bibc/hdf/hdfwat et bibc/hdf/hdfwsv 
+   sont modifiées pour utiliser l'interface par défaut 1.8. 
+   
+   Le fichier de configuration est modifié pour pointer sur les nouvelles librairies et les 
+   différentes fonctions s'appuyant sur les includes (med.h et hdf.h) sont recompilées.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste complxc3xa8te
+DEJA RESTITUE DANS : 11.1.17
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 04/24/2012 - 05:28:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018587 DU 2012-03-20 17:51:29
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    [FORMA] NOM_VARC n'est pas vxc3xa9rifixc3xa9e ?
+FONCTIONNALITE
+   Problème:
+   ---------
+   Quand on se trompe sur le nom d'une variable de commande dans la commande AFFE_MATERIAU,
+   celle-ci est igorée sans aucune alarme.
+                           
+   Par exemple si on écrit :
+   CHMAT2=AFFE_MATERIAU(MAILLAGE=MA,AFFE= _F(TOUT='OUI', MATER=MAT),
+           AFFE_VARC=_F(TOUT='OUI',NOM_VARC='TEMPER',CHAMP_GD=CHT1,VALE_REF=0.))
+   La dilatation thermique n'est pas prise en compte !
+                           
+   Analyse :
+   ---------
+   Dans le catalogue de la commande AFFE_MATERIAU, le mot clé NOM_VARC n'est plus contraint
+   par une liste "into" depuis la version 10.3.21.
+   C'est J.D. qui a mis la liste "into" en commentaire mais je n'ai pas vu dans l'histor de
+   la 10.3.21 de justification.
+                                                                                            
+                                                          
+   Correction :
+   ------------
+   Je rétablis la liste "into" des valeurs possibles pour le mot clé NOM_VARC.
+   Une faute de frappe conduit maintenant à une erreur syntaxique :
+   DEBUT CR validation : fort.1
+      Etape : AFFE_MATERIAU    ligne : 63    fichier : 'fort.1'
+         Mot cle Facteur :AFFE_VARC
+            Mot-clé simple : NOM_VARC
+               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+               ! La valeur : 'TEMPER'  ne fait pas partie des choix possibles ('TEMP', 'GEOM',  !
+               ! 'CORR', 'IRRA', 'HYDR', 'SECH', 'EPSA', 'M_ACIER', 'M_ZIRC', 'NEUT1', 'NEUT2', !
+               ! 'PTOT', 'DIVU')                                                                !
+               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            Fin Mot-clé simple : NOM_VARC
+         Fin Mot cle Facteur :AFFE_VARC
+      Fin Etape : AFFE_MATERIAU
+   FIN CR validation :fort.1
+                                                                                            
+                                                         
+   Impact documentaire :    Aucun : la doc est à jour. Il existe auhourd'hui 13 valeurs
+   possibles.
+   ---------------------
+                           
+   NEW10 :
+   -------
+   Je pense qu'il est préférable d'ajouter la liste "into" en version NEW10.
+   Attention : la liste est un peu moins longue en NEW10. Il faut recopier la liste de
+   LIST_NOM_VARC
+                                                                                            
+                                  
+    
+   Liste des fichiers impactés par la correction de la fiche:  18587
+     affe_materiau.capy
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+DEJA RESTITUE DANS : 11.1.17
+NB_JOURS_TRAV  : 0.15
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018687 DU 2012-04-11 15:12:33
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    CALC_MATR_ELEM trop gourmand en mxc3xa9moire (version // mpi)
+FONCTIONNALITE
+   Problème:
+   ---------
+   Thomas De Soza a remarqué qu'en mode parallèle MPI, la commande CALC_MATR_ELEM a besoin de
+   beaucoup plus de mémoire qu'en séquentiel.
+                                                                                            
+                           
+   Par exemple, pour un cube maillé en 40x40x40 Hexa8 :
+   Version MPI (sur 1 seul proc) :
+     # Statistiques mémoire (Mo) :    466.94 /    185.86 /     33.10 (VmPeak / Optimum / Minimum)
+   Version MPI (sur 2 procs) :
+     # Statistiques mémoire (Mo) :    534.12 /    185.89 /    154.23 (VmPeak / Optimum /
+   Minimum)                                                                                 
+                                  
+   Analyse :
+   ---------
+   Le problème vient de la routine mpicm2.F qui est utilisée à la fin de la commande
+   CALC_MATR_ELEM pour "distribuer" (ALL_REDUCE) les matrices élémentaires.
+   Dans cette routine, on a oublié d'appeler JELIBE pour chaque objet de la collection à
+   distribuer (si c'est une collection).
+               
+   Correction :
+   ------------
+   On ajoute CALL JELIBE dans la routine mpicm2.F
+                                                                                            
+                           
+   Validation :
+   ------------
+   Après correction :
+   Version MPI (sur 2 procs) :
+     # Statistiques m?moire (Mo) :    533.91 /    185.89 /     34.08 (VmPeak / Optimum / Minimum)
+                                                                                            
+                         
+   NEW10 :
+   -------
+   La correction est à reporter en NEW10.
+                                                                                            
+                         
+   Liste des fichiers impactés par la correction de la fiche:  18687
+     mpicm2.F
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+DEJA RESTITUE DANS : 11.1.18
+NB_JOURS_TRAV  : 0.15
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 04/24/2012 - 05:28:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018475 DU 2012-02-28 14:50:21
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    SIGM_ELNO et EPSI_ELNO fausses si NCOU > 1 pour les COQUE_3D
+FONCTIONNALITE
+   Anomalie :
+   ========
+   Pour les COQUE_3D, les calculs de EPSI_ELNO (et SIGM_ELNO en NEW10) sont faux si le nombre
+   de couche est supérieur à 1. En effet, on ne tient pas compte du nombre de couche donné
+   par l'utilisateur et on fait une sorte d'intégrale entre la peau supérieure et la peau
+   inférieure.
+   
+   Correction :
+   ==========
+   On interdit le calcul de ces options pour un nombre de couche supérieur à 1. Par ailleurs
+   une fiche est émise pour que le calcul soit fait sur toutes les couches.
+   On modifie ssnp15d car on considérait deux couches.
+   
+   Impacts :
+   =======
+   F:
+   te0410.f
+   
+   PY:
+   calculel7.py
+   
+   TEST:
+   ssnp15d.comm
+   
+   idem en NEW10, les sources sont fournies.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de tests persos + ssnp15d
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018426 DU 2012-02-16 09:54:28
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TITRE
+    Calcul d'indicateur d'erreur sur une partie du maillage
+FONCTIONNALITE
+   Problème :
+   ========
+   Lorsqu'on calcule l'indicateur d'erreur par résidus en mécanique sur une partie du
+   maillage, en
+   affectant le modèle mécanique seulement sur cette partie, on plante avec un message d'erreur
+   développeur dvp_1.
+   
+   C'est pourtant autorisé selon la documentation u2.08.01 p.10.
+   
+   Mettre TOUT='OUI' ou non dans la commande ne change rien au plantage.
+   
+   Analyse :
+   =======
+   Le plantage est du au fait que l'on ne récupère pas un nombre valide de sous-point (on
+   attend 0 ou 1 pour une modélisation 3D).
+   En réalité, ce nombre de sous-point est calculé à partir du numéro de l'élément et du
+   numéro de grel. Or dans notre cas, ils sont nuls. Cela signifie que l'élément n'a pas été
+   affecté.
+   
+   En effet, le calcul de l'estimateur d'erreur est bien fait sur les mailles affectées mais
+   la recherche des mailles voisines est faite sur tous le maillage.
+   
+   Correction :
+   ==========
+   Dans le calcul des voisins, on ajoute deux vérifications :
+   - la maille pour laquelle on recherche des voisins est bien affectée ;
+   - les voisins trouvés pour une maille affectée sont affectés.
+   Si ce n'est pas le cas, on ne stocke pas l'information.
+   
+   Impact :
+   ======
+   F:
+   resvoi.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de l'xc3xa9tude jointe et des tests ERME_ELEM et ERTH_ELEM
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 04/24/2012 - 05:28:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017880 DU 2011-11-09 17:23:06
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    [FORUM] Objet JEVEUX inexistant dans AFFE_CARA_ELEM
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans l'étude jointe, on renseigne dans AFFE_CARA_ELEM un groupe de mailles qui n'existe
+   pas dans le maillage ('kt0' alors que 'kt' existe).
+   On obtient alors une erreur JEVEUX alors que l'on s'attendrait au message classique "Le
+   groupe de mailles kt0 ne fait pas parti du maillage".
+   
+   Solution :
+   ----------
+   On ajoute dans la routine qui vérifier la syntaxe du mot-clé facteur DISCRET
+   d'AFFE_CARA_ELEM la vérification que les mots-clés GROUP_MA et MAILLE sont valides (appel
+   à VERIMA).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage du test
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 04/24/2012 - 05:28:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018689 DU 2012-04-11 17:10:39
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    [FORUM] Coquille dans forma01c
+FONCTIONNALITE
+   Problème :
+   ----------
+   Un membre a remarqué une coquille dans un test :
+     nomfic="MED_%d" %k
+     DEFI_FICHIER (UNITE=80+k,FICHIER='nomfic');
+   au lieu de : 
+     nomfic="MED_%d" %k
+     DEFI_FICHIER (UNITE=80+k,FICHIER=nomfic);
+   
+   Solution :
+   ----------
+   On fait la correction suggérée en ajoutant aussi la fermeture du fichier après l'écriture.
+     DEFI_FICHIER(ACTION='LIBERER',UNITE=80+k,)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage du test
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF forma01c                      macocco K.MACOCCO          224      5      3
+ CASTEST MODIF forma03c                      macocco K.MACOCCO          344     37      1
+ CASTEST MODIF hpla100c                      macocco K.MACOCCO          610      4      4
+ CASTEST MODIF hpla100d                      macocco K.MACOCCO          469      3      3
+ CASTEST MODIF hsnv101c                        abbas M.ABBAS            418      3      3
+ CASTEST MODIF ssnp15d                       macocco K.MACOCCO          471      3      3
+ CASTEST MODIF ssnv157a                      macocco K.MACOCCO          128      4      4
+ CASTEST MODIF ssnv175a                      macocco K.MACOCCO          137      4      4
+CATALOPY MODIF commande/affe_char_meca       macocco K.MACOCCO          738      4      2
+CATALOPY MODIF commande/affe_char_meca_f     macocco K.MACOCCO          459      4      2
+CATALOPY MODIF commande/affe_materiau        macocco K.MACOCCO          173      5      6
+ FORTRAN MODIF algorith/nmcere               macocco K.MACOCCO          221      7      6
+ FORTRAN MODIF algorith/nmcese               macocco K.MACOCCO          222     11     10
+ FORTRAN MODIF algorith/nmceta               macocco K.MACOCCO          240     12     11
+ FORTRAN MODIF algorith/nmchap               macocco K.MACOCCO          343      3     10
+ FORTRAN MODIF algorith/nmcrit               macocco K.MACOCCO          112      2      6
+ FORTRAN MODIF algorith/nmdepl               macocco K.MACOCCO          234      8      8
+ FORTRAN MODIF algorith/nminit               macocco K.MACOCCO          274      3      3
+ FORTRAN MODIF algorith/nmpich               macocco K.MACOCCO          144     10      9
+ FORTRAN MODIF algorith/nmpilr               macocco K.MACOCCO          118     32     10
+ FORTRAN MODIF algorith/nmrepl               macocco K.MACOCCO          378     11     10
+ FORTRAN MODIF elements/resvoi               macocco K.MACOCCO          397     21      4
+ FORTRAN MODIF elements/te0410               macocco K.MACOCCO          136     12      4
+ FORTRAN MODIF modelisa/acevdi               macocco K.MACOCCO          168      4      2
+ FORTRAN MODIF modelisa/pamano               macocco K.MACOCCO          414      3     12
+ FORTRAN MODIF utilifor/u2mesg               macocco K.MACOCCO          142      5      3
+FORTRAN90 MODIF utilitai/mpicm2               macocco K.MACOCCO          232      4      2
+  PYTHON MODIF Messages/calculel7            macocco K.MACOCCO           52     18      8
+  PYTHON MODIF Messages/modelisa6            macocco K.MACOCCO          379      2      6
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   29        8377       244     159       +85
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   29        8377       244     159       +85 

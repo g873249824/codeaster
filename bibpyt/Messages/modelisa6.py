@@ -1,8 +1,8 @@
-#@ MODIF modelisa6 Messages  DATE 09/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF modelisa6 Messages  DATE 24/04/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -87,10 +87,6 @@ Pour le chargement thermique ECHANGE_PAROI, le modèle fourni doit être homogène 
 
 18 : _("""
  la maille  %(k1)s donné après le mot clé  %(k2)s n'a pas un type géométrique autorisé
-"""),
-
-19 : _("""
-  mot cle non admis : %(k1)s  les mots-clés admissibles sont :  %(k2)s  ou  %(k3)s  ou  %(k4)s  ou  %(k5)s  ou  %(k6)s  ou  %(k7)s  ou  %(k8)s ou  %(k9)s
 """),
 
 20 : _("""

@@ -7,9 +7,9 @@
      &                  CONV  )
 C     
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 01/02/2011   AUTEUR MASSIN P.MASSIN 
+C MODIF ALGORITH  DATE 24/04/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -171,9 +171,9 @@ C
           CALL NMPICH(MODELE,NUMEDD,MATE  ,CARELE,COMREF,
      &                COMPOR,LISCHA,CARCRI,FONACT,DEFICO,
      &                RESOCO,SDPILO,ITERAT,SDNUME,DELTAT,
-     &                VALINC,SOLALG,VEELEM,VEASSE,SDTIME,
-     &                SDDISC,ETA   ,RHO   ,OFFSET,LDCCVG,
-     &                PILCVG)
+     &                VALINC,SOLALG,VEELEM,MATASS,VEASSE,
+     &                SDTIME,SDDISC,ETA   ,RHO   ,OFFSET,
+     &                LDCCVG,PILCVG)
           IF (PILCVG .EQ. 1) THEN
             GOTO 9999
           ENDIF             
@@ -187,9 +187,9 @@ C
      &                COMPOR,LISCHA,PARMET,CARCRI,FONACT,
      &                ITERAT,SDPILO,SDNUME,SDDYNA,METHOD,
      &                DEFICO,RESOCO,DELTAT,VALINC,SOLALG,
-     &                VEELEM,VEASSE,SDTIME,SDDISC,ETAN  ,
-     &                CONV  ,ETA   ,RHO   ,OFFSET,LDCCVG,
-     &                PILCVG)
+     &                VEELEM,MATASS,VEASSE,SDTIME,SDDISC,
+     &                ETAN  ,CONV  ,ETA   ,RHO   ,OFFSET,
+     &                LDCCVG,PILCVG)
         ELSE
           CALL NMRELI(MODELE,NUMEDD,MATE  ,CARELE,COMREF,
      &                COMPOR,LISCHA,CARCRI,FONACT,ITERAT,

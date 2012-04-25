@@ -1,9 +1,9 @@
-      SUBROUTINE NMPILR(NUMEDD,VEASSE,RESIDU)
+      SUBROUTINE NMPILR(FONACT,NUMEDD,MATASS,VEASSE,RESIDU)
 C
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 22/12/2009   AUTEUR ABBAS M.ABBAS 
+C MODIF ALGORITH  DATE 24/04/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2007  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -22,7 +22,8 @@ C RESPONSABLE ABBAS M.ABBAS
 C
       IMPLICIT NONE
       CHARACTER*24 NUMEDD
-      CHARACTER*19 VEASSE(*)
+      CHARACTER*19 MATASS,VEASSE(*)
+      INTEGER      FONACT(*)
       REAL*8       RESIDU
 C 
 C ----------------------------------------------------------------------
@@ -34,7 +35,9 @@ C
 C ----------------------------------------------------------------------
 C
 C
+C IN  FONACT : FONCTIONNALITES ACTIVEES
 C IN  NUMEDD : NOM DU NUME_DDL
+C IN  MATASS : MATRICE DU PREMIER MEMBRE ASSEMBLEE
 C IN  VEASSE : VARIABLE CHAPEAU POUR NOM DES VECT_ASSE 
 C OUT RESIDU : NORME MAX DU RESIDU D'EQUILIBRE
 C                MAX(CNFINT+CNDIRI-CNFEXT)
@@ -58,16 +61,22 @@ C
 C
 C -------------- FIN  DECLARATIONS  NORMALISEES  JEVEUX ----------------
 C
-      INTEGER      J,JFINT,JFEXT,JDIRI
+      INTEGER      JFINT,JFEXT,JDIRI
       CHARACTER*19 CNFEXT,CNFINT,CNDIRI 
-      INTEGER      NEQ,IRET
+      INTEGER      JCCID
+      INTEGER      IEQ,NEQ,IRET
       CHARACTER*8  K8BID     
       INTEGER      IFM,NIV     
+      LOGICAL      ISFONC,LCINE
 C 
 C ----------------------------------------------------------------------
 C
       CALL JEMARQ()
       CALL INFDBG('PILOTAGE',IFM,NIV)
+C
+C --- FONCTIONNALITES ACTIVEES
+C
+      LCINE  = ISFONC(FONACT,'DIRI_CINE')
 C
 C --- DECOMPACTION VARIABLES CHAPEAUX
 C      
@@ -80,16 +89,29 @@ C
       CALL JEVEUO(CNFINT(1:19)//'.VALE','L',JFINT)
       CALL JEVEUO(CNDIRI(1:19)//'.VALE','L',JDIRI)          
       CALL JEVEUO(CNFEXT(1:19)//'.VALE','L',JFEXT)           
+C
+C --- POINTEUR SUR LES DDLS ELIMINES PAR AFFE_CHAR_CINE
+C
+      IF (LCINE) THEN
+        CALL NMPCIN(MATASS)
+        CALL JEVEUO(MATASS(1:19)//'.CCID','L',JCCID)
+      ENDIF
 C      
       CALL DISMOI('F','NB_EQUA',NUMEDD,'NUME_DDL',NEQ,K8BID,IRET)      
       RESIDU = 0.D0
 C     
 C --- CALCUL
 C
-      DO 10 J=1, NEQ
-        RESIDU = MAX(RESIDU,ABS( ZR(JFINT+J-1)+
-     &                           ZR(JDIRI+J-1)- 
-     &                           ZR(JFEXT+J-1)) )
+      DO 10 IEQ=1, NEQ
+        IF (LCINE) THEN
+          IF (ZI(JCCID+IEQ-1).EQ.1) THEN
+            GOTO 15
+          ENDIF
+        ENDIF
+        RESIDU = MAX(RESIDU,ABS( ZR(JFINT+IEQ-1)+
+     &                           ZR(JDIRI+IEQ-1)- 
+     &                           ZR(JFEXT+IEQ-1)) )
+  15    CONTINUE
   10  CONTINUE  
 C
       CALL JEDEMA()

@@ -1,8 +1,8 @@
-#@ MODIF calculel7 Messages  DATE 13/01/2011   AUTEUR PELLET J.PELLET 
-
+#@ MODIF calculel7 Messages  DATE 24/04/2012   AUTEUR MACOCCO K.MACOCCO 
+# -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -29,14 +29,24 @@ cata_msg = {
 """),
 
 2 : _("""
-  option %(k1)s : pour l element  %(k2)s  il faut ajouter dans le %(k3)s
- le nbre de cmp calculees du flux
+  option %(k1)s : pour l élément  %(k2)s  il faut ajouter dans le %(k3)s
+ le nombre de composante calculées du flux
 """),
 
 3: _("""
-  Le MODELE doit etre le meme pour tous les numeros d'ordre du RESULTAT.
-  Faire le post_traitement en rentrant le numero d'ordre ou explicitement
-  le nom du modele.
+  Le MODELE doit être le même pour tous les numéros d'ordre du RESULTAT.
+  Faire le post-traitement en rentrant le numéro d'ordre ou explicitement
+  le nom du modèle.
 """),
 
+4 : _("""
+  Le nombre de couches est limité à %(i1)d, or vous en avez définies %(i2)d !
+  Veuillez contacter votre assistance technique.
+"""),
+
+5 : _("""
+  Pour l'option %(k1)s, le nombre de couches est limité à 1,
+  or vous en avez définies %(i1)d !
+  Veuillez contacter votre assistance technique.
+"""),
 }
