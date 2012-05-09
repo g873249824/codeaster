@@ -1,8 +1,8 @@
-#@ MODIF macro_bascule_schema_ops Intranet  DATE 17/12/2007   AUTEUR GREFFET N.GREFFET 
+#@ MODIF macro_bascule_schema_ops Intranet  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2007  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -77,19 +77,19 @@ def macro_bascule_schema_ops (self,MODE,MATE,CARA,
       dschi.append(j.cree_dict_valeurs(j.mc_liste))
       for i in dschi[-1].keys():
           if dschi[-1][i]==None : del dschi[-1][i]
-  #        
+  #
   dsche=[]
   for j in SCH_TEMPS_I :
       dsche.append(j.cree_dict_valeurs(j.mc_liste))
       for i in dsche[-1].keys():
           if dsche[-1][i]==None : del dsche[-1][i]
-  #        
+  #
   dscheq=[]
-  for j in SCH_TEMPS_I :
+  for j in SCH_TEMPS_EQ :
       dscheq.append(j.cree_dict_valeurs(j.mc_liste))
       for i in dscheq[-1].keys():
           if dscheq[-1][i]==None : del dscheq[-1][i]
-  #     
+  #
   dnew=[]
   for j in NEWT :
       dnew.append(j.cree_dict_valeurs(j.mc_liste))
@@ -179,7 +179,6 @@ def macro_bascule_schema_ops (self,MODE,MATE,CARA,
         dincre1[-1]['INST_INIT']= __L0[j-1]                 
         nomres=DYNA_NON_LINE(reuse=nomres, 
                              MODELE=MODE,
-                             MASS_DIAG='OUI',
                              CHAM_MATER=MATE,
                              CARA_ELEM=CARA,
                              EXCIT=dexct,
@@ -216,9 +215,16 @@ def macro_bascule_schema_ops (self,MODE,MATE,CARA,
             __lrec=DEFI_LIST_REEL(DEBUT=__L0[j-1],
                                   INTERVALLE=_F(JUSQU_A=(__L0[j-1])+(10*(__dtexp)),
                                                 PAS=__dtexp),)
+            schema_equi = dscheq[-1]['SCHEMA']
+            #print 'schema_equi =',schema_equi
+            if ( schema_equi == 'TCHAMWA') or (schema_equi == 'DIFF_CENT') :
+              masse_diago = 'OUI'
+            else :
+              masse_diago = 'NON'            
+            #print 'MASS_DIAG=',masse_diago
             __u_rec=DYNA_NON_LINE(MODELE=MODE,
                                   CHAM_MATER=MATE,
-                                  MASS_DIAG='OUI',
+                                  MASS_DIAG=masse_diago,
                                   CARA_ELEM=CARA,
                                   EXCIT=dexct,
                                   ETAT_INIT=_F(DEPL=__U1, VITE=__V1, ACCE=__A1, 

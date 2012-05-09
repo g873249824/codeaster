@@ -1,8 +1,8 @@
-#@ MODIF algorith9 Messages  DATE 21/02/2011   AUTEUR ABBAS M.ABBAS 
+#@ MODIF algorith9 Messages  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -260,4 +260,8 @@ cata_msg = {
  la variable  %(k1)s  n'existe pas dans la loi CJS en 2D
 """),
 
+100 : _("""
+ Vous ne pouvez pas mélanger deux modélisations avec et sans dépendance
+des paramètres matériau à la température (mots-clés ELAS, ELAS_FO).
+"""),
 }

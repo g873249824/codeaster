@@ -1,7 +1,7 @@
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF hdfrat hdf  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET */
+/* MODIF hdfrat hdf  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO */
 /* ================================================================== */
-/* COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG */
+/* COPYRIGHT (C) 1991 - 2012  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
 /* THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR      */
 /* MODIFY IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS     */
@@ -54,7 +54,7 @@ INTEGER DEFPSPS(HDFRAT, hdfrat, INTEGER *iddat, char *nomat, STRING_SIZE ln, INT
   k=ln-1;
   while (nom[k] == ' ') { k--;}
   nom[k+1] = '\0';
-  if ( (attr = H5Aopen_name(ida,nom)) >= 0) {
+  if ( (attr = H5Aopen(ida,nom,H5P_DEFAULT)) >= 0) { 
     atyp = H5Aget_type(attr);
     lt=H5Tget_size(atyp);
     aspa = H5Aget_space(attr);

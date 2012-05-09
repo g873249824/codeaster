@@ -1,8 +1,8 @@
-      SUBROUTINE DEFLOG(NDIM,F,EPSL,PE,GN,FETA,XI,ME, ICALC, T, TL )
+      SUBROUTINE DEFLOG(NDIM,F,EPSL,PE,GN,FETA,XI,ME, ICALC, T, TL,IRET)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 10/01/2011   AUTEUR PROIX J-M.PROIX 
+C MODIF ALGORITH  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -37,7 +37,7 @@ C ----------------------------------------------------------------------
       REAL*8  FT(3,3), DI(3),THETA(3,3),DZETA(3,3),T33(3,3),GN2(2,2)
       REAL*8  F(3,3),EPSL(6),R8MIEM, LAMB(3),LOGL(3),PN(3,3)
       REAL*8  PE(3,3,3,3),ME(3,3,3,3),F33(3,3),XI(3,3),FETA(4)
-      INTEGER NBVEC,I,ICAS,J,K,L,A,B,C,D,ICALC,NDIM3,CONFIG,NDIM
+      INTEGER NBVEC,I,ICAS,J,K,L,A,B,C,D,ICALC,NDIM3,CONFIG,NDIM,IRET
 C ----------------------------------------------------------------------
 
       NBVEC = 3
@@ -82,9 +82,12 @@ C --- MATRICE TR = (XX XY XZ YY YZ ZZ) (POUR DIAGP3)
          GN(3,3)=1.D0
          
       ENDIF
-
      
       DO 10 I=1,NBVEC
+         IF (LAMB(I).LE.R8MIEM()) THEN
+            IRET=1
+            GOTO 9999
+         ENDIF
          LOGL(I)=LOG(LAMB(I))*0.5D0
  10   CONTINUE
       
@@ -374,5 +377,6 @@ C     CALCUL DU TERME T.L
  68      CONTINUE
 
       ENDIF
+ 9999 CONTINUE
 
       END

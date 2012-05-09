@@ -1,8 +1,8 @@
-#@ MODIF plexus Messages  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF plexus Messages  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -30,6 +30,8 @@ cata_msg = {
 3 : _("Le mot-cle GROUP_MA est obligatoire dans AFFE_MODELE"), 
 
 4 : _("Le type de section de poutre %(k1)s n'est pas encore pris en compte dans le passage vers Europlexus"), 
+
+6 : _("""La modélisation %(k1)s n'est pas disponible dans CALC_EUROPLEXUS"""),
 
 7 : _("Le mot-cle FONC_MULT est obligatoire pour le chargement de type PRES_REP"),
 
@@ -70,6 +72,6 @@ le mot-clé %(k2)s devrait être présent dans CALC_EUROPLEXUS.
 
 16 : _("""En présence du mot-clé %(k1)s dans CALC_EUROPLEXUS
 le mot-clé %(k2)s est obligatoire dans AFFE_CARA_ELEM.
+"""),
 
-"""), 
 }

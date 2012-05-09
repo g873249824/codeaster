@@ -1,8 +1,8 @@
-#@ MODIF compor1 Messages  DATE 23/02/2011   AUTEUR LAVERNE J.LAVERNE 
+#@ MODIF compor1 Messages  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -363,5 +363,9 @@ suivantes : - D_PLAN_GRAD_VARI
 """),
 67 : _("""
 Dans la définition du materiau RUPT_DUCT les coefficients de forme de la loi CZM_TRA_MIX doivent vérifier : COEF_EXTR <= COEF_PLAS 
+"""),
+
+68 : _("""
+Erreur dans le calcul du tenseur equivalent au sens de HILL.
 """),
 }

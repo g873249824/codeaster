@@ -1,8 +1,8 @@
-#@ MODIF calc_europlexus_ops Macro  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calc_europlexus_ops Macro  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -515,6 +515,8 @@ class EUROPLEXUS:
           dic_gma[dic_modele[modelisation]].extend(group_ma)
         else : 
           UTMESS('F','PLEXUS_3') 
+      elif modelisation not in dic_modele.keys() and modelisation[0:4]!='DIS_':
+          UTMESS('A','PLEXUS_6',valk=modelisation)
     
     # Regrouper separement les mailles tria3 et quad4 de la modilisation DKT (s'il y a lieu)
     # parce que leurs modilisations dans europlexus sont differentes:
@@ -615,7 +617,7 @@ class EUROPLEXUS:
             if elem['CARA'] == 'M_T_D_N' :
                 group_ma = self.get_group_ma(elem)
                 vale = elem['VALE']
-                epx[MODULE].append('MASSE  123456 %s' %vale)
+                epx[MODULE].append('MASSE  123 %s' %vale)
                 epx[MODULE].append(7*' ' + 'LECT')
                 for group in group_ma:
                     epx[MODULE].append(11*' '+group)
@@ -2065,7 +2067,6 @@ class EUROPLEXUS:
 
     # Pour la gestion des alarmes
     RetablirAlarme('MED_83')
-    RetablirAlarme('MED_98')
 
 
     nbChamp = i
@@ -2229,6 +2230,8 @@ class EUROPLEXUS:
                 # dicDetr.append({'NOM' : __EPS1})
 #                dicDetr.append({'NOM' : __ECR1})
         # if 'DKT3' in self.modelisations:
+
+        RetablirAlarme('MED_98')
 
         __SIGN = CREA_CHAMP(
             INFO      = self.INFO,

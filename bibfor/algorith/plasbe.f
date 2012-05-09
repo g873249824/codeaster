@@ -5,9 +5,9 @@
         IMPLICIT REAL*8 (A-H,O-Z)
 C       ================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 20/09/2010   AUTEUR FLEJOU J-L.FLEJOU 
+C MODIF ALGORITH  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -170,33 +170,33 @@ C       ----------------------------------------------------------------
         INTEGER         IMAT , NDT   , NDI   , NR  , NVI
         INTEGER         ITMAX, ICOMP
         INTEGER         NMAT , IRTET , IRTETI, NSEUI4, IISNAN
-        INTEGER         NSEUIL, NSEUI1, NSEUI2, NSEUI3, NSEUII
+        INTEGER         NSEUIL, NSEUI1, NSEUI2, NSEUI3
         INTEGER         IADZI, IAZK24
         REAL*8          TOLER
         REAL*8          EPSI
-        LOGICAL         BZ
 C
         PARAMETER       ( EPSI = 1.D-15 )
         PARAMETER       ( NMAT = 90     )
+        PARAMETER       ( TNEG = -1.D3  )
 C
         REAL*8          CRIT(*)
         REAL*8          VIND(*),     VINF(*)
         REAL*8          TEMPD,    TEMPF
         REAL*8          ELGEOM(*)
-        REAL*8          EPSD(6),     DEPS(6),   EPSF(6)
+        REAL*8          EPSD(6),     DEPS(6)
         REAL*8          EPSDT(6),    DEPST(6)
-        REAL*8          SIGD(6),     SIGF(6),   SIGE(6), DSIG(6)
+        REAL*8          SIGD(6),     SIGF(6),   SIGE(6)
 C
-        REAL*8          HOOK(6,6),   DSDE(6,6)
+        REAL*8          DSDE(6,6)
         REAL*8          MATERD(NMAT,2) , MATERF(NMAT,2) , TMPMX
         CHARACTER*7     ETATD  ,     ETATF
         CHARACTER*8     MOD,        TYPMA,   TYPMOD(*)
-        CHARACTER*16    COMP(*),     OPT,        LOI
+        CHARACTER*16    COMP(*),     OPT
         CHARACTER*3     MATCST, CNSEUI
         CHARACTER*8     NOMAIL
         CHARACTER*(*)   FAMI
-        REAL*8          PC, PT, FC, FT, DFCDLC, DFTDLT, KUC, KUT, KE
         REAL*8          R8NNEM
+        LOGICAL         RIGI, RESI, ISTEMP
 C       ----------------------------------------------------------------
         COMMON /TDIM/   NDT  , NDI
         COMMON /ECRI/   NOMAIL
@@ -204,7 +204,7 @@ C       ----------------------------------------------------------------
 C
 C --    INITIALISATION DES PARAMETRES DE CONVERGENCE ET ITERATIONS
 C
-        IRTETI = 0
+        IRTETI   = 0
         ITMAX    = INT(CRIT(1))
         TOLER    =     CRIT(3)
 C        LOI      = COMP(1)
@@ -216,10 +216,29 @@ C        LOI      = COMP(1)
         NSEUI4   = 0
         NOMAIL   = ' '
 
+        RESI   = OPT(1:9).EQ.'FULL_MECA' .OR.
+     &           OPT     .EQ.'RAPH_MECA'
+        RIGI   = OPT(1:9).EQ.'FULL_MECA' .OR.
+     &           OPT(1:9).EQ.'RIGI_MECA'
+        CALL ASSERT ( (OPT(1:9).EQ.'RIGI_MECA') .OR.
+     &                (OPT(1:9).EQ.'FULL_MECA') .OR.
+     &                (OPT     .EQ.'RAPH_MECA') )
+C
         CALL RCVARC(' ','TEMP','-',FAMI,KPG,KSP,TEMPD,IRET)
         CALL RCVARC(' ','TEMP','+',FAMI,KPG,KSP,TEMPF,IRET)
         CALL RCVARC(' ','TEMP','REF',FAMI,KPG,KSP,TREF,IRET)
-
+C
+C --    C'EST INTERDIT DE MELANGER DEUX MODELISATIONS AVEC OU SANS 
+C --      DEPENDENCE DES PARAMETRES DE LA TEMPERATURE       
+        IF ( (IISNAN(TEMPD).EQ.0).AND.(IISNAN(TEMPF).EQ.1) ) THEN
+          CALL U2MESS('F','ALGORITH9_100')
+        ELSEIF ((IISNAN(TEMPD).EQ.1).AND.(IISNAN(TEMPF).EQ.0)) THEN
+          CALL U2MESS('F','ALGORITH9_100')
+        ELSEIF ((VIND(3).EQ.TNEG).AND.(IISNAN(TEMPF).EQ.0)) THEN
+          CALL U2MESS('F','ALGORITH9_100')        
+        ELSE
+          ISTEMP = IISNAN(TEMPD).EQ.0 .AND. IISNAN(TEMPF).EQ.0
+        ENDIF
 C
 C --    OPTION SUPPRIMEE CAR TYPMA EST IMPOSE SUIVANT QUE L'ON EST EN
 C --    PLASTCITE OU VISCOPLASTICITE. TYPMA EST DEFINI DANS LCMATE
@@ -237,9 +256,9 @@ C
 C --    LES PARAMETRES SONT FONCTIONS DE LA TEMPERATURE MAXIMALE
 C --    VIND(3) EST LE MAX DES TEMPERATURES DANS L'HISTORIQUE DES TEMP.
 C
-        TMPMX = VIND(3)
-        IF (IISNAN(TEMPD).EQ.0) THEN
-          IF(TEMPD.GT.TMPMX) TMPMX = TEMPD
+        IF (ISTEMP) THEN
+          TMPMX = VIND(3)
+          IF (TEMPD.GT.TMPMX) TMPMX = TEMPD
         ELSE
           TMPMX=R8NNEM()
         ENDIF
@@ -279,7 +298,8 @@ C       ----------------------------------------------------------------
 C       OPTIONS 'FULL_MECA' ET 'RAPH_MECA' = CALCUL DE SIG(T+DT)
 C       ----------------------------------------------------------------
 C
-        IF ( OPT .EQ. 'RAPH_MECA' .OR. OPT .EQ. 'FULL_MECA' ) THEN
+C        IF ( OPT .EQ. 'RAPH_MECA' .OR. OPT .EQ. 'FULL_MECA' ) THEN
+        IF (RESI) THEN
 C
 C --    INTEGRATION ELASTIQUE SUR DT
 C
@@ -291,11 +311,11 @@ C    2                SIGD ,VIND,  SIGE,  VINF )
         CALL LCEQVN  ( NVI-1, VIND , VINF )
         VINF(NVI)    = 0.D0
 
-        VINF(3) = TEMPF
-        IF (IISNAN(TEMPF).EQ.0) THEN
-          IF(TEMPF.LT.TMPMX) VINF(3) = TMPMX
+        IF (ISTEMP) THEN
+          IF (TMPMX.LT.TEMPF) TMPMX = TEMPF
+          VINF(3) = TMPMX
         ELSE
-          VINF(3)=R8NNEM()
+          VINF(3) = TNEG
         ENDIF
 C
         CALL LCEQVN ( NDT  ,  SIGE , SIGF )
@@ -406,23 +426,21 @@ C
            ETATF = 'ELASTIC'
         ENDIF
 C
-C --    CONTRAINTES PLANES
-C
-C       IF ( MOD(1:6) .EQ. 'C_PLAN' ) SIGF(3) = 0.D0 - NON TRAITE
-C
         ENDIF
 C
 C       ----------------------------------------------------------------
-C       OPTIONS 'FULL_MECA' ET 'RIGI_MECA_TANG' = CALCUL DE DSDE
+C       OPTIONS 'FULL_MECA', 'RIGI_MECA_TANG', 'RIGI_MECA_ELAS' :
+C          CALCUL DE DSDE
 C       ----------------------------------------------------------------
 C       EVALUATION DU JACOBIEN DSDE A (T+DT) POUR 'FULL_MECA'
 C       ET CALCUL ELASTIQUE    ET   A (T)    POUR 'RIGI_MECA_TANG'
 C       ----------------------------------------------------------------
 C
-        IF ( OPT .EQ. 'RIGI_MECA_TANG' .OR. OPT .EQ. 'FULL_MECA' ) THEN
-C
-          IF ( OPT .EQ. 'RIGI_MECA_TANG' ) THEN
-            IF ( ETATD .EQ. 'ELASTIC') THEN
+C        IF ( OPT .EQ. 'RIGI_MECA_TANG' .OR. OPT .EQ. 'FULL_MECA' ) THEN
+        IF (RIGI) THEN
+          IF ( OPT(1:9) .EQ. 'RIGI_MECA' ) THEN
+            IF (( ETATD.EQ.'ELASTIC' ) .OR. 
+     &         ( OPT(10:14).EQ.'_ELAS' )) THEN
 C           CALL LCJELA ( LOI  , MOD ,  IMAT,  NMAT, MATERD, NVI,
 C    1                    TEMPD, TIMED, DEPS,  EPSD, SIGD ,  VIND, DSDE)
             CALL LCOPLI ( 'ISOTROPE' , MOD , MATERD(1,1) , DSDE )
@@ -437,8 +455,9 @@ C PAS UTILISE ICI  CALL LCJELA ( LOI  , MOD ,  NMAT, MATERD,VIND, DSDE)
                 ENDIF
             ENDIF
 C
-          ELSEIF ( OPT .EQ . 'FULL_MECA' ) THEN
-                IF  ( ETATF .EQ. 'ELASTIC' ) THEN
+          ELSEIF ( OPT (1:9) .EQ . 'FULL_MECA' ) THEN
+                IF  (( ETATF .EQ. 'ELASTIC' ) .OR.
+     &               ( OPT(10:14) .EQ. '_ELAS' )) THEN
 C           CALL LCJELA ( LOI  , MOD ,  IMAT,  NMAT, MATERF, NVI,
 C    1                    TEMPF, TIMEF, DEPS,  EPSD, SIGF ,  VINF, DSDE)
             CALL LCOPLI ( 'ISOTROPE' , MOD , MATERF(1,1) , DSDE )
@@ -452,23 +471,7 @@ C PAS UTILISE ICI  CALL LCJPLC ( LOI  , MOD ,  NMAT, MATERD, DSDE)
      &                      VINF, ELGEOM, DSDE)
                 ENDIF
             ENDIF
-C
           ENDIF
-C
-C -      MODIFICATION EN CONTRAINTE PLANES POUR TENIR COMPTE DE
-C        SIG3=0 ET DE LA CONSERVATION DE L'ENERGIE
-C
-C         IF ( MOD(1:6).EQ.'C_PLAN' )THEN
-C          DO 136 K=1,NDT
-C            IF (K.EQ.3) GO TO 136
-C            DO 137 L=1,NDT
-C              IF (L.EQ.3) GO TO 137
-C              DSDE(K,L)=DSDE(K,L)
-C     +          - 1.D0/DSDE(3,3)*DSDE(K,3)*DSDE(3,L)
-C 137        CONTINUE
-C 136      CONTINUE
-C         ENDIF
-C
         ENDIF
 C
 C       ----------------------------------------------------------------
@@ -483,7 +486,7 @@ C
 C
         CALL TECAEL ( IADZI, IAZK24 )
         NOMAIL = ZK24(IAZK24-1+3)(1:8)
-        CALL U2MESK('A','ALGORITH9_95',1,NOMAIL)
+        CALL U2MESK('A','ALGORITH9_95',1, NOMAIL)
 C
         GOTO 9999
 C

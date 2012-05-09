@@ -1,8 +1,8 @@
-#@ MODIF mecanonline5 Messages  DATE 09/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF mecanonline5 Messages  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -77,6 +77,10 @@ en accélération est possible
 
 12 : _("""
  Pour un schéma de type THETA, seule les formulations en vitesse et en déplacement sont possibles
+"""),
+
+13 : _("""
+ La matrice de masse diagonale (option MASS_DIAG) n'est pas utilisable avec un schéma implicite.
 """),
 
 19 : _("""

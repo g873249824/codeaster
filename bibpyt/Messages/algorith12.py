@@ -1,8 +1,8 @@
-#@ MODIF algorith12 Messages  DATE 09/11/2010   AUTEUR NISTOR I.NISTOR 
+#@ MODIF algorith12 Messages  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2007  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -29,6 +29,13 @@ cata_msg = {
  nom sous-structure        : %(k1)s
  nom MACR_ELEM             : %(k2)s
  nom interface inexistante : %(k3)s
+"""),
+
+3 : _("""
+ On ne trouve pas le nom de l'interface associée à la sous-structure
+ %(k1)s. La base modale utilisée pour définir le macro-élément associé
+ à la sous-structure doit avoir été définie avec DEFI_BASE_MODALE, en
+ mentionnant obligatoirement l'interface sous le mot-clé INTERF_DYNA.
 """),
 
 

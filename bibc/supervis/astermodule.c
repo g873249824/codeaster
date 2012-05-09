@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------ */
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF astermodule supervis  DATE 19/05/2011   AUTEUR LEFEBVRE J-P.LEFEBVRE */
+/* MODIF astermodule supervis  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO */
 /* ================================================================== */
-/* COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG */
+/* COPYRIGHT (C) 1991 - 2012  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
 /* THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR      */
 /* MODIFY IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS     */
@@ -1943,6 +1943,7 @@ PyObject *args;
           groups = MakeBlankFStr(long_nomcham);
         }
 
+        commande = empile(get_active_command());
         try(1){
           CALL_JEMARQ();
           CALL_PRCOCH(Fce,Fcs,Fcm,Fty,&topo,&nval,groups);
@@ -1953,6 +1954,7 @@ PyObject *args;
           FreeStr(Fcs);
           FreeStr(Fcm);
           FreeStr(Fty);
+          commande = depile();
           return Py_None;
         }
         catch(CodeAbortAster){
@@ -1964,8 +1966,10 @@ PyObject *args;
           FreeStr(Fcs);
           FreeStr(Fcm);
           FreeStr(Fty);
+          commande = depile();
           return NULL;
         }
+   commande = depile();
    return NULL;
 }
 
@@ -1999,6 +2003,7 @@ PyObject *args;
         shf = (INTEGER)ishf;
         lng = (INTEGER)ilng;
 
+        commande = empile(get_active_command());
         try(1){
           iob=0 ;
           nomsd32 = MakeFStrFromCStr(nomsd, 32);
@@ -2010,6 +2015,7 @@ PyObject *args;
             /* Erreur : vecteur jeveux inexistant, on retourne None */
             Py_INCREF( Py_None ) ;
             CALL_JEDEMA();
+            commande = depile();
             return Py_None;
           }
           else if(ctype == 0){
@@ -2066,14 +2072,17 @@ PyObject *args;
 
           CALL_JEDETR("&&GETCON.PTEUR_NOM");
           CALL_JEDEMA();
+          commande = depile();
           return tup;
         }
         catch(CodeAbortAster){
           /* une exception a ete levee, elle est destinee a etre traitee dans l'appelant */
           PyErr_SetString(PyExc_KeyError, "Concept inexistant");
           CALL_JEDEMA();
+          commande = depile();
           return NULL;
         }
+   commande = depile();
    return NULL;
 }
 
@@ -2116,6 +2125,7 @@ PyObject *args;
         iob=val[0];
 
         dico = PyDict_New();
+        commande = empile(get_active_command());
         try(1){
           for(j=1;j<iob+1;j++){
                 ishf=0 ;
@@ -2130,6 +2140,7 @@ PyObject *args;
                 if(ctype < 0){
                     /* Erreur */
                     PyErr_SetString(PyExc_KeyError, "Concept inexistant");
+                    commande = depile();
                     return NULL;
                 }
                 else if(ctype == 0){
@@ -2196,6 +2207,7 @@ PyObject *args;
          FreeStr(nom);
          FreeStr(nomsd32);
          free(val);
+         commande = depile();
          return dico;
        }
         catch(CodeAbortAster){
@@ -2205,8 +2217,10 @@ PyObject *args;
           FreeStr(nom);
           FreeStr(nomsd32);
           free(val);
+          commande = depile();
           return NULL;
         }
+   commande = depile();
    return NULL;
 }
 
@@ -2259,6 +2273,7 @@ PyObject *args;
                  convr8(nind,tupr,valr);
                  convr8(nind,tupc,valc);
         }
+        commande = empile(get_active_command());
         try(1){
           CALL_JEMARQ();
           CALL_PUTCON(nomsd32,&nbind,ind,valr,valc,&num,&iret);
@@ -2267,6 +2282,7 @@ PyObject *args;
           if(iret == 0){
             /* Erreur */
             PyErr_SetString(PyExc_KeyError, "Concept inexistant");
+            commande = depile();
             return NULL;
           }
 
@@ -2278,9 +2294,11 @@ PyObject *args;
         catch(CodeAbortAster){
           /* une exception a ete levee, elle est destinee a etre traitee dans l'appelant */
           PyErr_SetString(PyExc_KeyError, "Concept inexistant");
+          commande = depile();
           return NULL;
         }
         Py_INCREF( Py_None ) ;
+        commande = depile();
         return Py_None;
 }
 

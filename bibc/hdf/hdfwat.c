@@ -1,7 +1,7 @@
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF hdfwat hdf  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET */
+/* MODIF hdfwat hdf  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO */
 /* ================================================================== */
-/* COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG */
+/* COPYRIGHT (C) 1991 - 2012  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
 /* THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR      */
 /* MODIFY IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS     */
@@ -59,7 +59,7 @@ INTEGER DEFPSPS(HDFWAT, hdfwat, INTEGER *iddat, char *nomat, STRING_SIZE ln,
     H5Sset_extent_simple( aid, rank, dimsf, NULL );
     if ( (aty = H5Tcopy(H5T_FORTRAN_S1)) >= 0) {
                 H5Tset_size(aty, lv);
-      if ( (att = H5Acreate(ida, nom, aty, aid, H5P_DEFAULT)) >= 0) {
+      if ( (att = H5Acreate(ida, nom, aty, aid, H5P_DEFAULT, H5P_DEFAULT)) >= 0) {
         if ( (ret = H5Awrite(att, aty, valat)) >= 0) { 
           if ( (retc = H5Sclose(aid)) >= 0)  iret = 0;
         } 
