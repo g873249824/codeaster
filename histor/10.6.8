@@ -1,0 +1,607 @@
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 11/05/2012 - 10:58:42
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018852 DU 2012-05-11 08:59:56
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    Correction du changement API hdf en version 10
+FONCTIONNALITE
+   La mise à jour 10.6.7 (paquet "-1" seul) ne compile pas sur Calibre 5 et sur 
+   toutes les machines qui n'ont pas l'API 1.6 par défaut dans leur installation 
+   de hdf5.
+   
+   On reporte les développements effectués en version 11 pour le changement d'API.
+   
+   Routines concernées :
+   
+   bibc/hdf/hdfcld.c
+   bibc/hdf/hdfclf.c
+   bibc/hdf/hdfclg.c
+   bibc/hdf/hdfcrf.c
+   bibc/hdf/hdfcrg.c
+   bibc/hdf/hdfnbo.c
+   bibc/hdf/hdfnom.c
+   bibc/hdf/hdfopd.c
+   bibc/hdf/hdfopf.c
+   bibc/hdf/hdfopg.c
+   bibc/hdf/hdfrat.c
+   bibc/hdf/hdfrsv.c
+   bibc/hdf/hdftsd.c
+   bibc/hdf/hdftyp.c
+   bibc/hdf/hdfwat.c
+   bibc/hdf/hdfwsv.c
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    asrest
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 05/22/2012 - 06:41:29
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018843 DU 2012-05-10 15:51:25
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    LIRE_MAILLAGE/RENOMME : UnicodeDecodeError
+FONCTIONNALITE
+   Problème
+   --------
+   
+   Si on fait :
+   
+   MaSyr=LIRE_MAILLAGE(FORMAT='MED',RENOMME=_F(NOM_MED='1_FROM_REF_4',NOM='yyyy',),)
+   
+   Le message d'erreur n'est pas émis par le superviseur à cause d'un problème
+   d'encodage (UnicodeDecodeError).
+   
+   
+   Correction
+   ----------
+   
+   L'erreur se produit lors du formattage du message d'erreur dans N_VALIDATOR.
+   En effet, pour formatter correctement une chaine unicode, il faut que tous les
+   arguments soient aussi en unicode.
+   
+   Après cette correction, le message est :
+   
+   ERREUR A LA VERIFICATION SYNTAXIQUE - INTERRUPTION
+   >> JDC.py : DEBUT RAPPORT
+   DEBUT CR validation : fort.1
+    . Etape : LIRE_MAILLAGE . .ligne : 2 . .fichier : 'fort.1'
+    . . .Bloc :b_format_med
+    . . . . Mot clé Facteur :RENOMME
+    . . . . . .Mot-clé simple : NOM_MED
+    . . . . . . . !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    . . . . . . . ! '1_FROM_REF_4' (de type <type 'str'>) n'est pas d'un type autorisé: (<class !
+    . . . . . . . ! 'Cata.cata.grma'>,) On attend une chaine de caractères (de longueur < 8). . !
+    . . . . . . . !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    . . . . . .Fin Mot-clé simple : NOM_MED
+    . . . . Fin Mot clé Facteur :RENOMME
+    . . .Fin Bloc :b_format_med
+    . Fin Etape : LIRE_MAILLAGE
+   FIN CR validation :fort.1
+   
+   Cela se produit car dans le catalogue de LIRE_MAILLAGE, NOM_MED est demandé de
+   type 'grma' qui impose une longueur <= 8.
+   On modifie le type en TXM + vérification de la longueur <= 64.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    exemple fourni
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroche     DESROCHES Xavier       DATE 05/22/2012 - 06:41:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018780 DU 2012-04-25 16:08:17
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    coquille dans RVCHL3
+FONCTIONNALITE
+   Bug dans POST_RELEVE_T dont la correction rend un cas-test NOOK
+   
+   J'ai repris le problème de Christophe, le cas-test NOOK analysé par Jacques et la 
+   routine incriminée RVCHL3.
+   
+   A l'issue de cette analyse on peut dire :
+   
+   - la correction proposée par Christophe corrige effectivement son problème, qui était 
+   du au fait qu'une variable nommée DEC1 valait 0 au lieu de 2 (protégé par un U2MESS).
+   Comme il l'explique plus bas c'est du au fait que l'instruction M=MA(1) est hors de la 
+   boucle au lieu d'être dedans. Or DEC1 dépend de M et M était dans certains cas mal 
+   initialisé. On corrige donc un vrai bug en déplaçant l'instruction.
+   
+   - néanmoins la protection par U2MESS ne suffit pas (c'est bien dommage) car on peut 
+   avoir des valeurs fausses de DEC1 qui passent le test. C'est ce qui se produit dans le 
+   test zzzz136a où la variable DEC1 vaut 3 (dans un cas) sans correction au lieu de 2 
+   avec correction. Or cette variable est un pointeur qui sert à calculer le champ de 
+   sortie, d'où les NOOK. Attention, cette valeur fausse est loin d'être systématique,
+   dans le test il y a 8 NOOK sur plusieurs centaines de tests qui passent dans RVCHL3.
+   
+   - point important : ces NOOK n'en sont pas, car les soi-disant références AUTRE_ASTER 
+   ne sont autres que des NON_REGRESSION déguisées. En effet le cas-test n'est pas 
+   physique et il n'y a pas de solution analytique ou autre. On se contente de valider 
+   informatiquement POST_RELEVE et on a simplement recopier la colonne résultat dans la 
+   colonne référence (comme on fait pour les NON_REGRESSION ).
+   
+   En conclusion, on peut dire :
+   
+   1. on a un vrai bug qu'il faut corriger dans RVCHL3
+   2. il faut changer les TEST_TABLE NOOK dans zzzz136a et mettre tous les tests en 
+   NON_REGRESSION 
+   3. il y a (avait) des résultats faux possibles dans POST_RELEVE dans le cas suivant :
+   extraction en 3D sur un chemin défini par INTE_MAIL_3D sur les points (intersections 
+   entre le chemin et le maillage) qui appartiennent à plus de 2 éléments strictement, 
+   soit les points situés sur des arêtes (pas forcément si on est au bord), ou sur des 
+   sommets (même restriction). Pour un chemin quelconque, qui coupe les mailles 3D à 
+   l'intérieur des faces, il n'y a pas de résultats faux.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.1
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste compl?te
+DEJA RESTITUE DANS : 11.1.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 05/22/2012 - 06:41:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018721 DU 2012-04-16 06:42:01
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Etat initial non xc3xa9quilibrxc3xa9 avec L&K
+FONCTIONNALITE
+   Probleme posé:
+   --------------
+   Lorsque l'état initial du problème mécanique sort du domaine élastique, il faut équilibrer
+   les seuils (plastique et visqueux).
+   
+   Ceci doit être vrai pour la version implicite récemment développée et doit être vérifiée
+   pour la version explicite.
+   
+   NB : un calcul implicite ne sera pas en capacité de démarrer alors qu'en version explicite
+   le calcul démarre (mais avec quelle garantie sur les variables d'écrouissages ?)
+   
+   
+   Discussion tenue avec A.Silvestre (EDF/CIH):
+   --------------------------------------------
+   Partir d'un état plastiquement non admissible pour LETK est une erreur d'utilisation du code. 
+   L'utilisateur n'a pas d'autres choix que de modifier son état de contraintes initiales ou
+   modifier les paramètres matériau.
+   Réaliser cette opération en sous-terrain dans le code n'est pas une solution qui apparait
+   comme pertinente au vu des nombreux choix potentiels pour équilibrer les seuils
+   d'endommagement et de viscosité.
+   
+   Solutions proposées:
+   -------------------
+   Emission d'une erreur fatale lorsque ce cas de figure se présente.
+   
+   Impact source:
+   --------------
+   version explicite : lkcomp.f ;
+   version implicite : lkcnvx.f, lccnvx.f.
+   
+   
+   Message d'erreur pour l'utilisateur: algorith9.py
+   ------------------------------------
+   """
+   L'état initial défini n'est pas plastiquement admissible pour le modèle LETK.  
+   L'état initial des contraintes est erroné ou les propriétés matériaux ne sont pas adaptées. 
+   Le calcul s'arrête en erreur fatale par précautions.
+   """
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1.17
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ETUDE
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tran         TRAN Van-xuan          DATE 05/22/2012 - 06:41:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018682 DU 2012-04-10 15:54:47
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    RUPT : CALG et prise en compte de symetrie pour CALC_G_GLOB
+FONCTIONNALITE
+   Problème:
+   =========
+   dans sslv110e on ne modélise que 1/8 de la structure (un quart de la longueur 
+   du fond et seulement une levre)
+   
+   le G global trouvé vaut 1/8 du Gglobal de réf.
+   
+   or d'apres la doc (et meme d'apres le fortran vite fait) il semblerait que la 
+   symétrie fasse que l'on multiplie par 2 la valeur de G en sortie, 
+   
+   donc on devrait plutot avoir 1/4 de la valeur de réf
+   
+   Analyse:
+   =======
+   Pour la fissure maillée avec le champ théta foruni par CALC_THETA, il faut 
+   indiquer que le champ théta est symmétrique.
+   
+   Pour ce problème, il suffit d'ajouter 'SYME = 'OUI' dans le champ THETA de 
+   CALC_G suite à la restution de de la fiche 18065 pour regler cette fiche. 
+   Cependant, il faut bien expliquer dans le document l'obligation du ce mot-
+   clé dans les cas particulier.
+   
+   Validation
+   ==========
+   sslv110e
+   
+   Docs:
+   ====
+   V3.04.110
+   
+   U2.82.03: CALC_G
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.04.110, U2.82.03
+VALIDATION
+    sslv110e
+DEJA RESTITUE DANS : 11.1.21
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR massin       MASSIN Patrick         DATE 05/22/2012 - 06:41:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018545 DU 2012-03-14 12:56:29
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    X-FEM : bug dans xoripe suite restitution fiche 13731 (contact quadratique)
+FONCTIONNALITE
+   Problème :
+   ===========
+   
+   Des erreurs de programmation ont été repérées dans le corps de la boucle 400 de la routine
+   xoripe (orientation des sous-éléments de bord pour X-FEM) :
+      1- Le test permettant de traiter seulement les éléments de bords de type "Heavyside"
+   utilise la variable JINDIC alors que celle-ci n'a de sens que dans le corps de la boucle 20.
+      2- La variable NBNOBO, prévue pour stocker le nombre de noeuds d'un élément de bord,
+   change de rôle et est utilisée pour stocker le nombre de sous-éléments d'un élément de
+   bord. De plus, cette quantité n'est pas calculée correctement dans le cas 3D.
+      3- La borne supérieure de la boucle 421 n'est pas cohérente avec le rôle de l'indice de
+   boucle dans le corps de la boucle.
+   DO 420 ISE=1, NSE
+     DO 421 IN=1, NDIM
+       ICMP=NBNOBO*(ISE-1)+IN
+   
+   Correction :
+   ============
+   
+      1- Le test s'est avéré inutile puisque tous les types d'éléments de bords (i.e.
+   "Heavyside", "crack-trip" et "Heavyside et crack-trip") sont gérés. Il a donc été supprimé.
+      2- La nouvelle variable NBNOSE a été introduite pour stocker le nombre de sous-éléments
+   d'un éléments de bord. Le calcul de cette quantité a été corrigée dans le cas 3D et pour
+   des éléments linéaires.
+      3- La borne supérieure de la boucle 421 pour a été modifiée pour retrouver une
+   indexation cohérente.
+   DO 420 ISE=1, NSE
+     DO 421 IN=1, NBNOSE
+       ICMP=NBNOSE*(ISE-1)+IN
+   
+   Validation :
+   ============
+   
+   La routine modifiée a été validée sur une version modifiée de la modélisation A du cas
+   test SSLP318, où la taille de la fissure initiale a été augmentée de sorte que les
+   éléments de bord à subdiviser soient de type "crack-trip".
+   
+   Remarque: La correction du calcul du nombre de sous-éléments d'un éléments de bord
+   quadratique, en 3D, est reportée à une prochaine restitution.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Cas-test base aster
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 05/22/2012 - 06:41:44
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017238 DU 2011-07-01 13:50:15
+TYPE anomalie concernant Code_Aster (VERSION 11.1)
+TMA : Necs
+TITRE
+    PETIT_REAC pour DIS_TR_L
+FONCTIONNALITE
+   Problème :
+   ==========
+   La fonctionnalité DEFORMATION = 'PETIT_REAC' pour les éléments discrets n'est pas pertinente.
+   
+   Solution :
+   ==========
+   On supprime cette fonctionnalité.
+   
+   Sources impactées :
+   ===================
+   te0047.f : suppression tout ce qui concerne la réactualisation de la géométrie et ajout
+   d'un message d'alarme pour avertir que seul DEFORMATION=PETIT est disponible pour les
+   discrets.
+   
+   discrets.py : ajout du message d'alarme discrets_18
+   
+   ssnl135b et ssnl135c : suppression de DEFORMATION =PETIT_REAC (ces deux tests sont
+   également modifiés par issue17380 restitué conjointement)
+   ssnl135a : suppression de DEFORMATION =PETIT_REAC + modification de la liste d'instant et
+   de RESI_GLOB_RELA pour faire converger le test (pas de modifs des TEST_RESU)
+   
+   Doc impactée :
+   ============== 
+   V6.02.135
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.02.135
+VALIDATION
+    passage cas test
+DEJA RESTITUE DANS : 11.1.22
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 05/22/2012 - 06:41:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018858 DU 2012-05-14 06:50:52
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW11.01.22, le cas-test zzzz264a, b et c s'arretent en erreur fatale sur Rocks, Calibre 5 et 7.
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Les cas-tests zzzz264 échouent en 11.1.22
+   
+   
+   Correction
+   ==========
+   
+   L'erreur se produit suite à la modification de la fonction crea_mail_lig_coup de MACR_LIGN_COUPE.
+   Le retour n'est plus une chaine de caractères du contenu du fichier maillage mais la liste des lignes le 
+   composant.
+   
+   Il faut concaténer les chaines de la liste en retour de cette fonction avant de les transmettre aux 
+   fonctions dans POST_ENDO_FISS (3 ou 4 fois).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz264a, zzzz264b, zzzz264c
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 05/22/2012 - 06:41:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018783 DU 2012-04-26 07:05:51
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW10.06.06, le cas-test perf011b est NOOK en MPI sur Aster4.
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   En NEW10.06.06, le cas-test perf011b est NOOK en MPI sur Aster4.
+   """
+   
+   
+   Analyse :
+   ---------
+   J'ai fait 3 runs de perf011b sur aster4 en version NEW10, ils sont tous revenus OK.
+   
+   Le problème est habituel et difficilement débuggable (problème aléatoire : issue15934,
+   issue16009, issue16129, issue18599).
+   
+   On pense que c'est un problème MUMPS.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perf011b
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 05/22/2012 - 06:41:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018839 DU 2012-05-10 13:16:40
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme sur ELAS_ISTR avec COMP_ELAS en themo-mecanique
+FONCTIONNALITE
+   Probleme :
+   ==========
+   Dans le test joint, l'utilisateur modélise une montée en température d'une plaque
+   tubulaire de 20°C à 100°C sur 1 s puis un maintient à 100°C sur 1 s, suivi du calcul des
+   déplacements associés. Les résultats obtenus ne lui semblent pas cohérents, puisqu'en fin
+   de montée en température (à t = 1s)  les déformations thermiques sont théoriquement égales à :
+    
+   εTH = α ΔT = 1,122.10-5 x 80 = 8,976.10-4 (dans notre cas ALPHA_L = ALPHA_N = 1,122.10-5)
+   d'où un déplacement radial d'un point situé sur le rayon r0 = 100 mm égal à : ur = εTH x
+   r0 = 8,976.10-4 x 100 = 8,976.10-2 mm.
+   
+   Quand le GROUP_MA ZONE2 est traité par COMP_ELAS, la solution est fausse.
+   Si on fait tout le calcul avec COMP_INCR, on obtient la bonne solution.
+   
+   Correction :
+   ============
+   COMP_ELAS + ELAS_ISTR (ou ELAS_ORTH) + dilatation thermique est effectivement faux !
+   
+   Dans le cas COMP_ELAS, si ELAS_ISTR ou ELAS_ORTH, on appelle la routine NMORTH pour
+   calculer le comportement. Or celle ci a été pensée pour COMP_INCR, donc calcule les
+   déformations thermiques (via la routine VERIFT) dues à l'incrément de température, et non
+   pas la température totale à l'instant courant.
+   
+   Pour corriger, il suffit de rajouter à NMORTH l'argument "POUM" (c'est à dire '+', ou '-',
+   ou 'T'). Si l'appelant est LC0001 (COMP_INCR), on appele NMORTH avec 'T' comme avant.
+   Si l'appelant est NMCEPL (COMP_ELAS) on appele NMORTH avec '+'.
+   
+   Du coup les résultats COMP_INCR, COMP_LEAS et MECA_STATIQUE sont identiques, cf. fichier
+   joint.
+   
+   Validation:
+   ===========
+   étude jointe et test HSNV100a
+   
+   HSNV100A : Avant correction : 
+   ---------------------------
+   on testait COMP_ELAS/ELAS_ORTH mais seulement au premier pas de temps. Or l'erreur se
+   produit aux pas de temps suivants :
+   t=66.6 SIG=-133. OK
+   t=80., SIG=-13.34  FAUX
+   t=90., SIG=-10 FAUX
+   
+   HSNV100A : après correction : 
+   -----------------------------
+   Maintenant , on compare en thermoélasticité pour tous les instants COMP_ELAS et COMP_INCR
+   et la solution analytique en thermoelasticité  pour un matériau élastique orthotrope
+   t=66.6 SIG=-133 OK
+   t=80., SIG=-160 OK
+   t=90., SIG=-180 OK
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v7.22.100
+VALIDATION
+    hsnv100a et etude jointe
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 05/22/2012 - 06:41:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018529 DU 2012-03-09 14:07:17
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Message plus explicite si le fichier maillage est invalide
+FONCTIONNALITE
+   Problème :
+   ----------
+   si l'on tente d'importer un maillage MED via LIRE_MAILLAGE avec FORMAT = 'ASTER' (erreur
+   typique de débutant), on obtient le message d'erreur MODELISA4_93 :
+   
+     Problème lors de la lecture du fichier maillage
+     numéro de la dernière ligne traitée : %(i1)d
+   
+     -> Risque & Conseil :
+     Vérifiez si le mot clé FIN est présent à la fin du fichier.
+   
+   Solution :
+   ----------
+   On complète le message par :
+     -> Risque & Conseil :
+     Vérifiez que le maillage est au format Aster (.mail).
+     Vérifiez que le mot clé FIN est présent à la fin du fichier de maillage.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Sans objet
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+       C MODIF hdf/hdfcld                   courtois M.COURTOIS          45      1      1
+       C MODIF hdf/hdfclf                   courtois M.COURTOIS          45      1      1
+       C MODIF hdf/hdfclg                   courtois M.COURTOIS          44      1      1
+       C MODIF hdf/hdfcrf                   courtois M.COURTOIS          59      1      1
+       C MODIF hdf/hdfcrg                   courtois M.COURTOIS          73      3      2
+       C MODIF hdf/hdfnbo                   courtois M.COURTOIS          94     27      6
+       C MODIF hdf/hdfnom                   courtois M.COURTOIS         108     31      9
+       C MODIF hdf/hdfopd                   courtois M.COURTOIS          74      3      2
+       C MODIF hdf/hdfopf                   courtois M.COURTOIS          55      1      1
+       C MODIF hdf/hdfopg                   courtois M.COURTOIS          65      2      2
+       C MODIF hdf/hdfrat                   courtois M.COURTOIS          73      2      2
+       C MODIF hdf/hdfrsv                   courtois M.COURTOIS          71      1      1
+       C MODIF hdf/hdftsd                   courtois M.COURTOIS          70      1      1
+       C MODIF hdf/hdftyp                   courtois M.COURTOIS         125     33     13
+       C MODIF hdf/hdfwat                   courtois M.COURTOIS          74      1      1
+       C MODIF hdf/hdfwsv                   courtois M.COURTOIS         137      1      1
+       C MODIF supervis/python               macocco K.MACOCCO           89      7      4
+ CASTEST MODIF hsnv100a                      macocco K.MACOCCO          506    385    252
+ CASTEST MODIF sslv110e                      macocco K.MACOCCO          365      8      5
+ CASTEST MODIF ssnl135a                      macocco K.MACOCCO          731      7     11
+ CASTEST MODIF ssnl135b                      macocco K.MACOCCO          740      2      3
+ CASTEST MODIF ssnl135c                      macocco K.MACOCCO          744      4      5
+ CASTEST MODIF zzzz136a                      macocco K.MACOCCO         1853      2      2
+ CASTEST MODIF zzzz136b                      macocco K.MACOCCO         1767      2      2
+CATALOPY MODIF commande/lire_fonction        macocco K.MACOCCO           68      3      3
+CATALOPY MODIF commande/lire_maillage        macocco K.MACOCCO           63      4      4
+ FORTRAN MODIF algorith/lc0001               macocco K.MACOCCO          159      3      3
+ FORTRAN MODIF algorith/lkcomp               macocco K.MACOCCO          610     16      2
+ FORTRAN MODIF algorith/nmcpel               macocco K.MACOCCO          125      3      3
+ FORTRAN MODIF algorith/nmorth               macocco K.MACOCCO          221      6      6
+ FORTRAN MODIF algorith/xoripe               macocco K.MACOCCO          402     11     23
+ FORTRAN MODIF elements/te0047               macocco K.MACOCCO          890      5     46
+ FORTRAN MODIF elements/te0477               macocco K.MACOCCO          503      9      4
+ FORTRAN MODIF modelisa/lrmmf3               macocco K.MACOCCO          471      6      6
+ FORTRAN MODIF modelisa/op0001               macocco K.MACOCCO          211      6      6
+ FORTRAN MODIF postrele/rvchl3               macocco K.MACOCCO          149      3      3
+  PYTHON MODIF Macro/post_endo_fiss_ops      macocco K.MACOCCO          868      5      5
+  PYTHON MODIF Messages/algorith2            macocco K.MACOCCO          298      7      2
+  PYTHON MODIF Messages/discrets             macocco K.MACOCCO          183      6      2
+  PYTHON MODIF Messages/modelisa4            macocco K.MACOCCO          423      8      5
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   40       13651       628     452      +176
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   40       13651       628     452      +176 

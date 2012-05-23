@@ -10,9 +10,9 @@ C
 C
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF POSTRELE  DATE 03/04/2007   AUTEUR VIVAN L.VIVAN 
+C MODIF POSTRELE  DATE 22/05/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -61,10 +61,10 @@ C     ------------------------------------------------------------------
 C
 C======================================================================
 C
-      UNSUR4 = 0.25D0
-      M      = MA(1)
+      UNSUR4 = 0.25D0      
 C
       DO 300, IPT = 1, NBPT, 1
+         M      = MA(1)
          F      = FACE(IPT)
          NBNF   = NBNDF(F,ITYPM)
          NBNM   = PNBN(M)

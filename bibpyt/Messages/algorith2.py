@@ -1,8 +1,8 @@
-#@ MODIF algorith2 Messages  DATE 03/01/2011   AUTEUR DESROCHES X.DESROCHES 
+#@ MODIF algorith2 Messages  DATE 22/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -29,6 +29,11 @@ Erreur utilisateur dans la commande CREA_RESU / AFFE :
  est différent de celui associé au mot clé MODELE : %(k2)s
 """),
 
+2 : _("""
+ L'état initial défini n'est pas plastiquement admissible pour le modèle LETK. 
+ L'état initial de contraintes est erroné ou les propriétés matériaux ne sont pas adaptées au problème posé. 
+ Le calcul s'arrête en erreur fatale par précautions. 
+"""),
 
 
 3 : _("""

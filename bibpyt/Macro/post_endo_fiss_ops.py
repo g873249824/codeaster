@@ -1,8 +1,8 @@
-#@ MODIF post_endo_fiss_ops Macro  DATE 02/02/2011   AUTEUR PELLET J.PELLET 
+#@ MODIF post_endo_fiss_ops Macro  DATE 22/05/2012   AUTEUR MACOCCO K.MACOCCO 
 
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -409,7 +409,7 @@ def post_endo_fiss_ops(self,
 
     nomFichierSortie = os.path.join(os.getcwd(),'maillage.mail')
     fproc            = open(nomFichierSortie, 'w')
-    fproc.write(resu_mail0)
+    fproc.write(os.linesep.join(resu_mail0))
     fproc.close()
     UL               = UniteAster()
     uniteMail        = UL.Libre(action = 'ASSOCIER', nom = nomFichierSortie)
@@ -524,7 +524,7 @@ def post_endo_fiss_ops(self,
     resu_mail0,arcgma0,angles0,nbno0 = crea_mail_lig_coup(dime,lignes,groups,arcs)
 
     fproc            = open(nomFichierSortie, 'w')
-    fproc.write(resu_mail0)
+    fproc.write(os.linesep.join(resu_mail0))
     fproc.close()
     UL               = UniteAster()
     uniteMail        = UL.Libre(action = 'ASSOCIER', nom = nomFichierSortie)
@@ -667,7 +667,7 @@ def post_endo_fiss_ops(self,
       resu_mail0,arcgma0,angles0,nbno0 = crea_mail_lig_coup(dime,lignes,groups,arcs)
 
       fproc            = open(nomFichierSortie, 'w')
-      fproc.write(resu_mail0)
+      fproc.write(os.linesep.join(resu_mail0))
       fproc.close()
       UL               = UniteAster()
       uniteMail        = UL.Libre(action = 'ASSOCIER', nom = nomFichierSortie)

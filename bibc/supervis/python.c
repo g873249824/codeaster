@@ -1,9 +1,9 @@
 /* ------------------------------------------------------------------ */
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF python supervis  DATE 19/05/2011   AUTEUR LEFEBVRE J-P.LEFEBVRE */
+/* MODIF python supervis  DATE 22/05/2012   AUTEUR MACOCCO K.MACOCCO */
 /* RESPONSABLE LEFEBVRE J-P.LEFEBVRE */
 /* ================================================================== */
-/* COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG */
+/* COPYRIGHT (C) 1991 - 2012  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
 /* THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR      */
 /* MODIFY IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS     */
@@ -49,22 +49,25 @@ void terminate(){
 }
 #endif
 
-int
-main(argc, argv)
-	int argc;
-	char **argv;
+#ifndef _MAIN_
+#define _MAIN_ main
+#endif
 
+int
+_MAIN_(argc, argv)
+    int argc;
+    char **argv;
 {
    int ierr;
 #ifdef _USE_MPI
    int me, rc, namelen, nbproc;
-	char processor_name[MPI_MAX_PROCESSOR_NAME];
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
    
    rc = MPI_Init(&argc,&argv);
-	if (rc != MPI_SUCCESS) {
-	     fprintf(stderr, "MPI Initialization failed: error code %d\n",rc);
-	     abort();
-	}  
+    if (rc != MPI_SUCCESS) {
+         fprintf(stderr, "MPI Initialization failed: error code %d\n",rc);
+         abort();
+    }  
    atexit(terminate);
    MPI_Comm_size(MPI_COMM_WORLD, &nbproc);
    MPI_Comm_rank(MPI_COMM_WORLD, &me);
@@ -72,15 +75,15 @@ main(argc, argv)
    printf("\n Version parallèle de Code_aster compilée avec MPI\n");
    printf(" Exécution sur le processeur de nom %s de rang %d\n",processor_name,me);
    printf(" Nombre de processeurs utilisés %d\n",nbproc);
-#else	
+#else   
    printf("\n Version séquentielle de Code_aster \n");
-#endif	
-	
+#endif  
+    
    PyImport_AppendInittab("aster",initaster);
 
    /* Module définissant des opérations sur les objets fonction_sdaster */
-	PyImport_AppendInittab("aster_fonctions",initaster_fonctions);
+    PyImport_AppendInittab("aster_fonctions",initaster_fonctions);
 
-	ierr= Py_Main(argc, argv);
-	return ierr;
+    ierr= Py_Main(argc, argv);
+    return ierr;
 }
