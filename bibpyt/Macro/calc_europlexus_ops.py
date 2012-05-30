@@ -1,4 +1,4 @@
-#@ MODIF calc_europlexus_ops Macro  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calc_europlexus_ops Macro  DATE 29/05/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -1095,7 +1095,10 @@ class EUROPLEXUS:
                 for car in ['OML','RLR'] :
                   dic_tmp[car] = liner[car]
                 dic_mater[nom_mater]['LINER'].append(dic_tmp)
-                
+
+            else:
+                if beton  :
+                    self.gmaGLRC.extend(group_ma)
 
       if debug: print 'MATER = %s \n type = %s \n dic = %s'%(nom_mater,typMat, dic_mater[nom_mater])
       dic_mater[nom_mater]['GROUP_MA'].extend(group_ma)
