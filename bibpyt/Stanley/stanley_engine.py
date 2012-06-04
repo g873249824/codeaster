@@ -1,8 +1,8 @@
-#@ MODIF stanley_engine Stanley  DATE 29/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF stanley_engine Stanley  DATE 05/06/2012   AUTEUR ASSIRE A.ASSIRE 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -2955,7 +2955,7 @@ class DRIVER_SUP_GMSH(DRIVER) :
     INDICE=_NUM
 
     try:
-      _MA[INDICE] = CREA_MAILLAGE(MAILLAGE = __ma, COPIE=_F())
+      _MA[INDICE] = CREA_MAILLAGE(MAILLAGE = __ma)
     except aster.error,err:
       return self.erreur.Remonte_Erreur(err, [__ma, _MA[INDICE]], 1)
     except Exception,err:
@@ -2999,7 +2999,7 @@ class DRIVER_SUP_GMSH(DRIVER) :
     INDICE=_NUM
 
     try:
-      _MA[INDICE] = CREA_MAILLAGE(MAILLAGE = ma, COPIE=_F())
+      _MA[INDICE] = CREA_MAILLAGE(MAILLAGE = ma)
     except aster.error,err:
       return self.erreur.Remonte_Erreur(err, [ma, _MA[INDICE]], 1)
     except Exception,err:
