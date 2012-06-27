@@ -1,7 +1,7 @@
       SUBROUTINE TE0154(OPTION,NOMTE)
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -19,7 +19,7 @@ C ======================================================================
       IMPLICIT  NONE
       CHARACTER*(*)     OPTION,NOMTE
 C ----------------------------------------------------------------------
-C MODIF ELEMENTS  DATE 02/02/2011   AUTEUR PELLET J.PELLET 
+C MODIF ELEMENTS  DATE 25/06/2012   AUTEUR MACOCCO K.MACOCCO 
 C     CALCUL
 C       - DU VECTEUR ELEMENTAIRE EFFORT GENERALISE,
 C       - DU VECTEUR ELEMENTAIRE CONTRAINTE
@@ -55,16 +55,18 @@ C --------- DEBUT DECLARATIONS NORMALISEES  JEVEUX ---------------------
       COMMON  / KVARJE / ZK8(1) , ZK16(1) , ZK24(1) , ZK32(1) , ZK80(1)
 C --------- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
 C
-      REAL*8       PGL(3,3), KLC(6,6), ENERTH,EPSGL(6)
-      REAL*8       UGR(6),ULR(6),FLR(6),EPS(6)
+      REAL*8       PGL(3,3), KLC(6,6), ENERTH
+      REAL*8       UGR(6),ULR(6),FLR(6)
       CHARACTER*2  CODRES
+      CHARACTER*1  STOPZ(3)
       CHARACTER*4  FAMI
       CHARACTER*8  NOMAIL
       CHARACTER*16 CH16
       LOGICAL      LTEIMP
-      REAL*8       A,EPSTH,E,R8BID,RHO,XFL1,XFL4,XL,XMAS,XRIG,TREF
+      REAL*8       A,EPSTH,E,R8BID,RHO,XFL1,XFL4,XL,XMAS,XRIG
       INTEGER      I,IF,ITYPE,J,JDEPL,JEFFO,JENDE,JFREQ,JDEFO,KANL
-      INTEGER      LMATER,LORIEN,LSECT,LTEMP,IRET,LX,NC,NNO,IADZI,IAZK24
+      INTEGER      LMATER,LORIEN,LSECT,IRET,LX,NC,NNO,IADZI,IAZK24
+      INTEGER      JVITE
 C     ------------------------------------------------------------------
 
       LTEIMP = .FALSE.
@@ -85,7 +87,7 @@ C     --- RECUPERATION DES CARACTERISTIQUES MATERIAUX ---
 
       CALL RCVALB(FAMI,1,1,'+',ZI(LMATER),' ','ELAS',
      &            0,' ',R8BID,1,'E',E,
-     &            CODRES, 'FM' )
+     &            CODRES,'F ')
       IF (EPSTH.NE.0.D0) LTEIMP =.TRUE.
 C
 C     --- RECUPERATION DES COORDONNEES DES NOEUDS ---
@@ -123,22 +125,69 @@ C     --- RECUPERATION DES DEPLACEMENTS ----
            UGR(I) =  0.D0
  19   CONTINUE
 C
-      CALL JEVECH ('PDEPLAR', 'L', JDEPL)
+      IF ( OPTION .NE. 'ECIN_ELEM' ) THEN
 C
-      IF (NOMTE.EQ.'MECA_BARRE') THEN
-        DO 22 I = 1,6
-           UGR(I) = ZR(JDEPL+I-1)
- 22     CONTINUE
-      ELSE IF (NOMTE.EQ.'MECA_2D_BARRE') THEN
-         UGR(1) =  ZR(JDEPL+1-1)
-         UGR(2) =  ZR(JDEPL+2-1)
-         UGR(4) =  ZR(JDEPL+3-1)
-         UGR(5) =  ZR(JDEPL+4-1)
+C ON RECUPERE DES DEPLACEMENTS
+C
+        CALL JEVECH ('PDEPLAR', 'L', JDEPL)
+        IF (NOMTE.EQ.'MECA_BARRE') THEN
+          DO 21 I = 1,6
+            UGR(I) = ZR(JDEPL+I-1)
+ 21       CONTINUE
+        ELSE IF (NOMTE.EQ.'MECA_2D_BARRE') THEN
+          UGR(1) =  ZR(JDEPL+1-1)
+          UGR(2) =  ZR(JDEPL+2-1)
+          UGR(4) =  ZR(JDEPL+3-1)
+          UGR(5) =  ZR(JDEPL+4-1)
+        ENDIF
+C
+      ELSE
+C
+        STOPZ(1)='O'
+        STOPZ(2)='N'
+        STOPZ(3)='O'
+        CALL TECACH(STOPZ,'PDEPLAR',1,JVITE,IRET)
+C IRET NE PEUT VALOIR QUE 0 (TOUT EST OK) OU 2 (CHAMP NON FOURNI)
+        IF (IRET.EQ.0) THEN
+C
+C ON RECUPERE DES VITESSES
+C
+          IF (NOMTE.EQ.'MECA_BARRE') THEN
+            DO 22 I = 1,6
+              UGR(I) = ZR(JVITE+I-1)
+ 22         CONTINUE
+          ELSE IF (NOMTE.EQ.'MECA_2D_BARRE') THEN
+            UGR(1) =  ZR(JVITE+1-1)
+            UGR(2) =  ZR(JVITE+2-1)
+            UGR(4) =  ZR(JVITE+3-1)
+            UGR(5) =  ZR(JVITE+4-1)
+          ENDIF
+C
+        ELSE
+C
+C ON RECUPERE DES DEPLACEMENTS
+C
+          CALL TECACH(STOPZ,'PDEPLAR',1,JDEPL,IRET)
+          IF (IRET.EQ.0) THEN
+            IF (NOMTE.EQ.'MECA_BARRE') THEN
+              DO 23 I = 1,6
+                UGR(I) = ZR(JDEPL+I-1)
+ 23           CONTINUE
+            ELSE IF (NOMTE.EQ.'MECA_2D_BARRE') THEN
+              UGR(1) =  ZR(JDEPL+1-1)
+              UGR(2) =  ZR(JDEPL+2-1)
+              UGR(4) =  ZR(JDEPL+3-1)
+              UGR(5) =  ZR(JDEPL+4-1)
+            ENDIF
+          ELSE
+            CALL U2MESK('F','ELEMENTS2_1',1,OPTION)
+          ENDIF
+C
+        ENDIF
+C
       ENDIF
-
 C
-
-C     --- VECTEUR DEPLACEMENT LOCAL  ULR = PGL * UGR
+C     --- VECTEUR DANS REPERE LOCAL  ULR = PGL * UGR
 C
       CALL UTPVGL ( NNO, NC, PGL, UGR, ULR )
 C
@@ -168,14 +217,22 @@ C
       ELSEIF( OPTION .EQ. 'ECIN_ELEM' ) THEN
          CALL RCVALB(FAMI,1,1,'+', ZI(LMATER),' ','ELAS',
      &                 0,' ',R8BID,1,'RHO',RHO,
-     &                 CODRES , 'FM' )
+     &                 CODRES , 'F ')
          CALL JEVECH ('PENERCR', 'E', JENDE)
          CALL JEVECH ('PFREQR' , 'L', JFREQ)
          XMAS = RHO * A * XL / 6.D0
          KLC(1,1) =  XMAS * 2.D0
+         KLC(2,2) =  XMAS * 2.D0
+         KLC(3,3) =  XMAS * 2.D0
+         KLC(4,4) =  XMAS * 2.D0
+         KLC(5,5) =  XMAS * 2.D0
+         KLC(6,6) =  XMAS * 2.D0
          KLC(1,4) =  XMAS
          KLC(4,1) =  XMAS
-         KLC(4,4) =  XMAS * 2.D0
+         KLC(2,5) =  XMAS
+         KLC(5,2) =  XMAS
+         KLC(3,6) =  XMAS
+         KLC(6,3) =  XMAS
          IF = 0
          ITYPE = 50
          KANL = 1

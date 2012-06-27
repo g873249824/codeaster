@@ -1,9 +1,9 @@
-# MODIF  DATE 02/02/2011   AUTEUR PELLET J.PELLET 
+# MODIF  DATE 25/06/2012   AUTEUR MACOCCO K.MACOCCO 
 # TITRE TREILLIS DE BARRES ARTICULEES SOUS CHARGE PONCTUELLE
 # ssll11c.para = tps_job 60 mem_job 128Mo ncpus 1 liste_test S
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -20,53 +20,71 @@
 # ======================================================================
 #       MODELE BARRE
 
-
 DEBUT(CODE=_F(NOM='SSLL11C', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
 
-MAILLAGE=LIRE_MAILLAGE( )
+MAILLAGE=LIRE_MAILLAGE();
 
-MATERIAU=DEFI_MATERIAU( ELAS=_F(  RHO = 1.E04,  E = 1.962E11, NU = 0.3,
-                                    AMOR_ALPHA = 0.1,  AMOR_BETA = 0.1))
+MATERIAU=DEFI_MATERIAU(ELAS=_F(E=1.962E11,
+                               NU=0.3,
+                               RHO=1.E04,
+                               AMOR_ALPHA=0.1,
+                               AMOR_BETA=0.1,),);
 
-CH_MATER=AFFE_MATERIAU(  MAILLAGE=MAILLAGE,
-                             AFFE=_F(  TOUT = 'OUI', MATER = MATERIAU) )
+CH_MATER=AFFE_MATERIAU(MAILLAGE=MAILLAGE,
+                       AFFE=_F(TOUT='OUI',
+                               MATER=MATERIAU,),);
 
-MODELE=AFFE_MODELE(  MAILLAGE=MAILLAGE,
-                           AFFE=_F(  TOUT = 'OUI', PHENOMENE = 'MECANIQUE',
-                                  MODELISATION = 'BARRE') )
+MODELE=AFFE_MODELE(MAILLAGE=MAILLAGE,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='BARRE',),);
+RAYON1 = ((0.0001 / pi) ** 0.5);
 
-RAYON1=( 1.E-04 / pi ) ** 0.5
+RAYON2 = ((0.0002 / pi) ** 0.5);
 
-RAYON2=( 2.E-04 / pi ) ** 0.5
 
-CARA_ELE=AFFE_CARA_ELEM(  MODELE=MODELE,BARRE=(
-                              _F(  MAILLE = ( 'AC',  'CB', ),
-                                      SECTION = 'CERCLE',
-                                      CARA = 'R', VALE = RAYON2),
-                                    _F(  MAILLE = ( 'CD',  'BD', ),
-                                      SECTION = 'CERCLE',
-                                      CARA = 'R', VALE = RAYON1)) )
+CARA_ELE=AFFE_CARA_ELEM(MODELE=MODELE,
+                        BARRE=(_F(MAILLE=('AC','CB',),
+                                  SECTION='CERCLE',
+                                  CARA='R',
+                                  VALE=RAYON2,),
+                               _F(MAILLE=('CD','BD',),
+                                  SECTION='CERCLE',
+                                  CARA='R',
+                                  VALE=RAYON1,),),);
 
-CHARGE=AFFE_CHAR_MECA(  MODELE=MODELE,DDL_IMPO=(
-                              _F(  TOUT = 'OUI',  DZ = 0.),
-                                       _F(  NOEUD = ( 'A', 'B', ), DX = 0., DY = 0.)),
-                              FORCE_NODALE=_F(  NOEUD = 'D', FY = -9810.) )
+CHARGE=AFFE_CHAR_MECA(MODELE=MODELE,
+                      DDL_IMPO=(_F(TOUT='OUI',
+                                   DZ=0.,),
+                                _F(NOEUD=('A','B',),
+                                   DX=0.,
+                                   DY=0.,),),
+                      FORCE_NODALE=_F(NOEUD='D',
+                                      FY=-9810.,),);
 
-RIGI_ELE=CALC_MATR_ELEM(  MODELE=MODELE,   OPTION='RIGI_MECA',
-                               CHAM_MATER=CH_MATER,  CARA_ELEM=CARA_ELE,
-                               CHARGE=CHARGE                )
+RIGI_ELE=CALC_MATR_ELEM(OPTION='RIGI_MECA',
+                        MODELE=MODELE,
+                        CHAM_MATER=CH_MATER,
+                        CARA_ELEM=CARA_ELE,
+                        CHARGE=CHARGE,);
 
-VECT_ELE=CALC_VECT_ELEM(  CHARGE=CHARGE, OPTION='CHAR_MECA' )
+VECT_ELE=CALC_VECT_ELEM(OPTION='CHAR_MECA',
+                        CHARGE=CHARGE,);
 
-NUMEDDL=NUME_DDL(   MATR_RIGI=RIGI_ELE )
+NUMEDDL=NUME_DDL(MATR_RIGI=RIGI_ELE,);
 
-RIGIDITE=ASSE_MATRICE(  MATR_ELEM=RIGI_ELE,  NUME_DDL=NUMEDDL )
+RIGIDITE=ASSE_MATRICE(MATR_ELEM=RIGI_ELE,
+                      NUME_DDL=NUMEDDL,);
 
-FORCE=ASSE_VECTEUR(  VECT_ELEM=VECT_ELE,  NUME_DDL=NUMEDDL )
+FORCE=ASSE_VECTEUR(VECT_ELEM=VECT_ELE,
+                   NUME_DDL=NUMEDDL,);
 
-RIGIDITE=FACTORISER(reuse=RIGIDITE,  MATR_ASSE=RIGIDITE )
+RIGIDITE=FACTORISER(reuse =RIGIDITE,
+                    MATR_ASSE=RIGIDITE,);
 
-FORCE=RESOUDRE(reuse=FORCE,  MATR=RIGIDITE,  CHAM_NO=FORCE )
+FORCE=RESOUDRE(reuse =FORCE,
+               MATR=RIGIDITE,
+               CHAM_NO=FORCE,);
 
 TEST_RESU(CHAM_NO=(
             _F(  CHAM_GD = FORCE, CRITERE = 'RELATIF', PRECISION = 1.E-4,
@@ -83,69 +101,69 @@ TEST_RESU(CHAM_NO=(
 #                   C A L C U L    H A R M O N I Q U E
 # =====================================================================
 
+MACRO_MATR_ASSE(MODELE=MODELE,
+                CHAM_MATER=CH_MATER,
+                CARA_ELEM=CARA_ELE,
+                CHARGE=CHARGE,
+                NUME_DDL=CO('NUM'),
+                MATR_ASSE=(_F(MATRICE=CO('MATASSR'),
+                              OPTION='RIGI_MECA',),
+                           _F(MATRICE=CO('MATASSM'),
+                              OPTION='MASS_MECA',),
+                           _F(MATRICE=CO('MATASSC'),
+                              OPTION='AMOR_MECA',),),);
 
-MACRO_MATR_ASSE(     MODELE=MODELE,          CHARGE=CHARGE,
-                     CARA_ELEM=CARA_ELE,    CHAM_MATER=CH_MATER,
-                      NUME_DDL=CO("NUM"),MATR_ASSE=(
-                     _F(  MATRICE = CO("MATASSR"),  OPTION = 'RIGI_MECA'),
-                               _F(  MATRICE = CO("MATASSM"),  OPTION = 'MASS_MECA'),
-                               _F(  MATRICE = CO("MATASSC"),  OPTION = 'AMOR_MECA'))
-                  )
+VECTELE=CALC_VECT_ELEM(OPTION='CHAR_MECA',
+                       CHARGE=CHARGE,);
 
-VECTELE=CALC_VECT_ELEM(  CHARGE=CHARGE,      OPTION='CHAR_MECA' )
-
-VECTASS=ASSE_VECTEUR(  VECT_ELEM=VECTELE,    NUME_DDL=NUM  )
+VECTASS=ASSE_VECTEUR(VECT_ELEM=VECTELE,
+                     NUME_DDL=NUM,);
 
 # --------------------------------------------------------------------
 
+DYNHARM=DYNA_LINE_HARM(MATR_MASS=MATASSM,
+                       MATR_RIGI=MATASSR,
+                       MATR_AMOR=MATASSC,
+                       FREQ=100.,
+                       TOUT_CHAM='OUI',
+                       EXCIT=_F(VECT_ASSE=VECTASS,
+                                COEF_MULT=1.,),);
 
-DYNHARM=DYNA_LINE_HARM(  MATR_MASS=MATASSM, MATR_RIGI=MATASSR,
-                             MATR_AMOR=MATASSC,   FREQ=100.,
-                              TOUT_CHAM='OUI',
-                             EXCIT=_F(  COEF_MULT = 1.,VECT_ASSE = VECTASS))
+DYNHARM=CALC_ELEM(reuse =DYNHARM,
+                  RESULTAT=DYNHARM,
+                  OPTION=('SIGM_ELNO','EFGE_ELNO',),);
 
-DYNHARM=CALC_ELEM(reuse=DYNHARM,     RESULTAT=DYNHARM,
-                              OPTION=( 'SIGM_ELNO',
-                                       'EFGE_ELNO',  ),
-                       )
-DYNHARM=CALC_NO( reuse=DYNHARM,
-                         RESULTAT=DYNHARM,
-                          OPTION='SIGM_NOEU'    )
+DYNHARM=CALC_NO(reuse =DYNHARM,
+                RESULTAT=DYNHARM,
+                OPTION='SIGM_NOEU',);
+
 TEST_RESU(RESU=(
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'DEPL',  NOEUD = 'C',   NOM_CMP = 'DX',
-       FREQ = 100.,      VALE_C = 6.44819E-08-4.21925E-06j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = 4.0180557023514E-08-4.219877519542E-06j, REFERENCE = 'NON_REGRESSION',),
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'DEPL',  NOEUD = 'C',   NOM_CMP = 'DY',
-       FREQ = 100.,      VALE_C = 2.14940E-08-1.40642E-06j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = 1.6601939026346E-08-1.4065410208823E-06j, REFERENCE = 'NON_REGRESSION',),
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'DEPL',  NOEUD = 'D',   NOM_CMP = 'DX',
-       FREQ = 100.,      VALE_C = 8.61774E-07-5.53570E-05j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = 5.8126321672295E-07-5.5364337063597E-05j, REFERENCE = 'NON_REGRESSION',),
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'DEPL',  NOEUD = 'D',   NOM_CMP = 'DY',
-       FREQ = 100.,      VALE_C = -1.39177E-06+8.91105E-05j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = -9.7259000307554E-07+8.9121528618742E-05j, REFERENCE = 'NON_REGRESSION',),
 
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'VITE',  NOEUD = 'D',   NOM_CMP = 'DX',
-       FREQ = 100.,      VALE_C = 3.47818E-02+5.41469E-04j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = 0.034786438917973+3.6521845029176E-04j, REFERENCE = 'NON_REGRESSION',),
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'VITE',  NOEUD = 'D',   NOM_CMP = 'DY',
-       FREQ = 100.,      VALE_C = -5.59898E-02-8.74476E-04j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = -0.055996707917066-6.110963217234E-04j, REFERENCE = 'NON_REGRESSION',),
 
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'ACCE',  NOEUD = 'D',   NOM_CMP = 'DX',
-       FREQ = 100.,      VALE_C = -3.40215E-01+2.18541E+01j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = -0.22947352007841+21.856964189851j, REFERENCE = 'NON_REGRESSION',),
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'ACCE',  NOEUD = 'D',   NOM_CMP = 'DY',
-       FREQ = 100.,      VALE_C = 5.49450E-01-3.51794E+01j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = 0.38396314299240-35.183769243494j, REFERENCE = 'NON_REGRESSION',),
 
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'EFGE_ELNO',
        MAILLE = 'BD',   NOEUD = 'B',   NOM_CMP = 'N',
-       FREQ = 100.,      VALE_C = -5.19928E+00+3.31122E+02j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
+       FREQ = 100.,      VALE_C = -3.838915774118+331.15804915597j, REFERENCE = 'NON_REGRESSION',),
      _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'EFGE_ELNO',
        MAILLE = 'BD',   NOEUD = 'D',   NOM_CMP = 'N',
-       FREQ = 100.,      VALE_C = -5.19928E+00+3.31122E+02j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
-
-     _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'SIGM_ELNO',
-       MAILLE = 'BD',   NOEUD = 'B',   NOM_CMP = 'N',
-       FREQ = 100.,      VALE_C = -5.19928E+04+3.31122E+06j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'),
-     _F(  RESULTAT = DYNHARM,   NOM_CHAM = 'SIGM_ELNO',
-       MAILLE = 'BD',   NOEUD = 'D',   NOM_CMP = 'N',
-       FREQ = 100.,      VALE_C = -5.19928E+04+3.31122E+06j, REFERENCE = 'NON_REGRESSION', VERSION='3.5'))
-
-            )
+       FREQ = 100.,      VALE_C = -3.838915774118+331.15804915597j, REFERENCE = 'NON_REGRESSION',),
+           ) )
 
 FIN( )
 #

@@ -1,4 +1,4 @@
-#@ MODIF elements2 Messages  DATE 11/01/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF elements2 Messages  DATE 25/06/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -22,6 +22,11 @@
 def _(x) : return x
 
 cata_msg = {
+
+1  : _("""
+   Aucun champ de déplacement ni de vitesse n'est fourni
+   pour le calcul de l'option %(k1)s.
+"""),
 
 27 : _("""
  pas d'intersection trouvé

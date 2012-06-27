@@ -1,0 +1,341 @@
+========================================================================
+Version 10.7.1 du : 28/06/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 06/25/2012 - 01:46:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018825 DU 2012-05-04 14:51:26
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : DeltaCad
+TITRE
+    AFFE_CHAR_MECA/DDL_POUTRE : aucune maille trouvee
+FONCTIONNALITE
+   1-Problème
+   - Une étude passée sur Aster4 en STA10 s'interrompt dans AFFE_CHAR_MECA (DDL_POUTRE) avec
+   le message "on ne trouve pas de maille".
+    
+   2-Analyse/Modification
+   Le problème est présent uniquement dans la NEW10, il vient de la routine caddlp. Il faut
+   remplacer la ligne 162 de cette routine :
+      =>  CALL JEVEUO ( '&&CADDLP.NOEUD','L', IALIMA )
+    par
+      =>  CALL JEVEUO ( '&&CADDLP.MAILLE','L', IALIMA )
+   Ce bug a été corrigé dans la NEW11 (Fiche 17939 " Bug dans DDL_POUTRE AFFE_CHAR_MECA) mais
+   il n'a pas été reporté dans la NEW10.
+   
+   3 - Validation:
+   - On passe le cas-test ssll118b (créé en NEW11) 
+   - On repasse l'étude.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage xc3xa9tude
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 06/25/2012 - 01:46:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018941 DU 2012-06-05 09:05:21
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    STANLEY
+FONCTIONNALITE
+   Anomalie
+   ========
+   
+   Lorsque l'on essaye de post-traiter avec STANLEY une base produite par un calcul
+   parallèle, on rencontre l'erreur :
+   
+   !-------------------------------------------------------------------------------------------!
+   ! <EXCEPTION> <CALCULEL_13>                                                                 !
+   !                                                                                           !
+   ! Erreur utilisateur concernant le parallélisme des calculs élémentaires :                  !
+   !   La partition des éléments du modèle a été faite sur 2 processeurs.                      !
+   !   Mais maintenant, le nombre de processeurs disponibles est de 1.                         !
+   !                                                                                           !
+   ! Conseil :                                                                                 !
+   !   Il faut utiliser la commande MODI_MODELE pour modifier la partition du modèle           !
+   !   afin qu'elle soit cohérente avec le nombre de processeurs disponibles pour les calculs. !
+   !-------------------------------------------------------------------------------------------!
+   
+   Correction
+   ==========
+   
+   On ajoute une méthode à la classe STANLEY pour transformer un modèle quelconque en modèle
+   "centralisé", c'est à dire avec la commande MODI_MODELE/PARALLELISME='CENTRALISE'.
+   
+   Cette méthode est systématiquement appelée à l'initialisation de Stanley. En pratique cela
+   veut dire que l'on ne peut pas profiter du parallélisme avec Stanley (chose jamais
+   exploitée à ma connaissance).
+   
+   Validation
+   ==========
+   
+   La validation a été faite manuellement sur le cas-test SSNV112D en 10 et en 11.
+   
+   À faire en V10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perso
+DEJA RESTITUE DANS : 11.2.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 06/25/2012 - 01:46:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018947 DU 2012-06-06 14:41:19
+TYPE anomalie concernant Code_Aster (VERSION 11.3)
+TITRE
+    X-FEM: erreur de programmation DVP_1 dans MODI_MODELE_XFEM
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Le test ci-joint (test.tar.bz2, voir test.mess y contenu) s'arrête en erreur fatale DVP_1
+   («Erreur de programmation : condition non respectée.») dans la commande MODI_MODELE_XFEM. Il
+   s'agit d'un test très simple: on définit une fissure circulaire dans un cube à l'aide d'un
+   maillage.
+   
+   
+   Analyse du problème :
+   ---------------------
+   
+   On cherche le découpage en facettes de contact d'un HEXA.
+   L'HEXA est coupé dans la pire config possible, celle en biais, où il existe 6 points
+   d'intersection entre les arêtes de l'HEXA et la plan de la fissure.
+   Cela implique un découpage en 4 facettes triangulaire.
+   
+   Ce cas est prévu depuis le début de la programmation du contact X-FEM 3d,
+   est clairement expliqué dans la doc R5.03.54 et aussi conforme à la programmation.
+   
+   Cependant, on a complètement omis le cas de figure où cet HEXA coupé de biais contiendrait
+   aussi le fond de fissure. C'est ce qui se passe ici.
+   Sur l'image en PJ, on a tracé le plan de la fissure en vert (LSN=0) et l'isozero de LST en
+   bleu sur l'HEXA problématique.
+   Le polygone en vert est bien un hexagone (6 cotés, 6 sommets), mais si on prend en compte
+   le fond de fissure on obtient un polygone à 7 cotés.
+   On a donc un point d'insection en plus :
+   -> arret par call assert dans te0510.f  -> xajpin.f  car on cherche à ajouter un point
+   d'intersection mais on n'a plus la place...
+   
+   Ici :
+   6 points d'intersection -> 7 points d'intersection.
+   
+   De plus, cela ajoute une nouvelle facette triangulaire de contact :
+   4 facettes -> 5 facettes.
+   
+   
+   Solution :
+   ----------
+   
+   Il faut augmenter le nombre maximal de point d'intersection des facettes de contact et
+   allonger la taille de PPINTER, PAINTER et PBASECO.
+   
+   impacts :
+   ---------
+   
+   xcface.f : avant d'appeler xcfacf.f (recherche des points d'intersection pour les mailles
+   contenant le fond de fissure) on permet un point en plus.
+   ajout de la connectivité des facettes dans le cas NINTER=7
+   
+   on en profite pour modifier le calcul de NDIM dans xajpin.f (passage de NDIM par argument
+   plutot que call tecael+dismoi....)
+   -> xajpin.f  xcface.f  xcfacf.f  xcfacj.f  xcfaq2.f  xdecou.f  xdecqu.f
+   
+   
+   catalogues X-FEM 3D des éléments crack-tip et mixtes :
+   gener_me_xht.cata  gener_me_xhtc.cata  gener_me_xt.cata  gener_me_xtc.cata
+   
+   PPINTER (et ses cousins, voir fiche 18974) : passage de 6*3=18 à 7*3 = 21 composantes
+   PAINTER : passage de 6*5=30 à 7*5 = 35 composantes
+   PCFACE : bizarrement, il était déjà prévu de trouver 5 facettes de contact... -> pas
+   d'impact, le champ est bien dimensionné.
+   PBASECO : passage de 6*9=54 à 7*9=63 composantes
+   
+   
+   Remarque : 
+   ----------
+   
+   l'arrêt se fait par un call assert "propre".
+   Pas de risque de résultats faux.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R5.03.54, D4.10.02
+VALIDATION
+    etude fournie
+DEJA RESTITUE DANS : 11.2.3
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 06/25/2012 - 01:46:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018982 DU 2012-06-14 09:43:44
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme memoire CALC_TABLE
+FONCTIONNALITE
+   Problème
+   --------
+   
+   Un écrasement mémoire se produit lors d'un CALC_TABLE.
+   
+   Correction
+   ----------
+   
+   La table initiale contient 400.000 lignes, 4 colonnes.
+   On demande à CALC_TABLE de faire un filtre sur une colonne avec 240 valeurs possibles.
+   CALC_TABLE complète le titre de la table avec les opérations effectuées (il suffit de
+   renseigner le mot-clé TITRE pour mettre ce que l'on veut).
+   
+   Ici, le titre ajouté est donc long : 9 caractères x 240 + ... = 2208 caractères.
+   
+   Le problème se passe avec GETLTX.
+   
+   - GETLTX est utilisé en lien avec GETVTX qui récupère un tableau de chaines.
+   
+   - GETLTX retourne un vecteur des longueurs des chaines de caractères.
+   
+   - Les tableaux de chaines en fortran contiennent les chaines bout à bout.
+     Si ce sont des K8, on sait que le 2ème élément du tableau commence à l'indice 9.
+   
+   - GETVTX tronque les chaines à la longueur du tableau réceptacle.
+   
+   - GETLTX retourne la longueur des chaines python sans connaitre la longueur
+     du tableau réceptacle de GETVTX.
+     => Il faut donc transmettre cette taille à GETLTX.
+        On utilise la place de IARG qui ne sert pas.
+   
+   - Pour le dernier élément du tableau, la chaine C n'est pas terminée par '\0',
+     la longueur est donc celle de la chaine python. Celle-ci peut donc être
+     plus grande que celle du réceptacle d'où l'écrasement mémoire !
+   
+   
+   bibfor/soustruc/ssdmdn.f : ce n'est pas un tableau mais une valeur unique,
+   bibfor/soustruc/ssdmgn.f : on ferait mieux d'utiliser LXLGUT.
+   bibfor/utilitai/op0017.f : iocc=0, c'est chanceux car en C, on fait ioc=iocc-1,
+   bibfor/utilitai/op0174.f : on a donc "-1" : en python, c'est le dernier élément !
+   bibfor/utilitai/titrea.f : écrasement qui pose problème.
+   
+   Par ailleurs, on fait une double correction : dans la méthode des Tables python
+   qui construit les arguments pour CREA_TABLE, on appelle cut_long_lines(titr, 80)
+   pour limiter les lignes de titre à 80 caractères.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude jointe
+DEJA RESTITUE DANS : 11.2.3
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 06/25/2012 - 01:46:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019020 DU 2012-06-19 15:07:58
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Modification de la matrice de masse des barres
+FONCTIONNALITE
+   Problème :
+   =========
+   Dans la fiche issue16924, une évolution a été réalisée en v11 pour prendre en compte des
+   forces d'inertie tri-directionnelles dans les éléments BARRE. Ce développement a été
+   considéré comme une évolution du cahier des charges initial des barres et réalisé
+   uniquement en v11.
+   Suite à une sollicitation de Sébastien Ravet (7N) nous signalant un risque élevé d'erreur
+   lié à cette définition de la matrice de masse des barres, nous proposons de considérer ce
+   développement comme une correction d'anomalie et donc de le rétro-porter en v10.
+   
+   Solution :
+   =========
+   On réalise en v10 le développement de la v11.
+   Les impacts à réaliser sont les suivants : 
+   - Fortran : te0153, te0154
+   . o on modifie l'expression de la matrice de masse des barres pour 
+   . . faire apparaitre des termes dans les 3 directions
+     o on ajoute la possibilité de calculer l'option M_GAMMA, 
+   . . indispensable pour calculer des réactions nodales 
+   
+   - Cas-tests : SDLL135 ; SSLL11 ; SDLL146
+   . o SDLL135E : modélisation BARRE de la réponse dynamique d'une 
+   . . poutre encastrée libre
+   . o SSLL11C : treillis de barres articulées sous charge ponctuelle :
+   . . modification des valeurs de non-régression (en accord avec la v11)
+   . o SDLL146 : validation des éléments barre en dynamique
+   
+   - Documentation : R3.08.01, U2.06.01, V2.02.135, V3.01.011, V2.02.146
+   
+   
+   Résultats faux :
+   ================
+   La prise en compte de la matrice de masse est cohérente à la fois avec le 
+   cahier des charges originel des barres ainsi qu'avec l'écriture de la matrice
+   de rigidité. De plus, ce comportement est décrit dans les docs R3.08.01 et 
+   U2.06.01. On ne peut donc pas à proprement parler parler de résultats faux.
+   Néanmoins, cette écriture était une source d'erreurs de modélisation.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 6.2.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : R3.08.01, U2.06.01, V2.02.135, V3.01.011, V2.02.146
+VALIDATION
+    Passage de tous les tests BARRE
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT sdll135e                      macocco K.MACOCCO          465    465      0
+ CASTEST AJOUT sdll146a                      macocco K.MACOCCO          478    478      0
+ CASTEST MODIF ssll11c                       macocco K.MACOCCO          169    103     85
+CATALOGU MODIF typelem/gener_me2db1          macocco K.MACOCCO          232      5      4
+CATALOGU MODIF typelem/gener_me_xht          macocco K.MACOCCO          337     23     23
+CATALOGU MODIF typelem/gener_me_xhtc         macocco K.MACOCCO          344     37     36
+CATALOGU MODIF typelem/gener_me_xt           macocco K.MACOCCO          338     23     22
+CATALOGU MODIF typelem/gener_me_xtc          macocco K.MACOCCO          340     37     36
+CATALOGU MODIF typelem/gener_mebar1          macocco K.MACOCCO          244      5      4
+ FORTRAN MODIF algorith/xcface               macocco K.MACOCCO          445     28      6
+ FORTRAN MODIF elements/te0153               macocco K.MACOCCO          194     56      6
+ FORTRAN MODIF elements/te0154               macocco K.MACOCCO          292     70     13
+ FORTRAN MODIF modelisa/caddlp               macocco K.MACOCCO          260      3      3
+  PYTHON MODIF Messages/elements2            macocco K.MACOCCO          226      6      1
+  PYTHON MODIF Stanley/stanley_engine        macocco K.MACOCCO         3388     21      1
+  PYTHON MODIF Utilitai/Table                macocco K.MACOCCO         1073      4      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         943       943              +943
+ MODIF :   14        7882       421     242      +179
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   16        8825      1364     242     +1122 

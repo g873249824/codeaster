@@ -1,8 +1,8 @@
-#@ MODIF Table Utilitai  DATE 31/05/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF Table Utilitai  DATE 25/06/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -31,6 +31,7 @@ from Noyau.N_types import is_int, is_float, is_complex, is_number, is_str, is_en
 
 import transpose
 from Utilitai.Utmess import UTMESS
+from Utilitai.Utmess import cut_long_lines
 
 if not sys.modules.has_key('Graph'):
    try:
@@ -579,6 +580,7 @@ class Table(TableBase):
       """Renvoie le dictionnaire des mots-clés à fournir à la commande CREA_TABLE
       pour produire une table_sdaster.
       """
+      self.titr = cut_long_lines(self.titr, 80)      
       dico={ 'TITRE' : ['%-80s' % lig for lig in self.titr.split('\n')],
              'LISTE' : [], }
       # remplissage de chaque occurence (pour chaque paramètre) du mot-clé facteur LISTE
