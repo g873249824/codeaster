@@ -2,7 +2,7 @@
       IMPLICIT NONE
       CHARACTER*16 OPTION , NOMTE
 C ----------------------------------------------------------------------
-C MODIF ELEMENTS  DATE 11/01/2012   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ELEMENTS  DATE 04/07/2012   AUTEUR CHANSARD F.CHANSARD 
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
 C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -58,13 +58,16 @@ C --------- DEBUT DECLARATIONS NORMALISEES  JEVEUX ---------------------
       COMMON /KVARJE/ ZK8(1), ZK16(1), ZK24(1), ZK32(1), ZK80(1)
 C --------- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
 C
+      INTEGER      NPGE
+      PARAMETER (  NPGE=3)
+
       INTEGER      NDIM,NNO,NNOS,NPG,IPOIDS,IVF,IDFDX,JGANO,IND
       INTEGER      MULTIC,JTAB1(7),JTAB2(7),CODRET,JDEPM,JDEPR
       INTEGER      ICOMPO,I1,I2,J,JVECT,JVAPR
       INTEGER      ICHG,ICHN,NCMP,K,JCRET,JFREQ,IACCE
       INTEGER      JMATE,JGEOM,JMATR,JENER,I,JCARA
       INTEGER      IVECT,NDDL,NVEC,IRET,ICONTP,LGPG1,LGPG2
-      INTEGER      ICOU, NBCOU,JNBSPI, IRET1, VALI(2)
+      INTEGER      ICOU, NBCOU,JNBSPI, IRET1, VALI(2),ITAB(7),NBSP
       LOGICAL      LCQHOM
       CHARACTER*2  CODRE2(33),CODRE1,VAL
       CHARACTER*3  NUM
@@ -91,6 +94,9 @@ C DEB ------------------------------------------------------------------
 C
       CALL ELREF4(' ','RIGI',NDIM,NNO,NNOS,NPG,IPOIDS,IVF,IDFDX,JGANO)
 C
+        JNBSPI = 0
+        CALL TECACH('NNN','PNBSP_I',1,JNBSPI,IRET1)
+
       LCQHOM = .FALSE.
       IF ( OPTION.EQ.'FULL_MECA'      .OR.
      &     OPTION.EQ.'RAPH_MECA'      .OR.
@@ -114,8 +120,6 @@ C
 C ---   VERIFICATION DE LA COHERENCE DES INFORMATIONS
 C ---   PROVENANT DE DEFI_COQU_MULT ET DE AFFE_CARA_ELEM
 C       ----------------------------------
-        JNBSPI = 0
-        CALL TECACH('NNN','PNBSP_I',1,JNBSPI,IRET1)
         IF (IRET1.EQ.0) THEN
           NBCOU = ZI(JNBSPI)
           ICOU = 0
@@ -380,7 +384,14 @@ C
       ELSEIF ( OPTION.EQ.'FORC_NODA' ) THEN
 C     -------------------------------------
 
-         CALL JEVECH ( 'PCONTMR', 'L', ICONTP )
+         CALL TECACH('OOO','PCONTMR' ,7,ITAB,IRET)
+         ICONTP=ITAB(1)
+         NBSP=ITAB(7)
+         NBCOU=ZI(JNBSPI)
+
+         WRITE(6,*)'NBSP=',NBSP
+         WRITE(6,*)'NPGE*NBCOU=',NPGE*NBCOU
+         IF (NBSP.NE.NPGE*NBCOU) CALL U2MESS('F','ELEMENTS_4')
          IND=8
          CALL DXEFFI ( OPTION, NOMTE, PGL, ZR(ICONTP), IND, EFFGT )
 C

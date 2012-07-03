@@ -1,5 +1,6 @@
-      SUBROUTINE APCALC(SDAPPA)
-C     
+      SUBROUTINE APVEPA(SDAPPA)
+      IMPLICIT     NONE
+      CHARACTER*19 SDAPPA      
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
 C MODIF ALGORITH  DATE 04/07/2012   AUTEUR CHANSARD F.CHANSARD 
 C ======================================================================
@@ -18,16 +19,12 @@ C YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
 C ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
 C   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.         
 C ======================================================================
-C RESPONSABLE ABBAS M.ABBAS
-C
-      IMPLICIT     NONE
-      CHARACTER*19 SDAPPA      
-C      
+C 
 C ----------------------------------------------------------------------
 C
 C ROUTINE APPARIEMENT
 C
-C REALISATION DE L'APPARIEMENT ENTRE DEUX SURFACES MAILLEES
+C VERIFICATIONS DE L'APPARIEMENT
 C
 C ----------------------------------------------------------------------
 C
@@ -51,8 +48,12 @@ C
       COMMON  / KVARJE / ZK8(1) , ZK16(1) , ZK24(1) , ZK32(1) , ZK80(1)
 C
 C ---------------- FIN DECLARATIONS NORMALISEES JEVEUX -----------------
-C
-      INTEGER      IFM,NIV
+C 
+      INTEGER      IFM,NIV    
+      INTEGER      NBZONE,NTPT,NBPT
+      INTEGER      TYPAPP
+      INTEGER      IZONE,IP,I
+      INTEGER      NONAPP
 C
 C ----------------------------------------------------------------------
 C
@@ -62,26 +63,38 @@ C
 C --- AFFICHAGE
 C
       IF (NIV.GE.2) THEN
-        WRITE (IFM,*) '<APPARIEMENT> REALISATION DE L''APPARIEMENT' 
+        WRITE (IFM,*) '<APPARIEMENT> VERIFICATION DE L''APPARIEMENT' 
+      ENDIF  
+C
+C --- INITIALISATIONS
+C
+      IP     = 1
+      NONAPP = 1
+      CALL APPARI(SDAPPA,'APPARI_NBZONE',NBZONE)
+      CALL APPARI(SDAPPA,'APPARI_NTPT'  ,NTPT  ) 
+C
+C --- BOUCLE SUR LES ZONES
+C
+      DO 10 IZONE = 1,NBZONE  
+C
+C ----- INFORMATION SUR LA ZONE 
+C   
+        CALL APZONI(SDAPPA,IZONE ,'NBPT'  ,NBPT  )     
+C
+C ----- BOUCLE SUR LES POINTS
+C
+        DO 20 I = 1,NBPT
+          CALL APINFI(SDAPPA,'APPARI_TYPE'     ,IP    ,TYPAPP )  
+          IF (TYPAPP.LE.0) THEN
+            NONAPP = NONAPP + 1
+          ENDIF        
+          IP     = IP + 1
+  20    CONTINUE
+  10  CONTINUE
+C
+      IF (NONAPP.EQ.IP) THEN
+        CALL U2MESS('A','APPARIEMENT_1')
       ENDIF
-C
-C --- CALCUL DES TANGENTES
-C
-      CALL APCALN(SDAPPA)       
-C
-C --- APPARIEMENT METHODE FORCE BRUTE
-C
-      CALL APFORC(SDAPPA)      
-C
-C --- VERIFICATIONS APPARIEMENT
-C
-      CALL APVEPA(SDAPPA)    
-C
-C --- AFFICHAGE
-C
-      IF (NIV.GE.2) THEN
-        CALL APIMPR(SDAPPA,IFM   )
-      ENDIF    
 C
       CALL JEDEMA()
 C 

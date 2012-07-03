@@ -1,0 +1,403 @@
+========================================================================
+Version 10.7.2 du : 04/07/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 07/04/2012 - 11:26:46
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018639 DU 2012-03-29 15:11:12
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Bug de calcul des reactions nodales sur les deformees modales
+FONCTIONNALITE
+   Problème :
+   ========
+   Il semble que le calcul des réactions nodales sur les déformées modales avec CALC_NO ou
+   CALC_CHAMP est faux pour les COQUES_3D.
+   On compare un modèle DKT et un modèle COQUE_3D sur 1 et 4 couche.
+   
+   Correction :
+   ==========
+   En effet, le calcul de FORC_NODA et REAC_NODA est faux (depuis toujours) pour les COQUE_3D
+   pour un nombre de couche supérieur à 1 dans le cas ou la SD n'est pas un evol_noli.
+   
+   Dans le te, on regarde si la carte de comportement existe et si elle n'existe pas on
+   impose que le nombre de couche est égale à 1.
+   
+   Pour les coques axis, on fait la même chose, en considérant sûrement que pour de
+   l'élasticité, c'est suffisant. Mais la différence fondamentale avec les COQUE_3D est que
+   l'on se donne bien deux points pour faire l'intégration dans l'épaisseur. Ce n'est pas le
+   cas des COQUE_3D.
+   
+   Pour corriger, on supprime le test sur la carte de comportement. Au passage on supprime
+   aussi cette intégration sur une seule couche pour les coques axis.
+   
+   Enfin pour se protéger complètement, on ajoute un test pour vérifier que le champ de
+   contrainte (éventuellement extrait par POST_CHAMP) en entrée de l'option possède bien le
+   même nombre de couche que ce qui est déclaré par l'utilisateur dans AFFE_CARA_ELEM.
+   
+   On valide avec le test ssls129b. On change NBCOU=1 en NBCOU=3. Sans les corrections, le
+   test est NOOK.
+   
+   Impacts :
+   =======
+   F:
+   forngr.f  fornpd.f  te0031.f  te0234.f  te0416.f  te0517.f  te0585.f  tuforc.f
+   
+   PY:
+   elements.py
+   
+   TESTS:
+   ssls129b.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssls129b
+DEJA RESTITUE DANS : 11.1.23
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018885 DU 2012-05-21 14:39:52
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Complement de correction de la fiche 18639 en 10
+FONCTIONNALITE
+   Problème :
+   ========
+   Lorsqu'on modifie le nombre de couche (>1) dans le test ssls129b, il devient NOOK.
+   
+   Correction :
+   ==========
+   Il y a deux problèmes :
+   - le calcul de FORC_NODA et REAC_NODA est faux ;
+   - le calcul de SIEF_ELNO (au sens efforts généralisés) est faux en NEW10
+   
+   Le premier problème a été corrigé par la fiche issue18639.
+   
+   Le second problème a la même origine : dans le te, on regarde si la carte de comportement
+   existe et si elle n'existe pas on impose que le nombre de couche est égale à 1.
+   
+   On corrige donc de la même manière : on supprime le test dans le te0415 sur la carte de
+   comportement et on récupère le vrai nombre de couche.
+   
+   Ce second problème ne pouvait pas se déclarer en NEW11 car pour le cas linéaire (et donc
+   sans carte de comportement), on utilise le te0410
+   
+   On valide avec le test ssls129b. On change NBCOU=1 en NBCOU=3.
+   
+   Impacts :
+   =======
+   F:
+   te0415.f
+   
+   TESTS:
+   ssls129b.comm
+   
+   On joint également la correction à faire en NEW10 qui permettra le report de le fiche
+   issue18639.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de ssls129b avec 3 couches
+DEJA RESTITUE DANS : 11.2.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 07/04/2012 - 11:26:48
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018979 DU 2012-06-14 07:06:07
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Contact - Risque de bug en cas de non-appariement
+FONCTIONNALITE
+   Problème
+   ========
+   
+   
+   A l'occasion du chantier sur le Newton généralisé (fiche issue18339), on s'est aperçu d'un
+   risque de résultats faux dans certaines configurations du contact.
+   Le problème est révélé par le cas-test ssnv503f.
+   Dans ce test, les mouvements de corps rigides en frottement sont corrigés par des ressorts
+   très faibles. A tel point que la structure part "très loin" et les nœuds esclaves ne
+   s'apparient plus (projection des nœuds esclaves au-delà de la surface maitre). En mettant
+   TOLE_PROJ_EXT=1E99 (prolongement infini des surfaces maitres) , on résout le problème .
+   
+   Dans le cas d'un ré-appariement à chaque itération de Newton (Newton généralisé), ceci
+   provoque nécessairement un résultat faux. D'autres configurations en point fixe (algo
+   historique de la méthode continue) peuvent potentiellement aussi présenter ce problème,
+   mais c'est moins probable.
+   
+   
+   Solution
+   ========
+   
+   Il y a un moyen simple de contrôler ce risque: alarmer l'utilisateur lorsqu'aucun nœud
+   esclave ne s'apparie, ce qui révèle nécessairement un problème (soit de définition de
+   contact, soit de mouvements non contrôlés).
+   
+   Résultats faux ?
+   Même si le risque de résultat faux est possible, il est TRÈS facilement contrôlable par
+   l'utilisateur: on voit que les structures ne sont plus en contact.
+   
+   A faire en 10
+   
+   Impact: apcalc.f apvepa.f et appariement.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test perso
+DEJA RESTITUE DANS : 11.2.4
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018840 DU 2012-05-10 13:36:04
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    DEFI_CONTACT : formulation continue et POI1
+FONCTIONNALITE
+   Probleme
+   ========
+   
+   Dans la doc de DEFI_CONTACT U4.44.11, il est bien dit que les POI1 ne sont pas compatible
+   avec la formulation continue.
+   Cependant il n'y pas de message d'erreur mais seulement un ASSERT si on fait cette
+   combinaison.
+   
+   Solution
+   ========
+   
+   On ajoute une vérification dans la routine typeco.f (au moment du DEFI_COTNACT) avec une
+   erreur fatale.
+   A faire en V10
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+DEJA RESTITUE DANS : 11.2.4
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018773 DU 2012-04-24 13:14:33
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Recherche linxc3xa9aire dans dyna_non_line
+FONCTIONNALITE
+   Problème
+   ========
+   
+   La fiche issue11745 remettait en service la recherche linéaire dans DYNA_NON_LINE.
+   Or, dans nmdomt.f, aucun paramètre du mot-clef n'est lu quand on est en dynamique:
+   IF (NOMCMD(1:4).EQ.'DYNA') THEN
+     NOCC = 0
+   ELSE
+     CALL GETFAC('RECH_LINEAIRE',NOCC)
+   ENDIF
+   
+   
+   Solution
+   ========
+   
+   Il suffit de voir la validation (fdnv100a et sdnv106a) pour se rendre compte du
+   problème: le calcul converge en une itération à chaque pas de temps, la recherche linéaire
+   n'est jamais activée (car elle ne l'est jamais en prédiction) et les statistiques sur le
+   transitoire ne font pas apparaitre le nombre d'itérations de recherche linéaire. 
+   
+   Donc, effectivement, la recherche linéaire en dynamique est "activée", mais
+   avec les paramètres par défaut: méthode CORDE, 0 (!) itérations. Donc, on ne fait rien.
+   Donc, ça sert à rien, sinon à afficher la colonne dans le tableau de convergence.
+   
+   A la question, la recherche linéaire a-t-elle jamais marché un jour ? Oui, avant la
+   9.1.22, pile au moment où l'on émettait la "fiche de doute" issue11285 et qu'on
+   débranchait cette recherche linéaire par précaution.
+   
+   Il faut que la recherche linéaire soit validée. Malheureusement, aucun cas-test de la base
+   ne propose du non-linéaire sévère avec DYNA_NON_LINE, sauf sdnv103. Or ces cas-tests sont
+   des cas-tests de contact, fonctionnalité pour laquelle la recherche linéaire est
+   déconseillée !
+   Il y a bien le sdnv106a, mais il valide la recherche de modes vibratoires (comparaison
+   MODE_VIBR et MODE_ITER_SIMULT) et il est toujours en régime élastique dans ce test.
+   Il n'y a donc aucun moyen de valider la recherche linéaire en dynamique. On modifie
+   nmdomt.f pour que ce soit pris en compte informatiquement. Le défaut de validation de
+   DYNA_NON_LINE en régime non-linéaire est un problème qui reste à traiter.
+   
+   
+   A faire en V10
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    aucun
+DEJA RESTITUE DANS : 11.2.4
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 07/04/2012 - 11:26:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018987 DU 2012-06-14 16:37:06
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Le test wdnp101b (HUJEUX) se plante en vesrion MPI
+FONCTIONNALITE
+   Problème:
+   ---------
+   Le test wdnp101b se plante en version mpi sur 2 procs
+                                                                                            
+                          
+   Analyse :
+   ---------
+   Le problème apparait au 1er calcul STAT_NON_LINE :
+   U[0]=STAT_NON_LINE(MODELE=MOD[0],
+                    CHAM_MATER=AFFMAT1,
+                    EXCIT=(_F(CHARGE=PHAUT),
+                           _F(CHARGE=CHPAR),
+                           _F(CHARGE=CHLAT),
+                           _F(CHARGE=PES, FONC_MULT=FOC)),
+                    ETAT_INIT=_F(SIGM=SIEF), ...
+                                                                                            
+                          
+   Les charges PES et CHPAR ont été créées sur le modele MOD[9] et ne sont donc pas
+   cohérentes avec le modèle utilisé dans la commande (MOD[0]).
+                                                                                            
+                          
+   En mode parallèle, cela conduit à devoir considérer plusieurs partitions, ce que le code
+   interdit (ASSERT).
+                                                                                            
+                          
+   Une fiche d'évolution issue18990 a été émise pour que STAT_NON_LINE interdise ces charges
+   non-cohérentes avec le modèle.
+                                                                                            
+                          
+   Correction :
+   ------------
+   Je modifie le test wdnp101b pour recréer PES et CHPAR dans la boucle sur les différents
+   modèles.
+   Le test est alors OK  en parallèle (sur 2 procs).
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  18987
+     wdnp101b.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    wdnp101b
+DEJA RESTITUE DANS : 11.2.5
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019026 DU 2012-06-21 10:14:19
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    LIRE_RESU pour 'MODE_MECA': Problxc3xa8me de numerotation des champs
+FONCTIONNALITE
+   Problème:
+   ---------
+   Quand la sd_resultat produite par LIRE_RESU contient un objet .REFD permettant de
+   retrouver un nume_ddl (NU), la numérotation des champs de 'DEPL_R/C' de la sd_resultat ne
+   correspond pas, en général, à celle de NU.
+                                                                                            
+                                          
+   La SD est alors incohérente.
+                                                                                            
+                                          
+   Correction :
+   ------------
+   On ajoute à la fin de l'opérateur LIRE_RESU (op0150.f) un appel à une nouvelle routine
+   (rsmode.f) qui modifie les champs de DEPL_R/C pour qu'ils aient la numérotation voulue
+   dans le .REFD.
+                                                                                            
+                                          
+   Validation :
+   ------------
+   Le test (issu de sdll113b) à l'origine de issue18948 est OK avec la correction proposée
+   (on n'a pas besoin de la correction de issue18948).
+   
+   Résultats faux :
+   ----------------
+   Les résultats de REST_GENE_PHYS étaient faux lorsque l'on faisait :
+   
+   MODE1=LIRE_RESU(..., MATR_A=K_ASSE, MATR_B=M_ASSE, ...);
+                                                                                            
+                                          
+   PROJ_BASE(  BASE=MODE1, MATR_ASSE_GENE=(
+                _F( MATRICE = CO("M_PROJ1"),
+                    MATR_ASSE = M_ASSE),
+                ...))
+                                                                                            
+                                          
+   TRAN_GE1=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                       MATR_MASS=M_PROJ1,...)
+                                                                                            
+                                          
+   RESULT1=REST_GENE_PHYS(RESU_GENE=TRAN_GE1) 
+    
+   Liste des fichiers impactés par la correction de la fiche:  19026
+     op0150.f  rsmode.f
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdll113a
+DEJA RESTITUE DANS : 11.2.5
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdll14c                      chansard F.CHANSARD         161     11     15
+ CASTEST MODIF wdnp101b                     chansard F.CHANSARD         773     13      5
+ FORTRAN AJOUT algorith/apvepa              chansard F.CHANSARD         101    101      0
+ FORTRAN AJOUT utilitai/rsmode              chansard F.CHANSARD         148    148      0
+ FORTRAN MODIF algorith/apcalc              chansard F.CHANSARD          88      6      2
+ FORTRAN MODIF algorith/nmdomt              chansard F.CHANSARD         192      2      6
+ FORTRAN MODIF elements/forngr              chansard F.CHANSARD         495     16     45
+ FORTRAN MODIF elements/fornpd              chansard F.CHANSARD         238     21     28
+ FORTRAN MODIF elements/te0031              chansard F.CHANSARD         425     16      5
+ FORTRAN MODIF elements/te0234              chansard F.CHANSARD         232     14    136
+ FORTRAN MODIF elements/te0415              chansard F.CHANSARD         524      5      8
+ FORTRAN MODIF elements/te0416              chansard F.CHANSARD         100      6      9
+ FORTRAN MODIF elements/te0517              chansard F.CHANSARD         359     10      6
+ FORTRAN MODIF elements/te0585              chansard F.CHANSARD          92      3      3
+ FORTRAN MODIF elements/tuforc              chansard F.CHANSARD         461     10      6
+ FORTRAN MODIF modelisa/typeco              chansard F.CHANSARD         213     22      4
+ FORTRAN MODIF utilitai/op0150              chansard F.CHANSARD         489     15      8
+  PYTHON MODIF Messages/appariement         chansard F.CHANSARD          93      9      2
+  PYTHON MODIF Messages/elements            chansard F.CHANSARD         373     12      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         249       249              +249
+ MODIF :   17        5308       191     290       -99
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   19        5557       440     290      +150 

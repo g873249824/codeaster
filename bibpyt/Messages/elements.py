@@ -1,8 +1,8 @@
-#@ MODIF elements Messages  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF elements Messages  DATE 04/07/2012   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -47,6 +47,16 @@ Conseil :
   Vérifiez les données sous le mot clef ANGL_REP de la commande AFFE_CARA_ELEM.
 """),
 
+4 : _(u"""
+Problème dans le calcul de l'option FORC_NODA / REAC_NODA :
+ 
+Le nombre de sous-point du champ de contrainte contenu dans la SD n'est 
+pas cohérent avec ce qui a été défini dans AFFE_CARA_ELEM.
+ 
+Il est probable que le champ de contrainte a été extrait sur un seul sous-point.
+ 
+Il est impératif d'utiliser un champ de contrainte complet pour le calcul de FORC_NODA.
+"""),
 
 5 : _("""
  problème de maillage TUYAU :
