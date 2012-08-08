@@ -1,7 +1,7 @@
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF RMFILE UTILITAI  DATE 19/05/2011   AUTEUR LEFEBVRE J-P.LEFEBVRE */
+/* MODIF RMFILE UTILITAI  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD */
 /* ================================================================== */
-/* COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG */
+/* COPYRIGHT (C) 1991 - 2012  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
 /* THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR      */
 /* MODIFY IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS     */
@@ -20,54 +20,48 @@
 /* rm ou del suivant les plates-formes                    */
 /* si info  = 1 mode bavard                               */
 /* si info != 1 mode silencieux                           */
- 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "aster.h"
-
+#include "aster_utils.h"
 
 void DEFSP(RMFILE, rmfile, char *nom1, STRING_SIZE lnom1, INTEGER *info)
 {
-   char nomcmd[85];char *ncmd;
-   long i,l,ldeb,num;
-   int ier;
-
-   if (lnom1 > 80) { lnom1 = 80; }
+    char *cmdline, *ncmd, *fname;
+    size_t ldeb;
+    int ier;
+    
 #if defined _POSIX
-   num = fflush(stderr);
-   num = fflush(stdout);
-   ncmd = "rm ";
-   ldeb = 3;
+    ncmd = "rm -f ";
+    ldeb = 6;
 #else
-   num = _flushall();
-   ncmd = "del ";
-   ldeb = 4;
+    ncmd = "del ";
+    ldeb = 4;
 #endif
-   for (i=0;i<ldeb;i++) {nomcmd[i]=ncmd[i];}
-   l    = (long) lnom1;
-   ncmd = nom1;
-   if (l != 0) {
-     for (i=0;i<l;i++) {nomcmd[i+ldeb]=ncmd[i];}
-     i=l-1;
-     while (ncmd[i] == ' ') {i--;}
-     nomcmd[i+ldeb+1] ='\0';
-     ldeb = ldeb+i+1;
-   } else {
-     i=0;
-     while (ncmd[i] != ' ') { nomcmd[i+ldeb] = ncmd[i];i++;}
-     nomcmd[i+ldeb] ='\0';
-     ldeb = ldeb+i-1;
-   }
-   if ( *info == 1 ) { 
-   fprintf(stdout,"\n\nLancement de la commande ->%s<-\n\n",nomcmd);
-                     }
-   ier=system(nomcmd);
-   if ( ier == -1 ) {
+
+    cmdline = (char*)malloc((ldeb + lnom1 + 1) * sizeof(char));
+    fname = MakeCStrFromFStr(nom1, lnom1);
+    strncpy(cmdline, ncmd, (size_t)ldeb);
+    strcpy(cmdline + ldeb, fname);
+
+    if ( *info == 1 ) {
+        printf("\n\nLancement de la commande : %s\n\n", cmdline);
+    }
+
+    ier = system(cmdline);
+    free(cmdline);
+    FreeStr(fname);
+
+    if ( *info == 1 && ier == -1 ) {
         perror("\n<rmfile> code retour system");
-   } 
+    }
 #if defined _POSIX
-   num = fflush(stderr);
-   num = fflush(stdout);
+    fflush(stderr);
+    fflush(stdout);
 #else
-   num = _flushall();
+    _flushall();
 #endif
 }
+

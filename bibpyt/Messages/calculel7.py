@@ -1,4 +1,4 @@
-#@ MODIF calculel7 Messages  DATE 24/04/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calculel7 Messages  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -48,5 +48,10 @@ cata_msg = {
   Pour l'option %(k1)s, le nombre de couches est limité à 1,
   or vous en avez définies %(i1)d !
   Veuillez contacter votre assistance technique.
+"""),
+
+6 : _("""
+  Pour ce type d'opération, il n'est pas permis d'utiliser la structure de
+  données résultat existante %(k1)s derrière le mot clé reuse.
 """),
 }

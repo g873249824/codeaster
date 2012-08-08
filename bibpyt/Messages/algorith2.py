@@ -1,4 +1,4 @@
-#@ MODIF algorith2 Messages  DATE 22/05/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF algorith2 Messages  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -37,39 +37,39 @@ Erreur utilisateur dans la commande CREA_RESU / AFFE :
 
 
 3 : _("""
- la liste des CHAM_NO n'existe pas
+ La liste des CHAM_NO n'existe pas
 """),
 
 4 : _("""
- il n'y a aucun CHAM_NO dans la liste
+ Il n'y a aucun CHAM_NO dans la liste
 """),
 
 5 : _("""
- les CHAM_NO n'ont pas tous la meme longueur
+ Les CHAM_NO n'ont pas tous la meme longueur
 """),
 
 6 : _("""
- il faut définir NOM_CMP
+ Il faut définir NOM_CMP
 """),
 
 7 : _("""
- il faut définir 3 angles nautiques.
+ Il faut définir 3 angles nautiques.
 """),
 
 8 : _("""
- l'origine doit etre définie par 3 coordonnées.
+ L'origine doit etre définie par 3 coordonnées.
 """),
 
 9 : _("""
- l axe z est obligatoire en 3d.
+ L'axe z est obligatoire en 3D.
 """),
 
 10 : _("""
- pour le 2d, on ne prend que 2 coordonnées pour l'origine.
+ En 2D, seules les premières 2 coordonnées sont considérées pour l'origine.
 """),
 
 11 : _("""
- l axe z est n'a pas de sens en 2d.
+ L'axe z n'a pas de sens en 2D. Le mot-clé AXE_Z est inutile.
 """),
 
 12 : _("""

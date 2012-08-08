@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------ */
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF astermodule supervis  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO */
+/* MODIF astermodule supervis  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD */
 /* ================================================================== */
 /* COPYRIGHT (C) 1991 - 2012  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
@@ -22,6 +22,7 @@
 
 #include "Python.h"
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "aster.h"
 #include "aster_fort.h"
@@ -278,7 +279,6 @@ void PRE_myabort( _IN const char *nomFichier , _IN const int numeroLigne , _IN c
         */
         char *chaine = (char*)0 ;
         int longueur = 0 ;
-        void *malloc(size_t size);
                                                         ASSERT(numeroLigne>0);
                                                         ASSERT(((int)log10((float)numeroLigne))<=5);
                                                         ASSERT(nomFichier!=(char*)0) ;
@@ -1920,7 +1920,6 @@ PyObject *args;
         int long_nomcham=8;
         int itopo;
         INTEGER topo;
-        void *malloc(size_t size);
 
         if (!PyArg_ParseTuple(args, "ssssiO:prepcompcham",&nomce,&nomcs,&nomcmp,&ktype,&itopo,&list)) return NULL;
 
@@ -2110,7 +2109,6 @@ PyObject *args;
         INTEGER *val, nbval;
         int i, ksize=0;
         char *iaddr;
-        void *malloc(size_t size);
 
         if (!PyArg_ParseTuple(args, "s:getcolljev",&nomsd)) return NULL;
 
@@ -2123,7 +2121,8 @@ PyObject *args;
         CALL_JEMARQ();
         CALL_TAILSD(nom, nomsd32, val, &nbval);
         iob=val[0];
-
+#define DictSetAndDecRef(dico, key, item)   PyDict_SetItem(dico, key, item); \
+                                            Py_DECREF(key);  Py_DECREF(item);
         dico = PyDict_New();
         commande = empile(get_active_command());
         try(1){
@@ -2137,70 +2136,73 @@ PyObject *args;
                 else {
                     key=PyString_FromStringAndSize(nomob,8);
                 }
-                if(ctype < 0){
-                    /* Erreur */
-                    PyErr_SetString(PyExc_KeyError, "Concept inexistant");
-                    commande = depile();
-                    return NULL;
+                switch ( ctype ) {
+                    case 0 :
+                        Py_INCREF( Py_None );
+                        PyDict_SetItem(dico, key, Py_None);
+                        break;
+                    case 1 :
+                        /* REEL */
+                        f = (DOUBLE *)iaddr;
+                        tup = PyTuple_New( (Py_ssize_t)lcon ) ;
+                        for(i=0;i<lcon;i++){
+                           PyTuple_SetItem( tup, i, PyFloat_FromDouble((double)f[i]) ) ;
+                        }
+                        DictSetAndDecRef(dico, key, tup);
+                        break;
+                    case 2 :
+                        /* ENTIER */
+                        l = (INTEGER*)iaddr;
+                        tup = PyTuple_New( (Py_ssize_t)lcon ) ;
+                        for(i=0;i<lcon;i++){
+                           PyTuple_SetItem( tup, i, PyInt_FromLong((long)l[i]) ) ;
+                        }
+                        DictSetAndDecRef(dico, key, tup);
+                        break;
+                    case 9 :
+                        /* ENTIER COURT */
+                        i4 = (INTEGER4*)iaddr;
+                        tup = PyTuple_New( (Py_ssize_t)lcon ) ;
+                        for(i=0; i<lcon; i++){
+                           PyTuple_SetItem( tup, i, PyInt_FromLong((long)i4[i]) ) ;
+                        }
+                        DictSetAndDecRef(dico, key, tup);
+                        break;
+                    case 3 :
+                        /* COMPLEXE */
+                        f = (DOUBLE *)iaddr;
+                        tup = PyTuple_New( (Py_ssize_t)lcon ) ;
+                        for(i=0;i<lcon;i++){
+                           PyTuple_SetItem( tup, i, PyComplex_FromDoubles((double)f[2*i], (double)f[2*i+1]) ) ;
+                        }
+                        DictSetAndDecRef(dico, key, tup);
+                        break;
+                    case 4 :
+                    case 5 :
+                    case 6 :
+                    case 7 :
+                    case 8 :
+                        switch ( ctype ) {
+                            case 4 : ksize = 8;  break;
+                            case 5 : ksize = 16; break;
+                            case 6 : ksize = 24; break;
+                            case 7 : ksize = 32; break;
+                            case 8 : ksize = 80; break;
+                        }
+                        /* CHAINE DE CARACTERES */
+                        tup = PyTuple_New( (Py_ssize_t)lcon ) ;
+                        for(i=0; i<lcon; i++){
+                           kvar = iaddr + i*ksize;
+                           PyTuple_SetItem( tup, i, PyString_FromStringAndSize(kvar, ksize) ) ;
+                        }
+                        DictSetAndDecRef(dico, key, tup);
+                        break;
+                    default :
+                        /* Erreur */
+                        PyErr_SetString(PyExc_KeyError, "Concept inexistant, type inconnu");
+                        commande = depile();
+                        return NULL;
                 }
-                else if(ctype == 0){
-                    Py_INCREF( Py_None );
-                    PyDict_SetItem(dico,key,Py_None);
-                }
-                else if(ctype == 1){
-                    /* REEL */
-                    f = (DOUBLE *)iaddr;
-                    tup = PyTuple_New( (Py_ssize_t)lcon ) ;
-                    for(i=0;i<lcon;i++){
-                       PyTuple_SetItem( tup, i, PyFloat_FromDouble((double)f[i]) ) ;
-                    }
-                    PyDict_SetItem(dico,key,tup);
-                }
-                else if(ctype == 2){
-                    /* ENTIER */
-                    l = (INTEGER*)iaddr;
-                    tup = PyTuple_New( (Py_ssize_t)lcon ) ;
-                    for(i=0;i<lcon;i++){
-                       PyTuple_SetItem( tup, i, PyInt_FromLong((long)l[i]) ) ;
-                    }
-                    PyDict_SetItem(dico,key,tup);
-                }
-                else if(ctype == 9){
-                    /* ENTIER COURT */
-                    i4 = (INTEGER4*)iaddr;
-                    tup = PyTuple_New( (Py_ssize_t)lcon ) ;
-                    for(i=0; i<lcon; i++){
-                       PyTuple_SetItem( tup, i, PyInt_FromLong((long)i4[i]) ) ;
-                    }
-                    PyDict_SetItem(dico,key,tup);
-                }
-                else if(ctype == 3){
-                    /* COMPLEXE */
-                    f = (DOUBLE *)iaddr;
-                    tup = PyTuple_New( (Py_ssize_t)lcon ) ;
-                    for(i=0;i<lcon;i++){
-                       PyTuple_SetItem( tup, i, PyComplex_FromDoubles((double)f[2*i], (double)f[2*i+1]) ) ;
-                    }
-                    PyDict_SetItem(dico,key,tup);
-                }
-                else if (ctype == 4 || ctype == 5 || ctype == 6 || ctype == 7 || ctype == 8) {
-                    switch ( ctype ) {
-                        case 4 : ksize = 8;  break;
-                        case 5 : ksize = 16; break;
-                        case 6 : ksize = 24; break;
-                        case 7 : ksize = 32; break;
-                        case 8 : ksize = 80; break;
-                    }
-                    /* CHAINE DE CARACTERES */
-                    tup = PyTuple_New( (Py_ssize_t)lcon ) ;
-                    for(i=0; i<lcon; i++){
-                       kvar = iaddr + i*ksize;
-                       PyTuple_SetItem( tup, i, PyString_FromStringAndSize(kvar, ksize) ) ;
-                    }
-                    PyDict_SetItem(dico,key,tup);
-                }
-                Py_XDECREF(key);
-                Py_XDECREF(tup);
          }
          CALL_JEDETR("&&GETCON.PTEUR_NOM");
          CALL_JEDEMA();
@@ -2255,7 +2257,6 @@ PyObject *args;
         INTEGER nbind;
         int ok        = 0 ;
         INTEGER iret=0;
-        void *malloc(size_t size);
     
         ok = PyArg_ParseTuple(args, "siOOOi",&nomsd,&nind,&tupi,&tupr,&tupc,&inum);
         if (!ok)MYABORT("erreur dans la partie Python");
@@ -2326,7 +2327,6 @@ PyObject *args;
         INTEGER nbind;
         int ok        = 0 ;
         INTEGER iret=0;
-        void *malloc(size_t size);
 
         ok = PyArg_ParseTuple(args, "siOOOi",&nomsd,&nind,&tupi,&tupr,&tupc,&inum);
         if (!ok)MYABORT("erreur dans la partie Python");
@@ -2408,7 +2408,6 @@ PyObject *args;
    INTEGER icode, ctype;
    PyObject *dico=NULL, *liste, *key;
    char blanc[80];
-   void *malloc(size_t size);
 
    BlankStr(blanc, 80);
    
@@ -2893,7 +2892,6 @@ PyObject *args;
    int long_nompar = 8;       /* doivent impérativement correspondre aux  */
    int long_nomres = 8;       /* longueurs des chaines de caractères      */
    int long_codret = 2;       /* déclarées dans la routine fortran RCVALE */
-   void *malloc(size_t size);
 
    if (!PyArg_ParseTuple(args, "ssOOOs", &nommat, &phenom, \
                   &t_nompar, &t_valpar, &t_nomres, &stop)) return NULL;
@@ -3089,7 +3087,6 @@ int RecupNomCas(void)
    INTEGER nbval       = 1 ;
    int lng;
    INTEGER longueur;
-   void *malloc(size_t size);
                                                    ASSERT(commande!=(PyObject*)0);
    CALL_GETLTX ( "CODE","NOM",iocc,iarg,mxval, &longueur ,&nbval) ;
    lng = (int)longueur;
@@ -3734,7 +3731,6 @@ static PyObject *aster_argv( _UNUSED  PyObject *self, _IN PyObject *args )
         char     **argv    = NULL ;
 
         void asterm( long , char** ) ;
-        void *malloc(size_t size);
         /*
            la fonction aster_argv recoit un tuple d'arguments (ici de taille 1°
            dans lequel est stockee la liste, qui est extraite par l'appel a

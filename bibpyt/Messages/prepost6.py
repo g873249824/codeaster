@@ -1,8 +1,8 @@
-#@ MODIF prepost6 Messages  DATE 30/06/2010   AUTEUR DELMAS J.DELMAS 
+#@ MODIF prepost6 Messages  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2007  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -159,6 +159,22 @@ cata_msg = {
  -> le nombre de mailles de votre maillage (%(i1)d) est supérieur
     à la limite de 9 999 999.
  -> Risque & Conseil : générez un fichier MED directement depuis GMSH. 
+"""),
+
+44 : _("""
+ Attention, l'origine de votre chemin est située à l'intérieur d'un élément.
+ Le premier segment élémentaire (origine - intersection avec la première face)
+ ne fera pas partie du chemin.
+ Conseil : prolonger votre chemin à l'origine (mettre l'origine en dehors du
+  maillage) si vous voulez que votre chemin ne soit pas tronqué.
+"""),
+
+45 : _("""
+ Attention, l'extrémité de votre chemin est située à l'intérieur d'un élément.
+ Le dernier segment élémentaire (intersection avec la dernière face - extrémité)
+ ne fera pas partie du chemin.
+ Conseil : prolonger votre chemin à l'extrémité (mettre l'extrémité en dehors du
+ maillage) si vous voulez que votre chemin ne soit pas tronqué.
 """),
 
 }

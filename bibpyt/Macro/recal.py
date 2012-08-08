@@ -1,8 +1,8 @@
-#@ MODIF recal Macro  DATE 28/03/2011   AUTEUR ASSIRE A.ASSIRE 
+#@ MODIF recal Macro  DATE 10/07/2012   AUTEUR ASSIRE A.ASSIRE 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -32,11 +32,10 @@ import sys
 import shutil
 import tempfile
 import glob
-import math
 import copy
 import re
 import platform
-from math import log10
+from math import log10, sqrt
 
 import numpy as NP
 
@@ -809,7 +808,7 @@ class CALCULS_ASTER:
                if ('MAC' in reponses[i][2]):
                        t.append( self.ajout_post_mac( reponses[i] ) )
 
-            try:    os.remove( tmp_macr_recal+os.sep+"REPE_TABLE"+os.sep+"fort."+_ul )
+            try:    os.remove( 'tmp_macr_recal'+os.sep+"REPE_TABLE"+os.sep+"fort."+_ul )
             except: pass
 
             t.append("\n# Recuperation de la table : " + str(reponses[i][0]) + "\n")
@@ -1230,8 +1229,8 @@ class CALC_ERROR:
               for l in range(len(self.A[:,0])):
                    norme_A_nodim += self.A_nodim[l,c] * self.A_nodim[l,c]
                    norme_A       += self.A[l,c] * self.A[l,c]
-              self.norme_A_nodim[0,c] = math.sqrt( norme_A_nodim ) 
-              self.norme_A[0,c] = math.sqrt( norme_A )
+              self.norme_A_nodim[0,c] = sqrt( norme_A_nodim ) 
+              self.norme_A[0,c] = sqrt( norme_A )
           if self.debug:
               print "AA1/norme_A_nodim=", self.norme_A_nodim
               print "AA1/norme_A=", self.norme_A
@@ -1518,7 +1517,7 @@ if __name__ == '__main__':
 
         # Fonctionnelle
         if options.objective_type == 'float':
-           fonctionnelle = math.sqrt( NP.sum( [x**2 for x in fonctionnelle] ) )
+           fonctionnelle = sqrt( NP.sum( [x**2 for x in fonctionnelle] ) )
         Ecriture_Fonctionnelle(output_file=options.output, type_fonctionnelle=options.objective_type, fonctionnelle=fonctionnelle)
 
         # Gradient

@@ -1,4 +1,4 @@
-#@ MODIF Table Utilitai  DATE 25/06/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF Table Utilitai  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -581,7 +581,8 @@ class Table(TableBase):
       pour produire une table_sdaster.
       """
       self.titr = cut_long_lines(self.titr, 80)      
-      dico={ 'TITRE' : ['%-80s' % lig for lig in self.titr.split('\n')],
+      # il y a eu limite à 50 titres dans le fortran autant le limiter maintenant
+      dico={ 'TITRE' : ['%-80s' % lig for lig in self.titr.split('\n')][:50],
              'LISTE' : [], }
       # remplissage de chaque occurence (pour chaque paramètre) du mot-clé facteur LISTE
       for i in range(len(self.para)):

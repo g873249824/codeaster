@@ -1,8 +1,8 @@
-#@ MODIF utilitai4 Messages  DATE 30/06/2010   AUTEUR DELMAS J.DELMAS 
+#@ MODIF utilitai4 Messages  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2006  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -327,7 +327,7 @@ cata_msg={
 """),
 
 89: _("""
- seules les 50 premieres lignes du titre sont conservees.
+ seules les %(i1)d premières lignes du titre sont conservées (%(i2)d au total).
 """),
 
 99: _("""

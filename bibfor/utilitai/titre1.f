@@ -5,9 +5,9 @@
       INTEGER                  NBTITR,       LGDON(*)
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF UTILITAI  DATE 29/09/2006   AUTEUR VABHHTS J.PELLET 
+C MODIF UTILITAI  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -43,6 +43,7 @@ C                           MXLIGS MAX DE LIGNES EN SORTIE
       PARAMETER            (MXLIGS=50 )
       CHARACTER*1    KAVANT, KCOURA
       CHARACTER*16   NOMCMD, CBID
+      INTEGER VALI(2)      
 C     ------------------------------------------------------------------
       CALL JEMARQ()
       CALL WKVECT('&&TITRE1.TAMPON.SORTIE','V V K80',MXLIGS,LDONS)
@@ -59,7 +60,10 @@ C     --- TANT QU'IL Y A DES LIGNES FAIRE ---
       ICOLS  = 0
       ILIGD  = 1
       IF ( NBTITR .GT. MXLIGS ) THEN
-         CALL U2MESS('A','UTILITAI4_89')
+         VALI(1) = MXLIGS
+         VALI(2) = NBTITR
+         CALL U2MESI('A','UTILITAI4_89', 2, VALI)
+         NBTITR = MXLIGS
       ENDIF
  1000 CONTINUE
       IF ( ILIGD .LE. NBTITR .AND. ILIGD .LE. MXLIGS ) THEN
@@ -108,6 +112,10 @@ C                 --- ON EVITE DE COUPER LES MOTS ---
                      ICOLS = 1
                   ENDIF
                ENDIF
+               IF (LDONS1 .GT. LDONS-1+MXLIGS) THEN
+                 LDONS1 = LDONS1 - 1
+                 GOTO 1200
+               ENDIF
                ZK80(LDONS1)(ICOLS:ICOLS)=TITDON(ILIGD)(ICOLD:ICOLD)
                ICOLD = ICOLD + 1
             ENDIF
@@ -116,17 +124,16 @@ C                 --- ON EVITE DE COUPER LES MOTS ---
          ILIGD  = ILIGD + 1
          GOTO 1000
       ENDIF
+ 1200 CONTINUE
 C
 C     --- RECOPIE DANS L'OBJET FINAL ----
       ILIGS = LDONS1-LDONS+1
-C
 C
       CALL JEEXIN(NOMOBJ,IERX)
       IF ( IERX .EQ. 0 ) THEN
          CALL WKVECT(NOMOBJ,BASE(1:1)//' V K80',ILIGS,LSORT)
          LONMAX = 0
       ELSE IF(ST.EQ.'C') THEN
-         CALL JEVEUO(NOMOBJ,'E',LSORT)
          CALL JELIRA(NOMOBJ,'LONMAX',LONMAX,CBID)
          CALL JUVECA(NOMOBJ,LONMAX+ILIGS)
          CALL JEVEUO(NOMOBJ,'E',LSORT)
@@ -136,8 +143,12 @@ C
          LONMAX = 0
       ENDIF
       DO 2000 ILIG = 1, ILIGS
+         IF (ILIG .GT. MXLIGS) THEN
+           GOTO 2001
+         ENDIF
          ZK80(LSORT+LONMAX+ILIG-1) = ZK80(LDONS+ILIG-1)
  2000 CONTINUE
+ 2001 CONTINUE
 CC
 CC ----- DEBUG
 CC
