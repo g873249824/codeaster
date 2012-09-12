@@ -6,9 +6,9 @@
      &                    ADSL, ADSV, ADSD,
      &                    CODRET )
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF PREPOST  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
+C MODIF PREPOST  DATE 12/09/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -117,6 +117,11 @@ C
       CHARACTER*24 VALK(2)
 C
       CALL INFNIV ( IFM, NIVINF )
+C
+      IF ( NIVINF.GT.1 ) THEN
+        WRITE (IFM,1001) 'DEBUT DE '//NOMPRO
+      ENDIF
+ 1001 FORMAT(/,10('='),A,10('='),/)
 C
 C====
 C 1. ON BOUCLE SUR LES NBCMFI COMPOSANTES DU CHAMP QUI A ETE LU
@@ -234,7 +239,7 @@ C       SI TYPE DE CHAMP = 'ELGA'
             DO 132 ,  I = 1 , NBPTM
 
               LAUX = LAUX + NBCMFI
-C             IS GAUSS POINT IN ASTER ELEMENT ?              
+C             IS GAUSS POINT IN ASTER ELEMENT ?
               IF (I.LE.NBPT) THEN
                 IPG=INDPG(NUTYMA,I)
                 CALL CESEXI('S',ADSD,ADSL,IMA,IPG,1,NRCMP,KK)
@@ -270,8 +275,8 @@ C       SI TYPE DE CHAMP = 'ELGA'
             DO 134 ,  I = 1 , NBPTM
 
               LAUX = LAUX + NBCMFI
-C             IS GAUSS POINT IN ASTER ELEMENT ?              
-              IF (I.LE.NBPT) THEN              
+C             IS GAUSS POINT IN ASTER ELEMENT ?
+              IF (I.LE.NBPT) THEN
                 IPG=INDPG(NUTYMA,I)
                 CALL CESEXI('S',ADSD,ADSL,IMA,IPG,1,NRCMP,KK)
                 ZL(ADSL-KK-1) = .TRUE.
@@ -335,5 +340,9 @@ C 3. MENAGE
 C====
 C
       CALL JEDETC ('V','&&'//NOMPRO,1)
+C
+      IF ( NIVINF.GT.1 ) THEN
+        WRITE (IFM,1001) 'FIN DE '//NOMPRO
+      ENDIF
 C
       END

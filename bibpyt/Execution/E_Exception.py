@@ -1,8 +1,8 @@
-#@ MODIF E_Exception Execution  DATE 06/09/2010   AUTEUR COURTOIS M.COURTOIS 
+#@ MODIF E_Exception Execution  DATE 12/09/2012   AUTEUR COURTOIS M.COURTOIS 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -57,6 +57,10 @@ class error(Exception):
             return message_exception(code, self)
         except:
             return self.basic_format()
+
+    def __reduce__(self):
+        """Pickle an error"""
+        return (self.__class__, (self.id_message, ))
 
 
 class FatalError(error):

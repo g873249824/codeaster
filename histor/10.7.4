@@ -1,0 +1,596 @@
+========================================================================
+Version 10.7.4 du : 13/09/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 12/09/2012 - 16:11:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019461 DU 2012-09-11 11:55:29
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    PL10 - Homogénéiser les scripts de compilation des catalogues d'éléments
+FONCTIONNALITE
+   Des scripts de construction sur base waf ont été écrits et permettent 
+   de construire actuellement la version 'unstable'.
+   
+   Pour construire également la version 'stable', il faut corriger les 
+   scripts qui lisent les catalogues d'éléments (*.cata).
+   
+   La modification à réaliser en version stable consiste à revoir les 
+   arguments et options des scripts de Lecture_Cata_Ele pour pouvoir 
+   travailler dans un sous-répertoire, produire le catalogue d'éléments et 
+   pickled ailleurs.
+   Cela correspond au report de modifications faites en 11.1.17 & 11.1.18 
+   sur make_surch_offi.py, make_capy_offi.py et utilit.py.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    build
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019402 DU 2012-09-03 12:37:16
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Erreur a la relecture du fichier pick.1 en New11
+FONCTIONNALITE
+   Problème
+   --------
+   
+   Lorsqu'un calcul récupère une exception dans le jeu de commandes et que l'objet 
+   'Exception' est stocké dans une variable, la POURSUITE est impossible.
+   
+   Exemple :
+   
+   try:
+       res = STAT_NON_LINE(...)
+   except aster.InstabiliteError, exc:
+       ...
+   
+   L'objet Exception est "exc".
+   
+   
+   Correction
+   ----------
+   
+   En Python, on peut adapter la manière dont sont sérialisés/désérialisés les instances de 
+   classes particulières en surchargeant les méthodes __getstate__/__setstate__. Pour les 
+   exceptions, cela fonctionne comme les extensions et il faut définir la méthode 
+   __reduce__.
+   
+   
+   Validation
+   ----------
+   
+   Ajout de erreu09a.com1.
+   On vérifie :
+   - qu'on peut faire la poursuite
+   - que l'objet nommé "err" est présent dans le contexte picklé.
+   
+   
+   Report en stable-updates : E_Exception.py, ajout de la méthode __reduce__
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    erreu09a
+DEJA RESTITUE DANS : 11.2.12
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 12/09/2012 - 16:11:05
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019422 DU 2012-09-06 08:57:43
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    valeurs nulles du champ SIEQ_ELNO sur certains noeuds
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   Lors du report de la fiche issue19219 en version 10, en modifiant le te0330, les cas-tests
+   ssls124a et ssls133a se terminent en NOOK.
+   
+   Les NOOK portent sur le champ SIEQ_ELNO. On trouve des valeurs nulles (ce qui ne devrait
+   pas être le cas) en N39 pour le RESU31 de ssls124a et en N20 pour le RESU31 de ssls133a.
+   """
+   
+   
+   Solution :
+   ----------
+   Comme le TE0330 avait changé entre la NEW10 et la NEW11, le report n'était donc pas un
+   remplacement d'un fichier par un autre, il fallait adapter un peu les modifications
+   décrites dans la fiche issue19219.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssls124a ssls133a et ssnp15d
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR nicolas      NICOLAS Gérald        DATE 09/12/2012 - 01:55:56
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018991 DU 2012-06-15 09:04:31
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    LIRE_CHAMP et points de Gauss
+FONCTIONNALITE
+   Le modèle comporte deux familles de points de Gauss différentes pour les mailles selon
+   leur groupe d'appartenance. Si on veut lire un champ aux points de Gauss qui n'est défini
+   que sur un des groupes et donc n'est lié qu'à une seule des familles, Aster stoppe
+   violemment. La raison en est que le programme cherche dans le fichier toutes les
+   descriptions des points de Gauss pour toutes les familles du modèle. Or c'est inutile pour
+   celles qui ne serviront pas.
+   La solution retenue consiste à ne chercher que les familles dont Aster a réellement besoin
+   pour faire la lecture et créer les champs qui sont lus.
+   
+   Programmes modifiés :
+   lrcame, lrcmpr, lrcmve : correction des impressions d'information (confusion entre nom du
+   maillage et nom du champ par exemple)
+   lrmpga : recherche (et vérification) non pas de toutes les familles mais seulement de
+   celles utiles à la reconstruction du champ.
+   
+   Aucune modification de documentation.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.02.02
+VALIDATION
+    cas de la fiche
+DEJA RESTITUE DANS : 11.2.10
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 09/12/2012 - 01:55:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019273 DU 2012-07-30 15:15:12
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    plantage lors de la generation d'un MED
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   A la fin de mon calcul cristallin sur un élément 3D sous intégré j'obtient le message
+   suivant...
+   Est ce lié à 3D_SI ?
+   
+    Erreur signalée dans la bibliothèque MED
+    nom de l'utilitaire : MFCHRE
+    code retour : -112
+   """
+   
+   
+   Analyse :
+   ---------
+   En fait le problème vient du format MED. Il n'autorise pas l'impression d'un champ
+   contenant plus de 80 composantes.
+   
+   
+   Solution :
+   ----------
+   Pour être plus sympa avec l'utilisateur (et lui fournir un message plus clair), j'ajoute
+   l'alarme suivante :
+   """
+    Le nombre de composantes à imprimer est trop grand pour le champ SOLNL___VARI_ELGA.
+    Le format MED accepte au maximum 80 composantes dans un champ.
+   
+    Le champ ne sera donc pas imprimÃ© au format MED.
+   """
+   
+   AU final, le champ n'est évidemment pas imprimé mais au moins, le code ne plante plus.
+   
+   
+   Fichiers impactés :
+   -------------------
+   med.py et ircame.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+DEJA RESTITUE DANS : 11.2.11
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019265 DU 2012-07-27 15:09:57
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    LIRE_CHAMP: message MED_32 n'est pas cosnistent
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   SIG = LIRE_CHAMP(
+   NOM_MED = 'DEP5____SIEF_NOEU_ELGA__________',
+   FORMAT = 'MED',
+   MAILLAGE = MA_MTC,
+   TYPE_CHAM = 'NOEU_SIEF_R',
+   PRECISION = 9.9999999999999995E-07,
+   UNITE = 90,
+   INST = 0.021000000000000001,
+   );
+   
+   Message d'erreur obtenu :
+   <EXCEPTION> <MED_32>
+   Le champ est inconnu.
+   
+   → nous avons eu ce message d'erreur car 'DEP5____SIEF_NOEU_ELGA__________' dans NOM_MED ne
+   correspondait pas au nom du champ présent dans le fichier MED (et visible via Salomé_Méca
+   par exemple).
+   
+   La phrase « Le champ est inconnu » nous faisait croire qu'il s'agissait plutôt d'un
+   problème au niveau du mot clé « TYPE_CHAM » !
+   """
+   
+   
+   Solution :
+   ----------
+   On précise le message d'erreur :
+   Le champ DEP5____SIEF_NOEU_ELGA__________ est inconnu dans le fichier MED.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+DEJA RESTITUE DANS : 11.2.11
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019354 DU 2012-08-24 14:03:45
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    [FORUM] Vecteur JEVEUX de longueur nulle dans IMPR_RESU en cas de groupe manquant
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   Réf : http://www.code-aster.org/forum2/viewtopic.php?pid=38173#p38173
+   
+   Dans le post du forum ci-dessus (archive jointe), on rencontre un problème de LONMAX nul
+   dans IMPR_RESU après une alarme signalant un groupe manquant.
+   """
+   
+   
+   Solution :
+   ----------
+   Il faut protéger le WKVECT en question. On le fait en ajoutant un message d'erreur :
+   """
+    Il n'existe aucun noeud lié à la liste de de mailles ou au groupe de mailles fournit à
+   IMPR_RESU.
+   
+    Conseil : Vérifiez les mots-clés MAILLE ou GROUP_MA fournit à IMPR_RESU.   
+   """
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+DEJA RESTITUE DANS : 11.2.11
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 09/12/2012 - 01:55:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019281 DU 2012-07-31 15:10:54
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme IMPR_RESU/CONCEPT/CARA_ELEM
+FONCTIONNALITE
+   Problème :
+   ==========
+   Dans un exemple où le modèle ne contient que des poutres, la commande suivante s'arrête en
+   erreur fatale:
+                                                                                            
+                          
+   IMPR_RESU(FORMAT='MED',CONCEPT=_F(CARA_ELEM=CARAELEM))
+                                                                                            
+                          
+   Analyse :
+   =======
+   L'erreur survient dans la routine w039ca.f lors de l'appel suivant :
+                                                                                            
+                          
+   CALL DISMOI('F','NOM_MAILLA',CARELE,'CARA_ELEM',IBID,MAILLA,IBID)
+                                                                                            
+                          
+   La routine dismoi (dismcr) correspondant à cette question boucle sur les différentes
+   cartes possibles d'un cara_elem.
+   Dans la boucle, on appelle dismca sur chaque carte.
+   Malheureusement, l'argument IERD (code_retour) de dismca n'est pas mis à zéro quand tout
+   se passe bien.
+   Du coup, si la 1ere carte testée n'existe pas, le dismoi retourne un code_retour non nul,
+   execute toute la boucle et le code s'arrete en erreur fatale.
+                                                                                            
+                          
+   Correction :
+   =============
+   Dans dismca.f, on initialise IERD à 0.
+                                                                                            
+                          
+   Remarque :
+   ----------
+   En parcourrant les différentes routines de dismoi (dismxx.f), je m'aperçois que le "bug"
+   de dismca existe dans beaucoup d'autres routines. Je les corrige de la meme façon (en
+   initialisant IERD=0).
+                                                                                            
+                          
+   On peut se demander pourquoi ces nombreux "bugs" n'ont pas encore été observés ?
+   L'explication est que le plus souvent l'arbre d'appel d'un dismoi est très simple :
+     dismoi(..., IERD)
+        ->  dismxx(...,IERD)
+   Et comme dismoi.f initialise IERD=0 avant d'appeler dismxx, tout se passe bien.
+                                                                                            
+                          
+                                                                                            
+                          
+   Validation :  L'étude fournie est OK avec la correction.
+   ------------
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  19281
+     dismca.f  dismce.f  dismcg.f  dismch.f  dismcm.f  dismcn.f
+     dismcp.f  dismcr.f  dismct.f  dismes.f  dismff.f  dismgd.f
+     dismic.f  dismlg.f  dismli.f  dismma.f  dismme.f  dismml.f
+     dismmo.f  dismms.f  dismne.f  dismns.f  dismnu.f  dismph.f
+     dismpm.f  dismpn.f  dismqu.f  dismrs.f  dismtm.f  dismxf.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude jointe
+DEJA RESTITUE DANS : 11.2.11
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR alarcon      ALARCON Albert         DATE 09/12/2012 - 01:55:59
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018948 DU 2012-06-06 14:43:54
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme REST_GENE_PHYS
+FONCTIONNALITE
+   Problème
+   ===========================
+   Les résultats de REST_GENE_PHYS sont faux si les 2 conditions suivantes sont réunies :
+   1) on fait un calcul transitoire
+   2) le concept MODE_MECA utilisé pour la restitution est incohérent avec le nume_DDL des
+   matrices physiques du modèle. (C'est notamment le cas lorsque la base modale provient d'un
+   LIRE_RESU)
+                                                                                            
+                           
+   La commande REST_GENE_PHYS ne prend pas la précaution de vérifier cette cohérence, ce qui
+   peut conduire à des résultats faux.
+                                                                                            
+                           
+   Le cas-test sdll113b utilise l'information d'une base modale issue de LIRE_RESU présentant
+   cette incohérence, mais l'absence de TEST_RESU sur la partie « calcul direct » empêche de
+   la détecter.
+    
+           
+   Résultats faux
+   ============================
+   REST_GENE_PHYS donnait des résultats faux pour (au moins) le cas où la base modale
+   utilisée pour faire un calcul transitoire sur base généralisée provenait d'un LIRE_RESU
+   avec TYPE_RESU='MODE_MECA'.
+   Dans ces cas, les DDL de Lagrange n'apparaissaient pas dans la base et la restitution su
+   base physique donnait des résultats aberrants.
+    
+            
+   Solution
+   ============================
+   1) Le problème de LIRE_RESU (incohérence des champs avec le nume_ddl) a été résolu via la
+   fiche issue19026.
+   2) La correction de la présente fiche est donc limitée : on se contente de vérifier (dans
+   les 2 routines copmod.f et tran75.f) la cohérence des champs de la sd_resultat avec le
+   nume_ddl.
+      Si il y a incohérence, on s'arrete avec une erreur.fatale.
+                                                                                            
+                           
+   Validation
+   ==========================
+   J'ai vérifié que si on "recasse" LIRE_RESU (on défait la correction de issue19026) le test
+   sdll113b émet une erreur <F> (et donc ne produit pas de résultats faux).
+                                                                                            
+                           
+   On rajoute des TEST_RESU à la partie calcul direct de sdll113b vérfiant que la réponse sur
+   l'espace physique est correcte même en restituant sur une partie du maillage. Ce test
+   améliore la couverture de code de tran75.f
+                                                                                            
+                           
+   D'autres TEST_RESU sont rajoutés complétant le besoin de l'issue19027 donnant plus de
+   détails sur ces test.
+   
+          
+   Version NEW10 :
+   ===============
+   La fiche issue19026 a été déjà corrigée en NEW10.
+   Je propose de reporter également en NEW10 la correction de la présente fiche (blindage).
+                                                                                            
+                           
+   Je joins un fichier (new10.tar) contenant les modifications.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cast-test utilisant REST_GENE_PHYS
+DEJA RESTITUE DANS : 11.2.11
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 09/12/2012 - 01:56:00
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019414 DU 2012-09-05 06:12:27
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Pb dans routine ordonn.f
+FONCTIONNALITE
+   Problème
+   --------
+   
+   Dans ordonn.f, on affiche un message "Création de la fonction..." même si les 
+   abscisses sont correctement ordonnées.
+   Alors que ce message est censé être suivi par une précision sur le problème d'ordre 
+   constaté.
+   
+   Correction
+   ----------
+   
+   Quand les abscisses sont correctement ordonnées, il ne faut rien faire concernant 
+   le tri (donc IER=2 doit bien être ignoré). En revanche, quand on arrive au bout de 
+   l'analyse (examen de toutes les fonctions d'une nappe par exemple), il faut sauter 
+   le bloc qui affiche les messages et aller en fin de routine.
+   C'est cette instruction qui manquait.
+   
+   Rem: avec IMPR_MACRO='OUI', les messages identiques sont affichés mais suivi 
+   d'autres informations et donc séparés du message d'alarme COEUR0_1.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    mac3c03a, sdnl120a
+DEJA RESTITUE DANS : 11.2.12
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019412 DU 2012-09-04 12:37:13
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    DEFI_NAPPE : LONUTI non accessible
+FONCTIONNALITE
+   DEFI_NAPPE ne doit accepter que des fonctions derrière le mot-clé FONCTION : type 
+   fonction_sdaster uniquement.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    eficas
+DEJA RESTITUE DANS : 11.2.12
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroche     DESROCHES Xavier       DATE 09/12/2012 - 01:56:02
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019286 DU 2012-08-01 11:15:43
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Tests non restitues avec issue18989
+FONCTIONNALITE
+   ssnp123c n'a pas été restitué en 11.2.7 (fiche 18989):
+   dans ssnp123c on rajoute dans INTE_MAIL_3D un chemin tronqué pour imprimer un message 
+   d'alarme.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sans
+DEJA RESTITUE DANS : 11.2.11
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT erreu09a                     courtois M.COURTOIS         471    471      0
+ CASTEST MODIF ssnp123c                       ladier A.LADIER           256     22      3
+CATALOPY MODIF commande/defi_nappe            ladier A.LADIER            45      3      3
+ FORTRAN MODIF algorith/copmod                ladier A.LADIER           102      8      5
+ FORTRAN MODIF algorith/tran75                ladier A.LADIER           476     14      9
+ FORTRAN MODIF elements/te0330              courtois M.COURTOIS         170     22     13
+ FORTRAN MODIF prepost/ircame                 ladier A.LADIER           334      8      2
+ FORTRAN MODIF prepost/lrcame                 ladier A.LADIER           630     10      6
+ FORTRAN MODIF prepost/lrcmpr                 ladier A.LADIER           145     12      4
+ FORTRAN MODIF prepost/lrcmve                 ladier A.LADIER           348     11      2
+ FORTRAN MODIF prepost/lrmpga                 ladier A.LADIER           345     44     20
+ FORTRAN MODIF prepost/op0039                 ladier A.LADIER          1024      3      2
+ FORTRAN MODIF utilitai/dismca                ladier A.LADIER           131      6      3
+ FORTRAN MODIF utilitai/dismce                ladier A.LADIER           140      5      3
+ FORTRAN MODIF utilitai/dismcg                ladier A.LADIER           108      6      3
+ FORTRAN MODIF utilitai/dismch                ladier A.LADIER           152      6      3
+ FORTRAN MODIF utilitai/dismcm                ladier A.LADIER           279      6      4
+ FORTRAN MODIF utilitai/dismcn                ladier A.LADIER           109      6      3
+ FORTRAN MODIF utilitai/dismcp                ladier A.LADIER            98      5      4
+ FORTRAN MODIF utilitai/dismct                ladier A.LADIER            86      6      3
+ FORTRAN MODIF utilitai/dismgd                ladier A.LADIER           166      6      3
+ FORTRAN MODIF utilitai/dismic                ladier A.LADIER           151      6      3
+ FORTRAN MODIF utilitai/dismlg                ladier A.LADIER           413      6      3
+ FORTRAN MODIF utilitai/dismli                ladier A.LADIER            94      6      3
+ FORTRAN MODIF utilitai/dismma                ladier A.LADIER           155      6      3
+ FORTRAN MODIF utilitai/dismme                ladier A.LADIER           171      6      3
+ FORTRAN MODIF utilitai/dismml                ladier A.LADIER            90      6      3
+ FORTRAN MODIF utilitai/dismmo                ladier A.LADIER           336      7      4
+ FORTRAN MODIF utilitai/dismms                ladier A.LADIER           185      5      2
+ FORTRAN MODIF utilitai/dismne                ladier A.LADIER            80      6      3
+ FORTRAN MODIF utilitai/dismnu                ladier A.LADIER           136      6      3
+ FORTRAN MODIF utilitai/dismph                ladier A.LADIER           102      6      3
+ FORTRAN MODIF utilitai/dismpm                ladier A.LADIER            84      6      3
+ FORTRAN MODIF utilitai/dismpn                ladier A.LADIER           118      6      3
+ FORTRAN MODIF utilitai/dismqu                ladier A.LADIER           107      6      4
+ FORTRAN MODIF utilitai/dismrs                ladier A.LADIER           250      5      4
+ FORTRAN MODIF utilitai/dismtm                ladier A.LADIER           114      5      3
+ FORTRAN MODIF utilitai/dismxf                ladier A.LADIER           103      7      4
+ FORTRAN MODIF utilitai/ordonn                ladier A.LADIER           177      4      2
+  PYTHON MODIF Execution/E_Exception        courtois M.COURTOIS         145      6      2
+  PYTHON MODIF Lecture_Cata_Ele/make_capy_offi   courtois M.COURTOIS         123     82     91
+  PYTHON MODIF Lecture_Cata_Ele/make_surch_offi   courtois M.COURTOIS         118     80    104
+  PYTHON MODIF Lecture_Cata_Ele/utilit      courtois M.COURTOIS         734     40     65
+  PYTHON MODIF Messages/med                   ladier A.LADIER           576     11      2
+  PYTHON MODIF Messages/prepost5              ladier A.LADIER           226      8      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         471       471              +471
+ MODIF :   44        9932       541     420      +121
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   45       10403      1012     420      +592 

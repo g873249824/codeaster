@@ -4,9 +4,9 @@
       CHARACTER*(*) QUESTI,NOMOBZ,REPKZ
 C ----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF UTILITAI  DATE 12/10/2010   AUTEUR GENIAUT S.GENIAUT 
+C MODIF UTILITAI  DATE 12/09/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -60,8 +60,11 @@ C
 C DEB ------------------------------------------------------------------
 C
       CALL JEMARQ()
-      NOMOB=NOMOBZ
-      REPK=' '
+      REPK  = ' '
+      REPI  = 0
+      IERD = 0
+
+      NOMOB = NOMOBZ
       NOLIG=NOMOB//'.MODELE'
 C
       CALL JEVEUO(NOLIG//'.LGRF','L',IANOMA)

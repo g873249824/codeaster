@@ -1,8 +1,8 @@
-#@ MODIF prepost5 Messages  DATE 13/01/2011   AUTEUR PELLET J.PELLET 
+#@ MODIF prepost5 Messages  DATE 12/09/2012   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -57,6 +57,12 @@ Option illicite pour le resultat %(k1)s numero d'ordre trop grand %(k2)s pour le
  la taille memoire   necessaire au vecteur de travail dans   lequel nous stockons les composantes   u et v du vecteur tau est trop importante   par rapport a la place disponible.
  taille disponible :  %(i1)d
  taille necessaire :  %(i2)d
+"""),
+
+9 : _("""
+ Il n'existe aucun noeud lie a la liste de mailles ou au groupe de mailles fournit a IMPR_RESU.
+ 
+ Conseil : Verifiez les mots-cles MAILLE ou GROUP_MA fournit a IMPR_RESU.
 """),
 
 10 : _("""

@@ -2,9 +2,9 @@
       IMPLICIT REAL*8 (A-H,O-Z)
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 16/11/2009   AUTEUR REZETTE C.REZETTE 
+C MODIF ALGORITH  DATE 12/09/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -65,10 +65,10 @@ C ----------------------------------------------------------------------
       CHARACTER*16  TYPRES, NOMCMD, NOMP(MXPARA), TYPE(8), TYPCHA,
      &              TYPBAS(8), TYPREP, CONCEP, CHAMP(8)
       CHARACTER*19  FONCT, KINST, KNUME, KREFE, PRCHNO, TRANGE
-      CHARACTER*19  TYPREF(8), CHAM19, PROF
+      CHARACTER*19  TYPREF(8), CHAM19, PROF,PRCHN1
       CHARACTER*24  MATRIC, CHAMNO, CREFE(2), NOMCHA, CHAMN2, OBJVE1
       CHARACTER*24  OBJVE2,OBJVE3,OBJVE4,NOMNOE,NUMEDD,NPRNO,CHMOD
-      LOGICAL       TOUSNO, MULTAP, LEFFOR, LRPHYS, PREMS
+      LOGICAL       TOUSNO, MULTAP, LEFFOR, LRPHYS, PREMS,IDENSD
 C     ------------------------------------------------------------------
       DATA BLANC    /'        '/
       DATA CHAMN2   /'&&TRAN75.CHAMN2'/
@@ -326,14 +326,19 @@ C
                   VALK (1) = TYPCHA
                   VALK (2) = BASEMO
                   VALI = J
-      CALL U2MESG('F', 'ALGORITH12_66',2,VALK,1,VALI,0,0.D0)
+                  CALL U2MESG('F','ALGORITH12_66',2,VALK,1,VALI,0,0.D0)
                ENDIF
                CALL JEEXIN ( NOMCHA(1:19)//'.VALE', IBID )
-               IF (IBID.GT.0) THEN
-                  NOMCHA(20:24)='.VALE'
-               ELSE
-                  NOMCHA(20:24)='.CELV'
-               END IF
+               CALL ASSERT(IBID.GT.0)
+               NOMCHA(20:24)='.VALE'
+
+C              SI NOMCHA N'A PAS LA BONNE NUMEROTATION, ON ARRETE TOUT :
+               CALL ASSERT(PRCHNO.NE.' ')
+               CALL DISMOI('F','PROF_CHNO',NOMCHA,'CHAM_NO',IBID,
+     &                     PRCHN1,IE)
+               CALL ASSERT(IDENSD('PROF_CHNO',PRCHNO,PRCHN1))
+
+
                CALL JEVEUO(NOMCHA,'L',IDEFM)
                IDEC = 0
                DO 120 I = 1,NBNOEU
