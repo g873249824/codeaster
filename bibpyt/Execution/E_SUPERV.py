@@ -1,9 +1,9 @@
-#@ MODIF E_SUPERV Execution  DATE 27/04/2010   AUTEUR SELLENET N.SELLENET 
+#@ MODIF E_SUPERV Execution  DATE 09/10/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 # RESPONSABLE COURTOIS M.COURTOIS
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2002  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -136,8 +136,8 @@ class SUPERV:
       """Ajout des chemins pour les imports
       """
       sys.path.insert(0, '.')
-      sys.path.insert(0, self.CHEMIN)
-      sys.path.append(os.path.join(self.CHEMIN,'Cata'))
+      sys.path.insert(0, os.path.abspath(self.CHEMIN))
+      sys.path.append(os.path.join(os.path.abspath(self.CHEMIN),'Cata'))
 
    def init_timer(self):
       """Initialise le timer au plus tot

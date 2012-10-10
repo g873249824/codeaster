@@ -1,7 +1,7 @@
       SUBROUTINE ME2MME(MODELZ,NCHAR,LCHAR,MATE,CARAZ,EXITIM,TIME,
      &                  MATELZ,NH,BASEZ)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF CALCULEL  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
+C MODIF CALCULEL  DATE 09/10/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
 C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -568,6 +568,22 @@ C CHARGE DE TYPE EVOL_CHAR
  200    CONTINUE
 
         CALL JEDETR(CHARGE)
+
+C ====================================================================
+C CHARGE DE TYPE ONDE_PLANE :
+        CALL EXISD('CHAMP_GD',LIGRCH(1:13)//'.ONDPL',IRET)
+        IF (IRET.NE.0) THEN
+          OPTION='ONDE_PLAN'
+          LPAIN(4)='PONDPLA'
+          LCHIN(4)=LIGRCH(1:13)//'.ONDPL'
+          LPAIN(6)='PONDPLR'
+          LCHIN(6)=LIGRCH(1:13)//'.ONDPR'
+          ILIRES=ILIRES+1
+          CALL CODENT(ILIRES,'D0',LCHOUT(1)(12:14))
+          CALL CALCUL('S',OPTION,LIGRMO,6,LCHIN,LPAIN,1,LCHOUT,LPAOUT,
+     &                BASE,'OUI')
+          CALL REAJRE(MATEL,LCHOUT(1),BASE)
+        ENDIF
 
 C ====================================================================
    50   CONTINUE

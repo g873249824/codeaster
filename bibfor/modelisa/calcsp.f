@@ -3,9 +3,9 @@
       IMPLICIT REAL*8 (A-H,O-Z)
 C-----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF MODELISA  DATE 19/02/2008   AUTEUR MACOCCO K.MACOCCO 
+C MODIF MODELISA  DATE 09/10/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -64,8 +64,7 @@ C
 C
       PARAMETER   ( NBPAR = 5 )
       INTEGER       IVAL(3), VALI(2)
-      REAL*8        MGI, KSI
-      CHARACTER*3   K3IM, K3IV
+      REAL*8        MGI, KSI, HDENOM
       CHARACTER*8   K8B
       CHARACTER*19  NOMCOD
       CHARACTER*16  NOPAR(NBPAR)
@@ -195,16 +194,19 @@ C
               HII1 = ZR(IHI+NBPF*(IM1-1)+IL-1)
               HIR2 = ZR(IHR+NBPF*(IM2-1)+IL-1)
               HII2 = ZR(IHI+NBPF*(IM2-1)+IL-1)
-              HHR = 1.D0/(HIR1*HIR2 + HII1*HII2)
-              HHI = (HIR2*HII1 - HIR1*HII2)
-              IF ( ABS(HHI) .LE. 1.D-20 .OR. IM1.EQ.IM2) THEN
-                HHI = 0.D0
+              HDENOM = (HIR1*HIR1+HII1*HII1)*(HIR2*HIR2+HII2*HII2)
+              HHR = (HIR1*HIR2 + HII1*HII2)/HDENOM
+              HHI = (HIR2*HII1 - HIR1*HII2)/HDENOM
+C
+              IF (IM1.EQ.IM2) THEN
+                ZR(LVALE+NBPF+2*(IL-1))   = HHR*ZR(IFONC+NBPF+2*(IL-1))
+                ZR(LVALE+NBPF+2*(IL-1)+1) = 0.D0
               ELSE
-                HHI = 1.D0/HHI
+               ZR(LVALE+NBPF+2*(IL-1))  =HHR*ZR(IFONC+NBPF+2*(IL-1))-
+     &                                   HHI*ZR(IFONC+NBPF+2*(IL-1)+1)
+               ZR(LVALE+NBPF+2*(IL-1)+1)=HHR*ZR(IFONC+NBPF+2*(IL-1)+1)+
+     &                                   HHI*ZR(IFONC+NBPF+2*(IL-1))
               ENDIF
-              ZR(LVALE+NBPF+2*(IL-1))   = HHR*ZR(IFONC+NBPF+2*(IL-1))
-              ZR(LVALE+NBPF+2*(IL-1)+1) = HHI*
-     &                                    ZR(IFONC+NBPF+2*(IL-1)+1)
  80         CONTINUE
 C
  60       CONTINUE

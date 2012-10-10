@@ -3,7 +3,7 @@
       CHARACTER*16 OPTION,NOMTE
 C ----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 08/02/2012   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ELEMENTS  DATE 09/10/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -253,8 +253,8 @@ C     =======================================================
        ZR(ISIGM-1+3)= VTMP2(3)
        ZR(ISIGM-1+4)= SIGL(3,3)
 C
-       VTMP(1)=SIGL(1,1)
-       VTMP(2)=SIGL(2,2)
+       VTMP(1)=SIGL(3,1)
+       VTMP(2)=SIGL(3,2)
        VTMP(3)=0.D0
        CALL PMAVEC('ZERO',3,MLG,VTMP,VTMP2)
        ZR(ISIGM-1+5)= VTMP2(1)

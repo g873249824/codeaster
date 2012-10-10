@@ -1,4 +1,4 @@
-#@ MODIF calculel4 Messages  DATE 11/01/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calculel4 Messages  DATE 09/10/2012   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -142,6 +142,14 @@ Erreur utilisateur (ou programmeur) :
  couplage pesanteur - surface libre d'un fluide (modélisation '2D_FLUI_PESA').
 """),
 
+20 : _("""
+ Option PREP_VRC :
+ Il est impossible d'utiliser la température comme variable de commande pour les éléments de grille
+ si celle-ci varie dans l'épaisseur de la coque.
+ TINF= %(r1)f
+ TMOY= %(r2)f
+ TSUP= %(r3)f
+"""),
 
 
 

@@ -1,7 +1,7 @@
       SUBROUTINE TE0330(OPTION,NOMTE)
 C ----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 12/09/2012   AUTEUR COURTOIS M.COURTOIS 
+C MODIF ELEMENTS  DATE 09/10/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -38,12 +38,15 @@ C                NOMTE  : NOM DU TYPE ELEMENT
 C ----------------------------------------------------------------------
       PARAMETER (NPGMAX=27,NNOMAX=27,NEQMAX=16)
 C ----------------------------------------------------------------------
+      INTEGER NCMPMX,NFSMAX
+      PARAMETER (NCMPMX=6,NFSMAX=12) 
+
       INTEGER IDEFO,ICONT,IEQUIF
       INTEGER IDCP,KP,J,I,INO
       INTEGER NNO,NBPG(10),NCEQ,NPG,NNOS,NCMP
       INTEGER NDIM1,NBVA
       REAL*8 EQPG(NEQMAX*NPGMAX),EQNO(NEQMAX*NNOMAX)
-      REAL*8 SIGMA(30), FSTAB(12), HYD
+      REAL*8 SIGMA(NPGMAX*NCMPMX),FSTAB(NFSMAX),HYD
       CHARACTER*6  TYPMOD
       CHARACTER*16 NOMTE,OPTION
 
@@ -101,13 +104,19 @@ C -   CONTRAINTES EQUIVALENTES AUX POINTS DE GAUSS
 
       ELSEIF(TYPMOD.EQ.'3D') THEN
 
-         IF(NOMTE.EQ.'MECA_SHB8') THEN
+         IF((NOMTE.EQ.'MECA_SHB6')  .OR.
+     &      (NOMTE.EQ.'MECA_SHB8')  .OR.
+     &      (NOMTE.EQ.'MECA_SHB15') .OR.
+     &      (NOMTE.EQ.'MECA_SHB20')) THEN
 C        TRI ENTRE LES CONTRAINTES ET LES TERMES DE STABILISATION
             CALL SHBCSF(ZR(ICONT),SIGMA,FSTAB)
          ENDIF
          DO 100 KP = 1,NPG
            IDCP = (KP-1)*NCMP
-           IF(NOMTE.EQ.'MECA_SHB8') THEN
+           IF((NOMTE.EQ.'MECA_SHB6')  .OR.
+     &        (NOMTE.EQ.'MECA_SHB8')  .OR.
+     &        (NOMTE.EQ.'MECA_SHB15') .OR.
+     &        (NOMTE.EQ.'MECA_SHB20')) THEN
               CALL FGEQUI(SIGMA((KP-1)*NBVA+1),'SIGM',NDIM1,
      &                    EQPG(IDCP+1))
            ELSE
@@ -119,13 +128,19 @@ C        TRI ENTRE LES CONTRAINTES ET LES TERMES DE STABILISATION
 
       ELSEIF(TYPMOD.EQ.'COQUE') THEN
 
-         IF(NOMTE.EQ.'MECA_SHB8') THEN
+         IF((NOMTE.EQ.'MECA_SHB6')  .OR.
+     &      (NOMTE.EQ.'MECA_SHB8')  .OR.
+     &      (NOMTE.EQ.'MECA_SHB15') .OR.
+     &      (NOMTE.EQ.'MECA_SHB20')) THEN
 C        TRI ENTRE LES CONTRAINTES ET LES TERMES DE STABILISATION
             CALL SHBCSF(ZR(ICONT),SIGMA,FSTAB)
          ENDIF
          DO 200 KP = 1,NNO
            IDCP = (KP-1)*NCMP
-           IF(NOMTE.EQ.'MECA_SHB8') THEN
+           IF((NOMTE.EQ.'MECA_SHB6')  .OR.
+     &        (NOMTE.EQ.'MECA_SHB8')  .OR.
+     &        (NOMTE.EQ.'MECA_SHB15') .OR.
+     &        (NOMTE.EQ.'MECA_SHB20')) THEN
              CALL FGEQUI(SIGMA((KP-1)*NBVA+1),'SIGM',NDIM1,
      &                   EQPG(IDCP+1))
            ELSE

@@ -1,0 +1,923 @@
+========================================================================
+Version 10.7.5 du : 11/10/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR bargelli     BARGELLINI Renaud      DATE 08/10/2012 - 15:54:31
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019396 DU 2012-08-31 12:27:56
+TYPE anomalie concernant Code_Aster (VERSION 11.4)
+TITRE
+    En NEW11.02.10, le cas-test sslp115a s'arrete en fatale erreur sur Rocks.
+FONCTIONNALITE
+   Diagnostic :
+   
+   Le probl�me venait d'une variable initialis�e conditionnellement dans nmplru.f
+   Notons que cela faisait belle lurette que c'�tait ainsi et que le probl�me n'�tait pas
+   encore survenu.
+   
+   Modification :
+   On initialise les variables. On en profite pour faire un petit relooking de la routine nmplru.
+   
+   
+   Remarque importante :
+   Le cas test sort maintenant avec des alarmes, due � la restitution de la fiche 15632.
+   La fiche 19654 a pour objet d'enlever ces alarmes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sslp115a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 10/09/2012 - 12:03:47
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019336 DU 2012-08-20 16:15:03
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    [FORUM] SHB : calcul de SIEF_ELNO et SIEQ_ELNO bugges
+FONCTIONNALITE
+   Problème :
+   ========
+   Dans l'étude jointe utilisant la modélisation SHB, le calcul des options SIEF_ELNO et
+   SIEQ_ELNO ne fonctionne pas.
+   
+   Correction :
+   ==========
+   Pour SIEF_ELNO, le problème est récent et vient du fait que maintenant SIEF_ELNO est
+   l'extrapolation aux noeuds de toutes les composantes de SIEF_ELGA (ici en 3D il y a bien
+   plus que 6). Or dans le catalogue de l'élément, SIEF_ELNO n'avait que les 6 composantes du
+   tenseur des contraintes. Une vérification est faite dans te0004.
+   
+   On corrige en mettant les mêmes composantes que pour SIEF_ELGA.
+   
+   Pour SIEQ_ELNO, le problème vient de la routine eqcara qui indique, en focntion de la
+   modélisation, le nombre de composante des contraintes et le nombre de composante du champ
+   d'équivalent. Or les éléments SHB6, SHB15 et SHB20 ont été oubliés. Cela n'a donc jamais
+   marché pour ces éléments. Cette correction est a reporter en version 10.
+   
+   On corrige en complétant eqcara avec ces éléments.
+   
+   Pour valider, on calcule SIEF_ELNO et SIEQ_ELNO dans les tests sslv124[a-g] et on ajoute
+   des TEST_RESU en non-régression.
+   
+   Impacts :
+   =======
+   CATA:
+   gener_meshb3.cata
+   
+   F:
+   eqcara.f
+   
+   TESTS:
+   ssls124a.comm  ssls124c.comm  ssls124e.comm  ssls124g.comm
+   ssls124b.comm  ssls124d.comm  ssls124f.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v3.03.124
+VALIDATION
+    passage des tests ssls124 modifies
+DEJA RESTITUE DANS : 11.2.12
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017654 DU 2011-10-05 16:17:28
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    [FORUM] Calcul de SIRO_ELEM sur une interface
+FONCTIONNALITE
+   Problème :
+   ----------
+   L'étude jointe se plante dans le calcul de SIRO_ELEM avec un message pas clair du tout :
+   !----------------------------------------------------------------------!
+   ! <F> <CALCULEL_71> . . . . . . . . . . . . . . . . . . . . . . . . . .!
+   ! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .!
+   ! .numéro de composante invalide : .1 .(<1 ou > nombre de composantes) !
+   ! .pour la maille . . . . . . . .: .12300 . . . . . . . . . . . . . . .!
+   ! .pour le point . . . . . . . . : .3 . . . . . . . . . . . . . . . . .!
+   ! .pour le sous-point . . . . . .: .1 . . . . . . . . . . . . . . . . .!
+   !----------------------------------------------------------------------!
+    
+   Analyse :
+   ---------
+   Le problème existe en NEW10 et NEW11.
+    
+   Il vient du fait que la maille volumique (M12300) que l'on a associée à la maille de peau
+   (M4102) ne fait pas partie du modèle.
+   (M12300 fait partie du GROUP_MA 'RETENUE' qui ne fait pas partie du modèle.)
+    
+   Correction :
+   ------------
+   On modifie mearcc.f pour que l'appel à utmasu.f soit fait avec les seules mailles du modèle.
+                                                                                            
+                                                           
+   Validation :
+   ------------
+   L'étude jointe va au bout (en NEW11)
+   
+   Impact :
+   ======
+   mearcc.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Etude jointe
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR berro        BERRO Hassan           DATE 10/09/2012 - 12:03:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019449 DU 2012-09-07 17:38:47
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    IFS : Erreur dans le calcul des interspectres de reponses modales dans les systemes dissipatifs
+FONCTIONNALITE
+   . . . . . . . . . ********************
+   . . . . . . . . .* Résumé du problème *
+   . . . . . . . . . ********************
+   
+   Les termes croisés des interspectres de réponses modales ne sont pas correctement calculés
+   par l'opérateur DYNA_SPEC_MODAL dans les cas des systèmes dissipatifs ou quand 
+   l'interspectre d'excitation dispose dans ses termes extra-diagonaux d'une partie imaginaire
+   non-nulle.
+   
+   Pour une analyse complète de l'erreur de calcul, voir le premier post sur cette fiche.
+   
+   . . . . . . . . . ************
+   . . . . . . . . .* Correction *
+   . . . . . . . . . ************
+   
+   Dans la routine CALCSP, on re-programme la manière dans laquelle on calcule le produit :
+   . . . . . . . . . ______
+   . . . Sq_i_j(w) = H_i(w) x S_i_j(w) x H_j(w)
+   
+   Sq_i_j(w) : interspectre de la réponse sur base modale 
+   S_i_j(w). : interspectre d'excitation projeté sur base modale (issu de PROJ_SPEC_MODE)
+   H_i(w). . : Fonction de transfert pour le mode i 
+   _________________________________________________________________________________________
+   |. . . . . . DO 80 IL = 1,NBPF
+   |. . . . . . . HIR1 = ZR(IHR+NBPF*(IM1-1)+IL-1)
+   |. . . . . . . HII1 = ZR(IHI+NBPF*(IM1-1)+IL-1)
+   |. . . . . . . HIR2 = ZR(IHR+NBPF*(IM2-1)+IL-1)
+   |. . . . . . . HII2 = ZR(IHI+NBPF*(IM2-1)+IL-1). . . . . . .=======
+   |. . . . . . . HDENOM = (HIR1*HIR1+HII1*HII1)*(HIR2*HIR2+HII2*HII2)|_ CALCUL DE :
+   |. . . . . . . HHR = (HIR1*HIR2 + HII1*HII2)/HDENOM. . . . . . . . | . ______
+   |. . . . . . . HHI = (HIR2*HII1 - HIR1*HII2)/HDENOM. . . . . . . . | . H_i(w) x H_j(w)
+   |. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .=======
+   |. . . . . . . IF (IVAL(2) .EQ. IVAL(3)) THEN. . . . . . . . . . . |_ CALCUL DE Sq_i_j 
+   |. . . . . . . . ZR(LVALE+IL-1). . . = HHR*ZR(IFONC+IL-1). . . . . | .(1)TERMES DIAGONAUX
+   |. . . . . . . ELSE. . . . . . . . . . . . . . . . . . . . .=======
+   |. . . . . . . . ZR(LVALE+2*(IL-1)). = HHR*ZR(IFONC+2*(IL-1))- . . |
+   |. . .&. . . . . . . . . . . . . . . . HHI*ZR(IFONC+2*(IL-1)+1). . |_ (2)TERMES CROISES DE 
+   |. . . . . . . . ZR(LVALE+2*(IL-1)+1)= HHR*ZR(IFONC+2*(IL-1)+1)+ . | . . L'INTERSPECTRE
+   |. . .&. . . . . . . . . . . . . . . . HHI*ZR(IFONC+2*(IL-1)). . . |
+   |. . . . . . . ENDIF . . . . . . . . . . . . . . . . . . . .=======
+   | 80 . . . . CONTINUE
+   |________________________________________________________________________________________
+   
+   . . . . . . . . . ********************
+   . . . . . . . . .* Etendu de l'erreur *
+   . . . . . . . . . ********************
+   
+   24 cas tests font appel à l'opérateur DYNA_SPEC_MODAL :
+   
+   sdll110a sdll110b sdll110c sdll110d sdll110e sdll115a sdll115b sdll116a 
+   sdll117a sdll501a sdll502a sdll503a sdll503b sdll503c sdll504a sdll504b 
+   sdll504c sdll505a sdll506a sdll507a sdll508a sdll508b sdll508c sdnl112a
+   
+   Suite à la correction précédente, les 24 tests restent tous en OK!
+   
+   . . . . . . . . . ***********************************
+   . . . . . . . . .* Analyse approfondie des cas-tests *
+   . . . . . . . . . ***********************************
+   
+   En analysant les 24 tests, un par un, on découvre plusieurs cas de figures qui permettent
+   d'expliquer la raison pour laquelle la méthode de calcul précédente dans DYNA_SPEC_MODAL
+   donnait des résultats "non-faux" :
+   
+   (1) Cas tests dans lesquels les termes croisés du spectre d'excitation sont très petits
+   . . en comparaison avec les termes diagonaux :
+   . . . 11/24 tests sont dans ce cas de figure. Si on les passe en calculant uniquement
+   . . . les termes diagonaux du spectre d'excitation, les résultats ne changent pas. Du coup,
+   . . . les erreurs dans le calcul des termes extra-diagonaux n'influencent pas la réponse
+   . . . physique attendue.
+   
+   sdll115a sdll115b sdll117a sdll501a sdll503b sdll504a sdll504b sdll504c 
+   sdll505a sdll506a sdll507a
+   
+   (2) Cas tests dans lesquels on effectue des calculs sur la base de 2 modes seulement, les
+   . . modes étant en plus des modes doubles. Il se trouve dans ce cas spécial de w_i = w_j,
+   . . les résultats précédents sont corrects. (il y a des termes qui s'annulent pour ce cas
+   . . spécial)
+   . . . 12/24 tests se trouvent dans ce cas de figure.
+   
+   sdll110a sdll110b sdll110c sdll110d sdll110e sdll117a sdll501a sdll502a 
+   sdll503c sdll508a sdll508b sdll508c 
+   
+   (3) 1 cas test dispose d'un spectre d'excitation avec des termes croisés non-nulles, et 
+   . . relativement significatifs : sdll116a. Le test passe en raison de critères de tests
+   . . peu restrictives ( jusqu'à 7% car comparaison avec des résultats expérimentaux)
+   . . . La correction apportée à DYNA_SPEC_MODAL permet de serrer ces critères à 5% 
+   . . . (diff_max = 4.1%).
+   
+   . . . . . . . . . ************
+   . . . . . . . . .* Au passage *
+   . . . . . . . . . ************
+   
+   J'ai remarqué que l'erreur précédente conduisait parfois à des résultats non-physiques
+   quand on restitue un résultat d'interspectre généralisé sur base physique avec l'opérateur
+   REST_SPEC_PHYS. On peut obtenir dans certains cas des valeurs négatives de l'autospectres 
+   physique. C'est le cas de figure du test sdll116a, si on utilise  REST_SPEC_PHYS avec
+   OPTION = '****_TOUT' : 
+   
+   REPMOD=DYNA_SPEC_MODAL(BASE_ELAS_FLUI=MELFLUI,
+   . . . . . . . . . . . .VITE_FLUI=1.,
+   . . . . . . . . . . . .EXCIT=_F(INTE_SPEC_GENE = SPPROJ),
+   . . . . . . . . . . . .OPTION='TOUT')
+                                  ====
+   
+   REPSMFY=REST_SPEC_PHYS(BASE_ELAS_FLUI=MELFLUI,
+   . . . . . . . . . . . .VITE_FLUI=1.,
+   . . . . . . . . . . . .INTE_SPEC_GENE=REPMOD,
+   . . . . . . . . . . . .NOEUD=( 'N153', 'N052', 'N155',
+   . . . . . . . . . . . . . . . .'N156', 'N157', 'N118', ),
+   . . . . . . . . . . . .MODE_MECA=MODES,
+   . . . . . . . . . . . .NOM_CHAM='SIPO_ELNO',
+   . . . . . . . . . . . .NOM_CMP='SMFY',
+   . . . . . . . . . . . .OPTION='DIAG_TOUT' )
+   . . . . . . . . . . . . . . . . . . ====
+   
+   Sans la correction, on obtient des valeurs négatives sur les autospectres des contraintes. 
+   La correction de DYNA_SPEC_MODAL permet d'éviter ce genre de problème.
+   
+   
+   Remarque sur le risque des résultats faux v10 et v11:
+   =====================================================
+   
+   Si les trois conditions suivantes sont remplies simultanément, il y a une possibilité 
+   d'avoir des résultats imprécis sur l'interspectre des réponses modales par l'utilisation 
+   de l'opérateur DYNA_SPEC_MODAL : 
+   
+   1. Le spectre d'excitation, projeté sur base modale par l'opérateur PROJ_SPEC_BASE, doit
+   . .disposer d'une partie imaginaire non-nulle sur (un de) ses termes croisés. (Sij, i#j)
+   
+   2. La base modale de projection doit contenir au moins deux modes propres non doubles.
+   . .(fi # fj)
+   
+   3. La restitution des résultats spectraux sur base physique par le moyen de l'opérateur
+   . .REST_SPEC_PHYS doit se faire avec l'option DIAG_TOUT ou TOUT_TOUT, c'est à dire en 
+   . .se servant de tous les termes de l'interspectre de réponse.
+   
+   
+   . . . . . . . . . *********
+   . . . . . . . . .* Impacts *
+   . . . . . . . . . *********
+   
+   . . . . F : calcsp.f
+   .CAS-TEST : sdll116a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 3.3.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 3.3.2
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdll110a sdll110b sdll110c sdll110d sdll110e sdll115a sdll115b sdll116a sdll117a sdll501a sdll502a sdll503a sdll503b sdll503c sdll504a sdll504b sdll504c sdll505a sdll506a sdll507a sdll508a sdll508b sdll508c sdnl112a
+DEJA RESTITUE DANS : 11.2.13
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 10/09/2012 - 12:03:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019417 DU 2012-09-05 09:52:49
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Resultats faux avec PREP_VRC2 sur les GRILLES
+FONCTIONNALITE
+   Problème :
+   -----------
+   Jessica haelewyn a remarqué que la commande CREA_RESU / PREP_VRC2 donne des températures
+   fausses sur les éléments de grille dès que la température est variable dans l'épaisseur.
+                                                                                            
+                                             
+   En effet, dans la routine te0408.f, on croit récupérer l'épaisseur en faisant :
+         H = ZR(ICACOQ)
+   Mais pour les éléments de grille, on récupère en réalité SECT_L, ce qui n'a rien à voir !
+                                                                                            
+                                             
+   Jessica a également remarqué que le problème posé est en réalité impossible à traiter dans
+   Aster actuellement.
+                                                                                            
+                                             
+   Le problème est :
+     1) On a fait un calcul de coque thermique conduisant à un champ sur les noeuds de la
+   coque contenant : TINF, TMOY et TSUP.
+     2) On a dédoublé les éléments de coque pour créer des éléments de grille. En général,
+   ces grilles sont excentrées par rapport au feuillet moyen de la coque.
+        Les noeuds des éléments de grille sont les memes que les noeuds de la coque : ils
+   portent donc TINF, TMOY et TSUP.
+     3) Si, par exemple, la grille se trouve sur la peau supérieure de la coque, on aimerait
+   que sa température soit TSUP.
+        Mais comment savoir que l'on est sur la peau supérieure de la coque sans connaitre
+   l'épaisseur de la coque sous-jacente ?
+                                                                                            
+                                             
+   Conclusion :
+     Il est actuellement impossible de calculer la température pour un élément de grille qui
+   serait excentré par rapport au feuillet moyen de l'élément de coque qui l'accompagne.
+     Le seul cas que l'on peut résoudre est celui où la température est uniforme dans
+   l'épaisseur.
+                                                                                            
+                                             
+                                                                                            
+                                             
+   Correction :
+   ------------
+   On modifie te0408.f pour interdire une température variable dans l'épaisseur des grilles.
+                                                                                            
+                                             
+   Résultats faux :
+   ----------------
+   L'usage de CREA_RESU / PREP_VRC2  conduit à des résultats faux si :
+     1) le modèle contient des éléments de grille.
+     2) la température n'est pas constante dans l'épaisseur des grilles
+     3) Dans le calcul mécanique se servant du résultat de CREA_RESU, les éléments de grille
+   sont réellement "thermo-mécaniques" : coefficient de dilatation non nul ou coefficients
+   matériau fonctions de la température.
+                                                                                            
+                                             
+                                                                                            
+                                             
+                                                                                            
+                                             
+   Validation :
+   ------------
+   1) Quand on modifie (temporairement) le test hsns102a :
+   1.1) Si la température est constante dans l'épaisseur, le code va au bout.
+   1.2) Si la température varie dans l'épaisseur, le code s'arrete maintenant en erreur fatale:
+     
+   !-----------------------------------------------------------------------------------------------------!
+      ! <F> <CALCULEL4_20>                                                                  
+                  !
+      !                                                                                     
+                  !
+      !  Option PREP_VRC1 :                                                                 
+                  !
+      !  Il est impossible d'utiliser la température comme variable de commande pour les
+   éléments de grille !
+      !  si celle-ci varie dans l'épaisseur de la coque.                                    
+                  !
+      !  TINF= 20.000000                                                                    
+                  !
+      !  TMOY= 15.000000                                                                    
+                  !
+      !  TSUP= 25.000000                                                                    
+                  !
+     
+   !-----------------------------------------------------------------------------------------------------!
+                                                                                            
+                                             
+   2) Les 30 tests qui utilisent PREP_VRC2 restent OK.
+      Cela montre qu'ils n'utilisent pas de grilles ou que s'ils en utilisent, le température
+   y est constante dans l'épaisseur. Tant mieux pour nous !
+                                                                                            
+                                             
+   Suites à cette fiche :
+   ----------------------
+   La correction proposée n'en n'est pas vraiment une : c'est un "blindage" pour éviter les
+   résultats faux.
+   
+   Si un utilisateur souhaite réellement disposer d'un champ de température sur ses grilles
+   qui soit le résultat d'un calcul thermique de type "coque", il sera "coincé".
+   Le problème est encore plus grave que cela, car meme si l'utilisateur connait la
+   température de ses grilles, il n'a aucun moyen de la "forcer" car le mot clé PREP_VRC2
+   traite l'ensemble du modèle (il n'y a pas de mot clé GROUP_MA).
+   L'avenir dira si le projet CIWAP pourra se contenter de cette réponse.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  19147
+     te0408.f
+     calculel4.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+DEJA RESTITUE DANS : 11.2.13
+NB_JOURS_TRAV  : 0.3
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019469 DU 2012-09-12 07:48:07
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Traitement des ondes planes dans CALC_VECT_ELEM
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans le cadre du projet SALADYN, Aimery Assire s'est aperçu que le chargement de type
+   ONDE_PLANE n'est pas pris en compte dans la commande CALC_VECT_ELEM.
+                                                                                            
+                                                                           
+   Correction :
+   ------------
+   Comme le dit Aimery dans sa fiche, il faut ajouter un petit bloc dans la routine me2mme.f :
+                                                                                            
+                                                                           
+   C CHARGE DE TYPE ONDE_PLANE :
+           CALL EXISD('CHAMP_GD',LIGRCH(1:13)//'.ONDPL',IRET)
+           IF (IRET.NE.0) THEN
+             OPTION='ONDE_PLAN'
+             LPAIN(4)='PONDPLA'
+             LCHIN(4)=LIGRCH(1:13)//'.ONDPL'
+             LPAIN(6)='PONDPLR'
+             LCHIN(6)=LIGRCH(1:13)//'.ONDPR'
+             ILIRES=ILIRES+1
+             CALL CODENT(ILIRES,'D0',LCHOUT(1)(12:14))
+             CALL CALCUL('S',OPTION,LIGRMO,6,LCHIN,LPAIN,1,LCHOUT,LPAOUT,
+        &                BASE,'OUI')
+             CALL REAJRE(MATEL,LCHOUT(1),BASE)
+           ENDIF
+                                                                                            
+                                                                           
+   Validation :
+   ------------
+   J'ai modifié le test sdlv121a pour qu'il calcule avec CALC_VECT_ELEM le chargement de
+   ONDE_PLANE.
+   Le TEST_RESU est de type NON_REGRESSION.
+                                                                                            
+                                                                           
+   Je compte un peu sur le projet SALADYN pour une validation plus sérieuse.
+   Je ne pense pas qu'il y ait de risque avec cette correction : si le chargement ONDE_PLANE
+   est juste dans la commande DYNA_NON_LINE, il sera probalement juste dans CALC_VECT_ELEM.
+   
+   Résultats faux :
+   ----------------
+   Le calcul par CALC_VECT_ELEM d'une charge contenant un chargementde type ONDE_PLANE était
+   faux (oubli de ONDE_PLANE).
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  19469
+     me2mme.f
+     sdlv121a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdlv121a
+DEJA RESTITUE DANS : 11.2.13
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 10/09/2012 - 12:03:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019479 DU 2012-09-13 08:31:23
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    test ssns102b, ssns109c,d casses en 11.2.12
+FONCTIONNALITE
+   Probleme :
+   ==========
+   En version 11.2.12, les tests suivants sont cassés du côté de la routine CAUNDF.
+   ssns102b
+   ssns109c
+   ssns109d
+   
+   Le plantage (pas assez propre sur aster4) est là pour signaler une incompatibilité Fortran
+   Catalogue concernant le paramètre PVARIPR de l'option RAPH_MECA pour les éléments SHB20.
+   
+   il existe un bug dans la routine te0477 qui suppose qu'il y a toujours 2 (et 2 seulement)
+   variables internes par point de Gauss. Dans le test ssns109c, le comportement est 'ELAS'
+   (1 variable interne seulement). Ce qui explique le débordement constaté par CAUNDF.
+   
+   En faisant passer ce test avec valgrind, on voit 2 autres petits problèmes :
+      * dans la routine nmelas.f , on suppose que TYPMOD est un tableau de longueur 2 alors
+   que te0477 le déclare comme un scalaire. On teste donc une valeur non initialisée dans
+   nmelas.f. Un examen (rapide) des sources ne m'a pas permis de détecter d'autres routines
+   qui déclareraient TYPMOD de longueur 1. Néanmoins, on suggère d'attirer l'attention sur
+   cette variable "in" de nmcomp.f : dans la doc D5 et/ou dans le cartouche de nmcomp.
+      * dans la routine nmcrer.f, la variable CHAINE doit être initialisée avant l'appel à
+   GETVTX.
+   
+   Correction :
+   ============
+   dans TE0477 on corrige TYPMOD(2)  et on récupére le nombre de variables internes effectif du
+   comportement (via TECACH) puis on appelle NMCOMP avec ce nombre là. 
+   On corrige aussi nmcrer.f et on modifie dans NMCOMP, REDECE, LC0000 le commentaire sur TYPMOD.
+   
+   Validation :
+   ============
+   ssns102b
+   ssns109c
+   ssns109d
+   plus un nouveau test : ssns101h, identique à ssns101c, mais avec VMIS_ECMI_TRAC.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 7.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 7.2
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v6.05.101
+VALIDATION
+    ssns102b, ssns109c,d, ssns101h
+DEJA RESTITUE DANS : 11.2.13
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019491 DU 2012-09-13 11:46:02
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW11.02.12, les cas-tests ssnd107a et b s'arretent en erreur fatale sur Aster4.
+FONCTIONNALITE
+   En NEW11.02.12, le cas-test ssnd107a et b s'arrêtaient en erreur fatale sur Aster4. 
+   
+   cela plante seulement en nodebug, dans nmchab, (comportement VMIS_CIN1_CHAB) ligne 372
+   ......DO 120 I=1,NDIMSI
+   .........DEPSP(I)= UN/DENOMI*( 1.5D0*DP*SIGEDV(I)-MP*DP*ALFAM(I)-M2P*DP*ALFA2M(I))
+   .........EPSPP(I)=EPSPM(I)+DEPSP(I)
+   ..120.CONTINUE
+   
+   En fait le problème vient d'une absence d'initialisation de EPSPM : ce tenseur est
+   initialisé seulement dans le cas de l'effet de mémoire, et EPSPP est utile seulement dans
+   ce cas. Quand il n'y a pas d'effet de mémoire, l'instruction EPSPP(I)=EPSPM(I)+DEPSP(I)
+   est inutile.
+   
+   On corrige donc de la façon suivante :
+   
+   ......DO 120 I=1,NDIMSI
+   .........DEPSP(I)= UN/DENOMI*( 1.5D0*DP*SIGEDV(I)-MP*DP*ALFAM(I)-M2P*DP*ALFA2M(I))
+   .........IF (MEMO.EQ.1).THEN
+   ............EPSPP(I)=EPSPM(I)+DEPSP(I)
+   .........ENDIF
+   ..120.CONTINUE
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnd107b
+DEJA RESTITUE DANS : 11.2.16
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 10/09/2012 - 12:03:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019332 DU 2012-08-16 12:21:09
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    saisie de AFFE_CARA_ELEM/RIGI_PARASOL
+FONCTIONNALITE
+   Il est nécessaire de corriger le catalogue de AFFE_CARA_ELEM en version 10 pour pouvoir ajouter le mot-
+   clé RIGI_PARASOL dans eficas :
+   
+   +0200
+   @@ -562,9 +562,9 @@
+                                     into=("K_TR_D_N","K_T_D_N","K_TR_D_L","K_T_D_L",
+                                           "A_TR_D_N","A_T_D_N","A_TR_D_L","A_T_D_L"),
+                                     fr="Choix des types de discrets du tapis de ressorts." ),
+   -      b_cara= BLOC(condition =""" CARA is not None and ((CARA in 
+   ["K_TR_D_N","K_T_D_N","K_TR_D_L","K_T_D_L",
+   +      b_cara= BLOC(condition =""" (CARA in ["K_TR_D_N","K_T_D_N","K_TR_D_L","K_T_D_L",
+                                                "A_TR_D_N","A_T_D_N","A_TR_D_L","A_T_D_L"]) or \
+   -                                  (len(CARA)==2 and CARA[0][2:]==CARA[1][2:])) """,
+   +                                  (len(CARA)==2 and CARA[0][2:]==CARA[1][2:]) """,
+                       fr="Valeurs pour les discrets du tapis de ressorts.",
+             VALE = SIMP(statut='o',typ='R',max='**',
+                  fr="Valeurs pour les discrets du tapis de ressorts.",),
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    eficas
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019500 DU 2012-09-14 08:36:37
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW10.7.4, le cas-test zzzz281a s'arrete anormalement sur Aster4, Rocks et Calibre7.
+FONCTIONNALITE
+   Le test zzzz281a est cassé en version 10 : on ne peut pas importer un module de 
+   Lecture_Cata_Ele.
+   
+   L'import est, dans un module lui-même dans Lecture_Cata_Ele :
+   
+   from Lecture_Cata_Ele.imprime import impr_cata
+   
+   Or en version 10, E_SUPERV positionne le chemin de "bibpyt" en relatif.
+   On pourrait modifier l'import par : from imprime import impr_cata
+   
+   Je n'ai pas de certitude sur la meilleure écriture entre :
+   - systématiquement faire les imports "absolus" (c'est-à-dire par rapport à "bibpyt"). 
+   L'avantage est qu'on minimise les conflits de noms si le PYTHONPATH est alambiqué et 
+   qu'un autre module (comme 'imprime' ici) est trouvé avant.
+   - ou faire au maximum les imports "au plus proche".
+   
+   On corrige en faisant comme en version 11 en mettant le chemin absolu vers "bibpyt" 
+   ("Python" ou "Eficas" dans le répertoire de travail) dans E_SUPERV.py.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz281a
+DEJA RESTITUE DANS : 11.2.14
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 10/09/2012 - 12:03:53
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019525 DU 2012-09-19 08:56:27
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    MED : probleme relecture champ SIEF_ELGA
+FONCTIONNALITE
+   Problème :
+   ----------
+   """
+   Bonjour,
+   j'ai besoin de relire un fichier MED (contenant un evol_noli venant de DYNA_NON_LINE) qui
+   va me servir à initialiser un second calcul avec DYNA_NON_LINE.
+   En non-linéaire, il me faut relire la contrainte (et aussi les variables internes).
+   Or, la relecture du champ SIEF_ELGA aboutit à une erreur CALCULEL_69 :
+   numéro de point invalide     :  0 (<1 ou > nombre de points)
+   pour la maille               :  499
+   """
+   
+   
+   Solution :
+   ----------
+   Il y a un problème lors de la relecture des localisations des points de Gauss depuis le
+   format MED.
+   
+   En effet dans LRMPGA, il manquait le type MED_POIN1 de ce fait, on n'était pas en mesure
+   de relire correctement le champ MED.
+   
+   J'ajoute ce type MED et le test donné en pièce jointe de la fiche passe correctement à
+   l'émission près de l'alarme MED_83 qui est normale lorsqu'on a un mélange de modélisation.
+   
+   
+   Validation :
+   ------------
+   Pour valider, j'ai comparé le champ en sortie de DYNA_NON_LINE avec celui relu depuis le
+   fichier MED et ils sont identiques.
+   
+   J'ajoute un test pour combler ce trou de validation (zzzz322).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.322
+VALIDATION
+    test unitaire
+DEJA RESTITUE DANS : 11.2.14
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boiteau      BOITEAU Olivier        DATE 10/09/2012 - 12:03:54
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019608 DU 2012-09-28 12:32:42
+TYPE anomalie concernant Code_Aster (VERSION 11.4)
+TITRE
+    Correction restitution INFO_MODE faite en 11.2.15
+FONCTIONNALITE
+   PROBLEME
+   ========
+   En travaillant sur l'op. INFO_MODE (et son fortran op0032) je me suis rendu compte de quel
+   ques coquilles et erreurs fonctionnelles produites lors de la restit. dédiées du 27/09/12 
+   (V11.2.15).
+   
+   Je les traces et propose une correction ici. Je me suis mis d'accord avec les intervenants
+   de la restit. considérée.
+   
+       1/ Les mot-clés SEUIL_CHAR_CRIT et SEUIL_FREQ ont été introduits pour distinguer le
+        "zéro modal" du flambement et de la dynamique, mais ds le Fortran on continue comme
+        avant à les considérer tous les 2 comme étant produits pour une étude de dynamique !
+        
+            ==> Je corrige donc ceci ds op0032 en ne passant en w2 que SEUIl_FREQ.
+   
+       RQ. Je fais pareil ds MODE_ITER_SIMULT/INV qui sont eux-aussi incohérents sur ce
+       point (de détail) depuis 13 ans.
+     
+       - Le capy a été complètement réorganisé et suite à cette réorganisation j'ai noté
+         qqes menus pbs:
+      
+          2a/ Avec TYPE_RESU='MODE_COMPLEXE", les paramètres SEUIL_FREQ, PREC_SHIFT et NMAX_
+          ITER_SHIFT sont inutiles: le fortran n'ira pas les lire car ils sont dévolus à la
+          méthode de Sturm et non à la méthode 'APM' (seule utilisable ici).
+   
+              ==> Je les enlève du bloc.
+   
+          2b/ Avec TYPE_RESU='MODE_COMPLEXE' on permet au paramètre METHODE de prendre les
+          valeurs 'AUTO', 'STURM' et 'APM'. En fait seule la valeur 'APM' est pertinente ici.
+   
+          2c/ Avec TYPE_RESU='DYNAMIQUE'/'MODE_FLAMB' on permet au au paramètre METHODE de 
+          prendre les valeurs 'AUTO' et 'STURM'. En fait seule la valeur 'STURM' est 
+          pertinente ici.
+   
+             ==> Le critère 'AUTO' n'est pertinent que lorsqu'on a le choix. C'est le cas ici
+           pour TYPE_RESU='GENERAL' où on laisse 'AUTO', 'STURM' et 'APM'. Je supprime toute
+           ambiguité ds le capy en faisant le ménage à ce niveau.
+   
+           2d/ Avec TYPE_RESU='GENERAL' on a dupliqué les mot-clés FREQ_TYPE_CONTOUR/RAYON_
+          CONTOUR et FREQ_CENTRE_CONTOUR en CHAR_CRIT_TYPE_CONTOUR....
+          mais ces mot-clés ne sont pas appelés ds le Fortran ! Alors qu'on peut en avoir
+          besoin. De plus cette fonctionnalité n'est même pas testée !
+   
+            ==> Je change la logique de dénomination qui n'a pas lieu d'être ici. Ds le plan
+            complexe on ne parle plus de frequence ou de charge critique puisqu'on ne fait pas
+            la transformation f --> w2 pour l'un et lambda -> -lambda. 
+            Donc je modifie FREQ_TYPE_CONTOUR/RAYON_CONTOUR/CENTRE_CONTOUR et leur pendant en
+           CHAR_CRIT. Ils deviennent tout simplement:
+                 TYPE_CONTOUR, RAYON_CONTOUR et CENTRE_CONTOUR (pour TYPE_RESU='MODE_COMPLEXE'
+             et TYPE_RESU='GENERAL').
+    
+            2e/ Avec TYPE_RESU='GENERAL', les mot-clés **CONTOUR se trouvaient étrangement ds
+            le bloc COMPTAGE, je les remonte d'un cran pour être cohérent avec les 3 autres
+            types. Je gère avec les règles python les exclusions 'CHAR_CRIT'/'CONTOUR'.
+   
+            2f/ Le paramètre RAYON_CONTOUR doit rester un paramètre obligeatoire (on a pas
+            de valeur par défaut à proposer !). Je le protège aussi ds le F77 au cas où.
+   
+            2e/ Détail cosmétique: on appel l'option 'IMPR_STURM' du bloc commun SOLVEUR, 
+            j'adapte son nom pour être cohérent avec le nouvelle dénomination de l'op. Je la
+            renomme 'INFO_MODE'.
+   
+       3a/ Ds op0032 je supprime plusieures comparaison 'TYPE_MODE.EQ."GENERAL"' alors que
+          cela fait belle lurette qu'on a choisi, suivant la nature du pb, "MODE_FLAMB" ou
+          "MODE_COMPLEXE". 
+   
+   SOURCES RESTITUEES
+   ==================
+     F77: op0032.f, op0044.f et op0045.f
+     CAPY: impr_sturm.capy, c_colveur.capy
+   
+   IMPACTS FONCTIONNELS
+   ====================
+     Corrections de nbreux pbs fonctionnels potentiels et d'incohérences ds INFO_MODE.
+     Correction mineure pour MODE_ITER_SIMULT/INV.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.52.01
+VALIDATION
+    informatique,fonctionnelle,non-régression
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 10/09/2012 - 12:03:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 016941 DU 2011-05-17 09:25:18
+TYPE anomalie concernant Code_Aster (VERSION 9.1)
+TITRE
+    modification calcul SIG_N et SIG_T pour option SIRO_ELEM
+FONCTIONNALITE
+   La 1ère spécification faite pour l'option SIRO_ELEM était erronée.
+   
+   1) Correction du TE0141 pour répondre à la bonne spécification.
+   2) Modification des TEST_RESU de sslv04[a,b,c,d]. 
+   
+   La modification consiste dans TE0141 à remplacer les lignes 
+   . . Les lignes 241 à 243 :
+   . . . VTMP(1)=SIGL(1,1)
+   . . . VTMP(2)=SIGL(2,2)
+   . . . VTMP(3)=0.D0 
+   . . Doivent être remplacées par :
+   . . . VTMP(1)=SIGL(3,1)
+   . . . VTMP(2)=SIGL(3,2)
+   . . . VTMP(3)=0.D0 
+   
+   La documentation de CALC_CHAMP (U4.81.04) détaille ce que doit faire l'option SIRO_ELEM.
+   
+   Modifications du TE0141 et tests à faire en NEW10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.04.004, U4.81.04
+VALIDATION
+    passage cas test
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019194 DU 2012-07-17 10:58:55
+TYPE anomalie concernant Code_Aster (VERSION )
+TITRE
+    Vecteur VT de l'option SIRO_ELEM : est-ce bien ce que l'on souhaite ?
+FONCTIONNALITE
+   La 1ère spécification faite pour l'option SIRO_ELEM était erronée.
+   
+   1) Correction du TE0141 pour répondre à la bonne spécification.
+   2) Modification des TEST_RESU de sslv04[a,b,c,d]. 
+   
+   La modification consiste dans TE0141 à remplacer les lignes 
+   . . Les lignes 241 à 243 :
+   . . . VTMP(1)=SIGL(1,1)
+   . . . VTMP(2)=SIGL(2,2)
+   . . . VTMP(3)=0.D0 
+   . . Doivent être remplacées par :
+   . . . VTMP(1)=SIGL(3,1)
+   . . . VTMP(2)=SIGL(3,2)
+   . . . VTMP(3)=0.D0 
+   
+   La documentation de CALC_CHAMP (U4.81.04) détaille ce que doit faire l'option SIRO_ELEM.
+   
+   Modifications du TE0141 et tests à faire en NEW10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.04.004, U4.81.04
+VALIDATION
+    passage cas test
+NB_JOURS_TRAV  : 1.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT ssns101h                      macocco K.MACOCCO          307    307      0
+ CASTEST AJOUT zzzz322a                      macocco K.MACOCCO           92     92      0
+ CASTEST MODIF sdlv121a                      macocco K.MACOCCO          298     15      2
+ CASTEST MODIF ssls124a                      macocco K.MACOCCO          552     25      3
+ CASTEST MODIF ssls124b                      macocco K.MACOCCO          360     22      3
+ CASTEST MODIF ssls124c                      macocco K.MACOCCO          309     22      3
+ CASTEST MODIF ssls124d                      macocco K.MACOCCO          307     21      3
+ CASTEST MODIF ssls124e                      macocco K.MACOCCO          249     21      3
+ CASTEST MODIF ssls124f                      macocco K.MACOCCO          307     21      3
+ CASTEST MODIF ssls124g                      macocco K.MACOCCO          271     21      3
+ CASTEST MODIF sslv04a                       macocco K.MACOCCO         1190    249    609
+ CASTEST MODIF sslv04b                       macocco K.MACOCCO          720    101    252
+ CASTEST MODIF sslv04c                       macocco K.MACOCCO          450    103    254
+ CASTEST MODIF sslv04d                       macocco K.MACOCCO          414    101    250
+ CASTEST MODIF zzzz281a                      macocco K.MACOCCO           92     23     39
+CATALOPY MODIF commande/affe_cara_elem       macocco K.MACOCCO          597      5      4
+ FORTRAN MODIF algeline/op0032               macocco K.MACOCCO          271      7      3
+ FORTRAN MODIF algeline/op0044               macocco K.MACOCCO          788      7      3
+ FORTRAN MODIF algeline/op0045               macocco K.MACOCCO         1229      7      3
+ FORTRAN MODIF algorith/lc0000               macocco K.MACOCCO          689      3      3
+ FORTRAN MODIF algorith/nmchab               macocco K.MACOCCO          449      4      2
+ FORTRAN MODIF algorith/nmcomp               macocco K.MACOCCO          182      3      3
+ FORTRAN MODIF algorith/nmcrer               macocco K.MACOCCO          104      3      2
+ FORTRAN MODIF algorith/nmplru              bargelli R.BARGELLINI       205     17      7
+ FORTRAN MODIF algorith/redece               macocco K.MACOCCO          272      3      3
+ FORTRAN MODIF calculel/me2mme               macocco K.MACOCCO          623     17      1
+ FORTRAN MODIF calculel/mearcc               macocco K.MACOCCO          200     20      6
+ FORTRAN MODIF elements/eqcara               macocco K.MACOCCO          286     11      5
+ FORTRAN MODIF elements/shbcsf               macocco K.MACOCCO           52     13      7
+ FORTRAN MODIF elements/te0330               macocco K.MACOCCO          185     21      6
+ FORTRAN MODIF elements/te0408               macocco K.MACOCCO          175     24      4
+ FORTRAN MODIF elements/te0411               macocco K.MACOCCO          266      3      3
+ FORTRAN MODIF elements/te0477               macocco K.MACOCCO          467      9     45
+ FORTRAN MODIF elements/te0531               macocco K.MACOCCO          117      6      3
+ FORTRAN MODIF modelisa/calcsp               macocco K.MACOCCO          219     14     12
+ FORTRAN MODIF prepost/lrmpga                macocco K.MACOCCO          347     12     10
+  PYTHON MODIF Execution/E_SUPERV            macocco K.MACOCCO          400      4      4
+  PYTHON MODIF Messages/calculel4            macocco K.MACOCCO          406      9      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    2         399       399              +399
+ MODIF :   36       14048       967    1567      -600
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   38       14447      1366    1567      -201 
