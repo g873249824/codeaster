@@ -3,9 +3,9 @@
       CHARACTER*16      OPTION,NOMTE
 
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 13/01/2011   AUTEUR PELLET J.PELLET 
+C MODIF ELEMENTS  DATE 25/10/2012   AUTEUR CHANSARD F.CHANSARD 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -24,7 +24,7 @@ C
 C FONCTIONS REALISEES:
 C
 C      CALCUL DE LA DENSITE DE DISSIPATION
-C      A L'EQUILIBRE POUR LES ELEMENTS DKT
+C      A L'EQUILIBRE POUR LES ELEMENTS DKTG ET LA LOI GLRC_DM
 C      .SOIT AUX POINTS D'INTEGRATION : OPTION 'DISS_ELGA'
 C      .SOIT AUX NOEUDS               : OPTION 'DISS_ELNO'
 C      .SOIT L INTEGRALE PAR ELEMENT  : OPTION 'ENER_DISS'
@@ -55,56 +55,34 @@ C------------FIN  COMMUNS NORMALISES  JEVEUX  --------------------------
       
       INTEGER    NNOMX 
       PARAMETER (NNOMX=4)
-      INTEGER    NBSM 
-      PARAMETER (NBSM=3)
       INTEGER    NPGMX 
       PARAMETER (NPGMX=4)
       
-      REAL*8   PGL(3,3),DM(3,3),DF(3,3),DMF(3,3),DC(4),DCI(4),COEF,DEUX
-      REAL*8   DMC(3,2),DFC(3,2),T2EV(4),T2VE(4),T1VE(9),EPS(3),KHI(3)
-      REAL*8   BF(3,3*NNOMX),BM(3,2*NNOMX),UM(2,NNOMX),UF(3,NNOMX)
-      REAL*8   UL(6,NNOMX),QSI,ETA,XYZL(3,4),JACOB(5),POIDS,CARA(25)
-      REAL*8   NMM(NBSM),NMF(NBSM),MFF(NBSM),DISSE(NPGMX),DISSP(NPGMX)
-      REAL*8   DISST(NPGMX),DSE,DSP,DST,AUXM(NNOMX),AUXF(NNOMX)
-      REAL*8   AUXT(NNOMX),ENELMF(NPGMX),DUM(2,NNOMX),DUF(3,NNOMX)
-      REAL*8   DUL(6,NNOMX),EFFINT(32),EFFGT(32),R8B(8),EP,SEUIL
-      REAL*8   HIC,COEHSD,NBSP,EBID(6),TM,TREF,SREF
-      REAL*8   SECHM,HYDRM
+      REAL*8   PGL(3,3),QSI,ETA,XYZL(3,4),JACOB(5),POIDS,CARA(25)
+      REAL*8   DISSE(NPGMX),DISSP(NPGMX),DISST(NPGMX),DSE,DSP,DST
+      REAL*8   AUXM(NNOMX),AUXF(NNOMX),AUXT(NNOMX)
+      REAL*8   R8B(8),EP,SEUIL
       
       INTEGER  NDIM,NNO,NNOEL,NPG,IPOIDS,ICOOPG,IVF,IDFDX,IDFD2,JGANO
-      INTEGER  JGEOM,MULTIC,IPG,K,INO,JDEPM,ISIG,JSIG,IDENER,NMCPI,IMATE
-      INTEGER  ICOMPO,ICACOQ,I,NCMP,ICONTP,JVARI,NBVAR,JTAB(7),IVPG
-      INTEGER  JNBSPI,NBCOU,NPGH,IRET,ICOU,IGAUH,ISP,TMA(3,3)
+      INTEGER  JGEOM,IPG,IDENER,IMATE
+      INTEGER  ICOMPO,ICACOQ,I,NCMP,JVARI,NBVAR,JTAB(7),IRET
       
-      CHARACTER*16 COMPOR,VALK(2)  
-      LOGICAL  GRILLE,ELASCO,DKQ,DKG,LKIT,COUP     
+      CHARACTER*16 VALK(2)  
+      LOGICAL  DKQ,LKIT     
       
-      DEUX   = 2.D0
       DKQ = .FALSE.
-      DKG = .FALSE.
 
-      IF (NOMTE(1:8).EQ.'MEDKQU4 ') THEN
+      IF (NOMTE(1:8).EQ.'MEDKQG4 ') THEN
         DKQ = .TRUE.
-      ELSEIF (NOMTE(1:8).EQ.'MEDKQG4 ') THEN
-        DKQ = .TRUE.
-        DKG = .TRUE.
-      ELSEIF (NOMTE(1:8).EQ.'MEDKTR3 ') THEN
-        DKQ = .FALSE.
       ELSEIF (NOMTE(1:8).EQ.'MEDKTG3 ') THEN
         DKQ = .FALSE.
-        DKG = .TRUE.
       ELSE
         CALL U2MESK('F','ELEMENTS_34',1,NOMTE)
       END IF
 
-C      CALL ELREF5(' ','RIGI',NDIM,NNO,NNOS,NPG,IPOIDS,ICOOPG,
-C     +                                         IVF,IDFDX,IDFD2,JGANO)
       CALL ELREF5(' ','RIGI',NDIM,NNO,NNOEL,NPG,IPOIDS,ICOOPG,
      +                                         IVF,IDFDX,IDFD2,JGANO)
       
-      GRILLE = .FALSE.
-      IF (NOMTE(1:8).EQ.'MEGRDKT ')  GRILLE = .TRUE.
-
       CALL JEVECH('PGEOMER','L',JGEOM)
       CALL JEVECH('PCOMPOR','L',ICOMPO)
       IF (NNO.EQ.3) THEN
@@ -116,7 +94,6 @@ C     +                                         IVF,IDFDX,IDFD2,JGANO)
       LKIT = ZK16(ICOMPO)(1:7).EQ.'KIT_DDI'
 
       IF ( ZK16(ICOMPO)(1:7).EQ.'GLRC_DM'.OR. 
-     &     ZK16(ICOMPO)(1:11).EQ.'GLRC_DAMAGE'.OR. 
      &   (LKIT  .AND. ZK16(ICOMPO+7)(1:7).EQ.'GLRC_DM' ) 
      &   ) THEN
 
@@ -145,28 +122,9 @@ C     +                                         IVF,IDFDX,IDFD2,JGANO)
       DSP = 0.0D0
       DST = 0.0D0
       
-      IF ( GRILLE ) THEN
-C        TYPMOD(2) = 'MEGRDKT '
-        NPGH = 1
-        COEF = DEUX
-      ELSE
-        NPGH = 3
-      END IF
-
       READ (ZK16(ICOMPO-1+2),'(I16)') NBVAR
       EP = ZR(ICACOQ)
       
-      IF (DKG) THEN
-        NBCOU = 1
-      ELSE
-        CALL JEVECH('PNBSP_I','L',JNBSPI)
-        NBCOU=ZI(JNBSPI-1+1)
-
-        HIC = EP/NBCOU
-      ENDIF    
-
-      IF (NBCOU.LE.0) CALL U2MESK('F','ELEMENTS_36',1,ZK16(ICOMPO-1+6))
-
 C ---- BOUCLE SUR LES POINTS D'INTEGRATION :
 C      ===================================
       DO 20 IPG = 1, NPG
@@ -176,71 +134,30 @@ C      ===================================
          IF ( DKQ ) THEN
            CALL JQUAD4 ( XYZL, QSI, ETA, JACOB )
            POIDS = ZR(IPOIDS+IPG-1)*JACOB(1)
-C           CALL DXQBM ( QSI, ETA, JACOB(2), BM )
-C           CALL DKQBF ( QSI, ETA, JACOB(2), CARA, BF )
          ELSE
            POIDS = ZR(IPOIDS+IPG-1)*CARA(7)
-C           CALL DXTBM ( CARA(9), BM )
-C           CALL DKTBF ( QSI, ETA, CARA, BF )
          ENDIF
 
         CALL JEVECH('PMATERC','L',IMATE)
-        IF(ZK16(ICOMPO)(1:7).EQ.'GLRC_DM') THEN
 
-          CALL CRGDM(ZI(IMATE),'GLRC_DM         ',TMA,R8B(1),R8B(2),
-     &               R8B(3),R8B(4),R8B(5),R8B(6),R8B(7),SEUIL,R8B(8),EP,
-     &               .FALSE.)
-
-        ENDIF  
+        CALL CRGDM(ZI(IMATE),'GLRC_DM         ',R8B(1),R8B(2),
+     &             R8B(3),R8B(4),R8B(5),R8B(6),R8B(7),SEUIL,R8B(8),EP,
+     &             .FALSE.)
 
 C  --    CALCUL DE LA DENSITE D'ENERGIE POTENTIELLE ELASTIQUE :
 C        ==========================================================
          IF ((OPTION(1:4).EQ.'DISS') .OR. (OPTION(6:9).EQ.'DISS')) THEN
 
            NCMP = JTAB(6)*JTAB(7)
-           NBSP=JTAB(7)
            
-           IF(DKG) THEN
-             DISSE(IPG) = (ZR(JVARI-1 + (IPG-1)*NBVAR + 1) +
-     &                     ZR(JVARI-1 + (IPG-1)*NBVAR + 2))*SEUIL
-             DISSP(IPG) = 0.0D0
+           DISSE(IPG) = (ZR(JVARI-1 + (IPG-1)*NBVAR + 1) +
+     &                   ZR(JVARI-1 + (IPG-1)*NBVAR + 2))*SEUIL
+           DISSP(IPG) = 0.0D0
            
-             DISST(IPG) = DISSE(IPG) + DISSP(IPG)
+           DISST(IPG) = DISSE(IPG) + DISSP(IPG)
            
-             DSE = DSE + DISSE(IPG)*POIDS
-C             DSP = DSP + DISSP(IPG)*POIDS
-C             DST = DST + DISST(IPG)*POIDS
-             DST = DSE
-           ELSE
-             DO 80,ICOU = 1,NBCOU
-               DO 70,IGAUH = 1,NPGH
-                 ISP=(ICOU-1)*NPGH+IGAUH
-                 IVPG = ((IPG-1)*NBSP + ISP-1)*NBVAR
-
-C       -- COTE DES POINTS D'INTEGRATION
-C       --------------------------------
-                IF (IGAUH.EQ.1) THEN
-                  IF (GRILLE) THEN
-                  ELSE
-                    COEF = 1.D0/3.D0
-                  END IF
-                ELSE IF (IGAUH.EQ.2) THEN
-                  COEF = 4.D0/3.D0
-                ELSE
-                  COEF = 1.D0/3.D0
-                END IF
-                COEHSD = COEF*HIC/DEUX
-                 
-                R8B(1) = ZR(JVARI + IVPG)*SEUIL*COEHSD
-                DISSE(IPG) = DISSE(IPG) + R8B(1)
-                DSE = DSE + R8B(1)*POIDS
- 70            CONTINUE
- 80          CONTINUE
-             DISSP(IPG) = 0.0D0
-             DISST(IPG) = DISSE(IPG)
-             DST = DSE
-
-           ENDIF  
+           DSE = DSE + DISSE(IPG)*POIDS
+           DST = DSE
 
          ENDIF
 C

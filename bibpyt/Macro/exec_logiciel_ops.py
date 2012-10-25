@@ -1,8 +1,8 @@
-#@ MODIF exec_logiciel_ops Macro  DATE 15/03/2011   AUTEUR ASSIRE A.ASSIRE 
+#@ MODIF exec_logiciel_ops Macro  DATE 25/10/2012   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -182,7 +182,7 @@ def exec_logiciel_ops(self, LOGICIEL, ARGUMENT, MACHINE_DISTANTE, MAILLAGE, SALO
          mode_lancement = CMD_EXTERNE
          cmd = '%(prog)s %(options)s -o %(fichOUT)s %(fichIN)s'
          d_para['prog'] = osp.join(aster.repout(), 'gmsh')
-         d_para['options'] = ('-3',)
+         d_para['options'] = ('-3 -format msh',)
 
       elif dMCF['FORMAT'] == 'GIBI':
          mode_lancement = CMD_EXTERNE

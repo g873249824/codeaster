@@ -1,8 +1,8 @@
-#@ MODIF algorith5 Messages  DATE 30/06/2010   AUTEUR DELMAS J.DELMAS 
+#@ MODIF algorith5 Messages  DATE 25/10/2012   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2007  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -289,12 +289,6 @@ On n'a pas trouvé le ddl DZ pour le noeud  %(k1)s .
 
 67 : _("""
  algorithme de DEVOGE: développement "AMOR_GENE" non implanté.
-"""),
-
-68 : _("""
- algorithme ITMI :
- il faut renseigner obligatoirement l'un ou l'autre des mots cles :
- AMOR_REDUIT, AMOR_GENE
 """),
 
 69 : _("""

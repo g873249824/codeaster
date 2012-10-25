@@ -1,8 +1,8 @@
       SUBROUTINE GEFACT (DUREE,NOMINF)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 16/11/2009   AUTEUR DURAND C.DURAND 
+C MODIF ALGORITH  DATE 25/10/2012   AUTEUR CHANSARD F.CHANSARD 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2003  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -221,24 +221,24 @@ C     DANS LE CAS OU CETTE DISCRETISATION EST CONSERVEE
         DFREQ = PAS
         DUREE = 1.D0 / DFREQ
         FREQI = ZR(LVAL1)
-        FRINIT = FREQI
+        FRINIT = MOD(FREQI,DFREQ)
 
         NBPOIN = 2**(INT(LOG(FREQF/DFREQ)/LOG(2.D0))+1)
         IF (LNBPN) THEN
           IF (NBPOIN.GT.NBPINI ) THEN
-        VALI = NBPOIN
-        CALL U2MESG('A','ALGORITH15_12',0,' ',1,VALI,0,0.D0)
+            VALI = NBPOIN
+            CALL U2MESG('A','ALGORITH15_12',0,' ',1,VALI,0,0.D0)
           ELSE
             PUI2  = LOG(DBLE(NBPINI))/LOG(2.D0)
             PUI2D = ABS( PUI2 - AINT( PUI2 ))
             PUI3D = ABS( 1.D0 - PUI2D )
             IF (PUI2D.GE.1.D-06 .AND. PUI3D.GE.1.D-06) THEN
-              NBPOIN = 2**(INT(PUI2)+1)
+              NBPINI = 2**(INT(PUI2)+1)
               CALL U2MESS('A','ALGORITH3_80')
             ENDIF
-          ENDIF
+            NBPOIN = NBPINI
+          ENDIF         
         ENDIF
-
       ELSE
 C 1.2.2 CAS OU ON PEUT INTERPOLER L INTERSPECTRE
 
@@ -357,6 +357,10 @@ C         DE LA DES QUELLES LA MATRICE EST NULLE---
           LPREM = .FALSE.
         ENDIF
    70 CONTINUE
+C     ------------------------------------------------------------------
+C     --- CHANGER LA FREQ INIT. A 0 HZ POUR LE CAS SANS INTERPOL
+      IF (LINTER) ZR(LVAL)=0.D0
+C     ------------------------------------------------------------------
       LVAL1 = LVAL + NBPT1
 C
 C     --- POUR CHAQUE FONCTION CALCUL DE X,Y POUR CHAQUE FREQ.
@@ -374,8 +378,8 @@ C     (ON PROLONGE PAR 0 EN DEHORS DE (FREQI,FREQF)), PUIS ON STOCKE ---
             ZR(IY) = 0.D0
           ELSE
             IF (LINTER) THEN
-              RESURE = ZR(LVAL2+NBVAL+2*(IPAS-1))
-              RESUIM = ZR(LVAL2+NBVAL+2*(IPAS-1)+1)
+              RESURE = ZR(LVAL2+NBVAL+2*(IPAS-IINF-1))
+              RESUIM = ZR(LVAL2+NBVAL+2*(IPAS-IINF-1)+1)
             ELSE
               CALL FOINTC('F',NOMFON,0,K8B,FREQ,RESURE,RESUIM,IER)
             ENDIF

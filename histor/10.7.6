@@ -1,0 +1,810 @@
+========================================================================
+Version 10.7.6 du : 26/10/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 10/25/2012 - 02:15:08
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019537 DU 2012-09-19 14:55:00
+TYPE anomalie concernant Code_Aster (VERSION 10.8)
+TITRE
+    [FORMA] DEFI_LIST_INST/METHODE='AUTO' dxc3xa9coupe sans fin en NEW10
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Dans le calcul joint tiré de la formation, en NEW10, le calcul en METHODE='AUTO' de
+   DEFI_LIST_INST ne s'arrête jamais. Il ne semble jamais atteindre le pas de découpe minimal
+   (SUBD_PAS_MINI) alors que c'est le cas en NEW11.
+   
+   
+   Analyse :
+   ---------
+   
+   It's not a bug, it's a feature.
+   
+   En NEW10 : pendant la subdivision du pas de temps, on regarde si le nouveau pas de temps
+   est inférieur à SUBD_PAS_MINI (0 par défaut). Comme il n'est pas renseigné, on s'arretera
+   en erreur F que si le nouveau pas de temps est strictement inférieur à 0 (dans nmdcei.f).
+   Ce qui n'est bien sur jamais le cas !!
+   Comme on est en gestion AUTO, il n'y a pas de NIVEAU, donc impossible de s'arrêter avec
+   SUBD_NIVEAU. La seule cause d'arrêt est le CPU_LIMIT. Jusque la, rien d'anormal.
+   
+   En NEW11 : on s'attend au même comportement, et pourtant, le calcul s'arrête bien avant le
+   CPU_LIMIT. Pourquoi ? et bien parce que lors de la reprogrammation du sous-découpage le
+   test d'émission de l'erreur F sur SUBD_PAS_MINI (PASMIN) est devenu (dans nmdecv.) :
+   DT.LT.PASMIN .OR.  DT.LE.R8PREM()
+   En clair, on s'arrête de sous-découper quand le pas de temps est en dessous de la
+   précision machine (ce qui semble raisonnable).
+   
+   
+   Solution :
+   ----------
+   
+   Pour s'arrêter plus tôt en NEW10, je propose que l'utilisateur mette SUBD_PAS_MINI
+   différent de 0.
+   
+   Pour améliorer la programmation en NEW10, on peut :
+   - soit rajouter le test DT<R8PREM() dans nmdcei.f
+   - soit mettre une valeur par défaut non nulle de SUBD_PAS_MINI en gestion AUTO.
+   
+   Je propose la 1ere solution car elle est coïncide avec celle en NEW11.
+   
+   impact (NEW1O uniquement) : nmdcei.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    etude fournie
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR devesa       DEVESA Georges         DATE 10/25/2012 - 02:15:08
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019603 DU 2012-09-27 16:32:21
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Copie de modes par COPMOD et COPMO2
+FONCTIONNALITE
+   Un certain nombre de routines appellent simultanément les routines de copie de modes avec ou sans conversion 
+   de numérotation COPMO2 et COPMOD.
+   
+   Pour la plupart (HARM75 MDTR74 OP0072 OP0079 PROJMC PROJMR REGENE TRAN75 TRAN77) le distinguo semble être 
+   basé selon que la base de projection soit un MODE_GENE (COPMOD) ou autre chose, généralement un MODE_MECA 
+   (COPMO2) et cela semble correct.
+   
+   Par contre, 3 routines (IREDM1 OP0162 OP0163) distinguent les appels à COPMOD ou COPMO2 selon la présence ou 
+   l'absence d'une interface dynamique. Or cela ne correspond plus à la réalité présente car on peut avoir 
+   besoin en sous-structuration statique d'une interface dynamique avec une base de Ritz quelconque et il faudra 
+   quand même faire appel à COPMO2. Depuis la version 10.2.3 on peut liaisonner les interfaces avec des macro-
+   éléments bâtis sur des modes quelconques qu'on doit relier à des degrés physiques de liberté d'interface par 
+   la donnée d'une interface dynamique. Or faire appel dans ce cas à COPMOD pourra induire des modes d'interface 
+   faux pour la détermination des impédances de sol ou de macro-élément. Cf. une étude Laplace-temps classique. 
+   Le plus simple est alors de supprimer cette condition de distinction et alors on fait appel à COPMO2 
+   systématiquement, ce qui ne coûte pas tellement plus cher.
+   
+   Enfin la routine ORTH99 appelle COPMOD si la base de projection est un MODE_GENE ou un MODE_MECA. Cela semble 
+   correspondre à un état ancien quand MODE_MECA ne désignait que les modes propres et pas les modes statiques 
+   ou les bases de Ritz par exemple. On supprime donc MODE_MECA de la condition d'appel à COPMOD.
+   
+   Les routines impactées sont donc : IREDM1 OP0162 OP0163 ORTH99
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.2.3
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.2.3
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ?tude MISS
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR alarcon      ALARCON Albert         DATE 10/25/2012 - 02:15:09
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018291 DU 2012-01-25 15:38:17
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Appariement manuel des frequences dans le mode dynamique de MACR_RECAL
+FONCTIONNALITE
+   Problème
+   ======================
+   
+   Dans le cas particulier de la dynamique, MACR_RECAL cherche à optimiser une fonctionnelle
+   composé de l'écart expérimental-numérique combinant l'écart des fréquences propres (FF) et
+   du critère de MAC. Souvent, lorsque le modèle est loin de l'objectif, il peut y avoir un
+   désappariement dans l'ordre des modes. C'est pourquoi MACR_RECAL propose la possibilité de
+   faire un appariement manuel des modes au fur et à mesure de l'optimisation (
+   APPARIEMENT_MANUEL='OUI' ) en faisant apparaître une fenêtre de MAC et laissant le choix
+   de l'appariement à l'utilisateur. 
+   Dans l'état actuel, les permutations éventuelles des modes sont bien  prises en compte
+   pour le critère de MAC, mais elles sont laissées dans l'état initial pour le cas des FF, à
+   l'insu de l'utilisateur.
+   On n'optimise donc pas la fonctionnelle proposée à l'utilisateur, conduisant
+   potentiellement à des résultats faux.
+   
+   Corrections et changements
+   ============================
+   
+   A chaque fois que l'on demande l'information de l'appariement, le choix utilisateur est
+   stockée pour, à la fin du calcul esclave en cours, venir permuter la table des fréquences
+   associée. Pour cela, on récupère en Python l'information de la table des fréquences
+   initiale, on la permute, on détruit le concept aster de type table initial, et on refait
+   un nouveau CREA_TABLE du même nom avec les valeurs permutées. 
+   
+   Par ailleurs, et afin d'éviter des erreurs lors de cette permutation, on modifie la
+   fenêtre de MAC affichée pour que l'utilisateur ne puisse permuter que les colonnes de
+   cette matrice. Cela n'enlève aucune généralité au choix utilisateur (les matrices sont
+   symétriques) mais élimine toute source d'erreur lorsqu'on affecte ce choix aux fréquences.
+   
+   On profite de cette fiche pour permettre l'apparition des fenêtres MAC pour les
+   algorithmes hybride, génétique et Levenberg (seul hybride était activé jusqu'à présent),
+   pouvant tous être utiles en dynamique.
+   
+   
+   Sources impactées
+   ======================
+   reca_mac.py
+   recal.py
+   macr_recal_ops.py
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.1.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.1.2
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    valid? sur sdls121a en mode manuel
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR berro        BERRO Hassan           DATE 10/25/2012 - 02:15:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018568 DU 2012-03-16 14:02:13
+TYPE evolution concernant Code_Aster (VERSION 10.5)
+TITRE
+    Difference des valeurs RMS calculees en frequentiel et en temporel
+FONCTIONNALITE
+   . . . . . . . . . ********************
+   . . . . . . . . .* Résumé du problème *
+   . . . . . . . . . ********************
+   
+   Dans le cadre des simulations en Interaction Fluide-Structure, on remarque une difference 
+   dans les niveaux de réponse structurelle à une excitation fluide turbulente selon le type 
+   de calcul: spectral ou temporel.
+   
+   . . . . . . . . . ****************************
+   . . . . . . . . .* Identification du problème *
+   . . . . . . . . . ****************************
+   
+   Je reviens sur cette fiche après quelques mois de travail sur les opérateurs IFS. Suite 
+   à mes analyses de chaque opérateur impliqué dans la chaîne de calcul spectral-temporel, 
+   j'ai la certitude que le problème vient de l'utilisation de l'opérateur GENE_FONC_ALEA 
+   avec l'option INTERP='OUI'.
+   
+   Quand on demande l'interspectre d'excitation turbulente projeté sur base modale par le
+   moyen de l'opérateur PROJ_SPEC_BASE, on est obligé de définir la plage de fréquences ou le
+   spectre est calculé ainsi que sa discrétisation. (FREQ_INIT, FREQ_FIN, NB_POIN)
+   
+   Ensuite si on veut générer un signal temporel (aléatoire) à partir du spectre, on a le 
+   choix d'interpoler (ou pas) les valeurs du spectre entre deux discrétisations. Ce que j'ai
+   remarqué est que cette pratique ne fait qu'introduire du bruit supplémentaire sur le 
+   signal temporel. 
+   
+   Pour obtenir un "joli" signal temporel "joli" et par intégration
+   temporelle une réponse précise de la structure, on doit rechercher plutôt une 
+   discrétisation fine en temps.
+   
+   Vu que l'intégration temporelle s'effectue avec des pas de temps assez petits, on doit
+   vérifier que l'excitation temporelle turbulente est définie assez finement sur l'échelle
+   temporelle. On sait que :
+   
+   dt = (1/fmax)
+   
+   dt : discrétisation temporelle de l'excitation
+   fmax : fréquence maximale du spectre d'excitation (= FREQ_FIN de PROJ_SPEC_BASE)
+   
+   Il est donc préférable d'éteindre le spectre d'excitaion à des hautes fréquences avant de 
+   procéder à la génération du signal temporel.
+   
+   Le raffinement fine du pas fréquentielle (augmenter NB_POIN dans PROJ_SPEC_BASE) permet 
+   simplement d'augmenter la durée d'excitation.
+   
+   Le problème rencontré dans ce genre de cas-test est du à deux mauvaises pratiques 
+   d'utilisation (au moins pour le cas d'études en IFS):
+   
+   .1. Interpolation linéaire d'un spectre d'excitation non-linéaire.
+   . . 
+   . . Dans le test initial par André, nous avons les options suivantes :
+   . . 
+   . . << dans PROJ_SPEC_BASE >>
+   . . FREQ_INIT = 19.2675
+   . . FREQ_FIN .= 57.8025
+   . . NB_POIN. .= 2048 . . . << (appelons le NB_POIN_0)
+   . . . . La discrétisation du spectre original est donc de :
+   . . . . DF_0 = (FREQ_FIN-FREQ_INIT)/(NB_POIN_0-1) = 0.018825 Hz
+   . . 
+   . . << dans GENE_FONC_ALEA >>
+   . . INTERP . .= 'OUI'
+   . . NB_POIN. .= 2048 . . . << (appelons le NB_POIN_1)
+   . . . . La discrétisation du spectre interpolé avant génération de l'excitation est de :
+   . . . . DF_1 = (FREQ_FIN)/(NB_POIN_1-1) = 0.028237 Hz
+   . . 
+   . . . . DF_1 > DF_0
+   . . On a donc de l'information perdue sur le spectre *avant* même de générer le signal!
+   
+   .2. Raffinement insuffisant de l'excitation temporelle.
+   . .
+   . . L'excitation temporelle est définie avec une discrétisation :
+   . . DT_EXCIT = 1./(FREQ_FIN) = 17.3E-3 s
+   . .
+   . . L'intégration temporelle avec DYNA_TRAN_MODAL s'effectue avec un pas de temps :
+   . . DT_INTEG = 1.0E-3
+   . .
+   . . DT_EXCIT > DT_INTEG
+   . . Là aussi on a un problème car on ne connait pas assez finement le signal d'excitation.
+   
+   . . . . . . . . . **********
+   . . . . . . . . .* Solution *
+   . . . . . . . . . **********
+   
+   Pour corriger ces deux points, il suffit d'utiliser GENE_FONC_ALEA sans interpolation et
+   avec un nombre de points suffisant :
+   
+   VECTINT2 = GENE_FONC_ALEA ( INTE_SPEC. . . = SPPROJ, 
+   . . . . . . . . . . . . . . NUME_VITE_FLUI = 1, . . . . << A enlever pour la V11
+   . . . . . . . . . . . . . . INTERPOL . . . = 'NON',
+   . . . . . . . . . . . . . . NB_POIN. . . . = 16384, . . << = NB_POIN_0 * 8
+   . . . . . . . . . . . . . . NB_TIRAGE. . . = 1,);
+   
+   
+   Ici, NB_POIN devient un paramètre qui permettra de prolonger le spectre à des hautes 
+   fréquences pour obtenir un rendu plus propre en signal temporel.
+   
+   Pour calculer la nouvelle FREQ_MAX et la discrétisation du signal d'excitation, on procède 
+   comme la suite : 
+   
+   1. Calculer le pas de fréquence initial dans le spectre de PROJ_SPEC_BASE : 
+   . . DF_0 = (FREQ_FIN-FREQ_INIT)/(NB_POIN_0-1) = 0.018825 Hz
+   
+   2. Multiplier cette valeur par NB_POIN dans GENE_FONC_ALEA : 
+   . . FREQ_MAX = NB_POIN_1 * DF_0 = 308.4306 Hz
+   
+   3. La discrétisation temporelle du signal d'excitation est l'inverse de FREQ_MAX : 
+   . . DT = 1.0/FREQ_MAX = 3.242E-3 s
+   
+   4. Choisir un pas de temps d'intégration temporelle supérieure à DT.
+   
+   ========================================================================================
+   Bug dans GENE_FONC_ALEA avec INTERP = 'NON' 
+   ========================================================================================
+   
+   Si on fait l'appel précédent à GENE_FONC_ALEA, on tombe sur un bug très curieux.
+   
+   Le signal généré correspond à un spectre décalé vers la "gauche". Autrement dit, FREQ_INIT 
+   devient 0.0 et FREQ_FIN devient (FREQ_FIN-FREQ_INIT). Si le spectre est défini entre 10 et 
+   25 Hz, on obtient un signal temporel avec une empreinte fréquentielle entre 0 et 15 Hz!
+   
+   L'erreur est tracé et corrigé dans gefact.f dans les versions 10 et 11.
+   
+   ========================================================================================
+   
+   En faisant ces corrections on arrive à ces résultats :
+   
+   *********************************************************************
+   Calcul temporel : RMS = 1.46706E-04
+   Calcul spectral : RMS = 1.47323E-04
+   **************************************** Soit 0.4% d'écart **********
+   
+   . . . . . . . . . *******************
+   . . . . . . . . .* Résultats Faux ?? *
+   . . . . . . . . . *******************
+   
+   1. Pour la méthode avec interpolation, les résultats obtenus sont faux si le spectre 
+   d'origine n'est pas censé être interpolé linéairement.
+   
+   2. Pour la méthode sans interpolation et vu le bug précédent alors oui il y a un risque de
+   résultat faux **si le spectre qu'on utilise n'est pas défini à partir de f = 0.0 Hz**
+   
+   En analysant les tests de couverture du code, l'option INTERPOL='NON' de GENE_FONC_ALEA
+   n'est testé que dans zzzz180a. Dans ce test le spectre est défini à partir de f = 0 Hz. Du
+   coup le bug de décalage n'intervenait pas.
+   
+   . . . . . . . . . **********************************************
+   . . . . . . . . .* Donner un bon exemple dans les cas-tests IFS *
+   . . . . . . . . . **********************************************
+   
+   Les 4 cas-tests IFS faisant appel à GENE_FONC_ALEA le font avec interpolation, je propose 
+   de les passer tous en INTERP='NON' pour donner un bon exemple d'utilisation.
+   
+   sdnl112b sdnl112c sdll115b sdnl136a
+   
+   Les valeurs de tests de non-régression pour les calculs temporels ont du être modifiées.
+   
+   
+   . . . . . . . . . *********
+   . . . . . . . . .* Impacts *
+   . . . . . . . . . *********
+   
+   . fortran : gefact.f
+   cas-tests : sdnl112b sdnl112c sdll115b sdnl136a
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U2.06.14
+VALIDATION
+    sdnl112b sdnl112c sdll115b sdnl136a
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 15.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019515 DU 2012-09-18 08:08:17
+TYPE anomalie concernant Code_Aster (VERSION )
+TITRE
+    ITMI dans DYNA_VIBRA, le mot-cle AMOR_REDUIT n'est pas utilise
+FONCTIONNALITE
+   . . . . . . . . . ********************
+   . . . . . . . . .* Résumé du problème *
+   . . . . . . . . . ********************
+   
+   Le mot-clé AMOR_REDUIT est obligatoire dans DYNA_VIBRA > ITMI. Il ne devrait pas l'être
+   parce qu'on récupère systématiquement les amortissements ajoutés venant du fluide et
+   présents dans la base modale melas_flu.
+   
+   
+   . . . . . . . . . ***********************
+   . . . . . . . . .* Corrections apportées *
+   . . . . . . . . . ***********************
+   
+   1. On garde le mot-clé AMOR_REDUIT mais il devient facultatif. Après correction d'un bug
+   dans mditmi.f, il devient possible d'utiliser ce mot-clé pour renseigner les amortissements
+   modaux pour les modes non couplés avec le fluide.
+   
+   2. Clarifications dans la doc U de DYNA_VIBRA, méthode ITMI.
+   
+   . . . . . . . . . *********
+   . . . . . . . . .* Impacts *
+   . . . . . . . . . *********
+   
+   fortran : mditmi.f, mdveri.f
+   . . doc : U4.53.21
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.53.21
+VALIDATION
+    cas-tests ITMI
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 4.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019764 DU 2012-10-18 15:35:47
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW11.02.19, le cas-test sdnl112b est NOOK sur Rocks.
+FONCTIONNALITE
+   . . . . . . . . . ********************
+   . . . . . . . . .* Résumé du problème *
+   . . . . . . . . . ********************
+   
+   En NEW11.02.19, le cas-test sdnl112b est NOOK sur Rocks.
+   
+   . . . . . . . . . *********************
+   . . . . . . . . .* Analyse du problème *
+   . . . . . . . . . *********************
+   
+   Le problème vient du comptage des cycles de chargement par POST_FATIGUE qui donne un 
+   nombre légèrement différent (de 294 à 297) selon la machine, sur une durée simulée de ~ 8s.
+   
+   Avant mes modifications, la réponse temporelle de la structure était simulée sur une durée
+   de seulement 1 s. Du coup, il y avait un risque moindre que le comptage des cycles soit 
+   différent selon les machines. De plus, on imposait un pas de temps d'intégration qui est 
+   trop petit par rapport à la discrétisation de l'excitation temporelle du fluide 
+   (1.0E-5 vs. 1.3E-2)
+   
+   Avec mes modifications, j'ai mis en cohérence la valeur du pas de temps d'intégration et  
+   l'excitation temporelle de GENE_FONC_ALEA. Mais j'ai fait une erreur dans le mesure où je
+   n'ai pas vérifié que l'algorithme ITMI ne finissait pas par découper le pas de temps 
+   d'intégration.
+   
+   . . . . . . . . . ************
+   . . . . . . . . .* Correction *
+   . . . . . . . . . ************
+   
+   Je reviens en arrière par rapport à la durée simulée en temporelle (1 s). Quant au pas de 
+   temps d'intégration, j'arrive à le réduire vers 1.E-5 tout en gardant la cohérence avec 
+   l'excitation temporelle. (J'y arrive en augmentant la fréquence de coupure du spectre
+   d'entrée de GENE_FONC_ALEA)
+   
+   . . . . . . . . . *********
+   . . . . . . . . .* Impacts *
+   . . . . . . . . . *********
+   
+   .CAS-TEST : sdnl112b.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdnl112b
+DEJA RESTITUE DANS : 11.2.20
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 10/25/2012 - 02:15:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019463 DU 2012-09-11 13:35:11
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    AR08 montee de version MED3.0.6
+FONCTIONNALITE
+   But de l'évolution :
+   ===================
+   Mettre à niveau la librairie med-3.0.6 avant stabilisation.
+   
+   Réalisation :
+   ===========
+   On reconstruit la librairie sur les différentes plates-formes et on modifie les fichiers
+   de configuration pour pointer sur la nouvelle version.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    les 1951 tests utilisant med
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 10/25/2012 - 02:15:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019695 DU 2012-10-10 11:09:29
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Les tests zzzz118a, b, c et d doivent xc3xaatre en Intranet
+FONCTIONNALITE
+   Les tests zzzz118a, b, c et d doivent être en NIV_PUB_WEB=INTRANET car ils font appel à un
+   catalogue matériau qui n'est pas distribué.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz118*
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017696 DU 2011-10-12 11:27:03
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Version de GMSH utilisee par Aster
+FONCTIONNALITE
+   On propose de faire une légère évolution dans EXEC_LOGICIEL / MAILLAGE = GMSH : 
+   rajoute "-format msh" à la ligne de commande de GMSH.
+   
+   Ceci permet de rentre compatible EXEC_LOGICIEL avec les dernières versions de GMSH.
+   Accessoirement, le zzzz141a sera OK dans aster-full.
+   
+   Cette option étant compatible avec les anciennes versions de GMSH, on peut alors utiliser
+   n'importe quelle version de GMSH.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    zzzz141a
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019727 DU 2012-10-13 20:44:04
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    Le test ssnv101c doit etre en Intranet
+FONCTIONNALITE
+   Le test ssnv101c doit être en Intranet car il utilise un catalogue matériau qui n'est pas
+   diffusé à l'externe.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv101c
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR foucault     FOUCAULT Alexandre     DATE 10/25/2012 - 02:15:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018998 DU 2012-06-15 11:47:27
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    PETIT_REAC+KIT_HM
+FONCTIONNALITE
+   L'emploi du mode de déformation PETIT_REAC n'est pas bloqué alors qu'il n'est jamais pris
+   en compte dans les éléments finis de THM.
+   
+   solution conservative: 
+   Retirer PETIT_REAC et GROT_GDEP des fichiers python suivants:
+   kit_hhm.py
+   kit_hm.py
+   kit_thhm.py
+   kit_thm.py
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    SANS
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 10/25/2012 - 02:15:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019578 DU 2012-09-25 16:28:23
+TYPE anomalie concernant Code_Aster (VERSION 11.4)
+TITRE
+    Le calcul des options DISS_* ne devrait pas etre dispo pour les DKT
+FONCTIONNALITE
+   . . . . . . . . . ********************
+   . . . . . . . . .* Résumé du problème *
+   . . . . . . . . . ********************
+   
+   Initialement, l'énergie de dissipation (option DISS_****) a été programmée pour DKT avec
+   EIB et DKTG avec GLRC_DM. 
+   En 10.0.3, le développement pour DKT+EIB supprimé, mais le ménage n'a pas été fait
+   correctement dans le TE0413.
+   
+   . . . . . . . . . ***********************
+   . . . . . . . . .* Corrections apportées *
+   . . . . . . . . . ***********************
+   
+   1) enlever les références à tout autre élément que DKTG et DKQG 
+   
+   2) enlever les références à toute autre loi de comportement que GLRC_DM. 
+   
+   Il est actuellement possible de lancer l'option avec GLRC_DAMAGE, mais les résultats
+   obtenus sont faux. C'est la raison pour laquelle je mets RESU_FAUX, même si l'utilisateur
+   est en principe protégé par la documentation.
+   
+   3) dans le catalogue de la modélisation DKT, on supprime les options DISS_****
+   
+   4) enlever les références à la dissipation plastique et à la dissipation totale.
+   
+   Pour GLRC_DM, il n'y a que de la dissipation due à l'endommagement. Ces allusions ont
+   probablement été créées pour anticiper l'utilisation de GLRC_DAMAGE. Le champ DISS_****
+   comporte actuellement trois composantes : TOTALE ENDO PLAS. Or, PLAS vaut toujours 0 pour
+   GLRC_DM (pas de plasticité), donc TOTALE = ENDO. On supprime les deux composantes PLAS et
+   TOTALE.
+   
+   5) dans le catalogue commun aux modélisations DKTG / Q4GG, on supprime les références à
+   TOTALE et PLAS. Pour Q4GG, on précise en tête de fichier que les options DISS_**** ne sont
+   pas disponibles.
+   
+   6) dans grandeur_simple__.cata, on supprime PLAS et TOTALE du champ DISS_R
+   
+   7) dans les tests ssns106a et ssns106k, on fait un TEST_RESU sur la composante TOTALE de
+   DISS_****. On change le test pour le faire sur la composante ENDO.
+   
+   8) comme je n'ai trouvé nulle part dans la documentation les noms de composante du champ
+   DISS_****, je le rajoute dans la doc R de GLRC_DM et dans CALC_CHAMP.
+   
+   
+   . . . . . . . . . ***********************
+   . . . . . . . . .* Nettoyage bonus       *
+   . . . . . . . . . ***********************
+   
+   La routine CRGDM sert à récupérer les paramètres de la loi GLRC_DM. En son sein, on crée
+   une matrice 2x2 qui sert à passer d'un tenseur d'ordre 4 à un tenseur d'ordre 2, en
+   faisant office d'indirection. Ce tenseur est passé en argument, donc remonte dans les
+   sources un peu partout. Or, il n'est utilisé que dans la routine TANMGL qui opère sur la
+   matrice tangente. On supprime la création de la matrice 2x2 dans CRGDM, ce qui enlève un
+   argument inutile dans pas mal de routine, et on la crée au seul endroit où elle est
+   utilisée : dans TANMGL.
+   
+   
+   . . . . . . . . . ***********************
+   . . . . . . . . .* Validation            *
+   . . . . . . . . . ***********************
+   
+   Tous les cas-tests avec GLRC_DM et GLRC_DAMAGE (au cas où).
+   Tous les cas-tests avec l'option DISS_**** ou ENER_DISS.
+   
+   
+   . . . . . . . . . *********
+   . . . . . . . . .* Impacts *
+   . . . . . . . . . *********
+   
+   fortran       : cntmat.f lcgldm.f dxglrc.f crgdm.f lgdmvm.f tanmgl.f te0413.f
+   cata          : gener_medkg1.cata gener_medkt2.cata grandeur_simple__.cata
+   cas-test      : ssns106a ssns106k
+   documentation : U4.81.04 (CALC_CHAMP) et R7.01.32 (GLRC_DM)
+   
+   
+   . . . . . . . . . *******************
+   . . . . . . . . .* Remontée en NEW10 *
+   . . . . . . . . . *******************
+   
+   Les RESU_FAUX sont dus à la possibilité d'appeler DISS_**** avec GLRC_DAMA. 
+   Je trouve qu'il est inutile de tout remonter en NEW10. Je propose de faire ça au plus
+   simple en blindant l'appel de l'option, de sorte que le te0413 ne puisse être utilisé
+   qu'avec GLRC_DM. La correction est facile et je fournirai le source du TE.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.81.04 R7.01.32
+VALIDATION
+    tous les cas-tests avec DISS_ELGA, DISS_ELNO, ENER_DISS ou utilisant GLRC_DM ou GLRC_DAMAGE
+DEJA RESTITUE DANS : 11.2.20
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR debonnieres  DE BONNIERES Philippe   DATE 10/25/2012 - 02:15:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019699 DU 2012-10-10 13:21:41
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme quand alpha varie avec T dans META_LEMA_ANI
+FONCTIONNALITE
+   Dans la loi de comportement META_LEMA_ANI, je modifie deux routines 
+   Fortran : EDGMAT et LCEDGA pour ajouter aux arguments de EDGMAT les 
+   variables TROIKM et ALPHAM : module de compressibilite et coefficient 
+   de dilatation a l'instant moins (Ces 2 grandeurs etaient auparavant 
+   considerees comme independantes de la temperature).Je modifie egalement 
+   le nom de l'ancienne variable ALPHA en ALPHAP.
+   Dans LCEDGA, je mets a jour les expressions de DEPSTH et TRSIGP :
+           DEPSTH   = ALPHAP*(TP-TREF) - ALPHAM*(TM-TREF)
+           TRSIGP = TRSIGM*TROISK/TROIKM + TROISK*(TRDEPS-DEPSTH)
+   
+   Avec ces modifs, le nouveau test COMP010J (copiÃ© sur le COMP010E : 
+   validation d'une loi en anisotherme) que j'avais mis au point dans le 
+   cadre de la fiche 17094 fonctionne parfaitement : il valide donc cette 
+   correction de bug.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.2.11
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.2.11
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.07.110
+VALIDATION
+    COMP010J
+DEJA RESTITUE DANS : 11.2.20
+NB_JOURS_TRAV  : 12.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017094 DU 2011-06-09 12:26:47
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Validation du modele META_LEMA_ANI en anisotherme
+FONCTIONNALITE
+   J'introduis une nouvelle modelisation COMP010J dans le test COMP010 
+   pour valider la loi META_LEMA_ANI en anisotherme (voir fiche 19699).
+   Le principe est de calculer de deux faÃ§ons differentes (l'une 
+   classique et l'autre en mecanique pure en imposant des increments de 
+   deformation qui correspondent a la sollicitation liee a la dilatation 
+   thermique) les contraintes d'origine thermique.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.07.110
+VALIDATION
+    COMP010J
+DEJA RESTITUE DANS : 11.2.20
+NB_JOURS_TRAV  : 10.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR laverne      LAVERNE Jérôme       DATE 10/25/2012 - 02:15:17
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019064 DU 2012-06-27 09:40:53
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    CZM_TRA_MIX, probleme dans le calcul de la VI4
+FONCTIONNALITE
+   Problème dans la définition de la variable interne de post-traitement V4 (indicateur du niveau
+   d'endommagement) pour la loi CZM_TRA_MIX.
+   
+   VIP(4) est actuellement calculée avec le seuil à l'instant précédent alors qu'elle devrait
+   être calculée avec le seuil courant (mis à jour).
+   
+   Cela n'a qu'une petite conséquence sur les valeurs de post-traitement, il faut modifier
+   quelques test_resu dans ssnp118VWX.
+   
+   Doc V modifiées pour snp118VWX.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.3.15
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.3.15
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V6.03.118
+VALIDATION
+    ssnp118vwx
+DEJA RESTITUE DANS : 11.2.20
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST AJOUT comp010j                     chansard F.CHANSARD         443    443      0
+ CASTEST MODIF sdll115b                     chansard F.CHANSARD         791     22     26
+ CASTEST MODIF sdnl112b                     chansard F.CHANSARD         579     42     19
+ CASTEST MODIF sdnl112c                     chansard F.CHANSARD         647     46     25
+ CASTEST MODIF ssnp118v                     chansard F.CHANSARD         652      4      4
+ CASTEST MODIF ssnp118w                     chansard F.CHANSARD         623      4      4
+ CASTEST MODIF ssnp118x                     chansard F.CHANSARD         623      4      4
+ CASTEST MODIF ssnv101c                     chansard F.CHANSARD         416      3      3
+ CASTEST MODIF zzzz118a                     chansard F.CHANSARD         281      3      3
+ CASTEST MODIF zzzz118b                     chansard F.CHANSARD         161      3      3
+ CASTEST MODIF zzzz118c                     chansard F.CHANSARD          37      3      3
+ CASTEST MODIF zzzz118d                     chansard F.CHANSARD          35      3      3
+ FORTRAN MODIF algorith/edgmat              chansard F.CHANSARD         251     13      7
+ FORTRAN MODIF algorith/gefact              chansard F.CHANSARD         454     11      7
+ FORTRAN MODIF algorith/lcedga              chansard F.CHANSARD         433      7      7
+ FORTRAN MODIF algorith/lceitr              chansard F.CHANSARD         224      6      5
+ FORTRAN MODIF algorith/mditmi              chansard F.CHANSARD         362      6      5
+ FORTRAN MODIF algorith/mdveri              chansard F.CHANSARD          97      5      5
+ FORTRAN MODIF algorith/nmdcei              chansard F.CHANSARD         179      4      4
+ FORTRAN MODIF algorith/orth99              chansard F.CHANSARD         249      3      3
+ FORTRAN MODIF elements/cntmat              chansard F.CHANSARD         314      5      5
+ FORTRAN MODIF elements/crgdm               chansard F.CHANSARD         203      4      9
+ FORTRAN MODIF elements/dxglrc              chansard F.CHANSARD         471      5      5
+ FORTRAN MODIF elements/lcgldm              chansard F.CHANSARD         211      5      5
+ FORTRAN MODIF elements/lgdmvm              chansard F.CHANSARD         421      6      6
+ FORTRAN MODIF elements/tanmgl              chansard F.CHANSARD         106      9      7
+ FORTRAN MODIF elements/te0413              chansard F.CHANSARD         220     13     96
+ FORTRAN MODIF prepost/op0162               chansard F.CHANSARD         345      2      6
+ FORTRAN MODIF prepost/op0163               chansard F.CHANSARD         228      5      9
+ FORTRAN MODIF utilitai/iredm1              chansard F.CHANSARD         490      2      6
+  PYTHON MODIF Comportement/kit_hhm         chansard F.CHANSARD          55      3      3
+  PYTHON MODIF Comportement/kit_hm          chansard F.CHANSARD          55      3      3
+  PYTHON MODIF Comportement/kit_thhm        chansard F.CHANSARD          55      3      3
+  PYTHON MODIF Comportement/kit_thm         chansard F.CHANSARD          55      3      3
+  PYTHON MODIF Macro/exec_logiciel_ops      chansard F.CHANSARD         488      3      3
+  PYTHON MODIF Macro/macr_recal_ops         chansard F.CHANSARD         690      3      3
+  PYTHON MODIF Macro/reca_mac               chansard F.CHANSARD         130      5      4
+  PYTHON MODIF Macro/recal                  chansard F.CHANSARD        1558     23      1
+  PYTHON MODIF Messages/algorith5           chansard F.CHANSARD         343      2      8
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1         443       443              +443
+ MODIF :   38       13532       296     325       -29
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   39       13975       739     325      +414 
