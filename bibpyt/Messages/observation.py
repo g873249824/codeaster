@@ -1,8 +1,8 @@
-#@ MODIF observation Messages  DATE 17/01/2011   AUTEUR ABBAS M.ABBAS 
+#@ MODIF observation Messages  DATE 07/11/2012   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -23,14 +23,6 @@
 def _(x) : return x
 
 cata_msg = {
-
-3 : _("""
-Il y aura, au maximum, %(i1)d observations à chaque instant sélectionné pour cela.
-"""),
-
-4 : _("""
-Il y a %(i1)d observations et on ne peut pas en faire plus de %(i2)d.
-"""),
 
 5 : _("""
 On ne peut faire plus de %(i1)d SUIVI_DDL.

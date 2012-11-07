@@ -1,8 +1,8 @@
-#@ MODIF mecanonline3 Messages  DATE 04/04/2011   AUTEUR DESOZA T.DESOZA 
+#@ MODIF mecanonline3 Messages  DATE 07/11/2012   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -27,8 +27,7 @@ cata_msg = {
  Il y a trop de colonnes à afficher dans le tableau de convergence.
  La largeur maximale affichable est de 256 caractères, donc 14 colonnes maximum.
  Or vous avez <%(i1)d> colonnes !
- Si vous avez des colonnes SUIVI_DDL, supprimez-en.
- Sinon, utiliser la commande AFFICHAGE pour choisir les colonnes à afficher.
+ Supprimez des SUIVI_DDL ou désactivez INFO_RESIDU.
 """),
 
 2 : _("""

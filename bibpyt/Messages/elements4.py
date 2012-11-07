@@ -1,8 +1,8 @@
-#@ MODIF elements4 Messages  DATE 15/02/2011   AUTEUR FLEJOU J-L.FLEJOU 
+#@ MODIF elements4 Messages  DATE 07/11/2012   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -33,6 +33,11 @@ cata_msg = {
 
 3 : _("""
  pour l'option INDIC_SEUIL, les seules relations admises sont "vmis_isot_line", "vmis_isot_trac"  et "vmis_cine_line" .
+"""),
+
+14 : _("""
+  Vous utilisez un élément de type multifibres <%(k1)s>.
+  Il faut que sous COMP_INCR le mot clef RELATION='MULTIFIBRE'.
 """),
 
 15 : _("""

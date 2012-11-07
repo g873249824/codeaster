@@ -3,9 +3,9 @@
       IMPLICIT NONE
 C ----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 11/05/2011   AUTEUR SELLENET N.SELLENET 
+C MODIF ALGORITH  DATE 07/11/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -162,6 +162,8 @@ C              --- LES PARAMETRES ---
                ZK8(LADPA) = CHMAT
                CALL RSADPA(RESU,'E',1,'CARAELEM',IMODE,0,LADPA,K8B)
                ZK8(LADPA) = CARAEL
+               CALL RSADPA(RESU,'E',1,'FREQ',IMODE,0,LTYPE,K8B)
+               ZR(LTYPE) = ZERO               
             ENDIF
  50      CONTINUE
       ENDIF
@@ -214,6 +216,8 @@ C              --- LES PARAMETRES ---
                ZK8(LADPA) = CHMAT
                CALL RSADPA(RESU,'E',1,'CARAELEM',IMODE,0,LADPA,K8B)
                ZK8(LADPA) = CARAEL
+               CALL RSADPA(RESU,'E',1,'FREQ',IMODE,0,LTYPE,K8B)
+               ZR(LTYPE) = ZERO
             ENDIF
  60      CONTINUE
       ENDIF
@@ -266,6 +270,8 @@ C              --- LES PARAMETRES ---
                ZK8(LADPA) = CHMAT
                CALL RSADPA(RESU,'E',1,'CARAELEM',IMODE,0,LADPA,K8B)
                ZK8(LADPA) = CARAEL
+               CALL RSADPA(RESU,'E',1,'FREQ',IMODE,0,LTYPE,K8B)
+               ZR(LTYPE) = ZERO
             ENDIF
  66      CONTINUE
       ENDIF

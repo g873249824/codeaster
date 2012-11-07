@@ -1,0 +1,730 @@
+========================================================================
+Version 10.7.7 du : 08/11/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 11/07/2012 - 01:18:49
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019541 DU 2012-09-20 08:00:14
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Plantage dans l'affichage des colonnes de SUIVI_DDL
+FONCTIONNALITE
+   Problème
+   ========
+   
+   
+   Dans l'étude ci-jointe on a le message d'erreur ci-dessous en présence de SUIVI_DDL :
+   
+    Instant de calcul:  6.048000000000e+05 - Niveau de dÃ©coupe: 1
+   ----------------------------------------------------------------------------------------------------
+   ---
+   |     NEWTON     |     RESIDU     |     RESIDU     |     OPTION     |    SUIVI       |   
+   SUIVI     
+    |
+   |    ITERATION   |     RELATIF    |     ABSOLU     |   ASSEMBLAGE   |     DDL        |   
+    DDL      
+    |
+   |                | RESI_GLOB_RELA | RESI_GLOB_MAXI |                |     1          |   
+    2        
+    |
+   ----------------------------------------------------------------------------------------------------
+   ---
+    STRUCT INTROUVABLE DANS LA LISTE 
+      
+      !-------------------------------------------------------!
+      ! <F> <DVP_1>                                           !
+      !                                                       !
+      !    Erreur de programmation : condition non respectÃ©e. !
+      !                                                       !
+      !                                                       !
+      ! Cette erreur est fatale. Le code s'arrÃªte.            !
+      ! Il y a probablement une erreur dans la programmation. !
+      ! Veuillez contacter votre assistance technique.        !
+      !-------------------------------------------------------!
+      
+   Liste des appels successifs (option -traceback)
+   Image              PC                Routine            Line        Source             
+   libintlc.so.5      00007F37E76EDB2D  Unknown               Unknown  Unknown
+   libintlc.so.5      00007F37E76EC635  Unknown               Unknown  Unknown
+   libifcoremt.so.5   00007F37E7CC4805  Unknown               Unknown  Unknown
+   libifcoremt.so.5   00007F37E7C3399C  Unknown               Unknown  Unknown
+   asterd             0000000000571560  trabck_                    34  trabck.F
+   asterd             000000000055A163  u2mesg_                   115  u2mesg.f
+   asterd             000000000052A692  u2mess_                    37  u2mess.f
+   asterd             000000000052A580  assert_                    30  assert.f
+   asterd             000000000175A5C5  oblgip_                    89  oblgip.f
+   asterd             0000000000F3C187  oblgop_                    53  oblgop.f
+   asterd             0000000000F3A299  nmimcr_                    63  nmimcr.f
+   asterd             0000000001975E18  nmsuiy_                    54  nmsuiy.f
+   asterd             000000000197597E  nmsui3_                   137  nmsui3.f
+   asterd             00000000011C5F95  nmsuiv_                   151  nmsuiv.f
+   asterd             0000000000EA4BDC  nmnewt_                   245  nmnewt.f
+   asterd             00000000007D11D0  op0070_                   200  op0070.f
+   
+   Solution
+   ========
+   
+   Le problème vient de la confusion entre le NOMBRE d'occurrences de SUIVI_DDL dans
+   STAT_NON_LINE et le nombre de SUIVI_DDL effectif.
+   En effet, si le SUIVI_DDL est une liste de deux noeuds -> on a DEUX SUIVI_DDL pour UNE
+   occurrence du mot-clef
+   
+   Première correction: bien prendre le nombre de SUIVI_DDL et non le nombre d'occurrences de
+   mots-clefs dans les routines nminim.f et nmimac.f (initialisation et activation de
+   l'affichage)
+   
+   Problème lié: l'utilisateur peut nommer ses colonnes (mot-clef TITRE). Problème: il ne
+   peut que nommer des occurrences de mots-clefs. Dans l'exemple: deux occurrences, trois
+   SUIVI_DDL -> le troisième titre n'est pas initialisé.
+   Je corrige aussi les routines nmcrdd.f et nmcrdn.f
+   
+   Validation: l'étude + modification du cas-test ssnv104e pour valider ce cas
+   
+   NB: le problème n'est que pour SUIVI_DDL (pas d'impact sur OBSERVATION) à cause de la
+   modification des SD sur
+   l'impression, c'est plus blindé (-> arret). Dans les versions précédentes, il manquait
+   donc une colonne.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv104e
+DEJA RESTITUE DANS : 11.2.14
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019856 DU 2012-10-31 15:33:02
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    Ecasement mxc3xa9moire dans nmdocc
+FONCTIONNALITE
+   Probleme
+   ========
+   
+   Le cas-test wtnv113j plante sur gfortran 32bit.
+   
+   Solution
+   ========
+   
+   L'erreur vient du tableau des comportements élémentaires LCOMEL, dimensionné à 5. Dans ce
+   cas-test, le nombre de comportements élémentaires (KIT_THM) vaut 6.
+   D'où l'écrasement mémoire.
+   Je corrige nmdoki/nmdocc en modifiant LCOMEL(5) à LCOMEL(10) (prenant de l'avance pour la
+   future TTTHHHHHMM), et je blinde par un ASSERT bien senti.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    wtnv113j
+DEJA RESTITUE DANS : 11.2.22
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR alarcon      ALARCON Albert         DATE 11/07/2012 - 01:18:50
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019376 DU 2012-08-28 14:58:32
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    [FORUM] : probleme de redemarrage dans DYNA_LINE_TRAN en version 10
+FONCTIONNALITE
+   Problème
+   *****************
+   
+   DYNA_LINE_TRAN plante lorsque l'utilisateur essaie de lancer un calcul avec un état
+   initial (ETAT_INIT) issu d'un calcul précédent qui ne porte pas le même nom que l'actuel.
+   Ce problème existe en version  11 mais aussi en 10. En gros, on n'a pas le droit de faire :
+   
+   DEP_0 = DYNA_LINE_TRAN ( )
+   
+   DEP_1 = DYNA_LINE_TRAN (ETAT_INIT=_F(RESULTAT=DEP_0))
+   alors que le suivant marche très bien.
+   
+   DEP_0 = DYNA_LINE_TRAN ( )
+   
+   DEP_0 = DYNA_LINE_TRAN (reuse=DEP_0 ,ETAT_INIT=_F(RESULTAT=DEP_0))
+   
+   Le code plante avec une erreur pas très claire pour l'utilisateur :
+   !-----------------------------------------------------!
+      ! <EXCEPTION> <JEVEUX_23>                                                             
+           !
+      !                                                                                     
+           !
+      !      Nom de Collection ou de RÃ©pertoire de noms inexistant :  DEP_1             
+   .DESC$$XNOM !
+     
+   !-----------------------------------------------------!
+   Solution
+   *****************
+   
+   Il y a une petite erreur dans la routine DLTINI.f (récupération des conditions initiales)
+   qui va chercher ces infos dans le nom du concept de la commande en cours, en non pas de la
+   commande donnée dans ETAT_INIT.  Lorsqu'on fait un « reuse », les deux concepts ont le
+   même nom, donc aucun souci.  Dans le cas particulier de cette fiche, le code plante car on
+   fait un CALL RSEXCH(*) sur un concept qui n'existe pas.
+   On modifie  donc DLTINI.f pour qu'il pointe sur le bon concept.
+   
+   Sources impactées
+   *****************
+   
+   dltini.f 
+   
+   *****************
+   PS : je mets en PJ de la fiche la correction pour V10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    tous les cas test DYNA_VIBRA
+DEJA RESTITUE DANS : 11.2.19
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 11/07/2012 - 01:18:51
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019779 DU 2012-10-19 13:56:54
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Emettre un message d'erreur pour multifibres
+FONCTIONNALITE
+   Dans Aster, il manque un certain nombre de vérifications assez difficiles à faire et qu'il
+   faudrait faire avant de commencer le calcul, notamment sur la vérification de la cohérence
+   des données utilisateur.
+   
+   Si le modèle contient des multifibres c'est ce qui est donné dans DEFI_COMPOR/MULTIFIBRE
+   qui compte.
+   xxx=DEFI_COMPOR/MULTIFIBRE=_F(MATER=xx, GROUP_FIBRE=xx, RELATION=xxx, DEFORMATION='PETIT')
+   Ce qui est sous STAT_NON_LINE/COMP_INCR/DEFORMATION n'est pris en compte, et même inconnu
+   au niveau des TE.
+   
+   Pour les multifibres on peut planter dans (te535, te516) sur un 
+   . . . CALL JEVEUO(ZK16(ICOMPO-1+7),'L',ISDCOM)
+   
+   Pou éviter ==> Ajout d'un JEEXIN en début de TE
+   . . . CALL JEEXIN(ZK16(ICOMPO-1+7),IRET)
+   Si la SD multifibres dont le nom est dans ZK16(ICOMPO-1+7) n'existe pas
+   14 : _(u"""
+     Vous utilisez un élément multifibres de type <%(k1)s>.
+     Il faut que sous COMP_INCR le mot clef RELATION='MULTIFIBRE'
+   """),
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage cas test ssnl139a
+DEJA RESTITUE DANS : 11.2.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019318 DU 2012-08-09 08:17:26
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Entier NBMAT non initialisxc3xa9 dans ACEAGB
+FONCTIONNALITE
+   Bug détecté à l'utilisation, mais ne provoque pas de résultats faux.
+   
+   Il y a une couverture incomplète des mots clefs dans les cas MAILLE/GRILLE et MAILLE/MEMBRANE
+   Je fais la correction NBMAT=NM, là ou cela me semble pertinent dans ACEAGB et ACEAMB.
+   
+   issue19840 pour tracer le manque de couverture des tests.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    compilation sans erreur !!
+DEJA RESTITUE DANS : 11.2.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 11/07/2012 - 01:18:52
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019487 DU 2012-09-13 11:25:58
+TYPE anomalie concernant Code_Aster (VERSION 11.3)
+TITRE
+    En NEW11.02.12, le cas-test sslp320b s'arrete en erreur fatale sur Rocks.
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   En NEW11.2.12, le cas-test sslp320b s'arrete en erreur fatale sur Rocks. 
+   En NEW11.2.13, le test est OK.
+   En NEW11.2.14, le test est de nouveau cassé sur Rocks.
+   En NEW11.2.17, le test est OK.
+   
+   
+   Analyse :
+   --------- 
+   
+   Valgrind détecte plusieurs erreurs :
+   
+   1) variable COMPOR mal passée entre xnmel.f et xnmel2.f -> on passait a la place K16BID.f
+   si OPTION = 'RIGI_MECA'. Or on se sert dans xnmel2.f de COMPOR(3) pour savoir si on est en
+   GROT_GDEP dans tous les cas.
+   
+   -> impact xnmel.f : on remplace K16BID par COMPOR
+   
+   2) variable RHO pas toujours initialisée dans te0297 (option CALC_K_G pour les éléments
+   X-FEM 2d), alors que l'on s'en sert toujours par la suite (gbilin.f). L'initialisation de
+   RHO est normalement faite dans xcgfvo.f, mais que si on a un chargement de PESANTEUR ou
+   ROTATION. 
+   
+   -> impact xcgfvo.f : on initialise dans tous les cas RHO à 0.
+   
+   3) dans xprvit.f (PROPA_FISS), l1084, on calcule BETAP en fonction du ZR de JBETA avec un
+   décalage de -1+JMIN+1 et -1+JMIN. Si on est en 2D avec un seul fond de fissure, alors
+   JMIN=1 forcement, donc BETAP est calculé en fonction de ZR de JBETA dans lequel on va
+   cherche la position 0 et la position 1. Or le tableau de BETAP est créé dans la routine
+   xprcyc.f de longueur NBPTFF (soit 1 dans le cas présent).
+   
+   -> impact xprvit.f : on modifie la formule de BETAP dans le cas 2D
+   
+   
+   
+   autres erreurs valgrind :
+   jjcrec, codree (ignorées)
+   indik8 (pb dans merime ?) : pb non traité
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sslp320b
+DEJA RESTITUE DANS : 11.2.21
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 11/07/2012 - 01:18:53
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019800 DU 2012-10-23 07:01:03
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme lors d'une poursuite : "ecrasement aval detecte"
+FONCTIONNALITE
+   Problème :
+   ==========
+   
+   Ecrasement aval dans la commande CALC_TABLE au niveau de la routine ctacce.f.
+   
+   
+   Analyse du problème :
+   =====================
+   
+   La routine ctacce utilise un objet de travail '&&CTRESU.ORDRE' dimensionné au nombre de
+   numéro d'ordre de la SD à traiter. L'accès aux champs est effectué par la valeur de INST.
+   On utilise la routine rsorac pour récupérer les numéros d'ordre associés à chaque instant,
+   pour les 2 derniers instants de la liste (12 et 13) 2 instants conviennent. Or la routine
+   ctacce n'est pas prudente et utilise en argument de sortie l'objet de travail sans
+   vérifier le débordement.
+   
+   Correction effectuée :
+   ======================
+   
+   On vérifie que pour chaque instant un seul numéro d'ordre est trouvé, sinon on émet un
+   message d'erreur fatale :
+   
+      
+      !----------------------------------------------------------------------------!
+      ! <EXCEPTION> <TABLE0_46>                                                    !
+      !                                                                            !
+      ! Plusieurs numéros d'ordre sont associés à l'accès INST de valeur 11.000000 !
+      !                                                                            !
+      !                                                                            !
+      ! Conseil :                                                                  !
+      !     Vous pouvez modifier la recherche en renseignant le mot clé PRECISION. !
+      !----------------------------------------------------------------------------!
+   
+   
+   Si dans l'étude proposée, on utilise le mot clé PRECISION=10.E-12, pour le premier appel à
+   CALC_TABLE, tout se déroule bien. 
+   
+     # ------------------------------------------------------------------------------------------
+     # Commande No :  0001            Concept de type : -
+     # ------------------------------------------------------------------------------------------
+     POURSUITE(INFO=1,
+               PAR_LOT='OUI',
+               IMPR_MACRO='NON',
+               MEMOIRE=_F(TAILLE_BLOC=800.0,
+                          TAILLE_GROUP_ELEM=1000),
+               RESERVE_CPU=_F(BORNE=900),
+               FORMAT_HDF='NON',
+               MESURE_TEMPS=_F(MOYENNE='OUI',
+                               NIVE_DETAIL=1),
+               );
+   
+     # Statistiques mémoire (Mo) :    229.50 /      7.62 /      7.62 (VmPeak / Optimum / Minimum)
+     # Fin commande No : 0001   user+syst:        0.00s (syst:        0.00s, elaps:        0.01s)
+     # ------------------------------------------------------------------------------------------
+   
+     # ------------------------------------------------------------------------------------------
+     # Commande No :  0002            Concept de type : table_sdaster
+     # ------------------------------------------------------------------------------------------
+     tab1=CREA_TABLE(TYPE_TABLE='TABLE',
+                     RESU=_F(CRITERE='RELATIF',
+                             TOUT='OUI',
+                             NOM_CHAM='DEPL',
+                             RESULTAT=SIG,
+                             LIST_INST=L_RESU,
+                             TOUT_CMP='OUI',
+                             PRECISION=9.9999999999999994E-12),
+                     );
+   
+     # Statistiques mémoire (Mo) :    431.89 /    259.92 /    222.47 (VmPeak / Optimum / Minimum)
+     # Fin commande No : 0002   user+syst:       67.38s (syst:        0.15s, elaps:       68.02s)
+     # ------------------------------------------------------------------------------------------
+   
+     # ------------------------------------------------------------------------------------------
+     # Commande No :  0003            Concept de type : -
+     # ------------------------------------------------------------------------------------------
+     IMPR_TABLE(IMPR_FONCTION='NON',
+                FORMAT='TABLEAU',
+                COMMENTAIRE='#',
+                FORMAT_R='E12.5',
+                FIN_LIGNE='\n',
+                UNITE=8,
+                FORMAT_C='MODULE_PHASE',
+                INFO=1,
+                DEBUT_LIGNE='',
+                SEPARATEUR=' ',
+                COMM_PARA='',
+                TABLE=tab1,
+                );
+   
+     # Statistiques mémoire (Mo) :   3205.29 /    259.92 /    222.47 (VmPeak / Optimum / Minimum)
+     # Fin commande No : 0003   user+syst:       67.00s (syst:        2.97s, elaps:       70.22s)
+     # ------------------------------------------------------------------------------------------
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude fournie
+DEJA RESTITUE DANS : 11.2.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 11/07/2012 - 01:18:53
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019774 DU 2012-10-19 09:11:35
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW11.02.19, les cas-tests zzzz159b et f sxe2x80x99arrxc3xaatent en erreur fatale sur Aster4 et Rocks.
+FONCTIONNALITE
+   Suite à la restitution de la fiche 18291, un bug a été introduit pour les cas MACR_RECAL
+   qui ne sont pas en DYNAMIQUE. On corrige en protégeant par un "if DYNAMIQUE" devant le
+   bloc qui avait été ajouté.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout macr_recal
+DEJA RESTITUE DANS : 11.2.21
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019084 DU 2012-06-29 14:25:53
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    macr_recal mot clef GRAPHIQUE mal dxc3xa9fini dans la doc
+FONCTIONNALITE
+   Probleme :
+   ==========
+   
+   La documentation de MACR_RECAL n'était pas conforme au capy : sous GRAPHIQUE, le mot-clé
+   UNITE n'était disponible que pour XMGRACE alors que la documentation l'indiquait comme
+   disponible pour GNUPLOT et XMGRACE.
+   Du coup, le plantage n'était pas très clair lorsque l'on voulait utiliser le tracé via
+   Gnuplot.
+   
+   
+   Resolution :
+   ============
+   
+   En fait, le mode GNUPLOT ne fonctionnait plus depuis longtemps. Comme c'est une
+   fonctionalité interactive, il n'y a pas de test. 
+   
+   En fait, plutot que de corriger la documentation, je corrige le capy et j'autorise le
+   mot-clé UNITE pour les deux cas. J'en profite pour refaire marcher le mode GNUPLOT et pour
+   installer le module Python Gnuplot.py sur Aster-4.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.73.02
+VALIDATION
+    zzzz159a modifixc3xa9
+DEJA RESTITUE DANS : 11.2.22
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR boyere       BOYERE Emmanuel        DATE 11/07/2012 - 01:18:55
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018919 DU 2012-05-29 12:09:54
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Pb E+308 pour les pseudo_modes
+FONCTIONNALITE
+   COMB_SISM_MODAL et de MODE_STATIQUE construisent des concepts qui sont des modes, des
+   pseudo-modes ou des quasi-modes qui ont pour particularité de ne pas avoir de "vraie"
+   fréquence propre.
+   Jusqu'ici on ne s'en inquiétait pas trop : la seule conséquence était d'avoir, pour les
+   post-processeurs qui insistent pour afficher une valeur de fréquence sur de tels champs,
+   des valeurs non initialisées, donc pas très jolies.
+   Toutefois dans PARAVIS, qui utilise la fréquence pour repérer les champs, cela pose une
+   difficulté supplémentaire. Il ne parvient pas à afficher les modes en question.
+   
+   Dans le cas des résultats issus de COMB_SISM_MODAL j'ai proposé une solution qui résout le
+   problème.
+   Les équivalents de "modes" correspondent chacun à une "direction" ou une combinaison de
+   direction.
+   Comme dans le paramètre 'FREQ' on ne peut mettre qu'une valeur numérique, je crée
+   l'équivalence suivante :
+   1 <-> direction 'X'
+   2 <-> direction 'Y'
+   3 <-> direction 'Z'
+   4 <-> combinaison sur les directions
+   
+   Dans le cas des modes issus de MODE_STATIQUE et qui n'ont pas fréquence "naturelle", je
+   mets 0 comme valeur de fréquence. Si on doit l'imprimer, ça paraît plus propre à
+   l'affichage. En revanche cela ne règle pas le problème de fond du PARAVIS qui cherche à
+   différencier les champs sur ce paramètre.
+   Il est à remarquer qu'on peut tomber sur le même écueil avec une "vraie" base de modes
+   propres qui aurait le mauvais goût de comporter des modes multiples dont la fréquence
+   calculée est la même, à la précision numérique près. Cette situation est rare mais pas
+   improbable (fiche 18625).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : u4.84.01
+VALIDATION
+    astout MODE_STATIQUE & COMB_SISM_MODAL
+DEJA RESTITUE DANS : 11.2.22
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018903 DU 2012-05-24 07:30:09
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Calcul spectral en multi-appuis avec COMB_SISM_MODAL
+FONCTIONNALITE
+   Une étude NECS met en évidence des problèmes de gestion de mémoire dans COMB_SISM_MODAL.
+   Elle possède comme particularité d'être d'une taille assez moyenne pour une étude en
+   dynamique (de l'ordre de 10000 DDLs) mais avec de très nombreux appuis (plus de 100). Je
+   remercie donc Nader de l'avoir transmise.
+   
+   Grâce à l'aide de la précieuse et efficace méthode TDS (Three Decisive Steps mais plus
+   connue à AMA sous le nom de Thomas De Soza) j'ai pu trouver trois erreurs d'allocation
+   mémoire qui se superposaient.
+   
+   - ASCORM et ASEFEN utilisaient des tableaux automatiques FORTRAN de taille non bornée (nb
+   de DDLs * nb d'appuis).
+   Jusqu'ici on utilisait en séisme des modèles de taille modeste (quelques centaines de
+   milliers de DDls au maximum) et peu appuis. Les erreurs passaient inaperçues. En revanche
+   avec quelques centaines d'appuis, même avec un modèle pas très gros (quelques dizaines de
+   milliers de DDLs) on dépasse vite la pile locale de la sous-routine.
+   Dans ASCORM le recours au tableau ne se justifiait, une variable locale scalaire dans une
+   boucle suffisait.
+   Dans ASEFEN on remplace le tableau automatique par une allocation par WKVECT en bonne et
+   due forme.
+   
+   - dans ASCALC, deux tableaux JEVEUX étaient de dimensions trop courtes. Pour un grand
+   nombre d'appui, l'impact mémoire était inévitable.
+   
+   La probabilité de résultats faux est faible (plantage sur une mauvaise adresse) et ne
+   pouvait se réaliser que dans le cas de MULTI_APPUI. Le cas MONO_APPUI, usage plus fréquent
+   de COMB_SISM_MODAL, n'est pas concerné.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    xc3xa9tude NECS + astout COMB_SISM_MODAL
+DEJA RESTITUE DANS : 11.2.22
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR tardieu      TARDIEU Nicolas        DATE 11/07/2012 - 01:18:56
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019815 DU 2012-10-24 10:16:18
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    POST_CHAMP/VOLUMOGRAMME
+FONCTIONNALITE
+   Problème :
+   ----------
+   Il existe un problème avec la commande POST_CHAMP/VOLUMOGRAMME dans le cas ou le
+   modèle contient des 3D et des BARRES.
+   
+   Solution :
+   ----------
+   Dans la routine chpond.f, on fait un test sur les  composantes des champs 
+   IN et OUT qui est trop sévère : on demande à ce que les composantes IN et OUT 
+   soient toutes affectées. Or ce n'est pas obligatoire. On demande plutôt que si le 
+   champ IN a une composante affectée, alors le champ OUT l'ait aussi.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Astout tests INTEGRALE et VOLUMOGRAMME
+DEJA RESTITUE DANS : 11.2.22
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 11/07/2012 - 01:18:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019465 DU 2012-09-11 14:40:04
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : Necs
+TITRE
+    CALC_EUROPLEXUS : modification du maillage par EPX
+FONCTIONNALITE
+   Problème :
+   ==========
+   
+   Jusqu'à présent, le maillage Aster pouvait être transmis à Europlexus sous le format GIBI
+   ou le format MED. Une subtilité historique faisait que, en présence de ETAT_INIT, on le
+   fournissait en MED, dans les autres cas on le fournissait en GIBI.
+   
+   Or, on s'est apercu (issue19250), que Europlexus renumérotait le maillage comme il voulait
+   dans le cas d'un maillage GIBI. Les résultats sortis par Europlexus sont donc "faux" car
+   la numérotation du maillage pouvait avoir été chamboulée par Europlexus.
+   
+   Dans le cas d'un maillage MED, Etienne avait déjà fait le travail dans l'issue19250 afin
+   de s'assurer que la nmérotation du maillage était conservé par Europlexus.
+   
+   L'objet de cette fiche est d'écrire au format MED le maillage fourni à Europlexus par
+   CALC_EUROPLEXUS.
+   
+   
+   
+   Travail effectué :
+   ==================
+   
+   Dans EPX :
+   ----------
+   
+   Il s'agit juste de dire que les éléments modélisés par le mot-clé APPU sont portés par les
+   mailles MED de numéro de type 1 (c-a-d des POI1) et que pour CL3L c'est 102 (SEG2).
+   
+   La surcharge est la suivante :
+   /home/cheignon/19465_CALC_EUROPLEXUS_modification_du_maillage/inico1.ff
+   
+   Elle est déjà restituée.
+   
+   
+   Dans Aster :
+   ------------
+   
+   On active l'export du maillage au format MED dans tous les cas dans CALC_EUROPLEXUS.
+   
+   Pour que tout fonctionne bien, on a ajouté des DEFI_GROUP/GROUP_NO à partir de certains
+   GROUP_MA notament pour les éléments discrets de masse concentrée.
+   
+   On a ajouté des MasquerAlarme('MODELISA7_9')/RetablirAlarme('MODELISA7_9') autour de ces
+   DEFI_GROUP car il arrive que le groupe de nœuds existe déjà, par exemple dans plexu02a car
+   on fait deux CALC_EUROPLEXUS sur le même maillage à la suite (-> la deuxième fois ils
+   existent déjà).
+   
+   
+   D'autre part, on a constaté que plexu02a et b donnaient des résultats faux au niveau des
+   valeurs aux points de Gauss.
+   Les valeurs de référence des TEST_RESU sur la maille M80 ne correspondaient pas à ce que
+   donne EPX pour cette même maille. 
+   => Modification des valeurs de référence.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.4
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.4
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.248
+VALIDATION
+    plexu02*
+DEJA RESTITUE DANS : 11.2.22
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF plexu02a                       ladier A.LADIER           449      3      3
+ CASTEST MODIF ssnv104e                       ladier A.LADIER           459     19      4
+CATALOPY MODIF commande/macr_recal            ladier A.LADIER           113      4      4
+ FORTRAN MODIF algorith/arch93                ladier A.LADIER           491      8      2
+ FORTRAN MODIF algorith/ascalc                ladier A.LADIER           332      3      3
+ FORTRAN MODIF algorith/asefen                ladier A.LADIER           268     10      6
+ FORTRAN MODIF algorith/asstoc                ladier A.LADIER           219      7      3
+ FORTRAN MODIF algorith/dltini                ladier A.LADIER           234      8      2
+ FORTRAN MODIF algorith/impin0                ladier A.LADIER           117      3      3
+ FORTRAN MODIF algorith/implec                ladier A.LADIER           113      3      5
+ FORTRAN MODIF algorith/nmcrdd                ladier A.LADIER           136      5     15
+ FORTRAN MODIF algorith/nmcrdn                ladier A.LADIER           110     23      7
+ FORTRAN MODIF algorith/nmcrob                ladier A.LADIER           140      4     22
+ FORTRAN MODIF algorith/nmdocc                ladier A.LADIER           275      3      3
+ FORTRAN MODIF algorith/nmdoki                ladier A.LADIER            85      4      3
+ FORTRAN MODIF algorith/nmextr                ladier A.LADIER           267      2      2
+ FORTRAN MODIF algorith/nmobse                ladier A.LADIER           230     20     23
+ FORTRAN MODIF algorith/nmsui3                ladier A.LADIER           215      2      2
+ FORTRAN MODIF algorith/nmsuiv                ladier A.LADIER           222     18     17
+ FORTRAN MODIF algorith/ntcrob                ladier A.LADIER           110      4     18
+ FORTRAN MODIF algorith/xnmel                 ladier A.LADIER           239      4      5
+ FORTRAN MODIF algorith/xprvit                ladier A.LADIER           846     11      2
+ FORTRAN MODIF elements/te0516                ladier A.LADIER           623      8      4
+ FORTRAN MODIF elements/te0535                ladier A.LADIER           340      8      2
+ FORTRAN MODIF elements/xcgfvo                ladier A.LADIER           175      5      2
+ FORTRAN MODIF modelisa/aceagb                ladier A.LADIER           224      3      2
+ FORTRAN MODIF utilitai/chpond                ladier A.LADIER           223      9      4
+ FORTRAN MODIF utilitai/ctacce                ladier A.LADIER           310      6      2
+  PYTHON MODIF Macro/calc_europlexus_ops      ladier A.LADIER          2611     42     14
+  PYTHON MODIF Macro/macr_recal_ops           ladier A.LADIER           700     14      4
+  PYTHON MODIF Macro/reca_controles           ladier A.LADIER           245      5      2
+  PYTHON MODIF Macro/reca_graphique           ladier A.LADIER            90      7      8
+  PYTHON MODIF Messages/elements4             ladier A.LADIER           267      7      2
+  PYTHON MODIF Messages/mecanonline3          ladier A.LADIER           112      3      4
+  PYTHON MODIF Messages/observation           ladier A.LADIER            52      2     10
+  PYTHON MODIF Messages/table0                ladier A.LADIER           165     10      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   36       11807       297     216       +81
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   36       11807       297     216       +81 

@@ -10,9 +10,9 @@
       REAL*8         LCMIN
       
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 13/09/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ALGORITH  DATE 07/11/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -778,11 +778,20 @@ C        ***************************************************************
 C        EVALUATE THE NORM. AND TANG. COMPONENTS OF THE PROPAGATION
 C        SPEED IN THE NODE WITH RESPECT TO THE LOCAL REFERENCE SYSTEM
 C        ***************************************************************
-         
-         BETAP=(ZR(JBETA-1+JMIN+1)-ZR(JBETA-1+JMIN))*SMIN+
-     &          ZR(JBETA-1+JMIN)
 
-         VP=(ZR(JVIT-1+JMIN+1)-ZR(JVIT-1+JMIN))*SMIN+ZR(JVIT-1+JMIN)
+         IF (NDIM.EQ.2) THEN
+         
+           BETAP=ZR(JBETA-1+JMIN)
+           VP=ZR(JVIT-1+JMIN)
+           
+         ELSEIF (NDIM.EQ.3) THEN  
+
+           BETAP=(ZR(JBETA-1+JMIN+1)-ZR(JBETA-1+JMIN))*SMIN+
+     &            ZR(JBETA-1+JMIN)
+
+           VP=(ZR(JVIT-1+JMIN+1)-ZR(JVIT-1+JMIN))*SMIN+ZR(JVIT-1+JMIN)
+
+         ENDIF
 
          ZR(JVNV+I-1)=VP*SIN(BETAP)
          ZR(JVTV+I-1)=VP*COS(BETAP)

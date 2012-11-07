@@ -1,4 +1,4 @@
-#@ MODIF calc_europlexus_ops Macro  DATE 29/05/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calc_europlexus_ops Macro  DATE 07/11/2012   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -371,9 +371,6 @@ class EUROPLEXUS:
     epx[MODULE].append('TITRE')
     epx[MODULE].append('ECHO')
     options = 'TRID NONL'
-# AA    champ_fact = self.ECRITURE['CHAMP']
-    champ_fact = self.ARCHIVAGE
-    if champ_fact is not None : options += ' MEDE'
     epx[MODULE].append(options)
     epx[MODULE].append('\n')
     
@@ -387,8 +384,8 @@ class EUROPLEXUS:
       epx[MODULE].append('\n')
 
 #-----------------------------------------------------------------------   
-  def export_MAILLAGE(self,format='CASTEM'):
-
+  def export_MAILLAGE(self,):
+    from Utilitai.Utmess import MasquerAlarme, RetablirAlarme
     epx = self.epx
 
     # Cle identifiant 
@@ -403,28 +400,50 @@ class EUROPLEXUS:
     else :
       concept_maillage = copy.copy(self.NEW_MA) 
 
-    # Ecrire le maillage, qui peut etre a ete enrichi avec des commandes Aster, sous le format souhaite (MED ou CASTEM)
+    # Ecrire le maillage, qui peut etre a ete enrichi avec des commandes Aster, sous le format MED
     unite = self.get_unite_libre()
 
-    # Extensions des formats de maillage 
-    extension = {'CASTEM' : '.msh', 'MED':'.med'}
-
     # donner un nom au fichier de maillage parce que le fort.unite peut etre ecrase par d'autre operation d'ecriture
-    nom_fichier = self.nom_fichiers['MAILLAGE'] + extension[format]
+    nom_fichier = self.nom_fichiers['MAILLAGE'] + '.msh'
     fichier_maillage = self.REPE_epx + os.sep + nom_fichier
+
+    # Dans le cas de 2 CALC_EUROPLEXUS, le maillage est deja present (dans REPE_OUT) donc on choisi de le suprimer
+    if os.path.isfile(fichier_maillage):
+        try:
+            os.remove(fichier_maillage)
+        except:
+            pass
+
+    # On crée des groupes de noeuds de mêmes noms que les groupes de mailles présents dans le modèle
+    # car EPX ne sait pas faire la correspondance comme en CASTEM
+    # Cela pourra être supprimer quand le problème sera résolu dans EPX.
+    liste_gma=[]
+
+    # groupes de mailles du modele
+    for model in ['DKT3','Q4GS','POUT'] :
+        if model in self.modelisations :
+            liste_gma.extend(self.dic_gma[model])
+    # le risque est que le groupe existe deja
+    MasquerAlarme('MODELISA7_9')
+    DEFI_GROUP(reuse=concept_maillage,
+                    MAILLAGE=concept_maillage,
+                    CREA_GROUP_NO=_F(GROUP_MA=liste_gma))
+    RetablirAlarme('MODELISA7_9')
 
     DEFI_FICHIER(UNITE=unite, FICHIER=fichier_maillage, ACTION='ASSOCIER')
     IMPR_RESU(UNITE  = unite,
-              FORMAT = format,
+              FORMAT = 'MED',
               RESU   = _F(MAILLAGE=concept_maillage)
              )
     DEFI_FICHIER(UNITE=unite,ACTION='LIBERER');    
 
-    epx[MODULE].append('%s TOUT' % format)
+    epx[MODULE].append('MEDL 28')
 
 #    epx[MODULE].append('%s '%format)
 #    epx[MODULE].append("'%s' TOUT" % fichier_maillage)    
 #    epx[MODULE].append("NTMPMA TOUT")    
+    champ_fact = self.ARCHIVAGE
+    if champ_fact is not None : epx[MODULE].append('MEDE')
 
     epx[MODULE].append('\n')    
 
@@ -579,7 +598,7 @@ class EUROPLEXUS:
     
  #-----------------------------------------------------------------------   
   def export_CARA_ELEM(self):
-    
+    from Utilitai.Utmess import MasquerAlarme, RetablirAlarme    
     epx = self.epx
     
     # Cle identifiant 
@@ -587,6 +606,8 @@ class EUROPLEXUS:
 
     # Recuperer la structure du concept sorti de AFFE_CARA_ELEM
     cara_elem_struc = self.recupere_structure(self.CARA_ELEM)
+    concept_modele  = self.recupere_structure(self.CARA_ELEM,'MODELE')
+    concept_maillage = self.recupere_structure(concept_modele,'MAILLAGE')
 
     epx[MODULE] = ['*--CARACTERISTIQUES DES ELEMENTS DE STRUCTURE']
 
@@ -619,9 +640,16 @@ class EUROPLEXUS:
                 vale = elem['VALE']
                 epx[MODULE].append('MASSE  123 %s' %vale)
                 epx[MODULE].append(7*' ' + 'LECT')
+                # creation du groupe de noeuds a partir du groupe de mailles
                 for group in group_ma:
                     epx[MODULE].append(11*' '+group)
                 epx[MODULE].append(7*' ' + 'TERM')
+                MasquerAlarme('MODELISA7_9')
+                DEFI_GROUP(reuse = concept_maillage,
+                           MAILLAGE = concept_maillage,
+                           CREA_GROUP_NO = _F(GROUP_MA=group_ma)
+                          )
+                RetablirAlarme('MODELISA7_9')
             if elem['CARA'] == 'K_TR_D_N' :
                 group_ma = self.get_group_ma(elem)
                 vale     = elem['VALE']

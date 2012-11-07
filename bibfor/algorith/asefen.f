@@ -10,10 +10,10 @@
       LOGICAL           MUAPDE
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 21/03/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ALGORITH  DATE 07/11/2012   AUTEUR LADIER A.LADIER 
 C TOLE CRS_1404
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -66,7 +66,8 @@ C     -----  FIN  COMMUNS NORMALISES  JEVEUX  --------------------------
       INTEGER       IBID, IDI, IER, IGR, IN, INO, INORF, IOC, IORDR,
      &              IRE1, IRE2, IRET, IS, JDGN, JGRN, JNOE, JVALE,
      &              NBTROU, NCAS, NG, NGR, NN, NNO, NNR, NX, NY, NZ,NS
-      REAL*8        DX, DY, DZ, R8B, XX1, XXX, REPMO1(NBSUP*NEQ)
+      INTEGER       JREPMO
+      REAL*8        DX, DY, DZ, R8B, XX1, XXX
       COMPLEX*16    CBID
       CHARACTER*1   K1BID
       CHARACTER*8   K8B, NOEU, CMP, NOMCMP(3), NOMA, GRNOEU
@@ -80,6 +81,7 @@ C     ------------------------------------------------------------------
 C
       CALL JEMARQ()
 C
+      CALL WKVECT('&&ASEFEN.REPMO','V V R',NBSUP*NEQ,JREPMO)
       CALL DISMOI('F','NOM_MAILLA',MASSE,'MATR_ASSE',IBID,NOMA,IRET)
       OBJ1 = NOMA//'.GROUPENO'
       OBJ2 = NOMA//'.NOMNOE'
@@ -216,7 +218,7 @@ C
       CMP = NOMCMP(ID)
       DO 11 IS=1,NBSUP
         DO 12 IN = 1,NEQ
-          REPMO1(IN + (IS-1)*NEQ) = 0.D0
+          ZR(JREPMO-1+IN + (IS-1)*NEQ) = 0.D0
   12    CONTINUE
   11  CONTINUE
       DO 110 IS = 1,NSUPP(ID)
@@ -238,7 +240,8 @@ C
             IOC = NBDIS(IS)
             DO 112 IN = 1,NEQ
               XXX = ZR(JVALE+IN-1) * XX1
-              REPMO1(IN+(IOC-1)*NEQ) = REPMO1(IN+(IOC-1)*NEQ) + XXX
+              ZR(JREPMO-1+IN+(IOC-1)*NEQ) = ZR(JREPMO-1+IN+(IOC-1)*NEQ)
+     &                                    + XXX
  112        CONTINUE
           ELSE
             DO 114 IN = 1,NEQ
@@ -251,14 +254,15 @@ C
       IF ( MUAPDE ) THEN
         DO 111 IOC = 1,NINTRA
           DO 113 IN = 1,NEQ
-            XXX =  REPMO1(IN+(IOC-1)*NEQ)
+            XXX =  ZR(JREPMO-1+IN+(IOC-1)*NEQ)
             RECMOD(IOC,IN,ID) = RECMOD(IOC,IN,ID) + XXX*XXX
  113      CONTINUE
  111    CONTINUE
       ENDIF
 C
  9999 CONTINUE
-
+      
+      CALL JEDETR('&&ASEFEN.REPMO')
       CALL JEDETC('V','&&ASEFEN',1)
       CALL JEDEMA()
       END
