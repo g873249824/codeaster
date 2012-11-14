@@ -2,7 +2,7 @@
       IMPLICIT REAL*8 (A-H,O-Z)
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 12/09/2012   AUTEUR LADIER A.LADIER 
+C MODIF ALGORITH  DATE 14/11/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -61,9 +61,9 @@ C ----------------------------------------------------------------------
       CHARACTER*8   K8B, BLANC, BASEMO, CRIT, GRAN, INTERP, BASEM2,
      &              MAILLA, NOMRES, NOMIN, NOMCMP(6), MODE, MONMOT(2),
      &              MATGEN, NOMGD, MACREL, LINTF, NOMNOL, NOGDSI, MAYA
-      CHARACTER*14  NUMDDL, NUMGEN
+      CHARACTER*14  NUMDDL
       CHARACTER*16  TYPRES, NOMCMD, NOMP(MXPARA), TYPE(8), TYPCHA,
-     &              TYPBAS(8), TYPREP, CONCEP, CHAMP(8)
+     &              TYPBAS(8), CONCEP, CHAMP(8)
       CHARACTER*19  FONCT, KINST, KNUME, KREFE, PRCHNO, TRANGE
       CHARACTER*19  TYPREF(8), CHAM19, PROF,PRCHN1
       CHARACTER*24  MATRIC, CHAMNO, CREFE(2), NOMCHA, CHAMN2, OBJVE1
@@ -129,10 +129,6 @@ C
          BASEMO = ZK24(IAREFE+5)(1:8)
          CALL JEVEUO(BASEMO//'           .REFD','L',IADRIF)
          IF (MATGEN(1:8) .NE. BLANC) THEN
-           CALL JEVEUO(MATGEN//'           .REFA','L',J2REFE)
-           NUMGEN = ZK24(J2REFE+1)(1:14)
-           CALL JEVEUO(NUMGEN//'.NUME.REFN','L',J3REFE)
-           CALL GETTCO(ZK24(J3REFE),TYPREP)
            MATRIC = ZK24(IADRIF)
            IF (MATRIC.NE.BLANC) THEN
             CALL DISMOI('F','NOM_NUME_DDL',MATRIC,'MATR_ASSE',IBID,

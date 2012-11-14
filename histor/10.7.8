@@ -1,0 +1,724 @@
+========================================================================
+Version 10.7.8 du : 15/11/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 11/14/2012 - 02:38:34
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019506 DU 2012-09-17 12:50:42
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Anomalie CALC_MISS TYPE_RESU='TABLE', NEW11
+FONCTIONNALITE
+   Plantages avec CALC_MISS (avec TYPE_RESU='TABLE', version NEW11) :
+   1) Si on tente de spécifier la liste de fréquence pour le calcul des spectres.
+   2) Si on entre plusieurs chargements par direction, alors que la doc l'autorise.
+   
+   
+   Analyse :
+   Au niveau de la liste de fréquence, il y a en effet une confusion entre celle qui est
+   utilisée pour la résolution harmonique et celle qui est utilisée en post-traitement pour
+   les SRO : les deux sont appelées LIST_FREQ.
+   Pour le point 2), dans le .capy on n'autorise explicitement qu'un chargement par direction
+   et dans les sources python, le cas à plusieurs chargement n'est pas du tout prévu.
+   
+   
+   Solution :
+   On corrige le point 1) en nommant différemment les deux listes de fréquence:
+   on garde LIST_FREQ pour la boucle fréquentielle et on introduit LIST_FREQ_SPEC_OSCI pour
+   les SRO (CALC_FONCTION option SPEC_OSCI).
+   Pour le point 2), on corrige la doc pour être en cohérence avec le source. Ce n'est pas
+   bloquant car on peut s'en sortir en faisant plusieurs appels successifs à CALC_MISS,
+   chacun pour une combinaison de chargement donnée.
+   
+   
+   Validation :
+   miss03a modifié avec ajout de la liste de fréquence pour les SRO.
+   
+   Impacts :
+   calc_miss.capy
+   miss_post.py
+   miss03a.com1
+   U7.03.12
+   
+   
+   Perspectives :
+   Si l'appel à plusieurs CALC_MISS à la suite, pour gérer plusieurs combinaisons
+   d'accéléros, ne convient pas, alors il sera possible d'émettre une EL pour avoir cette
+   fonctionnalité.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : u7.03.12
+VALIDATION
+    miss03a
+DEJA RESTITUE DANS : 11.2.24
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019851 DU 2012-10-30 17:02:45
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Calcul ISS : Objet JEVEUX inexistant dans les bases ouvertes
+FONCTIONNALITE
+   Problème :
+   Le résultat tran_gene généré par CALC_MISS (option  TYPE_RESU=TRAN_GENE) fait planter
+   REST_GENE_PHYS avec le message suivant :
+   !------------------------------------------------------------------------------!
+   ! !
+   ! !
+   ! Objet JEVEUX inexistant dans les bases ouvertes : >.9000054 .NUME.REFN< !
+   ! l'objet n'a pas été créé ou il a été détruit !
+   !------------------------------------------------------------------------------!
+   
+   
+   Analyse (faite par Georges) :
+   Le problème dans REST_GENE_PHYS vient du fait qu'on recherche des informations dans un
+   objet de type matrice généralisée qui a servi dans le calcul de l'évolution généralisée
+   mais qui à ce moment-là en sortant de CALC_MISS a été détruit : il s'agit d'une rigidité
+   issue de la combinaison d'une impédance de sol et d'une projection sur la base modale de
+   la rigidité de la structure.
+   En fait quand on regarde la programmation de la routine TRAN75, on s'aperçoit qu'il y a
+   des instructions inutiles : on cherche dans la matrice généralisée MATGEN une numérotation
+   généralisée NUMGEN afin d'obtenir un type de réponse TYPREP dont on ne fait rien ensuite.
+   Le seul objet exploitable est la numérotation 
+   physique NUMDDL qu'on va chercher exclusivement dans la base modale de projection BAMO qui
+   elle est permanente.
+   
+   
+   Solution :
+   on retire les 4 lignes qui ne servent à rien dans TRAN75 (lignes 124 à 127), mais aussi
+   dans HARM75 (les deux sont appelées par REST_GENE_PHYS) et dans HARM75 (REST_SOUS_STRUC).
+   Routines impactées :
+   HARM75
+   TRAN75
+   TRAN77
+   
+   Report v10 : seules TRAN75 et TRAN77 sont à corriger (HARM75 n'a pas ce problème).
+   
+   
+   Validation :
+   - L'étude jointe à cette fiche tourne jusqu'au bout
+   - ASTOUT sur tous les tests utilisant REST_GENE_PHYS ou REST_SOUS_STRUC (110 tests).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Test fourni avec la fiche
+DEJA RESTITUE DANS : 11.2.24
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR torkhani     TORKHANI Mohamed       DATE 11/14/2012 - 02:38:36
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018750 DU 2012-04-19 11:13:51
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW11.01.18, le cas-test sdll123e et sdll123f s'arrete en erreur fatale sur Calibre5.
+FONCTIONNALITE
+   Le système tournant étudié présente pour le couple de valeurs propres numéro 105 et 106 une instabilité 
+   numérique. Sur calibre5, le calcul modal réussit à déterminer 105 valeurs propre et pas la 106ème 
+   (erreur : aucun numéro d'ordre trouvé). Sur les autres plateformes, les mêmes solveurs modaux trouvent 
+   toutes les valeurs propres, y compris la 106ème valeur propre. Vue les valeurs des fréquences propres 
+   en présence à cet ordre (56000 Hz) et vu qu'il n'y a aucune action spécifique de prévue sur les 
+   solveurs modaux, je propose d'arrêter le TEST_RESU à la 104ème valeur propre. Si c'est Ok, je restitue 
+   lundi 12-11. La solution proposée doit normalement résoudre l'issue19372 (mêmes cas-tests sdl123e et 
+   sdll123f cassés en couverture de code).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v2.02.123
+VALIDATION
+    sdll123
+DEJA RESTITUE DANS : 11.2.24
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019372 DU 2012-08-28 14:16:38
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    sdll123 e et f plante en couverture de code
+FONCTIONNALITE
+   Le système tournant étudié présente pour le couple de valeurs propres numéro 105 et 106 une instabilité 
+   numérique. Sur calibre5, le calcul modal réussit à déterminer 105 valeurs propre et pas la 106ème 
+   (erreur : aucun numéro d'ordre trouvé). Sur les autres plateformes, les mêmes solveurs modaux trouvent 
+   toutes les valeurs propres, y compris la 106ème valeur propre. Vue les valeurs des fréquences propres 
+   en présence à cet ordre (56000 Hz) et vu qu'il n'y a aucune action spécifique de prévue sur les 
+   solveurs modaux, je propose d'arrêter le TEST_RESU à la 104ème valeur propre. Si c'est Ok, je restitue 
+   lundi 12-11. La solution proposée doit normalement résoudre l'issue19372 (mêmes cas-tests sdl123e et 
+   sdll123f cassés en couverture de code).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : v2.02.123
+VALIDATION
+    sdll123
+DEJA RESTITUE DANS : 11.2.24
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 11/14/2012 - 02:38:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019386 DU 2012-08-29 14:30:42
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    [FORMA] STANLEY : plusieurs courbes sur des points geometriques a la fois
+FONCTIONNALITE
+   Probleme:
+   =========
+   
+   Dans STANLEY, lorsque l'on veut tracer simultanement plusieurs courbes par exemple sur
+   deux noeuds, alors la deuxieme courbe echouait dans le PROJ_CHAMP avec un message d'erreur :
+      
+      !-----------------------------------------------------------------------------------!
+      ! <EXCEPTION> <JEVEUX_26>                                                           !
+      !                                                                                   !
+      !      Objet JEVEUX inexistant dans les bases ouvertes : >.9000022           .TACH< !
+      !      l'objet n'a pas été créé ou il a été détruit                                 !
+      !-----------------------------------------------------------------------------------!
+   
+   Le mecanisme d'exception de Stanley trappait l'erreur mais la deuxieme courbe n'etait pas
+   affichée.
+   
+   
+   Solution:
+   =========
+   
+   On sauvegarde le contexte pour que celui-ci soit bien pris en compte pour les deux courbes.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Stanley
+DEJA RESTITUE DANS : 11.2.24
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR michel       MICHEL-PONNELLE Sylvie   DATE 11/14/2012 - 02:38:38
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019671 DU 2012-10-08 09:34:13
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : Phimeca
+TITRE
+    RUPT : CALC_G et INCO en V10
+FONCTIONNALITE
+   Suite à la présentation en EDA de la fiche issue16745, dans laquelle le calcul de l'option
+   CALC_G pour les éléments INCO est rendu possible, 
+   
+   il a été demandé de blinder en V10 : mettre -1 devant les options incriminées dans les
+   catalogues des EF INCO&co
+   
+   
+   Réalisation:
+   -------------
+   Les catalogues suivants ont été modifiés:
+   
+   gener_me3di3.cata
+   gener_me3du3.cata
+   gener_me3gi3.cata
+   gener_mepli2.cata
+   gener_meplu2.cata
+   gener_meagi2.cata
+   gener_mepgi2.cata
+   gener_mepli2.cata
+   gener_meplu2.cata
+   
+   en mettant un -1 pour les options suivantes :
+   CALC_G            -1    IN__    OUT__    XXXXXX   XXXXXX
+   CALC_G_F          -1    IN__    OUT__    XXXXXX   XXXXXX
+   CALC_K_G          -1    IN__    OUT__    XXXXXX   XXXXXX
+   CALC_K_G_F        -1    IN__    OUT__    XXXXXX   XXXXXX
+   K_G_MODA          -1    IN__    OUT__    XXXXXX   XXXXXX
+   CALC_DG           -1    IN__    OUT__    XXXXXX   XXXXXX  
+   CALC_DG_E          -1    IN__    OUT__    XXXXXX   XXXXXX 
+   CALC_DG_E_F         -1    IN__    OUT__    XXXXXX   XXXXXX
+   CALC_DG_F           -1    IN__    OUT__    XXXXXX   XXXXXX
+   CALC_DG_FORC        -1    IN__    OUT__    XXXXXX   XXXXXX
+   CALC_DG_FORC_F      -1    IN__    OUT__    XXXXXX   XXXXXX
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  NON
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Sans objet
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019503 DU 2012-09-14 15:35:15
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : Necs
+TITRE
+    ?l?ments MEMBRANE GRILLE_EXCENTRE GRILLE_MEMBRANE angle BETA faux ==> r?sultats faux ?
+FONCTIONNALITE
+   Rappel du pb :
+   -------------
+   Jean-Luc a détecté une incohérence entre les elements GRILLE_MEMBRANE et MEMBRANE sur la 
+   definition/utilisation de l'angle BETA par rapport à ce qui est fait dans les coques (pb de 
+   signe).
+   
+   Résultats faux :
+   --------------
+   Il y a une erreur de signe avec l'angle BETA qui peut induire des résultats faux.
+   Illustrons cela par un exemple :
+   
+   Un élément GRILLE_MEMBRANE quad4 dans le plan X0Z. On fait les blocages nécessaires pour
+   que le calcul tourne, on lui donne un ANGL_REP = (0,-45) => selon la doc le x local est
+   (1,0,1).
+   
+   BLOCAGE =
+   N1 N2: DX DY DZ
+   N4 : DY DZ
+   N3 : DZ
+   On impose sur le noeud N3 le déplacement DX=0.2 et DZ=0.2.
+   
+     N2---N3
+     |     |
+     |     |
+     N1---N4
+   
+   En lançant le calcul avec ASTER on obtient SIXX = 0.
+   Avec la surcharge on obtient SIXX = 2.77555E-6.
+   
+   Ces deux résultats sont logiques : 
+   - dans la version actuelle ANGL_REP (0,-45) correspond en fait à xlocal = (1,0,-1), ce
+   vecteur est orthogonal à la force imposée donc il n'y a pas de résistance.
+   - avec la surcharge (correction) x_local est colinéaire à la force imposée donc il y a une
+   contrainte.
+   
+   Il n'y a pas de résultats faux quand :
+   
+   - la grille est dans le plan XOY car la projection des vecteurs correspondant à ANGL_REP =
+   (alpha,beta) et ANGL_REP = (alpha,-beta) est la même sur le plan tangent à la grille
+   
+   - ANGL_REP = (alpha, 90 )ou ANGL_REP = (alpha, -90 ), car ces deux informations
+   correspondent à un vecteur vertical. Une fois projeté sur le plan de la grille (peu
+   importe l'orientation de ce plan), la seule erreur est sur le signe du vecteur xlocal.
+   Cela ne produit pas de résultats faux car seule la direction de xlocal importe, pas le sens.
+   
+   - le plan tangent à la grille est vertical (P : a x + b y = d) et que la projection du
+   vecteur correspondant au ANGL_REP donné a seulement une composante en Z 
+   
+   - beta est nul 
+   
+   Dans tous les autres cas l'erreur de signe sur beta produit des résultats faux.
+   
+   Développements :
+   --------------
+   
+   Pour les modélisations GRILLE_EXCENTREE et GRILLE_MEMBRANE:
+   
+   Pour suivre ce que souhaite instaurer Jean-Luc dans issue19502, on met le beta donné dans
+   le fichier de commande dans la carte des orientations comme s'est fait aujourd'hui.
+   On crée une routine CARGRI qui renvoie la densité d'armature l'excentrement et la
+   direction d'armature.
+   Dans cette routine on a bien  DIR11(3) = - SIN(BETA) (jusqu'ici c'était DIR11(3) = 
+   SIN(BETA)).
+   On appelle cette routine dans te0430, te0431,te0432 et te0433.
+   
+   Dans te0134 (option REPERE_LOCAL) on fait BETA = - BETA dans le cas des grilles.
+   Cela sera à supprimer lors du traitement de issue19502, car la routine COQREP prendra
+   cela en compte pour les coques et les grilles.
+   
+   Toutes les valeurs de NON_REGRESSION sont légèrements fausses dans sslv146d => on remplace 
+   par
+   les nouvelles valeurs trouvées.
+   
+   Dans zzzz323b et c on modifie les 2 TEST_RESU devenus faux.
+   
+   Pour la modélisation MEMBRANE :
+   
+   On suit la même logique que pour les grilles.
+   Tous les te**** appellent la routine mbcine.f,
+   dans cette routine on ajoute un "-" devant SIN(BETA).
+    
+   
+   Validation :  
+   ----------
+   
+   On crée deux nouvelles modélisations dans zzzz189 (c et d). La première utilisant la
+   routine python pour définir les orientations et la deuxième utilisant le mot-clé AXE (voir
+   issue19841). Par rapport à zzzz189a et b l'axe de référence n'est plus Z mais Y, ce qui
+   permet d'avoir des BETA non nuls.
+   
+   Rq : dans issue19841 les tolérances du test zzzz189d pourront être réduite.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.189, V1.01.323
+VALIDATION
+    zzzz189c et d zzzz323b et c
+DEJA RESTITUE DANS : 11.2.24
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR martin       MARTIN Alexandre       DATE 11/14/2012 - 02:38:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019902 DU 2012-11-09 10:40:44
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    Bug dans la mise xc3xa0 jour du statut de contact, dans le cas X-FEM grands glissements
+FONCTIONNALITE
+   Dans le cas du contact X-FEM grands glissements, l'analyse du code du TE0363 montre que le
+   test utilisé pour mettre à jour le statut de contact --- dans le cas où le contact a été
+   postulé --- est incorrect.
+   En effet, le test s'appuie sur l'évaluation du lagrangien de contact :
+   
+   IF (DLAGRC.GT.-1.D-3) THEN
+   
+   alors que dans le cas du contact X-FEM petits glissements et dans le cas de la méthode
+   continue, le test porte sur le lagrangien augmenté.
+   On propose donc de remplacer le test précédent par :
+   
+   IF ((DLAGRC-RHON*JEUCA).GT.R8PREM()) THEN 
+   
+   N.B. : Cette fiche est le pendant de la fiche issue18725, pour le cas X-FEM petits
+   glissements.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de l'ensemble des cas-tests X-FEM
+DEJA RESTITUE DANS : 11.2.24
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019129 DU 2012-07-06 13:00:14
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Bug routine xpivit
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Le contact X-FEM plante si on utilise un schéma d'intégration de type SIMPSON.
+   
+   Analyse :
+   ---------
+   
+   La routine xpivit.f regarde pour les sous-éléments de contact X-FEM si les points
+   d'intégration peuvent être en conflit avec des intersections d'arêtes. 
+   En 2D, on a le bloc de programmation suivante:
+   
+         IF (NDIM.EQ.2) THEN
+           IF (XPC.EQ.-1) THEN
+             PINT = 1
+           ELSEIF (XPC.EQ.1) THEN
+             PINT = 2
+           ELSEIF (XPC.EQ.0) THEN
+             PINT = 3
+           ENDIF
+   
+   XPC.EQ.0 ne peut jamais être sur une arête puisqu'il est à l'intérieur du sous-élément.
+   Or le point de coordonnée KSI=0 dans l'élément de référence fait justement partie des
+   points d'intégration des schémas d'intégration de type SIMPSON, ce qui explique le plantage.
+   
+   On corrige en supprimant le test :
+   
+           ELSEIF (XPC.EQ.0) THEN
+             PINT = 3
+   
+   Validation :
+   ------------
+   
+   Le cas-test ssnv507a passe avec l'option INTEGRATION='SIMPSON'.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de l'ensemble des cas-tests X-FEM
+DEJA RESTITUE DANS : 11.2.24
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 11/14/2012 - 02:38:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019848 DU 2012-10-30 14:18:20
+TYPE anomalie concernant Code_Aster (VERSION 10.6)
+TITRE
+    NEW10 : CALC_ELEM et GROUP_MA
+FONCTIONNALITE
+   Problème :
+   ========
+   Dans zzzz166a, en ajoutant le mot clé GROUP_MA à CALC_ELEM, on est arrêté par SDVERI :  
+     
+   !----------------------------------------------------------------------------------------------------------------------!
+      ! <E> <SDVERI_30>                                                                     
+                                   !
+      !                                                                                     
+                                   !
+      ! Erreur de programmation (catalogue des SD) :                                        
+                                   !
+      !    Vérification de la structure de donnée RESUL                                     
+                                   !
+      !    produite (ou modifiée) par la commande CALC_ELEM                                 
+                                   !
+      !                                                                                     
+                                   !
+      !    Certains objets JEVEUX sont incorrects :                                         
+                                   !
+      !                                                                                     
+                                   !
+      !       Objet : 'RESUL2  .LIGR000000.LGRF'    Message : n'existe pas
+   (<sd_ligrel(44c5210,'RESUL2  .LIGR000000     ')>) !
+      !                                                                                     
+                                   !
+      !       Objet : 'RESUL2  .LIGR000000.NBNO'    Message : n'existe pas
+   (<sd_ligrel(44c5210,'RESUL2  .LIGR000000     ')>) !
+      !                                                                                     
+                                   !
+      !       Objet : 'RESUL2  .LIGR000000.PRNM'    Message : n'existe pas
+   (<sd_ligrel(44c5210,'RESUL2  .LIGR000000     ')>) !
+      !                                                                                     
+                                   !
+      !                                                                                     
+                                   !
+      ! Cette erreur sera suivie d'une erreur fatale.                                       
+                                   !
+     
+   !----------------------------------------------------------------------------------------------------------------------!
+   
+   Par ailleurs, en créant une nouvelle SD en sortie de CALC_ELEM, on s'arrête en erreur fatale.
+   
+   Correction :
+   ==========
+   Il y a deux problèmes :
+   - le ligrel réduit créé à partir du groupe de maille donné par l'utilisateur est créé sur
+   la base volatile (uniquement pour la thermique) ;
+   - pour la thermique, on crée deux fois la nouvelle SD dans thaclm.f. Pour l'acoustique, le
+   résultat est toujours écrit dans l'ancienne SD.
+   
+   On corrige en créant le ligrel réduit sur la base globale et et supprimant la création de
+   la nouvelle SD qui est faite hors du bloc THERMIQUE.
+   
+   On valide la première correction en ajoutant GROUP_MA au premier CALC_ELEM dans zzzz166a.
+   
+   Impacts :
+   =======
+   F:
+   thaclm.f
+   
+   TESTS:
+   zzzz166a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de zzzz166a
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR martin       MARTIN Alexandre       DATE 11/14/2012 - 02:38:42
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019511 DU 2012-09-17 15:41:32
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    XFEM : Probl?me appel routine reeref.f
+FONCTIONNALITE
+   Problème:
+   ---------
+   
+   Les routines suivantes :
+   
+     te0036.f  te0046.f  te0510.f  xbsig2.f  xbsig2.f  xcrvol.f
+     xdecou.f  xdecou.f  xdecou.f  xdecou.f  xdecov.f  xfovol.f
+     xjacf2.f  xjacf2.f  xjacff.f  xjacff.f  xpesro.f  xrige2.f
+     xrige2.f
+             
+   sont suspectées de faire une utilisation incorrecte de la routine reeref.f.
+   
+   En effet, la routine reeref.f calcule les coordonnées dans l'élément de référence d'un
+   point dans élément réel donné, mais peut aussi calculer, selon la valeur de l'argument
+   CINEM, les fonctions de formes, leurs dérivées, le gradient de la transformation, le
+   gradient des déplacement et le tenseur des déformations. Elle a évidemment besoin de
+   connaître le champ de déplacement pour calculer le gradient de la transformation, le
+   gradient des déplacement et le tenseur des déformations.
+   Toutefois, les routines citées précédemment appellent toutes la routine reeref.f avec un
+   champ de déplacement bidon.
+   Une première correction proposée par Jaques a consisté à remplacer l'argument IDEPL=IBID,
+   correspondant à un champ de déplacement bidon, par un appel avec IDEPL=0, assorti d'un
+   blindage de reeref.f qui garantit que les calculs nécessittant la connaissance d'un champ
+   de déplacement ne seront pas effectués si IDEPL=0.
+   
+   La question est maintenant de savoir si ces appels sans champ de déplacement (i.e. avec
+   IDEPL=0) sont cohérents avec les intentions des routines appelant la routine reeref.f.
+   
+   Analyse :
+   ---------
+   
+   Après analyse, il apparaît que la plupart des routines font une utilisation correcte de
+   reeref.f. Soit elles attendent simplement les coordonnées du point dans l'élément de
+   référence et la valeur des fonctions de forme et elles appellent reeref.f avec CINEM='NON'
+   et IDEPL=0, soit elles ont aussi besoin de connaître les dérivées des fonctions de forme
+   et elles appellent la routine avec CINEM='DFF' et IDEPL=0.
+   
+   Seules trois routines sont préoccupantes :
+      - La routine xbsig2.f, qui est appellée pour lors du calcul de l'option FORC_NODA, doit
+   renvoyer B^T.SIGMA mais n'a connaissance ni du champ de déplacement, ni du comportement.
+   Elle se contente d'appeler la routine reeref.f avec CINEM='OUI', IDEPL=0 et GRAND=.false.
+   et obtient toujours le gradient de la transformation correspondant au cas h.p.p.
+   Le calcul qu'elle effectue est donc faux dans le cas GROT_GDEPL !
+      - Les routines xjacf2.f et xjacff.f utilise une valeur de l'argument CINEM qu'elles
+   tiennent des routines qui les appellent. Or ces routines sont amenées à calculer les
+   valeurs des dérivées des fonctions de formes et renverront donc un résultat faux si elles
+   sont appelées avec CINEM='NON' !
+   
+   Correction :
+   ------------
+   
+      * pour xbsig2.f :
+      -----------------
+   
+   On récupère le champ de déplacement et le comportement dans le TE0542, qui calcule
+   l'option FORC_NODA pour les éléments X-FEM. Ils sont ensuite cascadés jusqu'à la routine
+   xbsig2.f, qui peut alors appeler la routine reeref.f avec les bonnes options.
+   On en profite pour corriger la routine xbsig3.f --- pendant 3D de la routine xbsig2.f ---
+   qui souffrait des mêmes problèmes lors de son appel à reere3.f --- pendant de xbsig2.f.
+   
+   Routines impactées : te0542.f, xbsig.f, xbsig2.f et xbsig3.f.
+   
+      * pour xjacf2.f et xjacff.f :
+      -----------------------------
+   
+   On n'a pas besoin de récupérer l'argument CINEM de l'appelant pour savoir comment appeler
+   correctement reeref.f dans ces routines. Elles renvoient FFP, FFPC et DFDI où :
+      - FFP et DFDI sont calculées par l'appel :
+   
+         CALL REEREF(ELREFP,AXI,NNO,NNOS,ZR(IGEOM),G,0,.FALSE.,NDIM,
+        &             HE,RBID, RBID,
+        &             IBID,IBID,DDLH,NFE,DDLS,DDLM,FE,DGDGL,CINEM,
+        &             XE,FFP,DFDI,F,EPS,GRAD)
+   
+   FFP correspond donc à des fonctions de forme et DFDI à leurs dérivées. Il suffit donc
+   d'appeler reeref.f avec CINEM='DFF' dans ce cas.
+      - FFPC est calculé par l'appel :
+   
+         CALL REEREF(ELREFC,AXI,NNOC,NNOC,ZR(IGEOM),G,0,.FALSE.,NDIM,
+        &             HE,RBID, RBID,
+        &             IBID,IBID,DDLH,NFE,DDLS,DDLM,FE,DGDGL,CINEM,
+        &             XE,FFPC,DFDIC,F,EPS,GRAD)
+   
+   FFPC correspond donc à des fonctions de forme. Il suffit donc d'appeler reeref.f avec
+   CINEM='DFF' dans ce cas.
+   L'argument CINEM des routines xjacf2.f et xjacff.f est supprimé.
+   
+   Routines impactées : xjacf2.f, xjacff.f, xsifle.f, pipefx.f, te0037.f, te0532.f, te0533.f,
+   te0534.f et te0548.f.
+   
+      * mise en conformité :
+      ----------------------
+   
+   Depuis la version 11.2.23, ZR(1) est initialisé à NaN de sorte que l'indice 1 désigne un
+   champ dont on n'est pas sensé se servir. On utilise cette nouvelle fonction pour remplacer
+   les IDEPL=0 par des IDEPL=1 dans les appels à reeref.f qui n'ont pas besoin du champ de
+   déplacement. Le blindage introduit par Jacques devient ainsi inutile.
+   
+   Routines impactées : reeref.f, xcrvo.f, xdecou.f, xdecov.f, xfovol.f, xpesro.f, xrige2.f,
+   te0036.f, te0046.f et te0510.f
+   
+   Risque de résultat faux :
+   -------------------------
+   
+   Il est à noter que l'option FORC_NODA est utilisée pour initialiser le second membre de la
+   première itération de Newton.
+   L'actualisation du second membre utilise l'option RAPH_MECA, semble quant à elle
+   programmée correctement (cf. xnmel2.f et
+   xnmel3.f). Il n'y a donc pas de risque de résultat faux liés à l'utilisation de STAT_NON_LINE.
+   En revanche, le calcul de l'option FORC_NODA par l'opérateur CALC_ELEM donne un résultat faux.
+   L'analyse de l'historique des sources montre que ce risque de résultat faux remonte au
+   moins à la version 10.2.2, où on observe que l'appel à reeref.f utilise GRAND=.false. dans
+   tous les cas.
+   
+   Validation :
+   ------------
+   
+   Passage de l'ensemble des cas-tests X-FEM.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.2.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.1
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de l'ensemble des cas-tests X-FEM
+DEJA RESTITUE DANS : 11.2.24
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF miss03a                        ladier A.LADIER           260      2      2
+ CASTEST MODIF sdll123e                       ladier A.LADIER           225      4      4
+ CASTEST MODIF sdll123f                       ladier A.LADIER           241      4      4
+ CASTEST MODIF zzzz166a                       ladier A.LADIER           257      3      2
+CATALOGU MODIF typelem/gener_me3di3           ladier A.LADIER           274     24      2
+CATALOGU MODIF typelem/gener_me3du3           ladier A.LADIER           279     23      1
+CATALOGU MODIF typelem/gener_me3gi3           ladier A.LADIER           228     24      2
+CATALOGU MODIF typelem/gener_meagi2           ladier A.LADIER           219     24      2
+CATALOGU MODIF typelem/gener_mepgi2           ladier A.LADIER           219     24      2
+CATALOGU MODIF typelem/gener_mepli2           ladier A.LADIER           260     24      2
+CATALOGU MODIF typelem/gener_meplu2           ladier A.LADIER           270     23      1
+CATALOPY MODIF commande/calc_miss             ladier A.LADIER           171      3      3
+ FORTRAN AJOUT elements/cargri                ladier A.LADIER            71     71      0
+ FORTRAN MODIF algorith/pipefx                ladier A.LADIER           184      4      4
+ FORTRAN MODIF algorith/tran75                ladier A.LADIER           472      3      7
+ FORTRAN MODIF algorith/tran77                ladier A.LADIER           407      4      8
+ FORTRAN MODIF algorith/xjacf2                ladier A.LADIER           229      5     10
+ FORTRAN MODIF algorith/xjacff                ladier A.LADIER           222      5     10
+ FORTRAN MODIF algorith/xpivit                ladier A.LADIER           161      2      4
+ FORTRAN MODIF calculel/thaclm                ladier A.LADIER           651      3     13
+ FORTRAN MODIF elements/te0037                ladier A.LADIER           356      4      4
+ FORTRAN MODIF elements/te0363                ladier A.LADIER           245      5      4
+ FORTRAN MODIF elements/te0431                ladier A.LADIER           484      5     14
+ FORTRAN MODIF elements/te0432                ladier A.LADIER           278      6     13
+ FORTRAN MODIF elements/te0532                ladier A.LADIER           355      4      4
+ FORTRAN MODIF elements/te0533                ladier A.LADIER           507      5      5
+ FORTRAN MODIF elements/te0534                ladier A.LADIER           489      4      4
+ FORTRAN MODIF elements/te0542                ladier A.LADIER           114      7      5
+ FORTRAN MODIF elements/te0548                ladier A.LADIER           200      4      4
+ FORTRAN MODIF elements/xbsig                 ladier A.LADIER           190     11      8
+ FORTRAN MODIF elements/xbsig2                ladier A.LADIER           259     11      8
+ FORTRAN MODIF elements/xbsig3                ladier A.LADIER           220     12     11
+ FORTRAN MODIF elements/xbsigr                ladier A.LADIER           194      8      7
+ FORTRAN MODIF elements/xsifle                ladier A.LADIER           396      4      4
+  PYTHON MODIF Miss/miss_post                 ladier A.LADIER           617      4      4
+  PYTHON MODIF Stanley/stanley_engine         ladier A.LADIER          3391      4      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1          71        71               +71
+ MODIF :   35       13524       306     183      +123
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   36       13595       377     183      +194 

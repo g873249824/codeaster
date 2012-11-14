@@ -1,4 +1,4 @@
-#@ MODIF stanley_engine Stanley  DATE 25/06/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF stanley_engine Stanley  DATE 14/11/2012   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -2671,7 +2671,10 @@ class DRIVER_COURBES(DRIVER) :
             if contexte.para_sensi: DETR( contexte.jdc.memo_sensi.get_nocomp(STNTBLGR.nom, contexte.para_sensi.nom) )
             if l_detr: DETR( tuple(l_detr) )
 
-
+            # Dans le cas de plusieurs points, il faut revenir au contexte initial
+            contexte = self.stan.contexte
+            
+            
     elif selection.geom[0] == 'CHEMIN' :
 
         chemin = selection.geom[1][0]

@@ -1,8 +1,8 @@
-#@ MODIF miss_post Miss  DATE 13/09/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF miss_post Miss  DATE 14/11/2012   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -544,8 +544,8 @@ class POST_MISS_TAB(POST_MISS):
         _reptemp = DEFI_FONCTION(VALE=fft.tabul(),
                                  **fft.para)
         opts = {}
-        if self.param['LIST_FREQ']:
-            opts['LIST_FREQ'] = self.param['LIST_FREQ']
+        if self.param['LIST_FREQ_SPEC_OSCI']:
+            opts['LIST_FREQ'] = self.param['LIST_FREQ_SPEC_OSCI']
         _spec = CALC_FONCTION(SPEC_OSCI=_F(FONCTION=_reptemp,
                                            NORME=self.param['NORME'],
                                            AMOR_REDUIT=self.param['AMOR_SPEC_OSCI'],
