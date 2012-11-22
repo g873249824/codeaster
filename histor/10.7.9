@@ -1,0 +1,254 @@
+========================================================================
+Version 10.7.9 du : 23/11/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 11/22/2012 - 03:53:39
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019720 DU 2012-10-12 11:47:46
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Calcul des forces internes des POU_D_TG
+FONCTIONNALITE
+   Pour les POU_D_TG, le calcul des FORC_NODA dans TE0347 n'était pas fait de la même façon
+   que dans TE0346 qui gère les options RAPH_MECA, FULL_MECA, RIGI_MECA_TANG.
+   
+   Pour FORC_NODA des POU_D_TG, on copiait les forces aux points de gauss 1 et 3
+   respectivement sur les noeuds 1 et 2. C'est pas bon !!! Les POU_D_TG sont des éléments
+   finis et pas des éléments de structure à la POUX comme les POU_D_E.
+   Pour les POU_D_E on peut faire une copie des valeurs aux points de Gauss, car ils ne sont
+   pas de "vrai" points de Gauss au sens des éléments finis, mais un vecteur de stockage
+   (poutres à la POUX).
+   
+   Maintenant cela converge à la prédiction, lorsque le chargement reste constant.
+   
+   Pas de restitution de cas test spécifique à cette correction, cela sera couvert par la
+   restitution de issue19235 : "GROT_GDEP sur tous les éléments de poutre"
+   
+   Un seul cas test est NOOK : ssll23c (cf issue19951 sur l'incohérence des valeurs entre la
+   doc V et les VALE_REFE).
+   Restitution du cas test avec les nouvelles valeurs de non-régression, qui sont proches des
+   valeurs initiale.
+   
+   Modification : TE0347
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage cas test
+DEJA RESTITUE DANS : 11.2.25
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 11/22/2012 - 03:53:40
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019370 DU 2012-08-28 13:49:00
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    ssnv214 a plante en couverture de code
+FONCTIONNALITE
+   ==========
+   Problème 
+   ==========
+   
+   Le cas-test ssnv214a ne converge pas avec l'executable couverture de code sur aster4.
+   
+   
+   ==========
+   Analyse 
+   ==========
+   
+   Le calcul de la matrice sécante diffère selon l'exécutable, à cause du test suivant :
+   
+   IF (S3(I).LE.0.) THEN
+     BT3(I) = 0
+   ENDIF
+   
+   On est en présence de valeurs très faibles en e-16 ou moins, positives ou négatives selon
+   les cas.
+   
+   
+   ===========
+   Correction
+   ===========
+   
+   S3 représente une contrainte, on propose de normer par rapport au module d'Young et
+   d'utiliser R8PREM() :
+   
+   IF S3(I) .LE. R8PREM()*E
+   
+   Le cas-test converge alors sans problème avec l'executable couverture de code.
+   Je propose de faire remonter la correction en NEW10.
+   
+   
+   ===========
+   Impact
+   ===========
+   brksec.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Passage du test et des autres BETON_RAG
+DEJA RESTITUE DANS : 11.2.25
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR michel       MICHEL-PONNELLE Sylvie   DATE 11/22/2012 - 03:53:41
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019841 DU 2012-10-29 15:32:14
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : Necs
+TITRE
+    AFFE_CARA_ELEM : GRILLE/AXE et ORIG_AXE
+FONCTIONNALITE
+   Description du problème :
+   =======================
+   
+   Il est possible de donner la direction d'armature des grilles à partir 
+   des mot-clés AXE et
+   ORIG_AXE.
+   A mon sens ORIG_AXE est en trop, actuellement il permet d'ailleurs de 
+   définir une
+   orientation d'armature qui n'appartient pas au plan tangent à l'élément.
+   
+   
+   Ex :
+   
+                     (1,0,1) A---B (2,0,1)
+                             |   |
+                     (1,0,0) D---C (2,0,0)
+   
+   AXE = (0,0,1)
+   ORIG_AXE =(0,0,0)
+   Le centre de gravité G = (1.5,0,0.5)
+   A partir de la doc de AFFE_CARA_ELEM on va calculer le xlocal sur cet 
+   exemple.
+   
+   La droite D est définie par (x0 = (0,0,0) et V = (0,0,1)
+   X = G
+   La projection de X sur D, XD = (0,0,0.5)
+   X1 =XXD = (1.5,0,0)
+   Y1 =V^X1=(0,1.5,0)
+   Normons Y1 : Y1 =(0,1,0)
+   xlocal = (0,1,0) n'appartient pas au plan tangent de l'élément.
+   
+   En fait, le mot-clé AXE suffit. xlocal est alors calculé à partir de AXE 
+   et de la normale
+   de l'élément.
+   C'est d'ailleurs ce qui est fait dans le routine python du test zzzz189a 
+   (on remarque
+   qu'elle n'a pas de mot-clé ORIG_AXE), mais dans aceagb.f on fait bien 
+   comme indiqué dans
+   la doc.
+   
+   
+   Résultats faux :
+   ==============
+   
+   Des résultats faux peuvent apparaitre quand le vecteur défini par le 
+   centre de gravité de
+   la maille de GRILLE et sa projection sur la droite définit par AXE et 
+   ORIG_AXE n'est pas
+   colinéaire au vecteur normal au plan tangent à l'élément.
+   Dans ces cas de figures le vecteur x local donnant l'orientation des 
+   armatures
+   n'appartient pas au plan tangent à l'élément.
+   Il n'y a pas de résultats faux dans le cas d'un modèle cylindrique si 
+   AXE et ORIG_AXE
+   définissent bien l'axe du cylindre.
+   Dans les autres cas il y a de grandes chances de résultats faux.
+   
+   
+   Travail effectué :
+   ================
+   
+   On supprime le mot-clé ORIG_AXE des mot-clés facteurs GRILLE et MEMBRANE.
+   A partir de AXE seul et de la normale de l'élément, on calcule ALPHA et BETA
+   comme c'est fait dans zzzz189a et c.
+   xlocal = AXE ^ vecteur normal
+   
+   Rq : AXE a le même rôle que ANGL_REP, mais au lieu de définir l'axe x 
+   local il défnit
+   l'axe y local.
+   
+   Sources modifiées :
+   
+   aceagb.f,aceamb.f
+   aceinc.f : on remplace la vérif fait sur ORIG_AXE par une vérif sur AXE.
+   affe_cara_elem.capy : suppression de ORIG_AXE du catalogue.
+   zzzz189a.comm : on ajoute beta = - beta dans le partie python (aucune 
+   incidence puisque
+   les betas sont nuls dans ce test.
+   zzzz189b.comm et zzzz189d.comm : suppression de ORIG_AXE et abaissement 
+   des tolérances des
+   TEST_RESU.
+   
+   
+   Validation :
+   ----------
+   
+   Les résultats obtenus dans zzzz189b et d sont plus proches de a et c.
+   
+   Doc impactées :
+   U4.42.01 : suppression de ORIG_AXE et réécriture des explications
+   V1.01.189
+   
+   
+   Pour la version 10
+   ------------------
+   
+   Blindage : on interdit l'utilisation de ORIG_AXE dans les routines aceagb.f et aceinc.f
+   Si le mot clef existe ==> <F> <MODELISA4_1>
+   1: _("""
+      L'usage de mot clef ORIG_AXE peut conduire à des résultats faux (fiche REX 19841).
+      L'utilisation de ce mot clef dans le cas considéré n'est pas nécessaire.
+   """),
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.42.01,V1.01.189
+VALIDATION
+    zzzz189b et d
+DEJA RESTITUE DANS : 11.2.25
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdll23c                        ladier A.LADIER           472     89     87
+ CASTEST MODIF zzzz189b                       ladier A.LADIER           151      2      3
+CATALOPY MODIF commande/affe_cara_elem        ladier A.LADIER           596      2      3
+ FORTRAN MODIF algorith/brksec                ladier A.LADIER            89      5      5
+ FORTRAN MODIF elements/te0347                ladier A.LADIER           404     55      4
+ FORTRAN MODIF modelisa/aceagb                ladier A.LADIER           227     11      8
+ FORTRAN MODIF modelisa/aceinc                ladier A.LADIER           284      6      2
+  PYTHON MODIF Messages/modelisa4             ladier A.LADIER           427      5      1
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    8        2650       175     113       +62
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    8        2650       175     113       +62 

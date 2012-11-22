@@ -1,8 +1,8 @@
       SUBROUTINE TE0347(OPTION,NOMTE)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 04/11/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ELEMENTS  DATE 22/11/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -73,7 +73,7 @@ C
       INTEGER NNO,NC,NEQ,ICHG,ICOMPO,ICHN,LGPG,NBVAR,I,K,IGEOM,IMATE
       INTEGER LSECT,LORIEN,NBPAR,ICGP,IDEPLP,ICONTN,IDEPLM
       INTEGER KK,ICONTG,IVECTU,IN
-      REAL*8  VALPAR,DDOT,TET1,TET2
+      REAL*8  VALPAR,DDOT,TET1,TET2,TEMP,SIGP(7)
 C
       DATA NOMRES/'E','NU'/
 C ----------------------------------------------------------------------
@@ -331,18 +331,69 @@ C        QUI CONTIENNENT DEJA LES EFFORTS AUX NOEUDS
                ENDIF
             ELSE IF ( OPTION .EQ. 'FORC_NODA' ) THEN
                CALL JEVECH('PCONTMR','L',ICONTG)
-               CALL JEVECH('PCAORIE','L',LORIEN )
+               CALL JEVECH('PCAORIE','L',LORIEN)
                CALL JEVECH('PVECTUR','E',IVECTU)
-               IF ( NPG .EQ. 2 ) THEN
-                  DO 222 IN = 1,NC
-                     FS(IN)    = -ZR(ICONTG+IN-1)
-                     FS(IN+NC) =  ZR(ICONTG+IN+NC-1)
-222               CONTINUE
+
+               IF (NOMTE .EQ. 'MECA_POU_D_TG') THEN
+                  CALL JEVECH('PGEOMER','L',IGEOM)
+                  CALL JEVECH('PCAGNPO','L',LSECT)
+                  CALL JEVECH('PMATERC','L',IMATE)
+                  CALL VDIFF(3,ZR(IGEOM-1+4),ZR(IGEOM),XD)
+                  XL2=DDOT(3,XD,1,XD,1)
+                  XL   = SQRT(XL2)
+
+                  CALL R8INIR(2*NC,0.D0,FS,1)
+                  CO(1) = 5.D0/9.D0
+                  CO(2) = 8.D0/9.D0
+                  CO(3) = 5.D0/9.D0
+
+C                 THERMIQUE A T+
+                  CALL MOYTEM(FAMI,NPG,1,'+',TEMP,IRET)
+                  NOMRES(1) = 'E'
+                  NOMRES(2) = 'NU'
+                  CALL RCVALB(FAMI,1,1,'+',ZI(IMATE),' ','ELAS',1,
+     &                     'TEMP',TEMP,2,NOMRES, VALRES, CODRES, ' ')
+                  E  = VALRES(1)
+                  NU = VALRES(2)
+                  G  = E / (2.D0*(1.D0+NU))
+
+                  A      = ZR(LSECT-1+1)
+                  XIY    = ZR(LSECT-1+2)
+                  XIZ    = ZR(LSECT-1+3)
+                  ALFAY = ZR(LSECT-1+4)
+                  ALFAZ = ZR(LSECT-1+5)
+                  PHIY = E*XIZ*12.D0*ALFAY/ (XL*XL*G*A)
+                  PHIZ = E*XIY*12.D0*ALFAZ/ (XL*XL*G*A)
+
+                  DO 400 KP = 1, NPG
+                     CALL JSD1FF(KP,XL,PHIY,PHIZ,D1B)
+                     DO 405 I = 1 ,NC
+                        SIGP(I) = ZR(ICONTG-1+NC*(KP-1)+I)
+405                  CONTINUE
+
+                     DO 410 K = 1,2*NC
+                       DO 420 KK = 1,NC
+                         FS(K)=FS(K)+XL*SIGP(KK)*D1B(KK,K)*CO(KP)*0.50D0
+420                    CONTINUE
+410                  CONTINUE
+400               CONTINUE
+C                 PRENDRE EN COMPTE CENTRE DE TORSION
+                  EY = -ZR(LSECT-1+6)
+                  EZ = -ZR(LSECT-1+7)
+                  FS( 4)=FS( 4)-EZ*FS(2)+EY*FS( 3)
+                  FS(11)=FS(11)-EZ*FS(9)+EY*FS(10)
                ELSE
-                  DO 225 IN = 1,NC
-                     FS(IN)    = -ZR(ICONTG+IN-1)
-                     FS(IN+NC) =  ZR(ICONTG+IN+NC+NC-1)
-225               CONTINUE
+                  IF ( NPG .EQ. 2 ) THEN
+                     DO 222 IN = 1,NC
+                        FS(IN)    = -ZR(ICONTG+IN-1)
+                        FS(IN+NC) =  ZR(ICONTG+IN+NC-1)
+222                  CONTINUE
+                  ELSE
+                     DO 225 IN = 1,NC
+                        FS(IN)    = -ZR(ICONTG+IN-1)
+                        FS(IN+NC) =  ZR(ICONTG+IN+NC+NC-1)
+225                  CONTINUE
+                  ENDIF
                ENDIF
                CALL MATROT ( ZR(LORIEN) , PGL )
                CALL UTPVLG ( NNO, NC, PGL, FS, ZR(IVECTU) )

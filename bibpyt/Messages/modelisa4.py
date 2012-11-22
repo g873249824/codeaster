@@ -1,4 +1,4 @@
-#@ MODIF modelisa4 Messages  DATE 22/05/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF modelisa4 Messages  DATE 22/11/2012   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
@@ -26,6 +26,10 @@ cata_msg = {
 
 
 
+1: _("""
+   L'usage du mot clef ORIG_AXE peut conduire à des résultats faux (fiche REX 19841).
+   L'utilisation de ce mot clef dans le cas considéré n'est pas nécessaire.
+"""),
 
 
 
@@ -73,7 +77,7 @@ cata_msg = {
 """),
 
 9 : _("""
-  -> Phase de vérification du maillage : présence de mailles dégénérées. 
+  -> Phase de vérification du maillage : présence de mailles dégénérées.
      Le rapport entre la plus petite arete sur la plus grande est inférieur à 0.001
 
   -> Risque & Conseil :

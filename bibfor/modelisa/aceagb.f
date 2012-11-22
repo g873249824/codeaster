@@ -4,7 +4,7 @@
       CHARACTER*8         NOMU, NOMA
 C ----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF MODELISA  DATE 07/11/2012   AUTEUR LADIER A.LADIER 
+C MODIF MODELISA  DATE 22/11/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
 C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -105,13 +105,19 @@ C
         CALL GETVR8('GRILLE','EXCENTREMENT' ,IOC,1,1   ,EZ       ,N3)
         CALL GETVR8('GRILLE','COEF_RIGI_DRZ',IOC,1,1   ,CTR      ,N4)
         CALL GETVR8('GRILLE','ORIG_AXE'     ,IOC,1,0   ,ORIG     ,N5)
-C
+C       BLINDAGE SEULEMENT POUR LA VERSION 10
+        IF ( N5.NE.0 ) THEN
+            CALL U2MESS('F','MODELISA4_1')
+        ENDIF
+
         ZR(JDVC  ) = SL
         ZR(JDVC+1) = ANG(1)
         ZR(JDVC+2) = ANG(2)
         ZR(JDVC+3) = EZ
         ZR(JDVC+4) = CTR
 C
+        CALL GETVR8 ( 'GRILLE', 'AXE'     , IOC,1,3 ,AXEZ, N5 )
+
         IF ( N5 .EQ. 0 ) THEN
 C
 C ---     "GROUP_MA" = TOUTES LES MAILLES DE LA LISTE DE GROUPES MAILLES
@@ -128,9 +134,6 @@ C ---     "MAILLE" = TOUTES LES MAILLES DE LA LISTE DE MAILLES
 C
         ELSE
 C
-           CALL GETVR8 ( 'GRILLE', 'ORIG_AXE', IOC,1,3 ,ORIG, N5 )
-           CALL GETVR8 ( 'GRILLE', 'AXE'     , IOC,1,3 ,AXEZ, N5 )
-C
            IF (NG.GT.0) THEN
              NBMAT = 0
              NUMA = -1
@@ -144,7 +147,7 @@ C
  122           CONTINUE
  120         CONTINUE
            ELSE
-               NBMAT = NM           
+               NBMAT = NM
              DO 130 IMA = 0 , NM-1
                CALL JENONU(JEXNOM(NOMAMA,ZK8(JDLS+IMA)),ZI(JNUMA+IMA))
  130         CONTINUE
@@ -175,9 +178,9 @@ C
                 Y = Y + ZR(AXYZM+3*(NUNOE-1)+1)
                 Z = Z + ZR(AXYZM+3*(NUNOE-1)+2)
  202         CONTINUE
-             AXER(1) = ( X / NBNO ) - ORIG(1)
-             AXER(2) = ( Y / NBNO ) - ORIG(2)
-             AXER(3) = ( Z / NBNO ) - ORIG(3)
+             AXER(1) = ( X / NBNO )
+             AXER(2) = ( Y / NBNO )
+             AXER(3) = ( Z / NBNO )
              PSCAL = AXER(1)*AXEZ(1)+AXER(2)*AXEZ(2)+AXER(3)*AXEZ(3)
              AXER(1) = AXER(1) - PSCAL*AXEZ(1)
              AXER(2) = AXER(2) - PSCAL*AXEZ(2)
