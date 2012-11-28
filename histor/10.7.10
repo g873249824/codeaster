@@ -1,0 +1,253 @@
+========================================================================
+Version 10.7.10 du : 29/11/2012
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR idoux        IDOUX Ludovic          DATE 11/27/2012 - 07:11:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019953 DU 2012-11-16 12:13:05
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : Necs
+TITRE
+    FORC_NODA : Q4GG et BARRE en géometrie réactualisée
+FONCTIONNALITE
+   Problème :
+   ========
+   
+   Le calcul des champs FORC_NODA pour les éléments BARRE et Q4GG/DKTG ne prend pas en compte
+   la géométrie réactualisée.
+   
+   Résultats faux :
+   ==============
+   
+   Les champs FORC_NODA et donc REAC_NODA pour les éléments BARRE avec DEFORMATION = PETIT_REAC et 
+   pour des modélisations Q4GG et DKTG avec DEFORMATION = GROT_GDEP et PETIT_REAC peuvent être faux 
+   car la matrice de passage local/global n'est pas la bonne.
+   Il n'y a cependant pas de résultats faux sur les déplacements et les contraintes car le calcul 
+   des forces internes est bien fait dans les options FULL_MECA et RAPH_MECA. L'erreur sur les 
+   forces internes est donc rectifiée dès la première itération de NEWTON en correction.
+   
+   
+   Travail effectué:
+   ================
+   
+   Développement :
+   -------------
+   Dans les te0409 pour les Q4GG et te0156 pour les BARRE, on ajoute la prise en compte de la
+   géométrie réactualisée lors du calcul de la matrice de passage repère global -> repère local.
+   
+   Validation :
+   ----------
+   Ces éléments sont présents dans le test plexu03b. Dans ce test les contraintes issues de
+   CALC_PRECONT sont envoyées à EPX comme état initial.
+   A partir de ces contraintes EPX calcule les forces internes au temps 0.
+   On ajoutera alors à plexu03b un TEST_RESU sur les FORC_NODA en sortie de CALC_PRECONT avec
+   REFERENCE = SOURCE_EXTERNE.
+   
+   On profite de cette fiche pour corriger les tests plexu03b et plexu04a cassés par la
+   restitution d'un correction dans EPX. Cela consiste à ajouter
+   GROT_GDEP et PETIT_REAC dans CALC_PRECONT et à modifier les valeurs de références des
+   TEST_RESU. 
+   
+   Impact Doc:
+   ----------
+   V1.01.312 V5.06.109
+   
+   Sources modifiées :
+   -----------------
+   
+   te0156.f te0409.f
+   gener_mebar1.cata gener_medktg1.cata
+   plexu03b.comm plexu04a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.312,V5.06.109
+VALIDATION
+    plexu03b
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 11/27/2012 - 07:11:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019961 DU 2012-11-19 15:25:52
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Suppression de ssnv199f en version 10
+FONCTIONNALITE
+   Ce cas-test présente une instabilité (présence de mouvements de corps 
+   rigide) dont la correction réalisée en version 11 de développement ne peut 
+   pas être reportée en version 10.
+   
+   On propose de supprimer cette modélisation, d'indiquer dans la doc V que 
+   cette modélisation n'est possible qu'en version 11.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : v6.04.199
+VALIDATION
+    ssnv199f
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR laverne      LAVERNE Jérôme       DATE 11/27/2012 - 07:11:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019945 DU 2012-11-15 15:27:39
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW10.07.08, le cas-test ssnv199f sxe2x80x99arrxc3xaate en erreur fatale sur Rocks.
+FONCTIONNALITE
+   Le test est supprimé en version 10 (cf. issue19961).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ras
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 11/27/2012 - 07:11:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019121 DU 2012-07-05 14:34:16
+TYPE anomalie concernant Code_Aster (VERSION 11.2)
+TITRE
+    DEFI_COMPOSITE en thermique (materiau THER_COQMU)
+FONCTIONNALITE
+   Problème :
+   ========
+   Dans les sources, on trouve des blocs IF THER_COQMU.
+   Cela corresponde à des coques multi-couches (au sens multi-matériaux). Or il
+   n'existe aucun cas test faisant de la thermique et du DEFI_COMPOSITE.
+   
+   Est-ce un défaut de validation ou bien cette fonctionnalité n'est plus accessible et ce
+   sont de restes à supprimer ?
+   
+   Correction :
+   ==========
+   Dans les routines suivantes, on trouve THER_COQMU:
+   elements/te0101.f -> RIGI_THER
+   elements/te0102.f -> MASS_THER
+   elements/te0109.f -> FLUX_ELGA
+   elements/te0110.f -> CHAR_THER_EVOL
+   modelisa/matcod.f -> utilitaire
+   modelisa/op0056.f -> DEFI_COMPOSITE
+   utilitai/dismcm.f -> utilitaire DISMOI
+   
+   En modifiant hpla100g et hpla100h, on valide dans ces routines, tous les blocs spécifiques
+   aux coques composites en thermique. Pour cela, on modifie les tests en remplaçant le
+   matériau THER par THER_ORTH (obligatoire pour DEFI_COMPOSITE) avec les mêmes valeurs pour
+   conserver un matériau isotrope. On utilise deux couches pour la thermique.
+   Les tests restent OK.
+   
+   Toutefois, le calcul de l'option FLUX_ELGA est impossible pour les coques composites car
+   il n'y a pas de champs à sous-points en thermique. On supprime donc la possibilité de
+   calculer cette option pour les coques thermiques composites.
+   
+   On en profite pour vérifier dans le te0109 (calcul de FLUX_ELGA pour les coques
+   thermiques) de vérifier que le nombre de couche est bien égale à 1. Pour cela il faut
+   modifier AFFE_CARA_ELEM pour écrire le nombre de couche (ce n'était pas fait pour la
+   thermique). On modifie aussi le test tpls100a (le seul à calculer FLUX_ELGA pour les
+   coques en thermique) en testant la valeur du flux en peau inférieure.
+   
+   Impacts :
+   =======
+   CATA:
+   flux_elga.cata  gener_thcq_2.cata
+   
+   F:
+   pmfd00.f  te0109.f
+   
+   TESTS:
+   hpla100g.comm  hpla100h.comm  tpls100a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage des tests hpla100g, hpla100h et tpls100a
+DEJA RESTITUE DANS : 11.2.25
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 11/28/2012 - 08:52:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020011 DU 2012-11-28 07:00:57
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    Comparaison erronée après l'appel à JJLDYN dans JJALLS
+FONCTIONNALITE
+   On reporte la correction de la routine JJALLS effetuée en 11.2.26 : la taille cumulée des
+   objets libérés était divisée à tort par la longueur de l'entier LOIS dans un test. 
+   
+   --- Mise a jour Aster 11.2.26 du 28/11/2012
+   4c4
+   < C MODIF JEVEUX  DATE 20/11/2012   AUTEUR LEFEBVRE J-P.LEFEBVRE 
+   ---
+   > C MODIF JEVEUX  DATE 27/11/2012   AUTEUR LEFEBVRE J-P.LEFEBVRE 
+   132c132
+   <           IF ( LTOT/LOIS .LT. LSIC ) CALL JJLDYN(0,-1,LTOT)
+   ---
+   >           IF ( LTOT .LT. LSIC ) CALL JJLDYN(0,-1,LTOT)
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF hpla100g                       ladier A.LADIER           288     29     35
+ CASTEST MODIF hpla100h                       ladier A.LADIER           296     17     10
+ CASTEST SUPPR ssnv199f.comm                  ladier A.LADIER           375      0    375
+CATALOGU MODIF options/flux_elga              ladier A.LADIER            55      4      2
+CATALOGU MODIF options/flux_elno              ladier A.LADIER            55      4      2
+CATALOGU MODIF typelem/gener_me2db1           ladier A.LADIER           232      2      2
+CATALOGU MODIF typelem/gener_mebar1           ladier A.LADIER           245      3      2
+CATALOGU MODIF typelem/gener_medkg1           ladier A.LADIER           263      3      2
+CATALOGU MODIF typelem/gener_thcq_2           ladier A.LADIER           145      7      4
+ FORTRAN MODIF elements/te0109                ladier A.LADIER           204     19     58
+ FORTRAN MODIF elements/te0156                ladier A.LADIER           144     36      2
+ FORTRAN MODIF elements/te0409                ladier A.LADIER           401     35      3
+ FORTRAN MODIF jeveux/jjalls                lefebvre J-P.LEFEBVRE       521      3      3
+ FORTRAN MODIF modelisa/op0056                ladier A.LADIER           807      3      3
+ FORTRAN MODIF modelisa/pmfd00                ladier A.LADIER           303     11     14
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   14        3959       176     142       +34
+ SUPPR :    1         375               375      -375
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   15        4334       176     517      -341 

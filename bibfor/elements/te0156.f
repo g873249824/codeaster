@@ -1,8 +1,8 @@
       SUBROUTINE TE0156 ( OPTION , NOMTE )
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 04/11/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ELEMENTS  DATE 27/11/2012   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -52,7 +52,10 @@ C     ----- DEBUT DECLARATIONS NORMALISEES  JEVEUX ---------------------
 C     ----- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
 C
       INTEGER IVECTU,ICONTG,LORIEN,NNO,NC,INO,I
+      INTEGER ICOMPO,IDEPLM,IDEPLP,IGEOM,IRETC
       REAL*8  FS(6),PGL(3,3),VECT(6),FORREF
+      REAL*8  W(6),ANG1(3),XD(3)
+      LOGICAL REACTU
 C
 C     ------------------------------------------------------------------
 C
@@ -82,6 +85,9 @@ C
 C
          CALL JEVECH ( 'PCONTMR', 'L', ICONTG )
          CALL JEVECH ( 'PCAORIE', 'L', LORIEN )
+         CALL TECACH('ONN','PCOMPOR',1,ICOMPO,IRETC)
+         REACTU = .FALSE.
+         IF (IRETC.EQ.0) REACTU = (ZK16(ICOMPO+2).EQ.'PETIT_REAC')
 C        PARAMETRES EN SORTIE
          CALL JEVECH('PVECTUR','E',IVECTU)
          NNO=2
@@ -91,7 +97,35 @@ C        PARAMETRES EN SORTIE
 13       CONTINUE
          FS(1) = -ZR(ICONTG)
          FS(4) =  ZR(ICONTG)
-         CALL MATROT ( ZR(LORIEN) , PGL )
+
+         IF (REACTU) THEN
+           CALL JEVECH('PGEOMER','L',IGEOM)
+           CALL JEVECH('PDEPLMR','L',IDEPLM)
+           CALL JEVECH('PDEPLPR','L',IDEPLP)
+           IF (NOMTE.EQ.'MECA_BARRE') THEN
+             DO 10 I = 1,3
+               W(I) = ZR(IGEOM-1+I) + ZR(IDEPLM-1+I) + ZR(IDEPLP-1+I)
+               W(I+3) = ZR(IGEOM+2+I) + ZR(IDEPLM+2+I) + ZR(IDEPLP+2+I)
+               XD(I) = W(I+3) - W(I)
+   10        CONTINUE
+           ELSE IF (NOMTE.EQ.'MECA_2D_BARRE') THEN
+             W(1) = ZR(IGEOM-1+1) + ZR(IDEPLM-1+1) + ZR(IDEPLP-1+1)
+             W(2) = ZR(IGEOM-1+2) + ZR(IDEPLM-1+2) + ZR(IDEPLP-1+2)
+             W(3) = 0.D0
+             W(4) = ZR(IGEOM-1+3) + ZR(IDEPLM-1+3) + ZR(IDEPLP-1+3)
+             W(5) = ZR(IGEOM-1+4) + ZR(IDEPLM-1+4) + ZR(IDEPLP-1+4)
+             W(6) = 0.D0
+             XD(1) = W(4) - W(1)
+             XD(2) = W(5) - W(2)
+             XD(3) = 0.D0
+           END IF
+           CALL ANGVX(XD,ANG1(1),ANG1(2))
+           ANG1(3) = ZR(LORIEN+2)
+           CALL MATROT(ANG1,PGL)
+         ELSE
+           CALL MATROT ( ZR(LORIEN) , PGL )
+         ENDIF
+
          CALL UTPVLG ( NNO, NC, PGL, FS, VECT )
 C
 C        ECRITURE DANS LE VECTEUR VECTU SUIVANT L'ELEMENT
