@@ -1,8 +1,8 @@
-#@ MODIF outils_ihm Calc_essai  DATE 29/11/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF outils_ihm Calc_essai  DATE 04/12/2012   AUTEUR COURTOIS M.COURTOIS 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -1656,8 +1656,8 @@ class XmgrManager:
         xmgr.Axe_x("Frequence")
         xmgr.Axe_y("Amplitude")
 
-        for absc, ordo, leg in zip(abscisses, ordonnees, legende):
-            cbr = Courbe(absc, ordo)
+        for ordo, leg in zip(ordonnees, legende):
+            cbr = Courbe(abscisses, ordo)
             xmgr.Courbe(cbr,leg)
 
         xmgr.Ech_x(self.echelle_dict[ech_x])

@@ -1,8 +1,8 @@
-#@ MODIF ce_calc_spec Calc_essai  DATE 14/12/2010   AUTEUR PELLET J.PELLET 
+#@ MODIF ce_calc_spec Calc_essai  DATE 04/12/2012   AUTEUR COURTOIS M.COURTOIS 
 # -*- coding: utf-8 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -347,9 +347,10 @@ class InterfaceCalcSpec(Frame):
         # 5 jaune       6 brun    7 gris    8 violet  9 cyan
         # 10 magenta    11 orange 12 marron 13 indigo 14 turquoise
         # 15 vert fonce
+        nbc = len(couleur)
+        l_coul = [couleur[i1 % nbc] for i1 in range(len(ind_v))]
 
 
-        compt_coul=0        
         courbes=[]
         legende=[]
         for i1 in ind_visu :
@@ -429,11 +430,11 @@ class InterfaceCalcSpec(Frame):
               leg=''+root_tab.list_visu.get(i1,i1)[0]
            legende.append(leg)   
            courbes.append(sig)
-           compt_coul=compt_coul+1                  
+
       
         #-- Ca serait bien que les couleurs soient dispos...
         
-        self.param_visu.visu_courbe(freq, courbes, [couleur[i1] for i1 in range(len(ind_visu))],
+        self.param_visu.visu_courbe(freq, courbes, l_coul,
                                     legende, 'LIN', 'LIN')
         
         

@@ -1,17 +1,17 @@
       SUBROUTINE IRRINI (FAMI, KPG, KSP, TYPESS, ESSAI, MOD,
      &                   NMAT, MATERF, YD,  DEPS, DY  )
-
+C
       IMPLICIT NONE
-
-      INTEGER TYPESS, NMAT, KPG, KSP
-      REAL*8  ESSAI, MATERF(NMAT,2), YD(*), DEPS(6),DY(*)
-      CHARACTER*8 MOD
+C
+      INTEGER       TYPESS, NMAT, KPG, KSP
+      REAL*8         ESSAI, MATERF(NMAT,2), YD(*), DEPS(6), DY(*)
+      CHARACTER*8   MOD
       CHARACTER*(*) FAMI
-
+C
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 01/09/2009   AUTEUR SELLENET N.SELLENET 
+C MODIF ALGORITH  DATE 04/12/2012   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2006  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -44,19 +44,19 @@ C       OUT DY     :  SOLUTION ESSAI  = ( DSIG DVIN (DEPS3) )
 C     ----------------------------------------------------------------
       COMMON /TDIM/   NDT , NDI
 C     ----------------------------------------------------------------
-      REAL*8 HOOK(6,6),DEV(6),S,DFDS(6),VTMP1(6),VTMP2(6)
-      REAL*8 DPHI,ID3D(6),NUN, SIG(6), P, ETAI
-      REAL*8 K,N,P0,AI0,ETAIS,AG, IRRAD, IRRAF, ZETAF, ZETAG
-      REAL*8 DETAI, DPI, DP, DG, YY, XX, ZZ, DSIG
-      REAL*8 PENPE,PE,PK
+      REAL*8   HOOK(6,6),DEV(6),S,DFDS(6),VTMP1(6),VTMP2(6),DSIG(6)
+      REAL*8  DPHI,ID3D(6),NUN, SIG(6), P, ETAI
+      REAL*8  K,N,P0,AI0,ETAIS,AG, IRRAD, IRRAF, ZETAF, ZETAG
+      REAL*8   DETAI, DPI, DP, DG, YY, XX, ZZ
+      REAL*8  PENPE,PE,PK
       INTEGER NDT, NDI, IRET, I
       DATA ID3D /1.D0, 1.D0, 1.D0, 0.D0, 0.D0, 0.D0/
-
+C
       IF ( TYPESS .EQ. -1 ) TYPESS = 2
       CALL LCEQVN ( NDT , YD(1)       , SIG )
       P    = YD(NDT+1)
       ETAI = YD(NDT+2)
-
+C
 C     PARAMETRES MATERIAUX
       AI0   = MATERF(4,2)
       ETAIS = MATERF(5,2)
@@ -69,10 +69,10 @@ C     PARAMETRES MATERIAUX
       PK    = MATERF(14,2)
       PE    = MATERF(15,2)
       ZETAG = MATERF(17,2)
-
+C
 C     POUR LES CONTRAINTES PLANES
       NUN   = MATERF(2,1) / (1.D0-MATERF(2,1))
-
+C
       TYPESS=1
 C     SOLUTION NULLE ( TYPESS=0) OU ELASTIQUE ( TYPESS=1)
       IF ( TYPESS .EQ. 0 .OR. TYPESS .EQ. 1 ) THEN
@@ -86,7 +86,7 @@ C     SOLUTION NULLE ( TYPESS=0) OU ELASTIQUE ( TYPESS=1)
             CALL LCOPLI ( 'ISOTROPE' , MOD , MATERF(1,1) , HOOK )
             CALL LCPRMV (HOOK,DEPS,DY)
          ENDIF
-
+C
 C        SOLUTION EXPLICITE
       ELSE IF (TYPESS.EQ.2) THEN
          CALL LCOPLI ( 'ISOTROPE' , MOD , MATERF(1,1) , HOOK )
@@ -98,11 +98,11 @@ C        ARRET DANS IRRMAT SI  IRRAD .GT. IRRAF*1.00001
          ELSE
             DPHI = IRRAF - IRRAD
          ENDIF
-
+C
          CALL LCDEVI(SIG,DEV)
          CALL LCNRVE ( DEV  , S )
          S =  SQRT ( 1.5D0 ) * S
-
+C
 C DETAI
          DETAI=ZETAF*S*DPHI
 C DPI
@@ -119,9 +119,9 @@ C DG
 C DP
          IF ( S .EQ. 0.D0)THEN
             DP   = 0.D0
-            DO 1, I=1,6
+            DO 10, I=1,6
                DFDS(I) = 0.D0
- 1          CONTINUE
+  10        CONTINUE
          ELSE
             CALL LCPRSV(1.5D0/S,DEV,DFDS)
             CALL LCPRSV(DPI,DFDS,VTMP1)
@@ -130,7 +130,7 @@ C DP
             CALL LCDIVE(VTMP1,VTMP2,VTMP1)
             CALL LCPRMV(HOOK,VTMP1,VTMP1)
             CALL LCPRSC(DFDS,VTMP1,YY)
-
+C
             IF      ( P .LT. PK ) THEN
                ZZ = 0.0D0
             ELSE IF ( P .LT. PE ) THEN
@@ -140,25 +140,25 @@ C DP
             ENDIF
             CALL LCPRMV(HOOK,DFDS,VTMP1)
             CALL LCPRSC(DFDS,VTMP1,XX)
-
+C
             XX=XX+ZZ
-
+C
             DP= YY/XX
          ENDIF
-
-C - (DEPS(3))
+C
+C        (DEPS(3))
          IF(MOD(1:6).EQ.'C_PLAN')THEN
             DEPS(3) = NUN * ((DP+DPI)*(DFDS(1)+DFDS(2))+
      &              2.D0*DG-DEPS(1)-DEPS(2))+ DFDS(3)*(DP+DPI)+DG
          ENDIF
-
+C
 C DSIG
          CALL LCPRSV((DPI+DP),DFDS,VTMP1)
          CALL LCDIVE(DEPS,VTMP1,VTMP1)
          CALL LCPRSV(DG,ID3D,VTMP2)
          CALL LCDIVE(VTMP1,VTMP2,VTMP1)
          CALL LCPRMV(HOOK,VTMP1,DSIG)
-C - DY
+C        DY
          CALL LCEQVN ( NDT , DSIG   , DY(1) )
          DY(NDT+1)=DP
          DY(NDT+2)=DETAI
@@ -168,7 +168,7 @@ C - DY
             DY(NDT+5) = DEPS(3)
             DY(3)     = 0.D0
          ENDIF
-
+C
 C - SOLUTION INITIALE = VALEUR ESSAI POUR TOUTES LES COMPOSANTES
 C
       ELSEIF ( TYPESS .EQ. 3 ) THEN
