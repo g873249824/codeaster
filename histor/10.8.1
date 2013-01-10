@@ -1,0 +1,457 @@
+========================================================================
+Version 10.8.1 du : 11/01/2013
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR flejou       FLEJOU Jean Luc        DATE 01/10/2013 - 11:05:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018362 DU 2012-02-07 16:18:56
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Non prise en compte de FONC_MULT dans CALC_ELEM/CALC_CHAMP pour les chargements repartis de poutre
+FONCTIONNALITE
+   Le problème venait du fait que la fonction multiplicatrice n'était pas bien pris en compte
+   dans CALC_CHAMP.
+   Le problème n'est pas particulièrement lié aux poutres, mais il est mis en évidence pour
+   les poutres, car pour certaines options de calcul (sur les poutres) on ne met pas le
+   chargement complet, notamment lorsqu'il y a des charges réparties.
+   
+   Risque de résultats faux :
+   --------------------------
+   Dans CALC_CHAMP la fonction multiplicatrice était prise égale à 1 dans certain cas. Si au
+   numéro d'ordre post-traité, dans le calcul initial la fonction est différente de 1, il y a
+   des résultats faux lors du calcul des REAC_NODA par CALC_CHAMP sur les éléments de poutres
+   dites 'exacts'.
+   
+   Correction :
+   ------------
+   Une charge c'est .LCHA et .FCHA, dans medom1 on ne retenait que .LCHA, donc dès que la
+   FMULT était différente de 1, cela conduisait a des résultats faux.
+   
+   La correction consiste a ajouter à la SD, déjà existante et construite dans medom1, le
+   .FCHA pour tenir compte de FMULT.
+   
+   medom1 est appelée par plusieurs routines (cf § modifications). Dans toutes ces routines
+   on change :
+   <       CALL JEVEUO(KCHA,'L',JCHA)
+   par
+   >       CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
+   Les routines les plus impactées : medom1 et ccpoux.
+   
+   Dans rslesd.f, ajout de message d'alarme suivant le cas rencontré :
+   Comme dans CALC_CHAMP on donne un chargement (CHARGE, FMULT) il faut vérifier que cette
+   charge a été utilisée lors du calcul. Plusieurs cas peuvent se produire :
+   1) Charge dans la SD calculée (cas classique) : MECA_STAT, STAT_NON_LINE, ...
+   2) Pas de charge dans la SD calculée :
+   . . * C'est possible et normal avec LIRE_RESU, CREA_RESU, ...
+   . . * C'est possible et pas normal par exemple avec DYNA_VIBRA (EXCIT est obligatoire)
+   . . . . . La commande ne renseigne pas la SD ==> fiche déjà émise issue19049 
+   3) Pas de charge dans CALC_CHAMP
+   4) Charge dans CALC_CHAMP
+   
+   * Si 1 et 4, vérification de la cohérence (déjà fait, aucune modification) 
+   * Si 1 et 3, aucune modification
+   * Si 2 et 4, il n'est pas possible de faire de vérification de cohérence.
+   . . . ==> Information UTILITAI4_1 : La récupération des chargements concernant le résultat
+   %(k1)s n'est actuellement pas possible. Code_Aster ne peut donc pas vérifier la cohérence
+   des chargements.
+   Conseil : Si vous utilisez une commande avec une option qui nécessite la redéfinition des
+   chargements, il faut vérifier la cohérence des chargements.
+   * Si  2 et 3, il faut donner les charges car on ne peut pas les récupérer de la SD
+   . . . ==> Information UTILITAI4_2 : Le mot clef EXCIT de la commande n'est pas renseigné
+   et la récupération des chargements concernant le résultat %(k1)s n'est actuellement pas
+   possible.
+   Conseil : Il faut renseigner le mot clef EXCIT de la commande,
+   
+   
+   Modifications :
+   ===============
+   ccpoux.f  ccvepo.f  meca01.f  mecalr.f  medom1.f  medom2.f  mmaxkl.f  op0038.f  op0100.f 
+   rslesd.f  thcalr.f
+   
+   utilitai4.py
+   
+   sdll401a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage liste_ct.tout
+DEJA RESTITUE DANS : 11.2.25
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 01/10/2013 - 11:05:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019675 DU 2012-10-08 15:39:21
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    CREA_CHAMP / EXTR / TABLE / ELNO et ELGA suite a CREA_TABLE / RESU
+FONCTIONNALITE
+   Problème :
+   ==========
+   L'utilisation de la commande CREA_CHAMP / EXTR / TABLE avec une table provenant de la
+   commande :
+    
+                          
+   TAB1 = CREA_TABLE ( RESU = _F(RESULTAT = STNL,  NOM_CHAM = xxx, NUME_ORDRE = 5,  NOM_CMP =
+   yyyy,),)
+                                                                                            
+                           
+   pose plusieurs problèmes :
+                                                                                            
+                           
+   PB1 :
+   -----
+   La commande CREA_CHAMP / EXTR / TABLE n'a pas prévu les colonnes inutiles dans la table à
+   transformer en champ.
+   Les paramètres de la table doivent etre :
+     - soit : MAILLE, POINT, NOEUD, SOUS_POINT
+     - soit le nom d'une composante de la grandeur.
+   Les paramètres : RESULTAT, NUME_ORDRE, ... sont interdits.
+                                                                                            
+                           
+   PB2 :
+   -----
+   Quand le champ à produire est de type ELNO, la commande CREA_CHAMP / EXTR / TABLE attend
+   les paramètres :
+   MAILLE et POINT
+   Le paramètre POINT doit contenir le numéro du noeud dans la connectivité de la maille (un
+   nombre de 1 à 8 pour un QUAD8 par exemple).
+   C'est ce qui est bien indiqué dans la documentation U.
+                                                                                            
+                           
+   Malheureusement, CREA_TABLE / RESU pour un champ ELNO produit les colonnes MAILLE et NOEUD
+   ! (NOEUD contient le nom du noeud)
+                                                                                            
+                           
+   PB3 :
+   -----
+   Dans le cas particulier du champ appelé VARI_ELGA, il ne faut pas fournir
+   OPTION='VARI_ELGA' mais OPTION='RAPH_MECA'
+                                                                                            
+                           
+                                                                                            
+                           
+   Evolutions, corrections :
+   =========================
+                                                                                            
+                           
+   PB1 :
+   ----
+   On ne corrige pas ce problème, mais on précise la documentation U et, en cas d'erreur, on
+   émet un message clair :
+   !----------------------------------------------------------------------------------------------------------
+   ---!
+   ! <F> <MODELISA9_2>. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   . . . . . . . . .  !
+   !. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   . . . . . . . . .  !
+   !. Erreur utilisateur dans la commande CREA_CHAMP / EXTR / TABLE. :. . . . . . . . . . . .
+   . . . . . . . . .  !
+   !. . Les paramètres de la table doivent être :. . . . . . . . . . . . . . . . . . . . . .
+   . . . . . . . . . . !
+   !. . . - soit : MAILLE, NOEUD, POINT, SOUS_POINT. . . . . . . . . . . . . . . . . . . . .
+   . . . . . . . . . . !
+   !. . . - soit le nom d'une composante de la grandeur.. . . . . . . . . . . . . . . . . . .
+   . . . . . . . . .  !
+   !. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   . . . . . . . . .  !
+   !. . L'une (au moins) des valeurs de la liste : RESULTAT NOM_CHAM NUME_ORDRE COOR_X COOR_Y
+   COOR_Z SIYY SIZZ.  !
+   !. . n'est pas le nom d'une composante de la grandeur.. . . . . . . . . . . . . . . . . .
+   . . . . . . . . . . !
+   !. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   . . . . . . . . .  !
+   !. Conseil :. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   . . . . . . . . . . !
+   !. . Si la table fournie provient de la commande CREA_TABLE / RESU, il faut probablement.
+   . . . . . . . . . . !
+   !. . utiliser la commande CALC_TABLE + OPERATION='EXTR' pour éliminer les colonnes
+   RESULTAT, NUME_ORDRE, .... !
+   !----------------------------------------------------------------------------------------------------------
+   ---!
+                                                                                            
+                           
+   PB2 :
+   ----
+   On améliore la commande pour "lire" les cham_elem ELNO.
+   On accepte maintenant l'un (au choix) des 2 paramètres POINT et NOEUD.
+   Au passage, je réécris assez profondément la routine tabchs.f pour la simplifier (500
+   lignes -> 360 lignes)
+   Si on se trompe, on obtient le message :
+   !-----------------------------------------------------------------------!
+   ! <F> <MODELISA9_1> . . . . . . . . . . . . . . . . . . . . . . . . . . !
+   ! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . !
+   ! Erreur utilisateur dans la commande CREA_CHAMP / EXTR / TABLE : . . . !
+   ! . .Dans la table TAB1, pour créer un champ de type ELNO, . . . . . . .!
+   ! . .certains paramètres sont obligatoires et d'autres sont interdits : !
+   ! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . !
+   ! . . .NOEU : . . . . . . . . . . . . . . . . . . . . . . . . . . . . . !
+   ! . . . .obligatoire : NOEUD . . . . . . . . . . . . . . . . . . . . . .!
+   ! . . . .interdit . .: MAILLE, POINT, SOUS_POINT . . . . . . . . . . . .!
+   ! . . .ELGA : . . . . . . . . . . . . . . . . . . . . . . . . . . . . . !
+   ! . . . .obligatoire : MAILLE, POINT . . . . . . . . . . . . . . . . . .!
+   ! . . . .interdit . .: NOEUD . . . . . . . . . . . . . . . . . . . . . .!
+   ! . . .ELNO : . . . . . . . . . . . . . . . . . . . . . . . . . . . . . !
+   ! . . . .obligatoire : MAILLE, NOEUD (ou POINT) . . . . . . . . . . . . !
+   ! . . .ELEM : . . . . . . . . . . . . . . . . . . . . . . . . . . . . . !
+   ! . . . .obligatoire : MAILLE . . . . . . . . . . . . . . . . . . . . . !
+   ! . . . .interdit . .: NOEUD, POINT . . . . . . . . . . . . . . . . . . !
+   !-----------------------------------------------------------------------!
+                                                                                            
+                           
+   PB3 :
+   ----
+   Si l'utilisateur donne OPTION='VARI_ELGA', le programme remplace cette option par 'RAPH_MECA'.
+                                                                                            
+                           
+                                                                                            
+                           
+   Validation :
+   ------------
+   On enrichit le test ssnp108b pour tester l'enchainement (CREA_TABLE / RESU ) puis
+   (CREA_CHAMP / EXTR / TABLE)
+   sur différents champs : DEPL, SIEF_ELGA, SIEF_ELNO, VARI_ELGA.
+   Remarque : ce test est un test de coques et il y a des SOUS_POINT.
+                                                                                            
+                           
+   Impact_documentaire :
+   ---------------------
+   U4.72.04 : commande CREA_CHAMP
+                                                                                            
+                           
+   NEW10 : Je pense que ces corrections peuvent etre reportées en NEW10 si la routine
+   tabchs.f est n'a pas été trop modifiée entre les versions 10 et 11.
+                                                                                            
+                           
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  19675
+     tabchs.f  trchel.f  u195tb.f
+     modelisa9.py
+     ssnp108b.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.72.04
+VALIDATION
+    ssnp108b
+DEJA RESTITUE DANS : 11.3.2
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 01/10/2013 - 11:05:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020052 DU 2012-12-05 09:29:30
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    L'alarme MECANONLINE2_93 reference un test n'existant pas
+FONCTIONNALITE
+   L'alarme MECANONLINE2_93 qui prévient l'utilisateur de contraintes incompatibles en
+   présence de variables de commandes référence le test FORMA09 qui est devenu FORMA30 (en 10
+   comme en 11).
+   La clé doc est bonne mais il faut corriger. C'est toujours dangereux de référencer des
+   tests dans un message mais ça se justifie ici compte tenu de l'importance de l'alarme.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    visuelle
+DEJA RESTITUE DANS : 11.3.1
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 01/10/2013 - 11:05:21
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020077 DU 2012-12-11 14:23:40
+TYPE anomalie concernant Code_Aster (VERSION 11.3)
+TITRE
+    Resultats douteux avec CALC_META
+FONCTIONNALITE
+   Problème
+   ~~~~~~~~~
+   
+   Les résultats obtenus par un utilisateur avec CALC_META et la loi META_ZIRC semblent douteux.
+   
+   Solutions
+   ~~~~~~~~~~
+   
+   Après étude, il semble que le problème ne vienne pas de CALC_META mais de l'utilisation de paramètres 
+   matériaux non appropriés. On modifie le source de :
+   _pour le mettre en cohérence avec la doc R notamment sur le calcul de T'eq (eq 3.2-5) pour le cas 
+   0.99<Z_beta<=1. 
+   _pour optimiser le calcul des résidus et des gradients dans la méthode de Newton-Raphson (eq 3.2-1 à 3.2-4)
+   _on ne travaille plus sur une chaîne de caractère pour savoir si on est dans une cinétique de chauffage ou 
+   de refroidissement mais sur un entier.
+   
+   Impacts sources :
+   ~~~~~~~~~~~~~~~~~~
+   
+   zedgar.f
+   zevolu.f
+   tempeq.f
+   
+   Impact doc :
+   ~~~~~~~~~~~~~
+   
+   R4.04.04 : On modifie l'équation 3.2-2 pour exprimer correctement la dérivée de la valeur absolue
+   
+   Validations :
+   ~~~~~~~~~~~~~~
+   
+   Astout sur les CALC_META avec META_ZIRC
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : R4.04.04
+VALIDATION
+    cas test
+DEJA RESTITUE DANS : 11.3.1
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020066 DU 2012-12-07 14:52:23
+TYPE anomalie concernant Code_Aster (VERSION 11.3)
+TITRE
+    Problemes de convergence META_LEMA_ANI avec ASTER V 11.2.0 (2)
+FONCTIONNALITE
+   Problème :
+   ========
+   Dans l'étude jointe, suivant le nombre de pas de temps et les températures souhaitées, la
+   partie métallurgique de META_LEMA_ANI s'arrête avec le message suivant:
+   
+      !-------------------------------------------------------!
+      ! <EXCEPTION> <DVP_2>                                   !
+      !                                                       !
+      !    Erreur numérique (floating point exception).       !
+      !                                                       !
+      !                                                       !
+      !                                                       !
+      ! Il y a probablement une erreur dans la programmation. !
+      ! Veuillez contacter votre assistance technique.        !
+      !-------------------------------------------------------!
+   
+   Correction :
+   ==========
+   Le problème vient de la routine tempeq.f où l'on teste de manière maladroite un zéro. Ceci
+   amène a faire une division par zéro.
+   
+   On remplace dans un test de la routine 0.D0 par R8PREM.
+   
+   Impact :
+   ======
+   tempeq.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    passage de l'xc3xa9tude et des tests META_LEMA_ANI
+DEJA RESTITUE DANS : 11.3.1
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR michel       MICHEL-PONNELLE Sylvie   DATE 01/10/2013 - 11:05:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020088 DU 2012-12-13 12:56:22
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : Phimeca
+TITRE
+    CALC_PRECONT : erreur dans le traitement des mots clxc3xa9s CABLE_BP et CABLE_BP_INACTIF
+FONCTIONNALITE
+   Suite signalement hotline, problème constaté par GDS :
+   
+   Si on fournit une liste en tant qu'argument au mot clé CABLE_BP de CALC_PRECONT, on a une
+   erreur 
+   au traitement. Ce qui n'est pas le cas si on fournit un tuple.
+   
+   Par exemple dans ssnv164b :
+   uuu=[CAB_BP1, CAB_BP2]
+   RES1 =  CALC_PRECONT( ... CABLE_BP   =uuu, ...)
+   
+   Alors qu'avec un tuple uuu=(CAB_BP1, CAB_BP2), cela fonctionne.
+   
+   Solution : 
+   
+   Il faut intervenir dans calc_precont_ops.py en versions 10 et 11. Et remplacer les lignes 
+   suivantes :
+   if type(CABLE_BP) is not types.TupleType:
+   if type(CABLE_BP_INACTIF) is not types.TupleType:
+   
+   par :
+   
+   if type(CABLE_BP) not in (types.TupleType,types.ListType):
+   if type(CABLE_BP_INACTIF) not in (types.TupleType,types.ListType):
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test perso
+DEJA RESTITUE DANS : 11.3.3
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssnp108b                       ladier A.LADIER           273     61      2
+ CASTEST MODIF zzzz126a                       ladier A.LADIER           486      2      2
+ FORTRAN MODIF algorith/tempeq                ladier A.LADIER            52     10     14
+ FORTRAN MODIF algorith/zedgar                ladier A.LADIER           298     18     21
+ FORTRAN MODIF algorith/zevolu                ladier A.LADIER            69     11     11
+ FORTRAN MODIF calculel/ccpoux                ladier A.LADIER           386     74     47
+ FORTRAN MODIF calculel/cescel                ladier A.LADIER           676      4      2
+ FORTRAN MODIF calculel/meca01                ladier A.LADIER           728      8      8
+ FORTRAN MODIF calculel/mecalm                ladier A.LADIER          2103     28     28
+ FORTRAN MODIF calculel/medom1                ladier A.LADIER           221     34     27
+ FORTRAN MODIF calculel/medom2                ladier A.LADIER           112      3      3
+ FORTRAN MODIF calculel/mscalm                ladier A.LADIER          2227     28     28
+ FORTRAN MODIF calculel/op0038                ladier A.LADIER           161      3      3
+ FORTRAN MODIF calculel/op0100                ladier A.LADIER          1105      8      9
+ FORTRAN MODIF calculel/thaclm                ladier A.LADIER           651      7      7
+ FORTRAN MODIF calculel/trchel                ladier A.LADIER           271      3      3
+ FORTRAN MODIF calculel/tsaclm                ladier A.LADIER           691      7      7
+ FORTRAN MODIF modelisa/tabchs                ladier A.LADIER           372    219    361
+ FORTRAN MODIF modelisa/u195tb                ladier A.LADIER           117      5      3
+ FORTRAN MODIF utilitai/mmaxkl                ladier A.LADIER           308      3      3
+ FORTRAN MODIF utilitai/rslesd                ladier A.LADIER           365      8      2
+  PYTHON MODIF Macro/calc_precont_ops         ladier A.LADIER           477      5      4
+  PYTHON MODIF Messages/mecanonline2          ladier A.LADIER           107      7     11
+  PYTHON MODIF Messages/modelisa8             ladier A.LADIER           346      2     12
+  PYTHON MODIF Messages/modelisa9             ladier A.LADIER           372     35     33
+  PYTHON MODIF Messages/utilitai4             ladier A.LADIER           352     18      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   26       13326       611     653       -42
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   26       13326       611     653       -42 

@@ -1,9 +1,9 @@
       SUBROUTINE CESCEL(CESZ,LIGREZ,OPTINI,NOMPAZ,PROLZ,NNCP,BASEZ,CELZ,
      &                  KSTOP,IRET)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF CALCULEL  DATE 07/10/2008   AUTEUR PELLET J.PELLET 
+C MODIF CALCULEL  DATE 10/01/2013   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -445,13 +445,15 @@ C                 -- QUE FAIRE SI LA MAILLE EST TARDIVE ?
                       GOTO 140
 
                     ELSE
-                      CALL JENUNO(JEXNUM(MA//'.NOMMAI',NUMA),NOMMA)
-                      VALK(1) = NOMMA
-                      VALK(2) = NOMGD
-                      VALI(1)=NBPT
-                      VALI(2)=NBPT2
-                      MESSAG = 'CALCULEL_57'
-                      GOTO 240
+                      IF (NBPT.LT.NBPT2.OR..NOT.PROL) THEN
+                        CALL JENUNO(JEXNUM(MA//'.NOMMAI',NUMA),NOMMA)
+                        VALK(1) = NOMMA
+                        VALK(2) = NOMGD
+                        VALI(1)=NBPT
+                        VALI(2)=NBPT2
+                        MESSAG = 'CALCULEL_57'
+                        GOTO 240
+                       ENDIF
 
                     ENDIF
                   ENDIF

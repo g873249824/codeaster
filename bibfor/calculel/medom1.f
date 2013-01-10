@@ -7,12 +7,12 @@
       CHARACTER*8       MODELE, CARA
       CHARACTER*8       RESULT
       CHARACTER*24      MATE
-      CHARACTER*(*)                      KCHA
+      CHARACTER*19                      KCHA
 C ----------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF CALCULEL  DATE 07/12/2010   AUTEUR PELLET J.PELLET 
+C MODIF CALCULEL  DATE 10/01/2013   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -62,8 +62,6 @@ C     ------------------------------------------------------------------
       INTEGER     IEXCIT, IERD,I, IBID, ICHA, IE, IKF, IN
       INTEGER     JFCHA, JINFC, JLCHA, N, N1, N2, N3, N5
       REAL*8      PREC
-      CHARACTER*6 NOMPRO
-      PARAMETER (NOMPRO='MEDOM1')
       CHARACTER*8  K8B, NOMO, MATERI
       CHARACTER*8  CRIT, BLAN8
       CHARACTER*16 CONCEP, NOMCMD, PHENOM
@@ -133,34 +131,42 @@ C
 C
         IF ( N5 .NE. 0 ) THEN
           NCHA = N5
-          CALL JEEXIN(KCHA,IRET)
-          IF(IRET.NE.0) CALL JEDETR(KCHA)
-          CALL WKVECT( KCHA ,'V V K8',N5,ICHA)
+          CALL JEEXIN(KCHA//'.LCHA',IRET)
+          IF(IRET.NE.0) THEN
+            CALL JEDETR(KCHA//'.LCHA')
+            CALL JEDETR(KCHA//'.FCHA')
+          ENDIF
+          CALL WKVECT( KCHA//'.LCHA','V V K8',N5,ICHA)
+          CALL WKVECT( KCHA//'.FCHA','V V K8',N5,IKF)
           DO 20 IEXCIT = 1, N5
             CALL GETVID('EXCIT','CHARGE',IEXCIT,1,1,
      &                  ZK8(ICHA+IEXCIT-1),N)
+            CALL GETVID('EXCIT','FONC_MULT',IEXCIT,IARG,1,K8B,N)
+            IF (N.NE.0) THEN
+              ZK8(IKF+IEXCIT-1) = K8B
+            ENDIF
  20       CONTINUE
         ELSE
-          CALL JEEXIN(KCHA,IRET)
-          IF(IRET.NE.0) CALL JEDETR(KCHA)
-          CALL WKVECT( KCHA ,'V V K8',1,ICHA)
+          CALL JEEXIN(KCHA//'.LCHA',IRET)
+          IF(IRET.NE.0) THEN
+            CALL JEDETR(KCHA//'.LCHA')
+            CALL JEDETR(KCHA//'.FCHA')
+          ENDIF
+          CALL WKVECT( KCHA//'.LCHA','V V K8',1,ICHA)
+          CALL WKVECT( KCHA//'.FCHA','V V K8',1,IKF)
         ENDIF
 
         IF ( NCHA .GT. 0 ) THEN
-C
-C     -- ON VERIFIE QUE LES CHARGES PORTENT TOUTES SUR LE MEME MODELE.
-C
+C         VERIFICATION QUE LES CHARGES PORTENT SUR LE MEME MODELE.
           CALL DISMOI('F','NOM_MODELE',ZK8(ICHA),'CHARGE',IBID,NOMO,IE)
           DO 30 I = 1,NCHA
             CALL DISMOI('F','NOM_MODELE',ZK8(ICHA-1+I),'CHARGE',IBID,
-     &                                                        K8B,IE)
+     &                  K8B,IE)
             IF ( K8B .NE. NOMO ) THEN
              CALL U2MESS('F','CALCULEL3_41')
             ENDIF
  30       CONTINUE
-C
-C        --- ON VERIFIE QUE LES CHARGES PORTENT SUR LE MODELE
-C                               EVENTUELEMENT DONNE EN ARGUMENT ---
+C         VERIFICATION QUE LES CHARGES PORTENT SUR LE MODELE.
           IF ( N1.NE.0 .AND. MODELE.NE.NOMO ) THEN
             CALL U2MESS('F','CALCULEL3_42')
           ENDIF
@@ -179,19 +185,21 @@ C        --- VERIFICATION DU TYPE DE CHARGEMENT ---
           ENDIF
         ENDIF
 C
-C   SI IEXCIT=0 ON PREND LE CHARGEMENT PRESENT DANS LA SD ET ON
-C   LE FILTRE
+C   SI IEXCIT=0 ON PREND LE CHARGEMENT PRESENT DANS LA SD
 C
       ELSE
-        KFON='&&'//NOMPRO//'.FONC_MULT '
         CALL JEVEUO(EXCIT//'.INFC','L',JINFC)
-        NCHA=ZI(JINFC)
         CALL JEVEUO(EXCIT//'.LCHA','L',JLCHA)
-        CALL JEDETR(KCHA)
-        CALL WKVECT(KCHA,'V V K8',NCHA,ICHA)
-        CALL JEDETR(KFON)
-        CALL WKVECT(KFON,'V V K8',NCHA,IKF)
         CALL JEVEUO(EXCIT//'.FCHA','L',JFCHA)
+        NCHA=ZI(JINFC)
+C
+        CALL JEEXIN(KCHA//'.LCHA',IRET)
+        IF(IRET.NE.0) THEN
+          CALL JEDETR(KCHA//'.LCHA')
+          CALL JEDETR(KCHA//'.FCHA')
+        ENDIF
+        CALL WKVECT( KCHA//'.LCHA','V V K8',NCHA,ICHA)
+        CALL WKVECT( KCHA//'.FCHA','V V K8',NCHA,IKF)
         CALL DISMOI('F','PHENOMENE',MODELE,'MODELE',IBID,PHENOM,IERD)
         CTYP=PHENOM(1:4)
         IN=0
@@ -199,14 +207,13 @@ C
 C         ON STOCKE LES CHARGES DONT LE TYPE CORRESPOND A CTYP
           CALL DISMOI('C','TYPE_CHARGE',ZK24(JLCHA+I-1),
      &                'CHARGE',IBID,K8B,IE)
-          IF(IE.EQ.0.AND.CTYP.EQ.K8B(1:4))THEN
+          IF( (IE.EQ.0) .AND. (CTYP.EQ.K8B(1:4)) )THEN
             ZK8(ICHA+IN)= ZK24(JLCHA+I-1)(1:8)
             ZK8(IKF+IN) = ZK24(JFCHA+I-1)(1:8)
             IN=IN+1
           ENDIF
  50     CONTINUE
         NCHA=IN
-
 C
       ENDIF
 C

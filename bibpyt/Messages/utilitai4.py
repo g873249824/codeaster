@@ -1,8 +1,8 @@
-#@ MODIF utilitai4 Messages  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
+#@ MODIF utilitai4 Messages  DATE 10/01/2013   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -22,6 +22,22 @@
 def _(x) : return x
 
 cata_msg={
+
+1: _("""
+ La recuperation des chargements concernant le resultat %(k1)s n'est actuellement pas possible.
+ Code_Aster ne peut donc pas verifier la coherence des chargements.
+
+ Conseil : Si vous utilisez une commande avec une option qui necessite la redefinition des chargements,
+ il faut verifier la coherence des chargements.
+"""),
+
+2: _("""
+ Le mot clef EXCIT de la commande n'est pas renseigne et la recuperation des chargements concernant
+ le resultat %(k1)s n'est actuellement pas possible.
+
+ Conseil : Il faut renseigner le mot clef EXCIT de la commande,
+"""),
+
 
 8: _("""
  la composante  %(k1)s  n existe pas dans le champ de la grandeur.

@@ -2,10 +2,10 @@
      &                  NBORDR,MODELE,MATE,CARA,NCHAR,CTYP)
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF CALCULEL  DATE 17/11/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF CALCULEL  DATE 10/01/2013   AUTEUR LADIER A.LADIER 
 C TOLE CRP_20
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -201,7 +201,7 @@ C     ON RECUPERE LE TYPE DE MODE: DYNAMIQUE OU STATIQUE
 
       CALL JEVEUO(KNUM,'L',JORDR)
       NUORD=ZI(JORDR)
-      CALL JEVEUO(KCHA,'L',JCHA)
+      CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
       IF (NEWCAL) THEN
         CALL RSCRSD('G',RESUC1,TYSD,NBORDR)
         CALL TITRE
@@ -362,7 +362,7 @@ C         PASSAGE CALC_CHAMP
         NUORD=ZI(JORDR)
         CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,NUORD,
      &              NBORDR,NPASS,LIGREL)
-        CALL JEVEUO(KCHA,'L',JCHA)
+        CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
 C
         CALL MECHAM(OPTION,MODELE,NCHAR,ZK8(JCHA),CARA,NH,CHGEOM,CHCARA,
      &              CHHARM,IRET)
@@ -436,7 +436,7 @@ C ---- TRAITEMENT DE L EXCENTREMENT POUR OPTIONS DE POST TRAITEMENT
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'DEPL',IORDR,CHAMGD,OPTION,IRET)
@@ -615,7 +615,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,LERES0,'SIEF_ELGA',IORDR,CHSIG,OPTION,IRET)
@@ -690,7 +690,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,TYPE//'            ',IORDR,CHAMGD,
@@ -743,7 +743,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'DEPL',IORDR,CHAMGD,OPTION,IRET)
@@ -779,7 +779,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'DEPL',IORDR,CHAMGD,OPTION,IRET)
@@ -843,7 +843,7 @@ C    ------------------------------------------------------------------
             CHSIC=' '
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             IF (OPTION.EQ.'EPEQ_ELGA') THEN
@@ -974,7 +974,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,NOMCHA,IORDR,CHBID,OPTION,IRET)
@@ -1302,7 +1302,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             IF (OPTION.EQ.'SICA_ELNO') THEN
@@ -1342,7 +1342,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'VITE',IORDR,CHAMGD,OPTION,IRET)
@@ -1384,7 +1384,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'DEPL',IORDR,CHAMGD,OPTION,IRET)
@@ -1417,7 +1417,7 @@ C     ------------------------------------------------------------------
             IORDR2=ZI(JORDR+IAUX)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR1,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             
@@ -1460,7 +1460,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
 
@@ -1682,7 +1682,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'SIEF_ELGA',IORDR,CHSIG,OPTION,IRET1)
@@ -1719,7 +1719,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXCH(RESUCO,'SIEF_ELGA',IORDR,CHSIG,IRET1)
@@ -1759,7 +1759,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'EPSI_ELGA',IORDR,CHEPS,OPTION,
@@ -1792,7 +1792,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'EPEQ_ELGA',IORDR,CHEEQ,OPTION,
@@ -1826,7 +1826,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'SIEQ_ELGA',IORDR,CHSEQ,OPTION,
@@ -1858,7 +1858,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'SIEF_ELGA',IORDR,CHSIG2,OPTION,IRET)
@@ -1886,7 +1886,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,LERES0,'VARI_ELGA',IORDR,CHAMGD,OPTION,IRET)
@@ -1915,7 +1915,7 @@ C     ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'VARI_ELGA',IORDR,CHAMGD,OPTION,IRET)
@@ -1943,7 +1943,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'SIEF_ELGA',IORDR,CHSIG,OPTION,IRET)
@@ -1995,7 +1995,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC1(LERES1,OPTION,IORDR,CHELEM)
@@ -2035,7 +2035,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'VARI_ELGA',IORDR,CHAMGD,OPTION,IRET)
@@ -2064,7 +2064,7 @@ C    ------------------------------------------------------------------
             IORDR=ZI(JORDR+IAUX-1)
             CALL MEDOM2(MODELE,MATE,CARA,KCHA,NCHAR,CTYP,RESUCO,IORDR,
      &                  NBORDR,NPASS,LIGREL)
-            CALL JEVEUO(KCHA,'L',JCHA)
+            CALL JEVEUO(KCHA//'.LCHA','L',JCHA)
             CALL MECARA(CARA,EXICAR,CHCARA)
             CALL MECHC1(SAVCAR,MODELE,MATE,EXICAR,CHCARA)
             CALL RSEXC2(1,1,RESUCO,'VARI_ELNO',IORDR,CHAMGD,OPTION,

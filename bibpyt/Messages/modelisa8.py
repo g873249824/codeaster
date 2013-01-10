@@ -1,8 +1,8 @@
-#@ MODIF modelisa8 Messages  DATE 30/06/2010   AUTEUR DELMAS J.DELMAS 
+#@ MODIF modelisa8 Messages  DATE 10/01/2013   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2007  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -341,16 +341,6 @@ La maille %(k1)s est mal orientée. Utilisez la commande MODI_MAILLAGE pour orien
 
  evaluation impossible  d une fonction materiau - on deborde a droite  pour la temperature
  temp : %(r1)f
-"""),
-
-98 : _("""
- il manque le parametre  %(k1)s dans la table %(k2)s
- .sa presence est indispensable a la  creation du champ nodal. %(k3)s
-"""),
-
-99 : _("""
- le parametre  %(k1)s ne doit pas apparaitre dans la  table %(k2)s
- pour la creation d'un champ nodal. %(k3)s
 """),
 
 }

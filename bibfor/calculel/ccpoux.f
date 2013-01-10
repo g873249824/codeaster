@@ -9,9 +9,9 @@ C     --- ARGUMENTS ---
       CHARACTER*19 KCHARG
       CHARACTER*24 LICHIN(*),SUROPT
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF CALCULEL  DATE 05/10/2010   AUTEUR SELLENET N.SELLENET 
+C MODIF CALCULEL  DATE 10/01/2013   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2010  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -70,6 +70,7 @@ C     ----- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
 
       INTEGER      LTYMO,LDEPL,LFREQ,NEQ,LVALE,LACCE,II,IPUIS,I
       INTEGER      L1,L2,L3,L4,L5,L6,JCHA,N1,IPARA,IBID,IER,LREFE,LINST
+      INTEGER      JLCHA,JFCHA
       
       REAL*8       ZERO,UN,PHASE,COEF,R8DEPI,OMEGA,VALRES,VALIM,R8DGRD
       REAL*8       ALPHA,TPS(11),RBID,FREQ,INST
@@ -81,7 +82,7 @@ C     ----- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
       CHARACTER*1  TYPCOE
       CHARACTER*5  CH5
       CHARACTER*8  CHAREP,K8B,CURPAR,NCMPPE(4),TPF(11),CHARGE,TYPCHA
-      CHARACTER*8  NCMPFO(11),MODELE
+      CHARACTER*8  NCMPFO(11),MODELE,FMULT,FMULTC
       CHARACTER*16 TYPEMO,NOMCMD
       CHARACTER*19 CHDYNR,MASSE,CHACCE
       CHARACTER*24 CHAMGD,NOCHIN,NOCHI1,CHDEPL,LIGRMO
@@ -101,17 +102,14 @@ C     ----- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
       ENDIF
       CALL RSEXCH(RESUIN,'DEPL',NORDRE,CHDEPL,IER)
       
-      CALL JEVEUO(KCHARG,'L',JCHA)
-      
       LIGRMO = MODELE//'.MODELE'
-      
-      CHAREP = ' '
+
       TYPCOE = ' '
       ALPHA = ZERO
       CALPHA = CZERO
       CHDYNR = '&&MECALM.M.GAMMA'
-      IF ((TYPESD.EQ.'MODE_MECA'.AND.TYPEMO(1:8).EQ.'MODE_DYN' )
-     &     .OR. TYPESD.EQ.'MODE_ACOU') THEN
+      IF ( (TYPESD.EQ.'MODE_MECA'.AND.TYPEMO(1:8).EQ.'MODE_DYN' )
+     &     .OR. (TYPESD.EQ.'MODE_ACOU') ) THEN
         CALL JEVEUO(CHDYNR//'.VALE','E',LVALE)
         CALL JELIRA(CHDEPL(1:19)//'.VALE','LONMAX',NEQ,K8B)
         CALL RSEXCH(RESUIN,'DEPL',NORDRE,CHAMGD,IER)
@@ -119,7 +117,7 @@ C     ----- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
         CALL RSADPA(RESUIN,'L',1,'OMEGA2',NORDRE,0,LFREQ,K8B)
         DO 20 II = 0,NEQ - 1
           ZR(LVALE+II) = -ZR(LFREQ)*ZR(LDEPL+II)
-   20   CONTINUE
+20      CONTINUE
         CALL JELIBE(CHAMGD(1:19)//'.VALE')
       ELSE IF (TYPESD.EQ.'DYNA_TRANS') THEN
         CALL JEVEUO(CHDYNR//'.VALE','E',LVALE)
@@ -129,13 +127,13 @@ C     ----- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
           CALL JEVEUO(CHACCE//'.VALE','L',LACCE)
           DO 30 II = 0,NEQ - 1
             ZR(LVALE+II) = ZR(LACCE+II)
-   30     CONTINUE
+30        CONTINUE
           CALL JELIBE(CHACCE//'.VALE')
         ELSE
           CALL U2MESS('A','CALCULEL3_1')
           DO 40 II = 0,NEQ - 1
             ZR(LVALE+II) = ZERO
-   40     CONTINUE
+40        CONTINUE
         END IF
       ELSE IF (TYPESD.EQ.'DYNA_HARMO') THEN
         CALL JEVEUO(CHDYNR//'.VALE','E',LVALE)
@@ -145,29 +143,72 @@ C     ----- FIN  DECLARATIONS  NORMALISEES  JEVEUX ---------------------
           CALL JEVEUO(CHACCE//'.VALE','L',LACCE)
           DO 50 II = 0,NEQ - 1
             ZC(LVALE+II) = ZC(LACCE+II)
-   50     CONTINUE
+50        CONTINUE
           CALL JELIBE(CHACCE//'.VALE')
         ELSE
           CALL U2MESS('A','CALCULEL3_1')
           DO 60 II = 0,NEQ - 1
             ZC(LVALE+II) = CZERO
-   60     CONTINUE
+60        CONTINUE
         END IF
       END IF
 C --- CALCUL DU COEFFICIENT MULTIPLICATIF DE LA CHARGE
 C     CE CALCUL N'EST EFFECTIF QUE POUR LES CONDITIONS SUIVANTES
 C          * MODELISATION POUTRE
 C          * PRESENCE D'UNE (ET D'UNE SEULE) CHARGE REPARTIE
-C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
+C
+C     IOCCUR C'EST SOIT :
+C        * L'OCCURENCE DANS LE MOT CLEF EXIT
+C        * L'INDEX DE LA CHARGE DANS KCHARG
+C     LES VERIFICATIONS D'EXISTANCE DE LA CHARGE ET DE SA FMULT SONT
+C     FAITES DANS RSLESD
+      CHARGE = ' '
+      FMULT  = ' '
+      FMULTC = ' '
+      COEF   = 0.0D0
+      CCOEF  = CZERO
       IF (NBCHRE.NE.0) THEN
-        PHASE = ZERO
-        IPUIS = 0
-        CALL GETVID('EXCIT','FONC_MULT',IOCCUR,1,1,K8B,L1)
-        CALL GETVID('EXCIT','FONC_MULT_C',IOCCUR,1,1,K8B,L2)
-        CALL GETVR8('EXCIT','COEF_MULT',IOCCUR,1,1,COEF,L3)
-        CALL GETVC8('EXCIT','COEF_MULT_C',IOCCUR,1,1,CCOEF,L4)
-        CALL GETVR8('EXCIT','PHAS_DEG',IOCCUR,1,1,PHASE,L5)
-        CALL GETVIS('EXCIT','PUIS_PULS',IOCCUR,1,1,IPUIS,L6)
+C       LA CHARGE REPARTIE EST :
+C           SOUS EXIT DE LA COMMANDE
+C           DANS KCHARG
+        CALL GETVID('EXCIT','CHARGE',   IOCCUR,1,1,CHARGE,N1)
+        IF ( N1.EQ.0 ) THEN
+           CALL JEVEUO(KCHARG//'.LCHA','L',JLCHA)
+           CALL JEVEUO(KCHARG//'.FCHA','L',JFCHA)
+           CHARGE = ZK8(JLCHA-1+IOCCUR)
+           FMULT  = ZK8(JFCHA-1+IOCCUR)
+C          LA FONCTION PEUT AVOIR ETE CREEE, SUR LA BASE V
+C          SI C'EST LE CAS C'EST LA FONCTION UNITE
+           IF ( FMULT(1:2).EQ.'&&' ) THEN
+C             NORMALEMENT SEUL NMDOME DOIT CREER CETTE FONCTION
+              CALL ASSERT( FMULT.EQ.'&&NMDOME' )
+              COEF  = 1.D0
+              CALL FOCSTE(FMULT,'TOUTRESU',COEF  ,'V')
+           ENDIF
+           L1 = 1
+           L2 = 0
+           L3 = 0
+           L4 = 0
+        ELSE
+           PHASE = ZERO
+           IPUIS = 0
+           CALL GETVID('EXCIT','FONC_MULT',IOCCUR,1,1,FMULT,L1)
+           CALL GETVID('EXCIT','FONC_MULT_C',IOCCUR,1,1,FMULTC,L2)
+           CALL GETVR8('EXCIT','COEF_MULT',IOCCUR,1,1,COEF,L3)
+           CALL GETVC8('EXCIT','COEF_MULT_C',IOCCUR,1,1,CCOEF,L4)
+           CALL GETVR8('EXCIT','PHAS_DEG',IOCCUR,1,1,PHASE,L5)
+           CALL GETVIS('EXCIT','PUIS_PULS',IOCCUR,1,1,IPUIS,L6)
+           IF (L1+L2+L3+L4.NE.0) THEN
+              IF ( (TYPESD.NE.'DYNA_HARMO') .AND.
+     &              (TYPESD.NE.'DYNA_TRANS') .AND.
+     &              (TYPESD.NE.'EVOL_ELAS') ) THEN
+                 CALL U2MESS('A','CALCULEL3_4')
+                 IRET = 1
+                 GO TO 9999
+              ENDIF
+           ENDIF
+        ENDIF
+
         IF (L1.NE.0 .OR. L2.NE.0 .OR. L3.NE.0 .OR.
      &      L4.NE.0 .OR. L5.NE.0 .OR. L6.NE.0) THEN
           IF (TYPESD.EQ.'DYNA_HARMO') THEN
@@ -176,10 +217,10 @@ C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
             FREQ = ZR(LFREQ)
             OMEGA = R8DEPI()*FREQ
             IF (L1.NE.0) THEN
-              CALL FOINTE('F ',K8B,1,'FREQ',FREQ,VALRES,IER)
+              CALL FOINTE('F ',FMULT,1,'FREQ',FREQ,VALRES,IER)
               CALPHA = DCMPLX(VALRES,ZERO)
             ELSE IF (L2.NE.0) THEN
-              CALL FOINTC('F',K8B,1,'FREQ',FREQ,
+              CALL FOINTC('F',FMULTC,1,'FREQ',FREQ,
      &                    VALRES,VALIM,IER)
               CALPHA = DCMPLX(VALRES,VALIM)
             ELSE IF (L3.NE.0) THEN
@@ -198,7 +239,7 @@ C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
             CALL RSADPA(RESUIN,'L',1,'INST',NORDRE,0,LINST,K8B)
             INST = ZR(LINST)
             IF (L1.NE.0) THEN
-              CALL FOINTE('F ',K8B,1,'INST',INST,ALPHA,IER)
+              CALL FOINTE('F ',FMULT,1,'INST',INST,ALPHA,IER)
             ELSE IF (L3.NE.0) THEN
               ALPHA = COEF
             ELSE
@@ -209,37 +250,23 @@ C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
           ELSE IF (TYPESD.EQ.'EVOL_ELAS') THEN
             TYPCOE = 'R'
             IF (L1.NE.0) THEN
-              CALL FOINTE('F ',K8B,1,'INST',INST,ALPHA,IER)
+              CALL FOINTE('F ',FMULT,1,'INST',INST,ALPHA,IER)
             ELSE
               CALL U2MESS('A','CALCULEL3_3')
               IRET = 1
               GO TO 9999
             END IF
-          ELSE
-            CALL U2MESS('A','CALCULEL3_4')
-            IRET = 1
-            GO TO 9999
           END IF
         END IF
       END IF
-      IF (IOCCUR.GT.0) THEN
-        CALL GETVID('EXCIT','CHARGE',IOCCUR,1,1,CHAREP,N1)
-        IF(N1.EQ.0) CHAREP=ZK8(JCHA-1+IOCCUR)
-      END IF
-      
-      IF ( CHAREP.EQ.' ' ) THEN
-        CHARGE = ZK8(JCHA)
-      ELSE
-        CHARGE = CHAREP
-      ENDIF
-      
+C      
       CH5 = '.    '
       DO 10 I = 1,11
          TPS(I) = ZERO
          TPF(I) = '&FOZERO'
          TPC(I) = CZERO
-  10  CONTINUE
-      
+10    CONTINUE
+C      
       NOCHI1 = CHARGE//'.CHME.F1D1D.DESC'
       EXIF1D = .FALSE.
       CALL JEEXIN(NOCHI1,IER)
@@ -272,8 +299,8 @@ C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
             CALL CODENT(IPARA,'D0',CH5(2:5))
             NOCHIN = '&&MECHPO'//CH5//'.PESAN.DESC'
             LICHIN(IPARA) = NOCHIN
-            CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,'PESA_R  ',4,
-     &                  NCMPPE,IBID,TPS,CBID,K8B)
+            CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,'PESA_R  ',
+     &                  4,NCMPPE,IBID,TPS,CBID,K8B)
           ELSE
             LICHIN(IPARA) = NOCHIN
           ENDIF
@@ -293,8 +320,8 @@ C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
               NOCHIN = '&&MECHPO'//CH5//'.P1D1D.DESC'
               LICHIN(IPARA) = NOCHIN
               CALL FOZERO(TPF(1))
-              CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,
-     &                    'FORC_F  ',11,NCMPFO,IBID,RBID,CBID,TPF)
+              CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,'FORC_F  ',
+     &                    11,NCMPFO,IBID,RBID,CBID,TPF)
             ENDIF
           ENDIF
         ELSEIF ( CURPAR.EQ.'PFR1D1D' ) THEN
@@ -302,8 +329,8 @@ C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
             CALL CODENT(IPARA,'D0',CH5(2:5))
             NOCHIN = '&&MECHPO'//CH5//'.P1D1D.DESC'
             LICHIN(IPARA) = NOCHIN
-            CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,'FORC_R  ',11,
-     &                  NCMPFO,IBID,TPS,CBID,K8B)
+            CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,'FORC_R  ',
+     &                  11,NCMPFO,IBID,TPS,CBID,K8B)
           ELSE
             IF ( (TYPCHA(5:7).EQ.'_FO').OR.
      &           (TYPCHA(5:7).EQ.'_RI') ) THEN
@@ -321,8 +348,8 @@ C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
             CALL CODENT(IPARA,'D0',CH5(2:5))
             NOCHIN = '&&MECHPO'//CH5//'.P1D1D.DESC'
             LICHIN(IPARA) = NOCHIN
-            CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,'FORC_C  ',11,
-     &                  NCMPFO,IBID,RBID,TPC,K8B)
+            CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,'FORC_C  ',
+     &                  11,NCMPFO,IBID,RBID,TPC,K8B)
           ELSE
             IF ( TYPCHA(5:7).EQ.'_RI' ) THEN
               LICHIN(IPARA) = NOCHI1
@@ -350,9 +377,9 @@ C          * UTILISATION DU MOT-CLE FACTEUR EXCIT
           CALL MECACT('V',NOCHIN,'MODELE',LIGRMO,'NEUT_K24',
      &                1,'Z1',IBID,RBID,CBID,SUROPT)
         ENDIF
-   70 CONTINUE
+70    CONTINUE
       
- 9999 CONTINUE
+9999  CONTINUE
       
       CALL JEDEMA()
       
