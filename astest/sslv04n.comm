@@ -1,0 +1,179 @@
+# MODIF  DATE 29/11/2011   AUTEUR DURAND C.DURAND 
+# TITRE CYLINDRE EN 3D (PENTA6 HEXA8) AVEC EFFET DE FOND
+#            CONFIGURATION MANAGEMENT OF EDF VERSION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+# CYLINDRE CREUX EN CONTRAINTES PLANES ET EFFET DE FOND
+#
+# MODELISATION : ELEMENTS MECANIQUE 3D (PENTA6 HEXA8)
+#
+
+
+DEBUT( CODE=_F( NOM = 'SSLV04N',NIV_PUB_WEB='INTERNET'))
+
+PRE_GIBI()
+
+M=LIRE_MAILLAGE()
+
+DEFI_GROUP(reuse=M,       MAILLAGE=M,CREA_GROUP_NO=(
+                  _F( NOM = 'DIRI',   GROUP_MA = 'DIRI',   ),
+                  _F( NOM = 'SB',   GROUP_MA = 'SB',   ),
+                  _F( NOM = 'DIRY',   GROUP_MA = 'DIRY',   )),
+                  CREA_GROUP_MA=_F( NOM = 'AE8',    UNION = ('AE6','AE5',),  )
+                )
+
+MO=AFFE_MODELE(            MAILLAGE=M,
+                                   VERIF='MAILLE',
+                                  AFFE=_F(  TOUT = 'OUI',
+                                         PHENOMENE = 'MECANIQUE',
+                                         MODELISATION = '3D',       ))
+
+MODI_MAILLAGE( reuse=M,   MAILLAGE=M,
+                        ORIE_PEAU_3D=_F(  GROUP_MA = 'SH',      )
+                    )
+
+TA=POST_ELEM(    MODELE=MO,AIRE_INTERNE=(
+                    _F(  GROUP_MA_BORD = 'AE7',         ),
+                    _F(  GROUP_MA_BORD = 'AE8',         ))
+               )
+
+MA=DEFI_MATERIAU(            ELAS=_F(  E = 200000.,
+                                         NU = 0.3,
+                                         ALPHA = 0.,    ) )
+
+CM=AFFE_MATERIAU(        MAILLAGE=M,
+                                  AFFE=_F(  TOUT = 'OUI',
+                                         MATER = MA,            ))
+
+CH=AFFE_CHAR_MECA(       MODELE=MO,DDL_IMPO=(
+                            _F(  GROUP_NO = 'DIRI',   DY = 0.,     ),
+                            _F(  GROUP_NO = 'SB',     DZ = 0.,     ),
+                            _F(  GROUP_NO = 'DIRY',   DX = 0.,     )),
+                           FACE_IMPO=_F(  GROUP_MA = 'DNOR',   DNOR = 0.,   ),
+                            PRES_REP=_F(  GROUP_MA = 'PRE7',   PRES = 60.,  ),EFFE_FOND=(
+                           _F(  GROUP_MA_INT = 'AE7',
+                                       GROUP_MA = 'SH',     PRES = 60.,  ),
+                           _F(  GROUP_MA_INT = 'AE8',
+                                       GROUP_MA = 'SH',     PRES = 60.,  ))
+                       )
+
+
+RESU=MECA_STATIQUE(    MODELE=MO,        CHAM_MATER=CM,
+                           EXCIT=_F(  CHARGE = CH,   ),
+
+                      )
+
+CALC_ELEM( reuse= RESU ,RESULTAT= RESU ,             
+                           
+                          OPTION=('EPSI_ELNO', 'SIGM_ELNO',)
+                      )
+
+CALC_NO( reuse=RESU,   RESULTAT=RESU,
+                     OPTION=('EPSI_NOEU', 'SIGM_NOEU',)
+                 )
+
+TEST_RESU(RESU=(
+   # DEPLACEMENTS
+
+         _F(    CRITERE = 'RELATIF',   PRECISION = 1.E-3,
+         RESULTAT = RESU,   NOM_CHAM = 'DEPL',     NUME_ORDRE = 1,
+         GROUP_NO = 'A',      NOM_CMP = 'DX',            VALE = 56.E-6,        ),
+         _F(    CRITERE = 'ABSOLU',    PRECISION = 1.E-10,
+         RESULTAT = RESU,   NOM_CHAM = 'DEPL',     NUME_ORDRE = 1,
+         GROUP_NO = 'A',      NOM_CMP = 'DY',            VALE = 0.,            ),
+         _F(    CRITERE = 'RELATIF',   PRECISION = 1.E-3,
+         RESULTAT = RESU,   NOM_CHAM = 'DEPL',     NUME_ORDRE = 1,
+         GROUP_NO = 'B',      NOM_CMP = 'DX',            VALE = 34.E-6,        ),
+         _F(   CRITERE = 'ABSOLU',    PRECISION = 1.E-10,
+         RESULTAT = RESU,   NOM_CHAM = 'DEPL',     NUME_ORDRE = 1,
+         GROUP_NO = 'B',      NOM_CMP = 'DY',            VALE = 0.,            ))
+           )
+
+TEST_RESU(RESU=(
+    # CONTRAINTES
+
+           _F(   CRITERE = 'RELATIF',    PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'A',        NOM_CMP = 'SIXX',       VALE = -60.,         ),
+           _F(   CRITERE = 'RELATIF',    PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'A',       NOM_CMP = 'SIYY',       VALE = 100.,         ),
+           _F(    CRITERE = 'RELATIF',     PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'A',         NOM_CMP = 'SIZZ',       VALE = 20.,           ),
+           _F(   CRITERE = 'ABSOLU',     PRECISION = 1.E-4,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'A',         NOM_CMP = 'SIXY',       VALE = 0.,           ))
+           )
+
+#-----------------------------------------------------------------
+
+TEST_RESU(RESU=(
+
+           _F(   CRITERE = 'ABSOLU',     PRECISION = 1.E-1,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'B',     NOM_CMP = 'SIXX',       VALE = 0.,           ),
+           _F(   CRITERE = 'RELATIF',    PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'B',      NOM_CMP = 'SIYY',       VALE = 40.,          ),
+           _F(    CRITERE = 'RELATIF',     PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'B',      NOM_CMP = 'SIZZ',       VALE = 20.,           ),
+           _F(    CRITERE = 'ABSOLU',     PRECISION = 1.E-4,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'B',     NOM_CMP = 'SIXY',       VALE = 0.,           ))
+           )
+
+#-----------------------------------------------------------------
+
+TEST_RESU(RESU=(
+
+           _F(    CRITERE = 'RELATIF',    PRECISION = 2.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'E',         NOM_CMP = 'SIXX',       VALE = 20.,        ),
+           _F(   CRITERE = 'RELATIF',    PRECISION = 2.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'E',        NOM_CMP = 'SIYY',       VALE = 20.,        ),
+           _F(    CRITERE = 'RELATIF',     PRECISION = 0.01,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'E',         NOM_CMP = 'SIZZ',       VALE = 20.,         ),
+           _F(    CRITERE = 'RELATIF',    PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'E',       NOM_CMP = 'SIXY',       VALE = -80.,       ))
+           )
+
+#-----------------------------------------------------------------
+
+TEST_RESU(RESU=(
+
+           _F(     CRITERE = 'RELATIF',    PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'F',       NOM_CMP = 'SIXX',       VALE = 20.,          ),
+           _F(    CRITERE = 'RELATIF',    PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'F',     NOM_CMP = 'SIYY',       VALE = 20.,          ),
+           _F(    CRITERE = 'RELATIF',     PRECISION = 0.01,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'F',       NOM_CMP = 'SIZZ',       VALE = 20.,           ),
+           _F(   CRITERE = 'RELATIF',    PRECISION = 1.E-2,
+ RESULTAT = RESU,   NOM_CHAM = 'SIGM_NOEU',     NUME_ORDRE = 1,
+ GROUP_NO = 'F',       NOM_CMP = 'SIXY',       VALE = -20.,         ))
+           )
+
+FIN()
+#

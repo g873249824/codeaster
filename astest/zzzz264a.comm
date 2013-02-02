@@ -1,0 +1,126 @@
+# MODIF  DATE 29/11/2011   AUTEUR DURAND C.DURAND 
+# RESPONSABLE BOTTONI M.BOTTONI
+# TITRE TEST MACRO POST_ENDO_FISS SUR RESULTAT ANALYTIQUE
+# zzzz264a.para = tps_job 1500 mem_job 256Mo ncpus 1 liste_test S
+#            CONFIGURATION MANAGEMENT OF EDF VERSION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
+# (AT YOUR OPTION) ANY LATER VERSION.                                                    
+#                                                                       
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
+#                                                                       
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='ZZZZ264A',NIV_PUB_WEB='INTERNET',))
+
+# --PARAMETRES DE LA POST_ENDO_FISS
+#
+lort  = 20.
+lreg  = lort*0.2
+pas   = 2.
+seuil = 10.**(-3)
+
+
+# --LECTURE MAILLAGE--
+#
+MAIL = LIRE_MAILLAGE()
+
+
+# --DEFINITION DU MODELE--
+#
+MOD1 = AFFE_MODELE(MAILLAGE = MAIL,
+                   AFFE     = _F(TOUT         = 'OUI',
+                                 PHENOMENE    = 'MECANIQUE',
+                                 MODELISATION = 'C_PLAN'),)
+
+
+# --LECTURE DU CHAMP A POST-TRAITER--
+#   On ne lit que la premiere variable interne DX
+#
+U1 = LIRE_RESU( TYPE_RESU  = 'EVOL_NOLI',
+                FORMAT     = 'MED',
+                MAILLAGE   = MAIL,
+                FORMAT_MED = (_F( NOM_CHAM_MED= 'U1______DEPL____________________                               ',
+
+                                  NOM_CHAM    = 'DEPL',
+                                  NOM_CMP     = ('DX',),
+                                  NOM_CMP_MED = ('DX',),),),
+                UNITE      = 80,
+                INST       = 1.,)
+
+
+
+# --RECHERCHE DU TRAJET DE FISSURATION--
+# On donne en entree un modele, parce que le resultat
+#  ne continet que le maillage
+MAFI = POST_ENDO_FISS( TABLE      = CO('TAB_FISS'),
+                       RESULTAT   = U1,
+                       INST       = 1.,
+                       MODELE     = MOD1,
+                       NOM_CHAM   = 'DEPL',
+                       NOM_CMP    = 'DX',
+                       RECHERCHE  = _F( LONG_ORTH = lort,
+                                        PAS       = pas,
+                                        LONG_REG  = lreg,
+                                        SEUIL     = seuil,
+                                        ANGL_MAX  = 180.,
+                                      ),)
+
+
+
+# --COMPARAISON AVEC L'ANALYTIQUE--
+#
+TEST_TABLE( TABLE     = TAB_FISS,
+            FILTRE    = (_F(NOM_PARA  = 'COORX',
+                            VALE      = 105.29,
+                            CRIT_COMP = 'EQ',),),
+            NOM_PARA  = 'COORY',
+            VALE      = 15.7113,
+            CRITERE   = 'RELATIF',
+            PRECISION = 1.E-2,
+            REFERENCE = 'ANALYTIQUE',
+            )
+
+TEST_TABLE( TABLE     = TAB_FISS,
+            FILTRE    = (_F(NOM_PARA  = 'COORX',
+                            VALE      = 81.6573,
+                            CRIT_COMP = 'EQ',),),
+            NOM_PARA  = 'COORY',
+            VALE      = 16.2577,
+            CRITERE   = 'RELATIF',
+            PRECISION = 1.E-2,
+            REFERENCE = 'ANALYTIQUE',
+            )
+
+TEST_TABLE( TABLE     = TAB_FISS,
+            FILTRE    = (_F(NOM_PARA  = 'COORX',
+                            VALE      = 19.1893,
+                            CRIT_COMP = 'EQ',),),
+            NOM_PARA  = 'COORY',
+            VALE      = 23.7201,
+            CRITERE   = 'RELATIF',
+            PRECISION = 1.E-2,
+            REFERENCE = 'ANALYTIQUE',
+            )
+
+
+## --IMPRESSION DES RESULTATS--
+##
+#IMPR_RESU(FORMAT = 'MED',
+          #UNITE  = 81,
+          #RESU   = (_F(RESULTAT = U1,),
+                    #_F(MAILLAGE = MAFI,),),)
+
+#IMPR_TABLE (TABLE = TAB_FISS,)
+
+
+FIN()

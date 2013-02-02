@@ -1,0 +1,250 @@
+# MODIF  DATE 29/11/2011   AUTEUR DURAND C.DURAND 
+# TITRE VALIDATION FETI, DIRICHLETS INTERSECTANT L'INTERFACE
+# feti005a.para = tps_job 60 mem_job 64Mo ncpus 1 liste_test S
+#            CONFIGURATION MANAGEMENT OF EDF VERSION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# ======================================================================
+# PLAQUE 2D MODELISEE VIA 24 TRIA3 ET DECOUPEE EN 4 SOUS-DOMAINES
+# HOMOGENES AVEC UN NOEUD CENTRAL DE MULTIPLICITE 4.
+# TEST INFORMATIQUE DU SOLVEUR FETI-1 AVEC
+# TROIS DIRICHLETS SIMPLES DONT UN INTERSECTANT L'INTERFACE (DDL_IMPO/CH3)
+# ET UN AUTRE LA TOUCHANT (FACE_IMPO/CH2)
+# PARALLELE: VALEUR CONSEILLEE 2 PROCS.
+# ======================================================================
+# RESPONSABLE BOITEAU O.BOITEAU
+
+DEBUT(CODE=_F(NOM='FETI005A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='NON'))
+
+MATER=DEFI_MATERIAU(
+           ELAS=_F(E = 180000., NU = 0.30, ALPHA = 15.E-6, RHO = 7700.,))
+
+MAIL=LIRE_MAILLAGE( )
+
+MODM=AFFE_MODELE(MAILLAGE=MAIL,
+                 AFFE=(_F(GROUP_MA = 'STRU',PHENOMENE = 'MECANIQUE',
+                          MODELISATION = 'D_PLAN',   ),))
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                    AFFE=(_F(TOUT='OUI',MATER=MATER),))
+
+CH1=AFFE_CHAR_MECA(MODELE=MODM,
+                    PRES_REP=(_F(GROUP_MA=('DDLI1'),PRES = 2000.,),),)
+
+CH2=AFFE_CHAR_MECA(MODELE=MODM,
+                    FACE_IMPO=(_F(MAILLE=('M25','M26'),DY = -1.,),),)
+
+CH3=AFFE_CHAR_MECA(MODELE=MODM,
+                    DDL_IMPO=(_F( GROUP_NO=('DIRI1'),DX=0.0,),),)
+
+CH4=AFFE_CHAR_MECA(MODELE=MODM,
+                    DDL_IMPO=(_F( GROUP_NO=('DIRI13'),DX=2.0, DY=-3.0),),)
+
+SDFETI=DEFI_PART_OPS(NOM='SD',
+                     MODELE=MODM,
+                     INFO=1,
+                     DEFI=(_F(GROUP_MA = 'FETI1', ),
+                           _F(GROUP_MA = 'FETI2', ),
+                           _F(GROUP_MA = 'FETI3', GROUP_MA_BORD = 'B5',),
+                           _F(GROUP_MA = 'FETI4', GROUP_MA_BORD = 'B6',),
+                           ),
+                     EXCIT=(_F(CHARGE=CH1),
+                            _F(CHARGE=CH2),
+                            _F(CHARGE=CH3),
+                            _F(CHARGE=CH4),),
+                    );
+
+
+RESU=MECA_STATIQUE(MODELE=MODM,
+                   CHAM_MATER=CHMAT,
+                  SOLVEUR=_F(METHODE='FETI',
+                             PARTITION=SDFETI,
+                             RESI_RELA=1.E-12,
+                             NMAX_ITER=30,
+                             VERIF_SDFETI='OUI',
+                             TEST_CONTINU=1.E-8,
+                             NB_REORTHO_DD=30,
+                             TYPE_REORTHO_DD='GSM',
+                             PRE_COND='LUMPE',
+                             SCALING='MULT',
+                             INFO_FETI='FFFFFFFFTF',
+                             RENUM='METIS',
+                             STOCKAGE_GI='OUI',
+                             ),
+                   EXCIT=(_F(CHARGE=CH1),
+                          _F(CHARGE=CH2),
+                          _F(CHARGE=CH3),
+                          _F(CHARGE=CH4),),
+                   INFO=1,
+                        )
+
+TEST_RESU(RESU=(
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N1',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 8.1946578086749E-01, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N1',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-2.4466558993334E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N2',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.7512356409554E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N2',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-2.2730360297203E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N3',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 2.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N3',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-3.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N4',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.5016076954569E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N4',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-3.1585584211104E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N5',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.1941922819731E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N5',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-1.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N6',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 3.0100384428987E-01, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N6',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-2.1609857071675E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N7',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE =  2.0322643481744E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N7',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE = -1.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N8',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.8356065590667E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N8',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-3.0717118068159E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N9',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.0590288862153E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N9',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-2.4997479844366E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N10',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 2.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N10',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-3.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N11',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.4450098040256E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N11',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-2.6930912686503E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N12',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 2.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N12',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-3.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N13',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.2962250139011E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N13',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE = -2.4531913504883E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N14',
+          CRITERE = 'ABSOLU', PRECISION = 1.E-14,
+          NOM_CMP = 'DX',    VALE = -1.0440866921035E-16, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N14',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-2.4060577657981E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N15',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.2083097157370E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N15',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-2.4267569775469E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N16',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.8554469553880E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N16',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-3.0080044682451E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N17',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.7855200158064E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N17',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-2.9577527420758E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N18',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 1.1916201242043E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N18',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-1.0000000000000E+00, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N19',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DX',    VALE = 7.9658993294143E-01, REFERENCE = 'NON_REGRESSION' ),
+     _F(  RESULTAT = RESU,   NUME_ORDRE = 1,
+          NOM_CHAM = 'DEPL',   NOEUD = 'N19',
+          CRITERE = 'RELATIF', PRECISION = 1.E-10,
+          NOM_CMP = 'DY',    VALE =-1.6331278069935E+00, REFERENCE = 'NON_REGRESSION' ),
+        ),);
+FIN( )
+#

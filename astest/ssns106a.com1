@@ -1,0 +1,926 @@
+# AJOUT
+# RESPONSABLE
+# TITRE  : ENDOMMAGEMENT D UNE PLAQUE PLANE SOUS SOLLICITATIONS VARIEES
+#  DETAILS : MODELISATION : MULTI-COUCHES
+#                          (DKT- ENDO_ISOT_BETON+2*GRILLE ACIER)
+#                                           VS.
+#                           DKTG (GLRC_DM)
+#            MAILLAGE     : TRIA3
+#            CHARGEMENT   : CYCLIQUE TRACTION - COMPRESSION
+#            REMARQUE 1   : ON TESTE DEFI_GLRC
+
+POURSUITE(CODE=_F(NOM='SSNS106A',),
+          DEBUG=_F(SDVERI='OUI',),
+          PAR_LOT='NON');
+
+#TEST DE DEFI_GLRC
+#PAR DEFAUT PENTE='RIGI_ACIER' METHODE_ENDO='ENDO_INTER'
+MAT_G_RA=DEFI_GLRC(RELATION='GLRC_DM',
+                   BETON=_F(MATER=BETON_E,
+                            EPAIS=EP,),
+                   NAPPE=(_F(MATER=ACIER,
+                             OMX=8.E-4,
+                             OMY=8.E-4,
+                             RX=0.8,
+                             RY=0.8,),),
+                   INFO=2,);
+
+nomres=aster.getvectjev("MAT_G_RA.ELAS      .VALK");
+valres=aster.getvectjev("MAT_G_RA.ELAS      .VALR");
+
+TAB_G_RA=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES ELASTIQUES
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='E'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.56249e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NU'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.82634e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='RHO'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.74960e+03,
+           REFERENCE='NON_REGRESSION',);
+
+#TESTE LE PASSAGE DES PARAMATRES D AMORTISSEMENT
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_ALP'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_ALP,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_BET'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_BET,
+           REFERENCE='NON_REGRESSION',);
+
+DETRUIRE(CONCEPT=_F(NOM=(TAB_G_RA),),);
+nomres=aster.getvectjev("MAT_G_RA.GLRC_DM   .VALK");
+valres=aster.getvectjev("MAT_G_RA.GLRC_DM   .VALR");
+
+TAB_G_RA=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES SPECIFIQUE A GLRC_DM
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EF'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.86598e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NUF'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.69124e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EPAIS'),
+           NOM_PARA='VAL_PARA',
+           VALE=EP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYT'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.73554e+05,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYF'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.73741e+03,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYC'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.16067e+06,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_T'),
+           NOM_PARA='VAL_PARA',
+           VALE=8.98248e-02,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_F'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.72470e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_RA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_C'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.0,
+           REFERENCE='ANALYTIQUE',);
+
+#TEST DE DEFI_GLRC
+#PENTE='PLAS_ACIER' METHODE_ENDO='ENDO_INTER'
+MAT_G_PA=DEFI_GLRC(RELATION='GLRC_DM',
+                   BETON=_F(MATER=BETON_E,
+                            EPAIS=EP,),
+                   NAPPE=(_F(MATER=ACIER,
+                             OMX=8.E-4,
+                             OMY=8.E-4,
+                             RX=0.8,
+                             RY=0.8,),),
+                   PENTE='PLAS_ACIER',
+                   RHO=2700.0,
+                   AMOR_ALPHA=5.e-05,
+                   AMOR_BETA=4.0,
+                   INFO=2,);
+
+nomres=aster.getvectjev("MAT_G_PA.ELAS      .VALK");
+valres=aster.getvectjev("MAT_G_PA.ELAS      .VALR");
+TAB_G_PA=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES ELASTIQUES
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='E'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.56249e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NU'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.82634e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='RHO'),
+           NOM_PARA='VAL_PARA',
+           VALE=2700.0,
+           REFERENCE='ANALYTIQUE',);
+
+#TESTE DE L IMPOSITION DES PARAMATRES D AMORTISSEMENT
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_ALP'),
+           NOM_PARA='VAL_PARA',
+           VALE=5.e-05,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_BET'),
+           NOM_PARA='VAL_PARA',
+           VALE=4.0,
+           REFERENCE='ANALYTIQUE',);
+
+DETRUIRE(CONCEPT=_F(NOM=(TAB_G_PA),),);
+nomres=aster.getvectjev("MAT_G_PA.GLRC_DM   .VALK");
+valres=aster.getvectjev("MAT_G_PA.GLRC_DM   .VALR");
+TAB_G_PA=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EF'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.86598e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NUF'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.69124e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EPAIS'),
+           NOM_PARA='VAL_PARA',
+           VALE=EP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYT'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.73554e+05,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYF'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.73741e+03,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYC'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.16067e+06,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_T'),
+           NOM_PARA='VAL_PARA',
+           VALE=5.50584E-02,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_F'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.35080E-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_PA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_C'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.0,
+           REFERENCE='ANALYTIQUE',);
+
+#TEST DE DEFI_GLRC
+#PENTE='UTIL' METHODE_ENDO='ENDO_INTER'
+MAT_G_UT=DEFI_GLRC(RELATION='GLRC_DM',
+                   BETON=_F(MATER=BETON_E,
+                            EPAIS=EP,),
+                   NAPPE=(_F(MATER=ACIER,
+                             OMX=8.E-4,
+                             OMY=8.E-4,
+                             RX=0.8,
+                             RY=0.8,),),
+                   PENTE='UTIL',
+                   EPSI_MEMB=0.002,
+                   EPSI_FLEX=0.03,
+                   INFO=2,);
+
+nomres=aster.getvectjev("MAT_G_UT.ELAS      .VALK");
+valres=aster.getvectjev("MAT_G_UT.ELAS      .VALR");
+TAB_G_UT=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES ELASTIQUES
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='E'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.56249e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NU'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.82634e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='RHO'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.74960e+03,
+           REFERENCE='ANALYTIQUE',);
+
+#TESTE DE L IMPOSITION DES PARAMATRES D AMORTISSEMENT
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_ALP'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_ALP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_BET'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_BET,
+           REFERENCE='ANALYTIQUE',);
+
+DETRUIRE(CONCEPT=_F(NOM=(TAB_G_UT),),);
+nomres=aster.getvectjev("MAT_G_UT.GLRC_DM   .VALK");
+valres=aster.getvectjev("MAT_G_UT.GLRC_DM   .VALR");
+TAB_G_UT=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EF'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.86598e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NUF'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.69124e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EPAIS'),
+           NOM_PARA='VAL_PARA',
+           VALE=EP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYT'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.73554e+05,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYF'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.73741e+03,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYC'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.16067e+06,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_T'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.946509308710144E-002,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_F'),
+           NOM_PARA='VAL_PARA',
+           VALE=0.217953933338788,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_UT,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_C'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.0,
+           REFERENCE='ANALYTIQUE',);
+
+#TEST DE DEFI_GLRC
+#PAR DEFAUT PENTE='RIGI_ACIER' METHODE_ENDO='ENDO_NAISS'
+MAT_G_NA=DEFI_GLRC(RELATION='GLRC_DM',
+                   BETON=_F(MATER=BETON_E,
+                            EPAIS=EP,),
+                   NAPPE=(_F(MATER=ACIER,
+                             OMX=8.E-4,
+                             OMY=8.E-4,
+                             RX=0.8,
+                             RY=0.8,),),
+                   METHODE_ENDO='ENDO_NAISS',
+                   INFO=2,);
+
+nomres=aster.getvectjev("MAT_G_NA.ELAS      .VALK");
+valres=aster.getvectjev("MAT_G_NA.ELAS      .VALR");
+TAB_G_NA=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES ELASTIQUES
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='E'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.56249e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NU'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.82634e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='RHO'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.74960e+03,
+           REFERENCE='ANALYTIQUE',);
+
+#TESTE DE L IMPOSITION DES PARAMATRES D AMORTISSEMENT
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_ALP'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_ALP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_BET'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_BET,
+           REFERENCE='ANALYTIQUE',);
+
+DETRUIRE(CONCEPT=_F(NOM=(TAB_G_NA),),);
+nomres=aster.getvectjev("MAT_G_NA.GLRC_DM   .VALK");
+valres=aster.getvectjev("MAT_G_NA.GLRC_DM   .VALR");
+TAB_G_NA=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EF'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.86598e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NUF'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.69124e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EPAIS'),
+           NOM_PARA='VAL_PARA',
+           VALE=EP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYT'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.73554e+05,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYF'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.73741e+03,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYC'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.16067e+06,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_T'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.94721e-02,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_F'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.65636e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_NA,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_C'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.0,
+           REFERENCE='ANALYTIQUE',);
+
+#TEST DE DEFI_GLRC
+#PAR DEFAUT PENTE='RIGI_ACIER' METHODE_ENDO='ENDO_LIM'
+MAT_G_LI=DEFI_GLRC(RELATION='GLRC_DM',
+                   BETON=_F(MATER=BETON_E,
+                            EPAIS=EP,),
+                   NAPPE=(_F(MATER=ACIER,
+                             OMX=8.E-4,
+                             OMY=8.E-4,
+                             RX=0.8,
+                             RY=0.8,),),
+                   METHODE_ENDO='ENDO_LIM',
+                   INFO=2,);
+
+nomres=aster.getvectjev("MAT_G_LI.ELAS      .VALK");
+valres=aster.getvectjev("MAT_G_LI.ELAS      .VALR");
+TAB_G_LI=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES ELASTIQUES
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='E'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.56249e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NU'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.82634e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='RHO'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.74960e+03,
+           REFERENCE='ANALYTIQUE',);
+
+#TESTE DE L IMPOSITION DES PARAMATRES D AMORTISSEMENT
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_ALP'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_ALP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_BET'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_BET,
+           REFERENCE='ANALYTIQUE',);
+
+DETRUIRE(CONCEPT=_F(NOM=(TAB_G_LI),),);
+nomres=aster.getvectjev("MAT_G_LI.GLRC_DM   .VALK");
+valres=aster.getvectjev("MAT_G_LI.GLRC_DM   .VALR");
+TAB_G_LI=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EF'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.86598e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NUF'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.69124e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EPAIS'),
+           NOM_PARA='VAL_PARA',
+           VALE=EP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYT'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.73554e+05,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYF'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.73741e+03,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYC'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.16067e+06,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_T'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.92386e-02,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_F'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.67004e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_LI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_C'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.0,
+           REFERENCE='ANALYTIQUE',);
+
+#TEST DE DEFI_GLRC
+#PAR DEFAUT PENTE='RIGI_ACIER' METHODE_ENDO='ENDO_INTER'
+MAT_G_CI=DEFI_GLRC(RELATION='GLRC_DM',
+                   BETON=_F(MATER=BETON_E,
+                            EPAIS=EP,),
+                   NAPPE=(_F(MATER=ACIER,
+                             OMX=8.E-4,
+                             OMY=8.E-4,
+                             RX=0.8,
+                             RY=0.8,),),
+                   CISAIL='OUI',
+                   INFO=2,);
+
+nomres=aster.getvectjev("MAT_G_CI.ELAS      .VALK");
+valres=aster.getvectjev("MAT_G_CI.ELAS      .VALR");
+
+TAB_G_CI=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES ELASTIQUES
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='E'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.4868E+10,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NU'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.95084809e-01,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='RHO'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.74960e+03,
+           REFERENCE='ANALYTIQUE',);
+
+#TESTE LE PASSAGE DES PARAMATRES D AMORTISSEMENT
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_ALP'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_ALP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_BET'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_BET,
+           REFERENCE='ANALYTIQUE',);
+
+DETRUIRE(CONCEPT=_F(NOM=(TAB_G_CI),),);
+nomres=aster.getvectjev("MAT_G_CI.GLRC_DM   .VALK");
+valres=aster.getvectjev("MAT_G_CI.GLRC_DM   .VALR");
+
+TAB_G_CI=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES SPECIFIQUE A GLRC_DM
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EF'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.86598e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NUF'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.69124e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EPAIS'),
+           NOM_PARA='VAL_PARA',
+           VALE=EP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYT'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.06039e+05,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYF'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.73741e+03,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYC'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.09804e+06,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_T'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.37712e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_F'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.74184e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CI,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_C'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.0,
+           REFERENCE='ANALYTIQUE',);
+
+#TEST DE DEFI_GLRC
+#PAR DEFAUT PENTE='RIGI_ACIER' METHODE_ENDO='ENDO_INTER'
+MAT_G_CO=DEFI_GLRC(RELATION='GLRC_DM',
+                   BETON=_F(MATER=BETON_E,
+                            EPAIS=EP,),
+                   NAPPE=(_F(MATER=ACIER,
+                             OMX=8.E-4,
+                             OMY=8.E-4,
+                             RX=0.8,
+                             RY=0.8,),),
+                   COMPR='SEUIL',
+                   SYC=2.16067e+06,
+                   INFO=2,);
+
+nomres=aster.getvectjev("MAT_G_CO.ELAS      .VALK");
+valres=aster.getvectjev("MAT_G_CO.ELAS      .VALR");
+
+TAB_G_CO=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES ELASTIQUES
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='E'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.56249e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NU'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.82634e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='RHO'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.74960e+03,
+           REFERENCE='NON_REGRESSION',);
+
+#TESTE LE PASSAGE DES PARAMATRES D AMORTISSEMENT
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_ALP'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_ALP,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='AMOR_BET'),
+           NOM_PARA='VAL_PARA',
+           VALE=AMOR_BET,
+           REFERENCE='NON_REGRESSION',);
+
+DETRUIRE(CONCEPT=_F(NOM=(TAB_G_CO),),);
+nomres=aster.getvectjev("MAT_G_CO.GLRC_DM   .VALK");
+valres=aster.getvectjev("MAT_G_CO.GLRC_DM   .VALR");
+
+TAB_G_CO=CREA_TABLE(LISTE=(_F(PARA='NOM_PARA',
+                              LISTE_K=nomres,),
+                           _F(PARA='VAL_PARA',
+                              LISTE_R=valres,),),);
+
+#TESTE LE CALCUL DES PARAMETRES SPECIFIQUE A GLRC_DM
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EF'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.86598e+10,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='NUF'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.69124e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='EPAIS'),
+           NOM_PARA='VAL_PARA',
+           VALE=EP,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYT'),
+           NOM_PARA='VAL_PARA',
+           VALE=3.73554e+05,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYF'),
+           NOM_PARA='VAL_PARA',
+           VALE=6.73741e+03,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='SYC'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.16067e+06,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_T'),
+           NOM_PARA='VAL_PARA',
+           VALE=8.98248e-02,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_F'),
+           NOM_PARA='VAL_PARA',
+           VALE=2.72470e-01,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=TAB_G_CO,
+           FILTRE=_F(NOM_PARA='NOM_PARA',
+                     VALE_K='GAMMA_C'),
+           NOM_PARA='VAL_PARA',
+           VALE=1.0,
+           REFERENCE='ANALYTIQUE',);
+
+FIN();

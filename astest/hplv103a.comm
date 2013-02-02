@@ -1,0 +1,482 @@
+# MODIF  DATE 29/11/2011   AUTEUR DURAND C.DURAND 
+# TITRE CALCUL DE G THERMO-ELASTIQUE 3D EN MILIEU INFINI
+# hplv103a.para = tps_job 330 mem_job 800Mo ncpus 1 liste_test S
+#            CONFIGURATION MANAGEMENT OF EDF VERSION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR   
+# (AT YOUR OPTION) ANY LATER VERSION.                                 
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT 
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF          
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU    
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                            
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE   
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,       
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.      
+# ======================================================================
+
+
+DEBUT(CODE=_F(NOM='HPLV103A',
+              NIV_PUB_WEB='INTERNET',),DEBUG=_F(SDVERI='OUI'));
+
+M=LIRE_MAILLAGE();
+
+M=DEFI_GROUP(reuse =M,
+             MAILLAGE=M,
+             CREA_GROUP_NO=(_F(GROUP_MA='LEVREINF',),
+                            _F(GROUP_MA='SSUP_S',),
+                            _F(GROUP_MA='SAV_S',),
+                            _F(GROUP_MA='SLAT_S',),
+                            _F(GROUP_MA='SINF',),
+                            _F(GROUP_MA='SAR',),
+                            _F(GROUP_MA='SLAT',),
+                            _F(UNION=('SINF','SAR','SLAT',),
+                               NOM='INFINI',),),);
+#--------------------------------------------------------------------
+#               DEBUT DU THERMIQUE                                  #
+#--------------------------------------------------------------------
+
+MOTH=AFFE_MODELE(MAILLAGE=M,
+                 AFFE=_F(TOUT='OUI',
+                         PHENOMENE='THERMIQUE',
+                         MODELISATION='3D',),);
+
+MATH=DEFI_MATERIAU(THER=_F(LAMBDA=1.0,
+                           RHO_CP=0.0,),);
+
+CMTH=AFFE_MATERIAU(MAILLAGE=M,
+                   AFFE=_F(TOUT='OUI',
+                           MATER=MATH,),);
+
+CHTH=AFFE_CHAR_THER(MODELE=MOTH,
+                    TEMP_IMPO=(_F(GROUP_NO='INFINI',
+                                  TEMP=0.0,),
+                               _F(GROUP_NO='LEVREINF',
+                                  TEMP=-1.0,),),);
+
+THLI=THER_LINEAIRE(MODELE=MOTH,
+                   CHAM_MATER=CMTH,
+                   EXCIT=_F(CHARGE=CHTH,),);
+
+TEMP=CREA_CHAMP(TYPE_CHAM='NOEU_TEMP_R',
+                OPERATION='EXTR',
+                RESULTAT=THLI,
+                NOM_CHAM='TEMP',
+                INST=0.0,);
+#--------------------------------------------------------------------
+#               FIN DU THERMIQUE                                    #
+#--------------------------------------------------------------------
+
+MO=AFFE_MODELE(MAILLAGE=M,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='3D',),);
+#
+
+MA=DEFI_MATERIAU(ELAS=_F(E=200000000000.0,
+                         NU=0.3,
+                         ALPHA=1e-06,),);
+#
+
+CM=AFFE_MATERIAU(MAILLAGE=M,
+                 AFFE=_F(TOUT='OUI',
+                         MATER=MA,),
+                 AFFE_VARC=_F( TOUT='OUI',
+                               NOM_VARC='TEMP',
+                               CHAMP_GD=TEMP,
+                               VALE_REF=0.0),
+);
+#
+
+CH=AFFE_CHAR_MECA(MODELE=MO,
+                  DDL_IMPO=(_F(GROUP_NO='SSUP_S',
+                               DZ=0.0,),
+                            _F(GROUP_NO='SLAT_S',
+                               DX=0.0,),
+                            _F(GROUP_NO='SAV_S',
+                               DY=0.0,),),);
+#
+
+MEST=MECA_STATIQUE(MODELE=MO,
+                   CHAM_MATER=CM,
+                   EXCIT=_F(CHARGE=CH,),);
+#
+
+T_POT=POST_ELEM(ENER_POT=_F(TOUT='OUI',),
+                RESULTAT=MEST,);
+
+IMPR_TABLE(TABLE=T_POT,);
+# VERSION=6.02.21 sans charge thermique :  3.92012E-06  (1/2U)
+# VERSION=6.02.21 avec charge thermique : -9.74690E-21  (1/2U - 1/2Th)
+# VERSION=6.02.22 avec charge thermique : -3.92012E-06  (1/2U - Th)
+# VERSION=6.03.20 avec charge thermique : 1.47E-06(1/2U - Th + 1/2 Eth A Eth)
+
+TEST_TABLE(TABLE=T_POT,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=1,),
+           NOM_PARA='TOTALE',
+           VALE=1.47660924769,
+           REFERENCE='NON_REGRESSION',
+           VERSION='6.03.20',);
+#--------------------------------------------------------------------
+#               CALCUL DE G SUR 4 COURONNES                         #
+#--------------------------------------------------------------------
+
+FF=DEFI_FOND_FISS(MAILLAGE=M,
+                  FOND_FISS=_F(GROUP_NO='LFF',),
+                  NORMALE=(0.0,0.0,-1.0,),
+                  DTAN_ORIG=(0.0,1.0,0.0,),
+                  DTAN_EXTR=(1.0,0.0,0.0,),);
+#
+
+THETA1=CALC_THETA(MODELE=MO,
+                  THETA_3D=_F(TOUT='OUI',
+                              MODULE=1.0,
+                              R_INF=0.07,
+                              R_SUP=0.2,),
+                  FOND_FISS=FF,);
+#
+
+G1=CALC_G(THETA=_F(THETA=THETA1,),
+          RESULTAT=MEST,
+          SYME_CHAR='SYME',
+          OPTION='CALC_G_GLOB',);
+#
+
+THETA2=CALC_THETA(MODELE=MO,
+                  THETA_3D=_F(TOUT='OUI',
+                              MODULE=1.0,
+                              R_INF=0.2,
+                              R_SUP=0.4,),
+                  FOND_FISS=FF,);
+#
+
+G2=CALC_G(THETA=_F(THETA=THETA2,),
+          RESULTAT=MEST,
+          SYME_CHAR='SYME',
+          OPTION='CALC_G_GLOB',);
+#
+
+G3=CALC_G(THETA=_F(FOND_FISS=FF,
+                   R_INF=0.4,
+                   R_SUP=0.6,),
+          RESULTAT=MEST,
+          SYME_CHAR='SYME',
+          OPTION='CALC_G_GLOB',);
+#
+
+G4=CALC_G(THETA=_F(FOND_FISS=FF,
+                   R_INF=0.07,
+                   R_SUP=0.6,),
+          RESULTAT=MEST,
+          SYME_CHAR='SYME',
+          OPTION='CALC_G_GLOB',);
+#
+#
+#--------------------------------------------------------------------
+#               CALCUL DE GLOCAL                                    #
+#--------------------------------------------------------------------
+
+GLOC1=CALC_G(THETA=_F(FOND_FISS=FF,
+                      R_INF=0.07,
+                      R_SUP=0.2,),
+             RESULTAT=MEST,
+             SYME_CHAR='SYME',
+             LISSAGE=_F(DEGRE=6,
+                        LISSAGE_THETA='LAGRANGE',),);
+
+IMPR_TABLE(TABLE=GLOC1,);
+#
+
+GLOC2=CALC_G(THETA=_F(FOND_FISS=FF,
+                      R_INF=0.07,
+                      R_SUP=0.2,),
+             RESULTAT=MEST,
+             SYME_CHAR='SYME',
+             LISSAGE=_F(DEGRE=6,),);
+#
+
+GLOC3=CALC_G(THETA=_F(FOND_FISS=FF,
+                      R_INF=0.2,
+                      R_SUP=0.4,),
+             RESULTAT=MEST,
+             SYME_CHAR='SYME',
+             LISSAGE=_F(DEGRE=7,
+                        LISSAGE_THETA='LAGRANGE',),);
+#
+
+GLOC4=CALC_G(THETA=_F(FOND_FISS=FF,
+                      R_INF=0.2,
+                      R_SUP=0.4,),
+             RESULTAT=MEST,
+             SYME_CHAR='SYME',
+             LISSAGE=_F(DEGRE=7,),);
+#
+
+GLOC5=CALC_G(THETA=_F(FOND_FISS=FF,
+                      R_INF=0.4,
+                      R_SUP=0.6,),
+             RESULTAT=MEST,
+             SYME_CHAR='SYME',
+             LISSAGE=_F(DEGRE=7,
+                        LISSAGE_THETA='LAGRANGE',),);
+#
+
+GLOC6=CALC_G(THETA=_F(FOND_FISS=FF,
+                      R_INF=0.4,
+                      R_SUP=0.6,),
+             RESULTAT=MEST,
+             SYME_CHAR='SYME',
+             LISSAGE=_F(DEGRE=7,),);
+#
+#
+#--------------------------------------------------------------------
+#               CALCUL DE GLOCAL                                    #
+#--------------------------------------------------------------------
+
+FFX=DEFI_FISS_XFEM(MODELE=MO,
+                   DEFI_FISS=_F(GROUP_MA_FISS='LEVREINF',
+                                GROUP_MA_FOND='MLFF',),
+                   ORIE_FOND=_F(PFON_INI=(0.0,1.0,0.0,),
+                                VECT_ORIE=(0.0,0.0,-1.0,),
+                                POINT_ORIG=(0.0,0.0,0.0,),),
+                   INFO=1,);
+
+GKLOC1=CALC_G(THETA=_F(FISSURE=FFX,
+                       R_INF=0.07,
+                       R_SUP=0.2,),
+              RESULTAT=MEST,
+              SYME_CHAR='SYME',
+              LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                         LISSAGE_G='LAGRANGE',),
+              OPTION='CALC_K_G',);
+
+IMPR_TABLE(TABLE=GKLOC1,);
+
+GKLOC2=CALC_G(THETA=_F(FISSURE=FFX,
+                       R_INF=0.2,
+                       R_SUP=0.4,),
+              RESULTAT=MEST,
+              SYME_CHAR='SYME',
+              LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                         LISSAGE_G='LAGRANGE',),
+              OPTION='CALC_K_G',);
+
+GKLOC3=CALC_G(THETA=_F(FISSURE=FFX,
+                       R_INF=0.4,
+                       R_SUP=0.6,),
+              RESULTAT=MEST,
+              SYME_CHAR='SYME',
+              LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                         LISSAGE_G='LAGRANGE',),
+              OPTION='CALC_K_G',);
+
+#
+#--------------------------------------------------------------------
+#            TEST DES RESULTATS DE G                                #
+#--------------------------------------------------------------------
+
+TEST_TABLE(TABLE=G1,
+           NOM_PARA='G',
+           VALE=0.17781,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=G1,
+           NOM_PARA='G',
+           VALE=0.173314346231,
+           PRECISION=0.0001,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=G2,
+           NOM_PARA='G',
+           VALE=0.17781,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=G3,
+           NOM_PARA='G',
+           VALE=0.17781,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=G4,
+           NOM_PARA='G',
+           VALE=0.17781,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+#--------------------------------------------------------------------
+#            TEST DES RESULTATS DE GLOCAL                           #
+#--------------------------------------------------------------------
+
+TEST_TABLE(TABLE=GLOC1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N254',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.1,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N190',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N190',),
+           NOM_PARA='G',
+           VALE=0.110111716004,
+           PRECISION=0.0003,
+           REFERENCE='NON_REGRESSION',);
+
+TEST_TABLE(TABLE=GLOC2,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N254',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC2,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N190',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC3,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N254',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.1,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC3,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N190',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC4,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N254',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC4,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N190',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC5,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N254',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.14,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC5,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N190',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC6,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N254',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GLOC6,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N190',),
+           NOM_PARA='G',
+           VALE=0.1132,
+           PRECISION=0.03,
+           REFERENCE='ANALYTIQUE',);
+#
+#--------------------------------------------------------------------
+#            TEST DES RESULTATS DE K1LOCAL                          #
+#--------------------------------------------------------------------
+
+TEST_TABLE(TABLE=GKLOC1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=1,),
+           NOM_PARA='K1',
+           VALE=157730.0,
+           PRECISION=0.04,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GKLOC2,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=1,),
+           NOM_PARA='K1',
+           VALE=157730.0,
+           PRECISION=0.05,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GKLOC3,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=1,),
+           NOM_PARA='K1',
+           VALE=157730.0,
+           PRECISION=0.055,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GKLOC1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=17,),
+           NOM_PARA='K1',
+           VALE=157730.0,
+           PRECISION=0.01,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GKLOC2,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=17,),
+           NOM_PARA='K1',
+           VALE=157730.0,
+           PRECISION=0.01,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GKLOC3,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=17,),
+           NOM_PARA='K1',
+           VALE=157730.0,
+           PRECISION=0.021,
+           REFERENCE='ANALYTIQUE',);
+
+TEST_TABLE(TABLE=GKLOC3,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=1,),
+           NOM_PARA='K1',
+           VALE=164779.156,
+           PRECISION=0.0015,
+           REFERENCE='NON_REGRESSION',
+           VERSION='9.3.5',);
+
+FIN();
+#
