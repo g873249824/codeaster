@@ -1,0 +1,762 @@
+========================================================================
+Version 10.8.3 du : 14/03/2013
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR berro        BERRO Hassan           DATE 03/13/2013 - 02:04:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020322 DU 2013-02-05 17:57:46
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    [FORUM] erreur dans la normalisation des concepts mode_meca obtenus suite xc3xa0 une restitution sur base physique
+FONCTIONNALITE
+   . . . . . . . . . ********************
+   . . . . . . . . .* Résumé du problème *
+   . . . . . . . . . ********************
+   
+   Erreur lors de la normalisation avec l'opérateur NORM_MODE d'un concept mode_meca obtenu 
+   par une restitution d'un mode_gene sur base physique (REST_GENE_PHYS).
+   
+   . . . . . . . . . *********************
+   . . . . . . . . .* Analyse du problème *
+   . . . . . . . . . *********************
+   
+   Le problème vient du faite que les modes dynamiques, obtenus par restitution des modes
+   généralisés sur base physique, ne contiennent pas les informations sur tous les paramètres 
+   modaux (masses effectives unitaires, facteurs de participation). Les mode_meca obtenus par
+   MODE_ITER_* contiennent toujours en ravanche ces informations.
+   
+   L'opérateur NORM_MODE ne voient pas la différence entre les deux types des mode_meca qui
+   sont d'origines différentes. NORM_MODE essaie donc systématiquement de repercuter la 
+   normalisation sur tous les paramètres modaux. A un moment donné dans VPNORM, on finit par
+   lire au délà de la taille du vecteur qui contient les valeurs des paramètres modaux ce qui
+   produite une SEGMENTATION FAULT.
+   
+   . . . . . . . . . ************
+   . . . . . . . . .* Correction *
+   . . . . . . . . . ************
+   
+   Je rajoute une condition supplementaire dans OP0037 (NORM_MODE) pour appeler correctement
+   la routine VPNORM (PARA='OUI'/'NON' dans les arguments de VPNORM : repercuter ou non la 
+   normalisation sur tous les paramètres modaux).
+   
+   La condition est tout simplement une vérification que les facteurs de participation ont
+   bien été calculées et stockées dans le mode_meca à normaliser.
+   
+   . . . . . . . . . ******************
+   . . . . . . . . .* Un peu de ménage *
+   . . . . . . . . . ******************
+   
+   Je supprime le dernier argument de VPNORM, qui ne servait pas.
+   
+   . . . . . . . . . ***************
+   . . . . . . . . .* Report en v10 *
+   . . . . . . . . . ***************
+   
+   Ce développement est à reporter en version 10. L'impact en v10 est testé pour le cas evoqué
+   par l'utilisateur sur le forum. (développement prêt pour être transmis à Phimeca)
+   
+   Il n'y a pas de risque de résultat faux, le code plantait dans ce cas...
+   
+   . . . . . . . . . *********
+   . . . . . . . . .* Impacts *
+   . . . . . . . . . *********
+   
+   .FORTRAN : OP0037 ; VPNORM ; MODIBA
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste complxc3xa8te (v11) + xc3xa9tude sur le forum (pour v10)
+DEJA RESTITUE DANS : 11.3.8
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020358 DU 2013-02-08 10:43:34
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    [IFS-13-SPEC] La liste de groupe de mailles sur lesquelles portent la projection des spectres n'est pas correctement prise en compte
+FONCTIONNALITE
+   >> Cette fiche corrige aussi la fiche issue20340 <<
+   
+   . . . . . . . . . *********************
+   . . . . . . . . .* Analyse du problème *
+   . . . . . . . . . *********************
+   
+   Il s'agit d'une mauvaise programmation dans PROJ_SPEC_BASE de la gestion des entités du 
+   maillage (GROUP_MA, MAILLE) sur lequelles la projection du spectre de turbulence est 
+   effectuée.
+   
+   Les erreurs se trouvent principalement dans la routine accep1.f, qui traite le calcul 
+   des coefficients d'acceptance pour des spectres de type SPEC_CORR_CONV_1 et 2.
+   
+   ========================
+   Avant cette correction : 
+   ========================
+   
+   1) le mot-clé MAILLE était toujours ignoré en faveur de TOUT='OUI'
+   >>!!! Risque de résultats faux !!!<< (1)
+   
+   2) le mot-clé GROUP_MA était pris en compte seulement si ça contient un seul groupe
+   
+   ===== Fiche issue20340 ===================================================================
+   
+   >>> Quand on disposait d'un groupe de mailles sous GROUP_MA, on l'utilisait pour extraire, 
+   . . à partir du modèle mécanique de la structure, un LIGREL réduit. 
+   >>> Ce LIGREL était nommé d'après le nom du GROUP_MA.
+   >>> Passage de GROUP_MA de K8 à K24 => Objets jeveux de plus de 24 charactères...
+   
+   ==========================================================================================
+   
+   3) dans le cas où une liste de plusieurs GROUP_MA était fournie, on prenait TOUT='OUI'
+   >>!!! Risque de résultats faux !!!<< (2)
+   
+   4) quand un modèle thermique d'interface était donné par le mot-clé MODELE_INTERFACE, on
+   prenait la totalité des mailles associées à ce modèle. (les mot-clés TOUT/GROUP_MA/MAILLE
+   étaient donc ignorés)
+   >>!!! Risque de résultats faux !!!<< (3)
+   
+   5) le code s’arrête brutalement si on défini la base par des cham_no (mot-clé CHAM_NO) et
+   qu'on procède à la projection sans avoir donner des informations sur le modèle EF par le
+   mot-clé MODELE_INTERFACE.
+   
+   6) si une base de projection est définie par une liste des cham_no, on récupère uniquement le 
+   premier cham_no. La projection se fait donc sur un seul mode de déformation structurelle. 
+   >>!!! Risque de résultats faux !!!<< (4)
+   
+   . . . . . . . . . ***************************
+   . . . . . . . . .* Proposition de correction *
+   . . . . . . . . . ***************************
+   
+   On apporte des corrections aux routines accep1 et sfifj ainsi qu'au catalogue de commande
+   de l'opérateur PROJ_SPEC_BASE comme la suite :
+   
+   - Désormais, les informations sur les entités de maillage où l'on souhaite calculer les
+   coefficients d'acceptance sont toujours prises en compte. Ceci est fait par des appels à
+   la routine EXLIMA qui permet de lire les informations sur les mot-clés TOUT/GROUP_MA/MAILLE
+   et d'extraire un LIGREL réduit à partir du modèle complet.
+   
+   - Le nom du LIGREL "réduit" n'est plus généré à partir du nom du GROUP_MA, ce qui corrige
+   la fiche issue20340. 
+   
+   - Le mot-clé MODELE_INTERFACE devient obligatoire si on dispose uniquement des CHAM_NO 
+   pour définir la base de projection du spectre turbulent. Il peut être donc soit un modèle 
+   (thermique) d'interface fluide-structure ou bien un modèle mécanique de la structure si 
+   celle-ci est modélisée en DKT.
+   
+   - On apporte des clarifications à la doc U4.63.14 concernant tous les aspects mentionnés 
+   dans cette fiche.
+   
+   . . . . . . . . . *********
+   . . . . . . . . .* Impacts *
+   . . . . . . . . . *********
+   
+   FORTRAN ----------------------------------------------------------------------------------
+   . . MODIF : ACCEP1 ; SFIFJ (2 fichiers)
+   
+   CATAPY -----------------------------------------------------------------------------------
+   . . MODIF : PROJ_SPEC_BASE (1 fichier)
+   
+   PYTHON -----------------------------------------------------------------------------------
+   . . MODIF : MODELISA . . . (1 fichier)
+   
+   DOCUMENTATION ----------------------------------------------------------------------------
+   . . MODIF : U4.63.14 . . . (1 fichier)
+   
+   
+   . . . . . . . . . ***************
+   . . . . . . . . .* Report en V10 *
+   . . . . . . . . . ***************
+   
+   Au vu des risques du risque résultats faux, il faut reporter ces corrections en version 
+   d'exploitation.
+   
+   
+   
+   
+   
+   . . . . . . . . . *************************************************
+   . . . . . . . . .* Point détaillé sur le risque des résultats faux *
+   . . . . . . . . . *************************************************
+   
+   Avant cette correction, l'interspectre d'excitation turbulente obtenu par l'opérateur 
+   PROJ_SPEC_BASE était faux dans les deux cas suivants :
+   
+   ------------------------------------------------------------------------------
+   Cas 1 : lié à la projection d'un spectre turbulent sur une partie du maillage
+   ------------------------------------------------------------------------------
+   
+   Le résultat est faux si les 3 conditions suivantes sont satisfaites en même temps :
+   
+   1. Le spectre à projeter, défini dans DEFI_SPEC_TURB, est de type SPEC_CORR_CONV_1 ou
+   . .SPEC_CORR_CONV_2.
+   
+   2. La projection ne porte pas sur la totalité du maillage.
+   
+   3. a) Un modèle d'interface est renseigné par le mot-clé MODELE_INTERFACE
+   . . <OU>  
+   . .b) La partie du maillage sur laquelle on souhaite projeter est spécifiée : 
+   . . - soit par le mot-clé MAILLE, en donnant alors une liste avec les numéros des mailles 
+   . . - soit par le mot-clé GROUP_MA, en combinant un nombre de groupes supérieur ou égal à 2
+   
+   ----------------------------------------------------------------------------------------
+   Cas 2 : lié à la définition de la base de projection par une liste des champs aux noeuds
+   ----------------------------------------------------------------------------------------
+   
+   Le résultat est faux si les 3 conditions suivantes sont satisfaites en même temps :
+   
+   1. Le spectre à projeter, défini par DEFI_SPEC_TURB, est de type SPEC_CORR_CONV_1 ou
+   . .SPEC_CORR_CONV_2.
+   
+   2. La base modale de projection est définie sous forme d'une liste des champs de déformées 
+   . .aux noeuds par le mot-clé CHAM_NO.
+   
+   3. Le nombre de champs de la liste CHAM_NO est supérieur ou égal à 2
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.63.14
+VALIDATION
+    liste restreinte des cas-tests
+DEJA RESTITUE DANS : 11.3.10
+NB_JOURS_TRAV  : 5.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 03/13/2013 - 02:04:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020333 DU 2013-02-06 15:11:08
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Risque de rxc3xa9sultats faux avec les variables de commande.
+FONCTIONNALITE
+   Problèmes :
+   -----------
+                                                                                            
+                                     
+   PB1) Quand on fourni un champ comme variable de commande, si le champ fourni ne contient
+   pas TOUTES les composantes attendues (par exemple X,Y et Z pour GEOM), les composantes
+   manquantes sont mises à zéro et l'utilisateur n'est pas alerté, ce qui entraine des
+   résultats faux.
+   Des résultats faux peuvent également etre obtenus avec la variable de commande TEMP si
+   dans le champ de TEMP_R, la composante TEMP n'est pas fournie. Ceci est improbable, mais
+   pas impossible à réaliser.
+                                                                                            
+                                     
+                                                                                            
+                                     
+   PB2) Si le champ fourni comme champ de variable de commande n'existe pas sur toutes les
+   mailles, le code s'arrete brutalement (ASSERT) dans la routine vrcins.f. Il faut que le
+   message d'erreur soit compréhensible.
+                                                                                            
+                                     
+   Corrections :
+   -------------
+   Il faut corriger la routine vrcins.f :
+   1) remettre à "NaN" les valeurs du champ à chaque appel.
+   2) accepter NBPT=0 dans la boucle 70.
+                                                                                            
+                                     
+   Validation :
+   ------------
+   Je propose d'ajouter un nouveau test (erreur14a) qui vérifie que le code émet bien un
+   message d'erreur pour trois types d'erreurs liés aux variables de commande :
+   1) Les mailles sont toutes affectées mais le nom de la composante n'est pas le bon.
+   2) Les mailles sont ne sont pas toutes affectées (cas 1)
+   3) Les mailles sont ne sont pas toutes affectées (cas 2)
+                                                                                            
+                                     
+   Résultats faux :
+   ----------------
+   Lorsqu'un utilisateur affecte un champ (ou une sd_evol_xxx) comme variable de commande
+   (AFFE_MATERIAU / AFFE_VARC) et que les noms de composantes ne correspondent pas aux noms
+   attendus :
+   TEMP : TEMP
+   HYDR : HYDR
+   SECH : TEMP
+   EPSA : EPXX, EPYY, EPZZ, ...
+   CORR : CORR
+   NEUT1 : X1
+   NEUT2 : X1
+   GEOM : X, Y, Z
+   M_ACIER : V1, V2, ..., V7
+   ...
+   Les composantes attendues et non présentes sont mises à 0. ce qui entraine des résultats
+   faux en général.
+                                                                                            
+                                     
+   Impact doucmentaire :
+   ---------------------
+   V1.01.335 : ERREU14
+                                                                                            
+                                     
+   Liste des fichiers impactés par la correction de la fiche:  20333
+     vrcins.f
+     erreu14a.comm
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.335
+VALIDATION
+    erreu14
+DEJA RESTITUE DANS : 11.3.8
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 03/13/2013 - 02:04:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020310 DU 2013-02-01 17:50:58
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Calcul du jacobien pour un SEG3 en 3D dans contact continu
+FONCTIONNALITE
+   Contexte
+   ========
+   
+   Dans le cadre de issue20195, je me suis rendu compte que j'avais permis un peu
+   précipitamment l'utilisation de SEG3 en contact continu 3D (dans issue17213).
+   
+   En effet dans la routine MMMJAC, le jacobien pour un SEG3 n'est pas bien calculé en 3D (on
+   ne tient pas compte de la composante suivant Z).
+   
+   Réalisation
+   ===========
+   
+   La routine de calcul des jacobiens pour les différents éléments de contact est inutilement
+   compliquée. On la factorise et on utilise des utilitaires de calcul différentiel d'Aster
+   (SUBACO/SUMETR).
+   En version 10, la routine est identique à l'include Jeveux près, on peut donc la reporter.
+   
+   Validation
+   ==========
+   
+   Hormis un astout de vérification, on ne propose pas de validation supplémentaire pour le
+   cas du contact avec une arête SEG3 (le calcul du Jacobien est maintenant générique pour un
+   SEGment quelconque).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    astout contact continu
+DEJA RESTITUE DANS : 11.3.8
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 03/13/2013 - 02:04:15
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 019963 DU 2012-11-20 07:50:40
+TYPE aide utilisation concernant Code_Aster (VERSION 10.5)
+TITRE
+    valeurs nxc3xa9gatives de G
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Fiche émise dans le cadre de l'AT (UTO)
+   
+   On calcule dans une étude thermo-mécanique le taux de restitution de l'énergie global et
+   local le long d'une fissure semi-elliptique.
+   => la valeur de G est négative à certains instants (aussi bien avec CALC_G que 
+   CALC_G_GLOB).
+   Certes, des alarmes sont émises :
+   
+   <A> <RUPTURE0_91>  : certes la fissure est courbe mais elle est bien définie  (plane dont
+   la direction est definie par DTAN_ORIG et DTAN_EXTR)
+   
+   <A> <RUPTURE1_42> :  cette alarme est émise dès que la relation n'est pas ELAS.
+   
+   
+   
+   Analyse :
+   ---------
+   
+   1) l'alarme RUPTURE0_91 est la suivante :
+   Aucune direction de propagation n'est fournie par l'utilisateur, la direction est calculée
+   à partir de la normale au fond de fissure (donnée dans DEFI_FOND_FISS).             
+   -> Risque et Conseil :                                                                       
+     - Si le fond de fissure est droit, la direction calculée est correcte, au signe près.      
+   Comme il n'y a aucun moyen de vérifier que la direction de propagation est dans le bon sens, 
+   cela peut inverser le signe du G calculé. On peut alors préciser la direction de             
+   propagation sous le mot clé DIRECTION. Mais il est préférable de définir la fissure à      
+   partir des mailles de ses lèvres (DEFI_FOND_FISS).                                           
+   - Si le fond de fissure est courbe, le direction calculée n'est pas correcte et il faut      
+   impérativement définir la fissure à partir des mailles de ses lèvres (DEFI_FOND_FISS).       
+     
+   Il y a une erreur dans le texte de cette alarme : ce n'est pas "si le fond de fissure est
+   droit/courbe..." mais "si la surface de la fissure est plane/courbe....". En ce sens,
+   cette alarme peut être ignorée car la fissure est plane.
+   
+   -> impact rupture0.py (en version 10 uniquement, car en version 11, le texte est différent
+   et correct).
+   
+   
+   2) l'alarme RUPTURE1_42 dit 
+    Lois de comportement différentes pour la maille M1133 :                                 
+     - loi de comportement extraite de la SD Résultat   : ELAS_VMIS_TRAC                    
+     - loi de comportement fournie à l'opérateur CALC_G : ELAS                              
+                                                                                            
+    --> Risques & conseils :                                                                
+    On doit généralement utiliser la meme loi de comportement entre le calcul et le         
+    post-traitement. On peut utiliser deux comportements différents, mais alors             
+    l'utilisateur doit etre vigilant sur l'interprétation des résultats(cf.U2.05.01).       
+    Si plusieurs comportements sont définis sur la structure, le comportement à             
+    indiquer dans CALC_G est celui du matériau dans lequel la fissure se développe.         
+    Dans ce cas, ce message d'alarme est quand meme émis mais le résultat est bien cohérent.
+    Un post-traitement élastique non-linéaire d'un calcul élastoplastique est               
+    admissible, si le chargement est radial et monotone. La comparaison du G calculé        
+    à partir des contraintes issues de STAT_NON_LINE (option CALC_CONTRAINTE='NON')         
+    ou à partir des contraintes recalculées avec la loi de comportement                     
+    (CALC_CONTRAINTES='OUI') peut fournir une indication sur le respect de ces              
+    hypothèses.                                                                             
+                           
+                                                            
+   L'alarme ici est justifiée, mais n'explique pas les valeurs négatives de G.
+   
+   En fait, le message dit que la maille M1 a un comportement différent entre STAT_NON_LINE
+   et CALC_G.
+   Il se trouve que la maille M1 est une maille de bord (QUAD8), qui appartient au groupe
+   FACESYM2.
+   Or aucune relation de comportement n'est affectée à ce groupe dans CALC_G : le
+   comportement pris par défaut est alors ELAS.
+   
+   Donc ici, même si cette maille de bord ne servira pas dans le calcul de G (car loin du
+   fond de fissure), la commande fait quand même des vérifications. D'où l'alarme.
+   
+   Pour éviter cette alarme, plusieurs solutions sont possibles :
+   - mettre TOUT='OUI' sous CALC_G/COMP_ELAS,
+   - renseigner sous CALC_G/COMP_ELAS / GROUP_MA tous les groupes de mailles définis dans le
+   modèle.
+   
+   
+   3) il me semble que les noeuds de la lèvre coté revêtement sont confondus avec les noeuds
+   du revêtement. Ce sont en fait les mêmes noeuds.
+   Comme une condition DNOR (=DY) = 0 est appliquée sur les faces FACESYM1 et FACSYM2, les
+   noeuds de la lèvre coté revêtement ont aussi un déplacement DY nul.
+   Celle empêche sérieusement la fissure de s'ouvrir. Est-ce vraiment voulu ?
+   On le voit bien sur l'image jointe : il y a une ligne rouge de noeuds sur le coté gauche
+   de la lèvre, correspondant à un DY nul.
+   
+   Ce point correspond bien à une erreur de modélisation, mais n'explique pas les valeurs
+   négatives de G.
+   
+   
+   
+   4) Une analyse approfondie des résultats par l'auteur de l'AOM lui-même l'a convaincu que
+   le calcul thermique était mal défini et amenait des températures absurdes. Ce qui
+   conduisait à des valeurs négatives de G.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    etude fournie
+DEJA RESTITUE DANS : 11.3.9
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 03/13/2013 - 02:04:16
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 017865 DU 2011-11-07 17:10:23
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    DYNA_NON_LINE/MODE_VIBR et POU_D_T_GD
+FONCTIONNALITE
+   Problème :
+   Un test qui utilise la commande DYNA_NON_LINE/MODE_VIBR avec des POU_D_T_GD plante en
+   erreur DVP_1.
+   
+   
+   Analyse :
+   On plante au niveau de MTCMBL dans NMFLMA car on veut combiner une matrice de masse
+   considérée non-symétrique avec une matrice de raideur symétrique.
+   En fait, il y a plusieurs problèmes. Premièrement, on fait appel à MTCMBL alors que ça ne
+   sert à rien ici ! En effet, le résultat est toujours la matrice de raideur, quel que soit
+   le cas.
+   Ensuite, il faut se poser la question du sens de faire un calcul de modes vibratoires sur
+   des matrices non-symétriques. On va obtenir des fréquences/modes complexes dont le sens
+   physique n'est pas immédiat.
+   Il n'y a pas de risque de résultat faux car ça plante.
+   
+   
+   Solution :
+   on interdit l'usage de MODE_VIBR lorsqu'on détecte qu'au moins une des matrices d'entrée
+   (masse et raideur) est non-symétrique. On émet alors le message suivant :
+   "Il n'est pas possible actuellement de calculer des modes vibratoires (MODE_VIBR) sur un
+   modèle dont au moins une matrice assemblée (masse ou raideur) est non-symétrique"
+   Ensuite, on retire l'appel inutile à MTCMBL.
+   
+   
+   Impact :
+   nmflma.f
+   mecanonline5.py (message 56)
+   
+   
+   Validation :
+   on passe tous les tests utilisant MODE_VIBR et/ou CRIT_STAB,
+   On teste sur le cas joint à cette fiche : qui se met à passer car les matrices sont bien
+   symétriques.
+   Pas de cas-test spécifique restitué pour provoquer le plantage.
+   
+   
+   Pas d'impact doc.
+   Report en STA à faire, mais facile car les routines sont proches.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test de la fiche
+DEJA RESTITUE DANS : 11.3.9
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020260 DU 2013-01-25 10:01:51
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Chaxc3xaenage EUROPLEXUS-Aster : cas-test demonstratif
+FONCTIONNALITE
+   Objectif :
+   Validation d'un calcul de dynamique transitoire non-linéaire dont la résolution commence
+   dans EUROPLEXUS (via CALC_EUROPLEXUS) puis se poursuit et s'achève dans Code_Aster (via
+   DYNA_NON_LINE et MACRO_BASCULE_SCHEMA).
+   
+   Ce cas-test doit s'appuyer sur une modélisation présentant les caractéristiques suivantes :
+   - éléments de type poutres et coques minces Q4GG (sur mailles triangles et quadrangles),
+   - zone linéaire,
+   - zone non-linéaire avec la loi GLRC_DAMAGE,
+   - mise en donnée dans un .comm Aster et appel à EUROPLEXUS via CALC_EUROPLEXUS.
+   
+   Ce cas-test doit permettre de valider les aspects suivants :
+   - relecture correcte des champs MED générés par CALC_EUROPLEXUS, qu'ils soient de type
+   champs aux noeuds ou aux points de Gauss,
+   - démonstration de l'équivalence des modèles entre EPX et Aster, dans le cas d'une
+   résolution explicite,
+   - mise en oeuvre de la bascule de schéma en temps pour passer de l'explicite en implicite,
+   tout en contrôlant la qualité de la solution par comparaisons avec des solutions sans bascule.
+   
+   
+   Analyse :
+   ce cas-test a soulevé plusieurs difficultés.
+   1)  Il a fallu s'assurer d'être à iso-modèle entre Europlexus et Code_Aster (par exemple
+   en développant les éléments Q4GG dans Code_Aster : issue17976, issue17977 )
+   2)  CALC_EUROPLEXUS a dû évoluer pour gérer ces éléments et les maillages mixtes
+   triangle-quadrangle ( issue18608 et issue19691 )
+   3)  La relecture des champs MED sur ce type de modèle ( issue19525, mais avant issue19164
+   et issue19227 )
+   
+   Aspects principaux du travail :
+   Mise au point d'une stratégie de relecture et de génération de champs cohérents pour la
+   poursuite avec DNL.
+   Comparaison, à schéma en temps semblable des résultats obtenus avec EPX, Aster, avec et
+   sans passage de l'un à l'autre.
+   Test et optimisation de MACRO_BASCULE_SCHEMA pour obtenir le moins de perturbation
+   possible lors de la bascule explicite vers implicite. Une bonne explication des écarts
+   résiduels a été trouvée : c'est le passage brusque de la matrice de masse lumpée (en
+   explicite) à la matrice de masse consistante (en implicite).
+   On en profite pour corriger quelques petits bugs de MACRO_BASCULE_SCHEMA :
+   - dans certains cas, une inversion du schéma entre implicite et explicite,
+   - un problème lorsqu'on ne spécifiait qu'une seule bascule.
+   Ces corrections font un peu bouger les valeurs du test sdnv100j qui test la bascule, mais
+   cela reste modéré.
+   
+   Le cas-test crée : plexu06a, en plus de démontrer la validité, de l'approche EPX-Aster
+   présente aussi sa mise en oeuvre, qui n'est pas évidente, surtout au niveau des
+   manipulations de champs. 
+   Ces étapes sont commentées dans le .comm ainsi que dans la doc (V5.06.110).
+   Cette doc présente aussi les résultats pour un temps final plus grand, afin de bien
+   observer les allures de solution. Dans le .comm qu'on restitue, ce temps final est
+   volontairement réduit pour diminuer le temps CPU et rester sous la barre des 150 secondes.
+   
+   
+   Impact :
+   - plexu06a : nouveau test,
+   - doc V5.06.110
+   - macro_bascule_schema_ops.py
+   - sdnv100j.comm
+   
+   Report de la correction sur macro_bascule_schema_ops.py à faire en STA.
+   
+   
+   Perspectives :
+   Tests sur un cas réaliste
+   Si le test réaliste ne donne pas des résultats satisfaisants, alors évolution de la
+   bascule pour passer progressivement de la masse lumpée à la masse consistante, sur
+   quelques pas de temps lors du rééquilibrage.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V5.06.110
+VALIDATION
+    plexu06a, sdnv100j
+DEJA RESTITUE DANS : 11.3.9
+NB_JOURS_TRAV  : 30.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 03/13/2013 - 02:04:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020413 DU 2013-02-19 10:20:42
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Plantage impression format MED
+FONCTIONNALITE
+   Problème :
+   ----------
+   Dans l'AOM issue20406, JLF a voulu faire un IMPR_RESU du maillage et "plouf" !!
+   #0  0x000000000053cf4b in jjlidy_ ()
+   #0  0x000000000053cf4b in jjlidy_ ()
+   #1  0x0000000000533922 in jedetr_ ()
+   #2  0x000000000162e4d3 in irmmf1_ ()
+   #3  0x000000000120b4c7 in irmmfa_ ()
+   #4  0x000000000120b0c4 in irmhdf_ ()
+   #5  0x00000000012027b8 in irmail_ ()
+   #6  0x0000000001208042 in irmfac_ ()
+   #7  0x0000000000b61aff in op0039_ ()
+   #8  0x00000000005dbb1f in ex0000_ ()
+   #9  0x000000000058a446 in execop_ ()
+   #10 0x0000000000544c70 in expass_ ()
+   #11 0x000000000052e058 in aster_oper ()
+   
+   
+   Solution :
+   ----------
+   Le problème vient des groupes vides. Quand LIRE_MAILLAGE créé un groupe vide, il
+   dimensionne le groupe à 1.
+   
+   Côté IMPR_RESU, on voit un groupe de longueur 1 et on essaye de l'imprimer sauf que la
+   seule "entité" (maille ou noeud) présente dedans a pour numéro 0 (ce qui pour Aster n'a
+   pas de sens car on numérote à partir de 1).
+   
+   Dans irmmf2, on fait confiance à ce qui se trouve dans .GROUPEMA et .GROUPENO donc on
+   essaye d'ajouter l'entité 0 (qui n'existe pas) dans les familles à imprimer. On se sert de
+   0 comme un indice de tableau => carton mémoire !
+   
+   Pour résoudre le problème, on rajoute un test sur le numéro de l'entité. S'il est nul, on
+   ne l'imprime pas au format MED.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    unitaire
+DEJA RESTITUE DANS : 11.3.10
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroche     DESROCHES Xavier       DATE 03/13/2013 - 02:04:18
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020444 DU 2013-02-22 11:05:00
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Problxc3xa8mes lorsque les variables de commandes sont absentes sur certaines mailles
+FONCTIONNALITE
+   Problème :
+   ----------
+   A l'occasion de la réalisation de l'évolution issue18394, on (JP+XD) s'est rendu compte de
+   2 erreurs de programmation se déclenchant lorsque certaines variables de commande sont
+   "NaN" ou non présentes sur certaines mailles.
+                                                                                            
+   Solution :
+   ----------
+   Reporter les corrections réalisées en v11 au sein de issue18394.
+                                  
+   Routines : nmvcmx.f rcvalb.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste complxc3xa8te
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR lefebvre     LEFEBVRE Jean-Pierre   DATE 03/13/2013 - 02:04:19
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020417 DU 2013-02-19 17:27:59
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Write intempestif en NEW10
+FONCTIONNALITE
+   En version NEW10, dans ssls101a par exemple, des impressions parasites apparaissent : 
+   
+    Instant de calcul:  1.000000000000e+00 
+    
+   ---------------------------------------------------------------------
+   |   ITERATIONS   |     RESIDU     |     RESIDU     |     OPTION     |
+   |     NEWTON     |     RELATIF    |     ABSOLU     |   ASSEMBLAGE   |
+   |                | RESI_GLOB_RELA | RESI_GLOB_MAXI |                |
+   ---------------------------------------------------------------------
+    NBSP=                    27
+    NPGE*NBCOU=                    27
+    
+   Elles sont dues à 2 instructions situées dans la routine TE0031 que l'on peut supprimer.
+            WRITE(6,*)'NBSP=',NBSP
+            WRITE(6,*)'NPGE*NBCOU=',NPGE*NBCOU
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    test ssls101a
+NB_JOURS_TRAV  : 0.01
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sdnv100j                     chansard F.CHANSARD         289      8     12
+CATALOPY MODIF commande/proj_spec_base      chansard F.CHANSARD          41      5      4
+ FORTRAN MODIF algeline/op0037              chansard F.CHANSARD         666     12      9
+ FORTRAN MODIF algeline/vpnorm              chansard F.CHANSARD         211      4      6
+ FORTRAN MODIF algorith/modiba              chansard F.CHANSARD         250      3      3
+ FORTRAN MODIF algorith/nmflma              chansard F.CHANSARD         336     20     36
+ FORTRAN MODIF algorith/nmvcmx              chansard F.CHANSARD         179      7      3
+ FORTRAN MODIF calculel/vrcins              chansard F.CHANSARD         220     12      6
+ FORTRAN MODIF elements/mmmjac              chansard F.CHANSARD         207      9      3
+ FORTRAN MODIF elements/te0031              chansard F.CHANSARD         423      2      4
+ FORTRAN MODIF modelisa/rcvalb              chansard F.CHANSARD          90      4      4
+ FORTRAN MODIF prepost/irmmf2               chansard F.CHANSARD         389      4      2
+  PYTHON MODIF Intranet/macro_bascule_schema_ops   chansard F.CHANSARD         306     14     10
+  PYTHON MODIF Messages/mecanonline5        chansard F.CHANSARD         237      7      2
+  PYTHON MODIF Messages/rupture0            chansard F.CHANSARD         570      4      4
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :   15        4414       115     108        +7
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   15        4414       115     108        +7 
