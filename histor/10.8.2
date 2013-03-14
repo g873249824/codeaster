@@ -1,0 +1,312 @@
+========================================================================
+Version 10.8.2 du : 07/02/2013
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR geniaut      GENIAUT Samuel         DATE 02/06/2013 - 01:04:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020151 DU 2013-01-07 13:23:40
+TYPE anomalie concernant Code_Aster (VERSION 11.4)
+TITRE
+    CALC_G : option CALC_K_G condition non respectee
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Un calcul CALC_G plante dans un call assert en STA11.
+   voici la remontée d'erreur :
+   
+   asteru             0000000000540ABC  assert_                    30  assert.f
+   asteru             0000000001118854  expcar_                   124  expcar.f
+   asteru             0000000000DC2B81  tecart_                    80  tecart.f
+   asteru             0000000000B807AC  gcharg_                   324  gcharg.f
+   asteru             0000000000A55E27  cakg3d_                   143  cakg3d.f
+   asteru             00000000006AB21C  op0100_                   630  op0100.f
+   asteru             00000000005542CB  ex0100_                    49  ex0100.f
+   
+   
+   Analyse :
+   ---------
+   
+   La calcul STAT_NON_LINE comprend 5 charges, dont 4 de pressions.
+   
+   Le problème se situe dans la routine expcar.f appelé par tecart.f 
+   
+   Pour la 3eme charge de pression, on trouve 3 zones dans la carte (NBEDIT=3) or le .NOLI de
+   la carte d'entrée ne contient qu'une case (='   ').
+   et pourtant on boucle sur .NOLI(i) avec i=1,3.
+   
+   En fait, cette carte a été créée lors du traitement de la 2eme charge de pression, par la
+   routine gcharf.f (fusion de 2 charges pour en créer une autre).
+   La nouvelle carte créée par cette routine a bien 3 zones (comme les 2 cartes en entrée de
+   gcharf.f) mais le .NOLI n'est dimensionné qu'à 1.
+   C'est un bug, il faut le dimensionner à 3 (nb de zones).
+   
+   
+   Solution :
+   ----------
+   
+   Dans gcharf.f (routine de fusion des charges pour CALC_G), on dimensionne le .NOLI de la
+   nouvelle carte à NBZO (nb de zones des cartes d'entrée).
+   Les NBZO valeurs de .NOLI sont initialisées à blancs.
+   
+   impact : gcharf.f
+   
+   Validation :
+   L'étude fournie fonctionne correctement avec la correction.
+   Cependant, j'ai fait un cas test avec 5 charges de pression, mais même sans correction, il
+   ne plante pas. Je ne restitue pas.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    etude fournie
+DEJA RESTITUE DANS : 11.3.5
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR courtois     COURTOIS Mathieu       DATE 02/06/2013 - 01:04:26
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020115 DU 2012-12-19 11:36:52
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    Deux petites corrections
+FONCTIONNALITE
+   Dans cette fiche, deux petites corrections (sans lien entre elles):
+   
+   1. dans onmetl.c (interface d'appel à la bibliothèque metis), il manque l'include
+   "aster_fort.h" pour appeler U2MESS dans le cas où metis est absent (_HAVE_METIS non défini).
+   => onmetl.c
+   
+   2. Suite à l'aom issue19956, on s'est aperçu que lors de la création d'un tableau croisé
+   le type de la 1ère colonne n'était pas le bon.
+   Dans la plupart des cas, ce sont tous des réels donc il ne doit pas y avoir de conséquence.
+   => Table.py
+   
+   Point 2 à reporter en v10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    compilation
+DEJA RESTITUE DANS : 11.3.4
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020236 DU 2013-01-23 08:12:26
+TYPE express concernant Code_Aster (VERSION 10.5)
+TITRE
+    variable non initialisxc3xa9e dans dladap.f
+FONCTIONNALITE
+   La variable DTMAX n'est pas initialisée dans dladap.f.
+   Pas de risque de résultat faux car elle ne sert qu'à l'affichage dans recpar.f mais peut
+   faire planter dans le passage fortran/C.
+   
+   Introduit en 10.1.21, donc à initialiser en v10.
+   
+   nifilg.f: indices de tableaux déclarés REAL*8 (uniquement v11).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    asrest
+DEJA RESTITUE DANS : 11.3.6
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 02/06/2013 - 01:04:27
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020124 DU 2012-12-20 15:20:11
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    En NEW11.03.02, le cas-test sdll148a est NOOK sur Rocks.
+FONCTIONNALITE
+   Problème :
+   ----------
+   En NEW11.03.02, le cas-test sdll148a est NOOK sur Rocks.
+                                                                                            
+                                    
+   Analyse :
+   ---------
+   Le problème vient du fait que, dans ce test, la commande PROJ_SPEC_BASE récupère une
+   fonction "réelle" (SXX) alors qu'elle croit récupérer une fonction complexe.
+   Elle demande (dans la routine evali2.f) l'évaluation de cette fonction en utilisant la
+   routine fointc.f qui rend une partie imaginaire non initialisée, ce qui provoque un
+   résultat NOOK sur Rocks.
+                                                                                            
+                                    
+   Correction :
+   ------------
+   Il faudrait peut-etre éviter d'évaluer une fonction réelle avec la routine fointc.f, mais
+   cela simplifie sans doute la programmation de la commande PROJ_SPEC_BASE de travailler
+   systématiquement avec des nombres complexes.
+   Je modifie donc fointc.f pour initialiser systématiquement la partie imaginaire du
+   résultat à 0.
+   Ainsi, la routine fointc.f évalue correctement les fonctions réelles.
+                                                                                            
+                                    
+   Validation :
+   ------------
+   Le test sdll148a devient OK sur Rocks.
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  20124
+     fointc.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sdll148a
+DEJA RESTITUE DANS : 11.3.5
+NB_JOURS_TRAV  : 0.2
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sfayolle     FAYOLLE Sebastien      DATE 02/06/2013 - 01:04:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020162 DU 2013-01-09 10:45:46
+TYPE anomalie concernant Code_Aster (VERSION 11.3)
+TITRE
+    DEF5 : INCO erreur dans l'option SIEF_ELGA des ?l?ments en petites d?formations
+FONCTIONNALITE
+   Anomalie
+   ~~~~~~~~~~
+   
+   En petites déformations et pour les éléments INCO, INCO_UP et INCO_OSGS, on a, à l'époque, activé 
+   l'option 
+   SIEF_ELGA avec les TEs standards TE0022 (3D) et TE0086 (AXIS et D_PLAN). Or dans le champ IN on passe 
+   DDL_MECA qui contient les déplacements + pression (+ gonflement) (+ gradient de pression projeté) et en 
+   sortie on utilise ECONTxx qui contient les composantes standars + SIP. On calcule donc n'importe quoi et 
+   on 
+   stocke n'importe comment. Heureusement ce problème n'intervient que dans le cas de MECA_STATIQUE et que 
+   les calculs en MECA_STATIQUE + INCO n'ont pas forcément de sens. 
+   
+   Correction
+   ~~~~~~~~~~~~~
+   
+   Dans SIEF_ELGA, on remplace :
+   _les ECONTxx par les ESIGMxx équivalent
+   _DDL_MECA par NDELPAR
+   
+   On fait de même pour SIEF_ELNO. La 7ème composante SIP du tenseur des contraintes de Cauchy ne sera donc 
+   pas projetée
+   
+   Validation
+   ~~~~~~~~~~~~~
+   
+   Nouvelle modélisation C du cas test zzzz291
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.3.2
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.3.2
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cas test
+DEJA RESTITUE DANS : 11.3.5
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR proix        PROIX Jean-Michel      DATE 02/06/2013 - 01:04:28
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020229 DU 2013-01-22 09:15:12
+TYPE aide utilisation concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme utilisation DD_CC avec homogeneisation BZ
+FONCTIONNALITE
+   Demande :
+   =========
+    après plusieurs tentatives j'ai toujours des difficultés pour utiliser la loi de
+   comportement DD_CC avec le comportement POLYCRISTAL (homogénéisation BZ). J'obtiens un
+   message d'erreur "floating point exception" et je n'arrive pas à identifier mon erreur à
+   partir de ce message.
+   
+   Reponse :
+   =========
+   
+   en regardant la différence par rapport au test SSNV194D (qui teste justement POLYCRISTAL +
+   DD_CC) ou SSND112D (monocristal et DD_CC) on voit que la température est importante pour
+   ce comportement. Ici le problème vient de la définition de la température : elle n'est pas
+   bien transmise ; Il faut écrire par exemple :
+   
+   TEMP300=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='NOEU_TEMP_R',
+                  MAILLAGE=MAIL,                    AFFE=_F( 
+                  TOUT = 'OUI',
+                  NOM_CMP = 'TEMP',
+                  VALE= 300.)
+                )
+   MAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                       AFFE=_F(TOUT='OUI',
+                               MATER=ACIER,),
+                       AFFE_VARC=_F(TOUT='OUI',
+                                    NOM_VARC='TEMP',
+                                    CHAMP_GD=TEMP300,
+                                    VALE_REF=300.,
+                                    ),                    );
+   
+   Néanmoins, pour éviter un plantage, on teste la lecture de la températre dans le comportement
+   si elle n'est pas trouvée, on s'arrête avec le message :
+      ! <S> Exception utilisateur levee mais pas interceptee.                      !
+      ! Les bases sont fermees.                                                    !
+      ! Type de l'exception : error                                                !
+      !                                                                            !
+      ! La température est obligatoire pour le comportement cristallin MONO_DD_CC. !
+   
+   
+   Validation :
+   ============
+   etude jointe
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    etude jointe
+DEJA RESTITUE DANS : 11.3.6
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+CATALOGU MODIF typelem/gener_me3di3         chansard F.CHANSARD         274      3      3
+CATALOGU MODIF typelem/gener_me3du3         chansard F.CHANSARD         279      2      2
+ FORTRAN MODIF algorith/dladap              chansard F.CHANSARD         555      3      2
+ FORTRAN MODIF algorith/lcmafl              chansard F.CHANSARD         173      5      2
+ FORTRAN MODIF calculel/gcharf              chansard F.CHANSARD         318      3      4
+ FORTRAN MODIF utilitai/fointc              chansard F.CHANSARD         225      5      2
+  PYTHON MODIF Messages/compor1             chansard F.CHANSARD         375      6      2
+  PYTHON MODIF Utilitai/Table               chansard F.CHANSARD        1074      3      3
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    8        3273        30      20       +10
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    8        3273        30      20       +10 
