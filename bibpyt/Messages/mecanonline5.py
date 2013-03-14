@@ -1,8 +1,8 @@
-#@ MODIF mecanonline5 Messages  DATE 10/05/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF mecanonline5 Messages  DATE 13/03/2013   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -227,6 +227,11 @@ Il faut préciser un concept EVOL_NOLI en prédiction de type 'DEPL_CALCULE'
 55 : _("""
   Vous utilisez l'indicateur de convergence RESI_REFE_RELA et une modélisation %(k1)s.
   Vous devez renseigner la valeur de référence %(k2)s dans CONVERGENCE.
+"""),
+
+56 : _("""
+  Il n'est pas possible actuellement de calculer des modes vibratoires (MODE_VIBR) 
+  sur un modèle dont au moins une matrice assemblée (masse ou raideur) est non-symétrique.
 """),
 
 }

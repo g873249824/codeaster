@@ -1,8 +1,8 @@
-#@ MODIF rupture0 Messages  DATE 21/10/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF rupture0 Messages  DATE 13/03/2013   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -518,12 +518,12 @@ Veuillez redéfinir le mot-clé LISSAGE_THETA.
 Aucune direction de propagation n'est fournie par l'utilisateur, la direction est
 calculée à partir de la normale au fond de fissure (donnée dans DEFI_FOND_FISS).
 -> Risque et Conseil :
-  - Si le fond de fissure est droit, la direction calculée est correcte, au signe près.
+  - Si la surface de la fissure est plane, la direction calculée est correcte, au signe près.
 Comme il n'y a aucun moyen de vérifier que la direction de propagation est dans le bon sens,
 cela peut inverser le signe du G calculé. On peut alors préciser la direction de
 propagation sous le mot clé DIRECTION. Mais il est préféranbble de définir la fissure à
 partir des mailles de ses lèvres (DEFI_FOND_FISS).
-- Si le fond de fissure est courbe, le direction calculée n'est pas correcte et il faut
+- Si la surface de la fissure est courbe, le direction calculée n'est pas correcte et il faut
 impérativement définir la fissure à partir des mailles de ses lèvres (DEFI_FOND_FISS).
 """), 
 

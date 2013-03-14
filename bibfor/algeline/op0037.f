@@ -2,9 +2,9 @@
       IMPLICIT REAL*8 (A-H,O-Z)
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGELINE  DATE 29/05/2012   AUTEUR MACOCCO K.MACOCCO 
+C MODIF ALGELINE  DATE 13/03/2013   AUTEUR CHANSARD F.CHANSARD 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -47,14 +47,14 @@ C     PARAMETRES "MODE_FLAMB"
       INTEGER VALI
       INTEGER       ADRECG,NRPASS,NBPASS,IRET,IAUX,JAUX,IOCC,LMODS,ISENS
       INTEGER       L1,L2,L3,LMASSE,LRAIDE,LAMOR,LDDL
-      REAL*8        R8B, PREC
+      REAL*8        R8B, PREC, R8VIDE
       COMPLEX*16    C16B
       LOGICAL       LMASIN, LREFE, LBASM, LAMO, LCMPLX
       CHARACTER*1   STATUT, TYPMOD
       CHARACTER*24 VALK(4)
       CHARACTER*8   MODEOU, MODEIN, NOMCMP(7), MASINE, K8B, CRIT, CMP,
      &              PARAKI(2), VALEKI(2), CTYP, FORMAR, NOMA, MAT1,
-     &              MAT2, MAT3
+     &              MAT2, MAT3, KBID
       CHARACTER*14  NUME
       CHARACTER*16  TYPCON, NOMCMD, NORM, NOEUD, NOMSY, NOMVAR, OLDNOR
       CHARACTER*19  K19B,NORECG,CHAMNO
@@ -588,14 +588,17 @@ C     --- NORMALISATION DES MODES ET ARCHIVAGE ---
              CALL VPNOR1 ( NORM, NEQ, NBMODE, ZI(LDDL), ZR(LMOD),
      &                     ISIGN, NUMDDL, ZR(LCOEF) )
           ELSE
-             IF ( LREFE) THEN
-                CALL VPNORM ( NORM,'OUI',LMAT,NEQ,NBMODE,ZI(LDDL),
-     &                        ZR(LMOD), ZR(LVALR), LMASIN, XMASTR,
-     &                        ISIGN, NUMDDL, ZR(LCOEF),LBASM )
+             CALL RSVPAR ( MODEIN,1,'FACT_PARTICI_DX',IBID,R8VIDE(),
+     &                     KBID, IRET)
+          
+             IF (IRET.EQ.100) THEN
+                CALL VPNORM (NORM,'NON',LMAT,NEQ,NBMODE,ZI(LDDL),
+     &                       ZR(LMOD), ZR(LVALR), LMASIN, XMASTR,
+     &                       ISIGN, NUMDDL, ZR(LCOEF) )
              ELSE
-                CALL VPNORM ( NORM,'NON',LMAT,NEQ,NBMODE,ZI(LDDL),
-     &                        ZR(LMOD), ZR(LVALR), LMASIN, XMASTR,
-     &                        ISIGN, NUMDDL, ZR(LCOEF),LBASM )
+                CALL VPNORM (NORM,'OUI',LMAT,NEQ,NBMODE,ZI(LDDL),
+     &                       ZR(LMOD), ZR(LVALR), LMASIN, XMASTR,
+     &                       ISIGN, NUMDDL, ZR(LCOEF) )
              ENDIF
           ENDIF
           CALL VPSTOR ( -1, TYPMOD, MODEOU, NBMODE, NEQ, ZR(LMOD),
