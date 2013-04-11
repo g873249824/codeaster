@@ -1,0 +1,651 @@
+========================================================================
+Version 10.8.4 du : 11/04/2013
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desroche     DESROCHES Xavier       DATE 04/10/2013 - 11:41:08
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020334 DU 2013-02-06 15:15:21
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TMA : DeltaCad
+TITRE
+    AXIS_FOURIER et CALC_CHAMP
+FONCTIONNALITE
+   1) Problèmes
+   ------------
+   => Pb n°1 : l'utilisateur calcule EPSI_ELNO en NEW11 avec CALC_CHAMP, Aster plante avec le message 
+   suivant : "on ne trouve pas dans les arguments de la routine CALCUL de champ à associer au paramètre: 
+   PHARMON - option: EPSI_ELGA - type élément MEFOTR6"
+   => Pb n°2: Le passage de l'étude en NEW10 ne plante pas mais le champ EPSI_ELNO calculéavec 
+   AXIS_FOURIER est nul.
+   
+   2) Analyse/Correction
+   ---------------------
+   => Pb n°1 : Le contenu de l'option EPSI_ELGA  en NEW11 pour le paramètre PHARMON est incomplet  
+     Avant :                 PHARMON  HARMON
+   .       <<  PHARMON : NUMERO D'HARMONIQUE DE FOURIER >>   
+     Apres :                 PHARMON  HARMON 'VOLA!&&CCPARA.NUME_MODE'
+   .       <<  PHARMON : NUMERO D'HARMONIQUE DE FOURIER >>
+   
+   => Pb n°2: => Dans la routine refode (Ligne 86-91), on recherche le NOMGD (SIEF_R, DEPL_R,TEMP_R) pour 
+   chacun des champs a traiter, ce qui permet de savoir si on est en mécanique ou en thermique. Dans le 
+   cas mécanique on ne teste que DEPL_R et SIEF_R, or pour le champ EPSI_ELNO on a NOMGD=EPSI_R!! 
+   
+   En ajoutant EPSI_R dans le IF (ligne 87) les résultats sont non nuls.
+   
+   Report des corrections : 
+   - NEW10 : refode 
+   - NEW11 : refode ; epsi_elga
+   
+   3) Vérification
+   --------------- 
+   - Etude fournie (Analyse thermoélastique) : les résultats obtenus ( EPSI_ELNO :COMB_FOURIER) en NEW10 
+   et en NEW11 sont pratiquement les mêmes on observe de très faibles écarts (0.002%).   
+   - Cas-test sslv04i : On ajoute pour la modélisation AXIS_FOURIER, le calcul de l'option EPSI_ELNO avec 
+   CALC_CHAMP et avec COMB_FOURIER et on teste les déformations avec la solutionanalytique. 
+   Les résultats obtenus sont les mêmes entre la NEW10 et la NEW11. - Passage des cas-tests AXIS_FOURIER
+   
+   4) Documentation
+   ---------------- 
+   Mise à jour de la doc V3.04.004
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V3.04.004
+VALIDATION
+    sslv04i
+DEJA RESTITUE DANS : 11.3.15
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR assire       ASSIRE Aimery          DATE 04/10/2013 - 11:41:09
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020536 DU 2013-03-11 15:24:25
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Probleme dans calcul.f en MPI
+FONCTIONNALITE
+   J'ai construis une version NEW11_impi sur Calibre-7 avec les compilateurs Intel Cluster
+   Suite (compilateur Intel 13.0 et Intel MPI 4.1), en prévision du serveur de dvp Aster.
+   C'est donc une version privée d'Aster et non celle qualifiée.
+   
+   Le test perf009e s'arrete en erreur.
+   
+   Après analyse, le proc 0 fait un corefile et on plante sur le IF des lignes 446-448 :
+   
+   ..................IF.(((IMA.LT.0).AND.(RANG.EQ.0))..OR.
+   .....&..............((IMA.GT.0).AND.(ZI(JNUMSD-1+IMA).EQ.RANG)))
+   .....&..............ZL(JPARAL-1+IEL)=.TRUE.
+   
+   Au debuggeur, on voit que IMA = -7. 
+   
+   Le problème est que la compilateur évalue le ZI dont l'adresse n'est pas valide, alors
+   qu'il ne devrait pas (il devrait tomber dans la première expression).
+   
+   Le cas-test passe en découpant le IF en plusieurs morceaux :
+   
+   ..................IF.(IMA.LT.0).THEN
+   .....................IF(RANG.EQ.0).THEN
+   ........................ZL(JPARAL-1+IEL)=.TRUE.
+   .....................ENDIF
+   ..................ELSEIF.(IMA.GT.0).THEN
+   .....................IF(ZI(JNUMSD-1+IMA).EQ.RANG).THEN
+   ........................ZL(JPARAL-1+IEL)=.TRUE.
+   .....................ENDIF
+   ..................ENDIF
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perf009e
+DEJA RESTITUE DANS : 11.3.15
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR zentner      ZENTNER Irmela         DATE 04/10/2013 - 11:41:10
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020460 DU 2013-02-26 16:25:33
+TYPE aide utilisation concernant Code_Aster (VERSION 10.5)
+TITRE
+    POST_DYNA_ALEA - mot-clxc3xa9 INTE_SPEC
+FONCTIONNALITE
+   Problème :
+   ==========
+   La commande POST_DYNA_ALEA demande un temps de calcul qui n'est pas proportionnel à la
+   dimension de la structure de données traitées. 
+   
+   Analyse :
+   =========
+   
+   La commande fait appel à la fonction JEVEUX JELIBZ qui traite l'ensemble des objets de 
+   la
+   base Globale dans EXECOP. Le profiling sur une exécution montre que c'est l'appel à 
+   JJCREN
+   qui est coûteux. Cet appel n'est pas indispensable dans JELIBZ car le nom des objets 
+   est
+   directement récupéré par une boucle sur le répertoire de la base, il faut juste 
+   modifier
+   la routine pour récupérer les paramètres indispensables destinés à JJLIDE. 
+   
+   Correction effectuée :
+   ======================
+   
+   On remplace l'appel à JJCREN dans JELIBZ par l'insertion de 2 blocs permettant
+   d'initialiser correctement les variables présentes dans les COMMONs /IATCJE/ 
+   et /NOMCJE/.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    GEVIBUS
+DEJA RESTITUE DANS : 11.3.15
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR sellenet     SELLENET Nicolas       DATE 04/10/2013 - 11:41:11
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020533 DU 2013-03-11 11:00:59
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Salomxc3xa9-Mxc3xa9ca : visualisation champ DEPL
+FONCTIONNALITE
+   Problème :
+   ----------
+   Lors de l'impression d'un champ de déplacement au format MED avec le mot-clé RESTREINT, la
+   visualisation obtenue donne des résultats incohérents.
+   
+   
+   Analyse :
+   ---------
+   Le problème vient d'une utilisation à deux reprises d'IMPR_RESU RESTREINT sur un même fichier.
+   
+   En fait lors du premier IMPR_RESU RESTREINT, on imprime un premier maillage qui sera nommé
+   dans le fichier MED '&&OP0039'. Ce maillage correspond au maillage retreint de la
+   sd_resultat cal1 (donc CORDEC). Ce maillage est quadratique, on imprime des champs
+   reposant dessus et tout fonctionne bien.
+   
+   Ensuite, on fait un deuxième IMPR_RESU RESTREINT. En utilisant ce mot-clé, on créé et on
+   imprime un maillage restreint qui se nommera toujours '&&OP0039'. Or ici, on constate que
+   '&&OP0039' existe déjà dans le fichier MED de ce fait, on imprime les champs sur le
+   maillage existant qui n'est pas le bon (maillage QUAD au lieu de LIN). À la relecture en
+   post-traitement, on relit n'importe quoi.
+   
+   L'utilisateur ne s'y est pas trompé. L'utilisation d'IMPR_RESU RESTREINT dans ce cas est
+   interdite en 1 seule passe (ligne 106 d'OP0039) du coup, l'utilisateur l'a fait en deux
+   fois. C'est ce qui provoque le problème.
+   
+   
+   Solution :
+   ----------
+   J'ajoute un commentaire dans la doc pour dire qu'il faut éviter d'utiliser IMPR_RESU
+   RESTREINT et plutôt passer par EXTR_RESU.
+   
+   J'ajoute une vérification dans IMPR_RESU RESTREINT pour empêcher l'utilisation en deux
+   fois qui ne peut amener qu'à des confusions de ce genre. On émet dorénavant le message
+   suivant :
+   """
+    Vous utilisez IMPR_RESU avec le mot-clé RESTREINT. Or vous avez
+    déjà  utilisé cette commande avec ce même mot-clé sur ce même
+    fichier précédemment.
+   
+    Cet usage est interdit en raison des risques de résultats
+    inattendus que cela peut provoquer.
+   
+    -> Conseils :
+   . .- Utilisez EXTR_RESU pour restreindre vos résultats,
+   . .- Faites votre deuxième IMPR_RESU RESTREINT sur un nouveau
+   . . .fichier.
+   """
+   
+   À reporter en NEW10.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U7.05.21
+VALIDATION
+    etude jointe
+DEJA RESTITUE DANS : 11.3.15
+NB_JOURS_TRAV  : 1.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR cuvillie     CUVILLIEZ Sam          DATE 04/10/2013 - 11:41:12
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020559 DU 2013-03-15 13:15:52
+TYPE anomalie concernant Code_Aster (VERSION 11.4)
+TITRE
+    X-FEM?: erreur dans la routine XTMAFI
+FONCTIONNALITE
+   La routine XTMAFI permet de créer, à partir d'un maillage et d'une liste FISS(1:NFISS) de
+   fissures xfem, une liste qui contient le nom de toutes les mailles enrichies. Cette liste
+   est obtenue par concaténation des NFISS listes de mailles enrichies par la présence des
+   NFISS fissures contenues dans FISS(1:NFISS). 
+   
+   Il y a une erreur de programmation dans cette routine : en fait, on ne prend en compte que
+   la dernière fissure de la liste FISS(NFISS), on fait donc NFISS fois la concaténation de
+   la liste de mailles enrichies par la présence de FISS(NFISS)
+   
+   Cette routine est appelée pour les opérateurs comportant le MC FISSURE, celui-ci pouvant
+   être renseigné avec une liste.
+   
+   - AFFE_CHAR_MECA / PRES_REP / FISSURE
+   -> tests concernés (dans lesquels on ne renseigne qu'une seule fissure) : SSNP138F,
+   SSNV185C, SSNV203A, SSNV203B, SSNV203C, SSNV203D
+   
+   - DEFI_GROUP / CREA_GROUP_MA / OPTION='FISS_XFEM' / TYPE_GROUP='XFEM' / FISSURE
+    -> tests concernés (dans lesquels on ne renseigne qu'une seule fissure): ssnp133e,
+   ssnp133f, ssnp133g, ssnp133h, ssnp133i, ssnp133j, ssnv185m, zzzz309a, zzzz309b, zzzz309c,
+   zzzz309d
+   
+   ##########################
+   Risque de résultats faux
+   ##########################
+   
+   Dès que l'on renseigne plusieurs fissures sous le MC FISSURE dans les cas suivants :
+   - AFFE_CHAR_MECA / PRES_REP
+   - DEFI_GROUP / CREA_GROUP_MA / OPTION='FISS_XFEM' / TYPE_GROUP='XFEM'
+   
+   ##############
+   impact source
+   ##############
+   
+   xtmafi.f : prise en compte toutes les fissures contenues dans la liste
+   
+   ###########
+   Validation
+   ###########
+   
+   J'ajoute un fichier .com1 au test SSLP317B dans lequel on est en présence de quatre
+   fissures X-FEM.
+   
+   1- Je passe dans XTAMFI avec une liste contenant quatre fissures, en faisant  DEFI_GROUP /
+   CREA_GROUP_MA / OPTION='FISS_XFEM' / TYPE_GROUP='XFEM' et en renseignant la liste des
+   quatre fissures définies dans ce test pour le MC FISSURE.
+   2 - Je calcule la surface (maillage 2D) du GROUP_MA ainsi obtenu avec POST_ELEM /
+   INTEGRALE, en intégrant sur ce GROUP_MA un champ constant et égal à 1. 
+   3- Je fais un test (REFERENCE = 'NON_DEFINI') sur la valeur de la surface ainsi obtenue.
+   
+   ###########
+   impact doc
+   ###########
+   
+   Aucun
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.1.8
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    sslp317b.com1
+DEJA RESTITUE DANS : 11.3.16
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020591 DU 2013-03-22 08:28:48
+TYPE anomalie concernant Code_Aster (VERSION 11.4)
+TITRE
+    X-FEM : bug dans DEFI_FISS_XFEM si ELLIPSE avec a<b
+FONCTIONNALITE
+   Problème :
+   ----------
+   
+   Une utilisatrice du Septen nous a fait remonter un bug dans la commande DEFI_FISS_XFEM si
+   on choisit une forme de fissure dans le catalogue de forme pré-défini, de type ELLIPSE
+   (FORM_FISS='ELLIPSE') et dans le cas où la valeur donnée sous le mot-clé DEMI_GRAND_AXE
+   est inférieure à celle donnée sous le mot-clé DEMI_PETIT_AXE.
+   
+   Dans ce cas précis, il y a une inversion des axes : c'est-à-dire que l'axe défini par
+   VECT_X (resp. VECT_Y) ne correspond plus à DEMI_GRAND_AXE (resp. DEMI_PETIT_AXE) mais à
+   DEMI_PETIT_AXE (resp. DEMI_GRAND_AXE).
+   
+   En clair, le code agit pour que l'axe VECT_X soit l'axe sur lequel où la longueur de
+   l'ellipse est la plus grande. Ce qui n'est pas conforme avec la spécification, ni la
+   documentation.
+   
+   
+   Analyse :
+   ---------
+   
+   Le problème vient de la routine qui calcule la distance d'un point à une ellipse (routine
+   disell.f). Cette routine a pour argument d'entrée les valeurs a et b (demi-grand axe et
+   demi-petit axe).
+   Or si a<b, alors la routine procède à une inversion a <-> b. Donc la routine modifie les
+   arguments d'entrée ! Ce qui a pour conséquence d'inverser le demi-grand axe et le
+   demi-petit axe si a<b.
+   
+   
+   Solution :
+   ----------
+   
+   On recopie les arguments d'entrée de disell.f dans des variables locales.
+   
+   impact : disell.f
+   
+   Validation : test perso (je ne souhaite pas modifier un test de la base car définir
+   DEMI_GRAND_AXE < DEMI_PETIT_AXE n'est pas un bon exemple pédagogique).
+   
+   Doc : u4.82.08 (pour clairement expliquer ce qu'on fait)
+   
+   
+   Résultat faux :
+   ---------------
+   
+   On précise que les 1ers résultats faux sont apparus en 9.3.5.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : U4.82.08
+VALIDATION
+    test perso
+DEJA RESTITUE DANS : 11.3.16
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR chau         CHAU T.H.              DATE 04/10/2013 - 11:41:13
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020577 DU 2013-03-20 17:48:01
+TYPE anomalie concernant Code_Aster (VERSION 11.3)
+TITRE
+    Anomalie fonctionnement POST_RCCM
+FONCTIONNALITE
+   Blindage du plantage par ajout de la ligne suivante dans RCEVO0.F, avant récupération du paramètre 
+   INTITULE :
+               CALL ASSERT(TYP(1:3).EQ.'K16')
+   
+   Ce qui permet de s'assurer de son type, K16 et non K8 comme fourni ici par la table de 
+   l'utilisateur.
+   
+   Correction à faire en versions 10 et 11.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ?tude fournie par l'utilisateur
+DEJA RESTITUE DANS : 11.3.18
+NB_JOURS_TRAV  : 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 04/10/2013 - 11:41:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020448 DU 2013-02-22 16:07:19
+TYPE anomalie concernant Code_Aster (VERSION 10.5)
+TITRE
+    Affectation d'un champ de tempxc3xa9rature sur un modxc3xa8le mixte (3D/COQUE)
+FONCTIONNALITE
+   Problème :
+   ----------
+   Quand on a un modèle mixte : 3D + coques (avec intégration dans l'épaisseur) et que l'on
+   veut utiliser la température comme variable de commande, on doit écrire par exemple :
+                                                                                            
+                                     
+   TEMPLI1=THER_LINEAIRE(...)
+                                    
+   TEMPLI2=CREA_RESU( OPERATION='PREP_VRC2', TYPE_RESU='EVOL_THER',
+                     PREP_VRC2= _F( MODELE=MO, CARA_ELEM=CARAC, EVOL_THER = TEMPLI1))
+                                  
+   CHMTM=AFFE_MATERIAU( MAILLAGE=MA,  AFFE=_F(  TOUT = 'OUI', MATER = MATER),
+                 AFFE_VARC=(
+                   _F( GROUP_MA='VOLU', EVOL=TEMPLI1, VALE_REF=-20., NOM_VARC='TEMP', 
+   NOM_CHAM='TEMP',),
+                   _F( GROUP_MA='COQU', EVOL=TEMPLI2, VALE_REF=-20., NOM_VARC='TEMP', 
+   NOM_CHAM='TEMP',),
+     ))
+                                                                                            
+                                     
+   En version NEW11, tout va bien.
+   En revanche, avec la version STA11 ou NEW10, on est arreté par :
+                                                                                            
+                                     
+    !--------------------------------------------------------------------------!
+    ! <A> <CALCULEL6_59> . . . . . . . . . . . . . . . . . . . . . . . . . . . !
+    ! Erreur d'utilisation (préparation des variables de commande) : . . . . . !
+    ! .Dans le CHAM_MATER CHMTM et pour la variable de commande TEMP, . . . . .!
+    ! .on a trouvé la composante 'TEMP_INF'. . . . . . . . . . . . . . . . . . !
+    ! .Cela veut sans doute dire que vous avez oublié de "préparer" . . . . . .!
+    ! .la variable de commande 'TEMP' avec . CREA_RESU / OPERATION='PREP_VRC2' !
+    !--------------------------------------------------------------------------!
+                                                                                            
+                                     
+    !-------------------------------------------------------!
+    ! <F> <DVP_1> . . . . . . . . . . . . . . . . . . . . . !
+    ! Erreur de programmation : condition non respectée. . .!
+    !-------------------------------------------------------!
+                                                                                            
+                                     
+                                                                                            
+                                     
+    Analyse :
+    ---------
+    La fiche issue18394  (ajout des composantes TEMP_INF et TEMP_SUP dans la variable de
+   commande TEMP) n'a été restituée qu'en version 11.
+                                                                                            
+                                     
+    Cela change le comportement des 3 boucles imbriquées de la routine vrcins.f :
+                                                                                            
+                                     
+    . . . DO 1, ICHS=1,NBCHS
+    . . . . .VARC1=...
+    . . . . .DO 2,KCMP=1,NBCMP
+    . . . . . . NOCMP1=...
+                                                                                            
+                                     
+   C . . . . . .-- CALCUL DE KCVRC :
+    . . . . . . DO 3,KCVRC=1,NBCVRC
+    . . . . . . . .VARC2=...
+    . . . . . . . .NOCMP2=...
+    . . . . . . . .IF ((VARC1.EQ.VARC2).AND.(NOCMP1.EQ.NOCMP2)) GO TO 4
+   3 . . . . . .CONTINUE
+                                                                                            
+                                     
+    . . . . . . IF (NOCMP1.EQ.'TEMP_INF') THEN
+    . . . . . . . .VALK(1) = CHMAT
+    . . . . . . . .VALK(2) = VARC1
+    . . . . . . . .CALL ASSERT(VARC1.EQ.'TEMP')
+    . . . . . . . .CALL U2MESK('A','CALCULEL6_59', 2 ,VALK)
+    . . . . . . ELSE
+    . . . . . . . .GOTO 2
+    . . . . . . ENDIF
+                                                                                            
+                                     
+   4 . . . . . .CONTINUE
+    . . . . . . CALL ASSERT(KCVRC.GE.1 .AND. KCVRC.LE.NBCVRC)
+                                                                                            
+                                     
+   EN NEW10 (comme en NEW11), le couple (VARC1,NOCMP1) prend les valeurs :
+     TEMP    TEMP
+     TEMP    TEMP_INF
+     TEMP    TEMP_SUP
+   Mais en NEW10, le couple (VARC2,NOCMP2) ne prend que la valeur
+     TEMP    TEMP
+                                                                                            
+                                     
+   Du coup, en NEW10, on sort de la boucle 3, on émet l'alarme CALCULEL6_59 puis on s'arrete
+   dans le ASSERT qui suit le "4 CONTINUE".
+                                                                                            
+                                     
+   L'erreur est d'avoir placé le "GOTO 2" dans le bloc ELSE au lieu de le mettre après le ENDIF.
+                                                                                            
+                                     
+   L'objectif est d'ABORD d'ignorer les composantes inconnues et ENSUITE d'alerter les
+   distraits qui ont oublier d'utiliser PREP_VRC.
+   Malheureusement, on alarme bien, mais ensuite on émet une erreur fatale.
+                                                                                            
+                                     
+                                                                                            
+                                     
+    Corrections  NEW10 :
+    --------------------
+    On déplace le "GOTO 2" après le ENDIF :
+    151,152d152
+   <           ELSE
+   <              GOTO 2
+   153a154
+   >           GOTO 2
+                                                                                            
+                                     
+                                                                                            
+                                     
+    Corrections  NEW11 :
+    --------------------
+    1) On déplace aussi le "GOTO 2" après le ENDIF :
+    151,152d152
+   <           ELSE
+   <              GOTO 2
+   153a154
+   >           GOTO 2
+                                                                                            
+                                     
+   Aujourd'hui, cela ne sert à rien pour les champs de température de coque car TEMP_INF et
+   TEMP_SUP ont été ajoutées comme composantes de la variable de commande TEMP.
+                                                                                            
+                                     
+   Mais si un jour un champ de TEMP_R avec des composantes "étranges" (issu par exemple d'un
+   calcul XFEM), était affecté dans AFFE_MATERIAU / AFFE_VARC. Il faudrait ignorer les
+   composantes XFEM mais ne pas s'arreter brutalement.
+                                                                                            
+                                     
+   2) On supprime le bloc
+    . . . . . . IF (NOCMP1.EQ.'TEMP_INF') THEN
+    . . . . . . . .VALK(1) = CHMAT
+    . . . . . . . .VALK(2) = VARC1
+    . . . . . . . .CALL ASSERT(VARC1.EQ.'TEMP')
+    . . . . . . . .CALL U2MESK('A','CALCULEL6_59', 2 ,VALK)
+    Car il ne peut plus se déclencher.
+                                                                                            
+                                     
+    L'idée était d'alerter l'utilisateur qui avait oublier d'utiliser PREP_VRC1/2.
+    Mais on ne peut plus le faire depuis issue18394 car l'usage de PREP_VRC1/2 dépend des
+   éléments de coque utilisés :
+      * il faut utiliser PREP_VRC pour les éléments DKT,DST, COQUE_3D
+      * il NE faut PAS utiliser PREP_VRC pour les éléments DKTG
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  20448
+     vrcins.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+DEJA RESTITUE DANS : 11.3.18
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR cuvillie     CUVILLIEZ Sam          DATE 04/10/2013 - 11:41:14
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020570 DU 2013-03-20 10:21:32
+TYPE express concernant Code_Aster (VERSION 11.4)
+TITRE
+    X-FEM : Blinder AFFE_CHAR_MECA* / PRES_REP pour le MC FISSURE
+FONCTIONNALITE
+   Actuellement, pour le MCF PRES_REP des opérateurs AFFE_CHAR_MECA et AFFE_CHAR_MECA_F, dans
+   le cas des fissures X-FEM (MC FISSURE), on ne teste pas la cohérence entre les fissures
+   renseignées par l'utilisateur et le modèle en entrée de l'opérateur. Plus précisément :
+    . 1) on ne s'assure pas du caractère X-FEM de ce modèle
+    . 2) on ne s'assure pas non plus de la présence de ces fissures dans ce modèle
+   
+   Dans le test ssnv185c, on observe par exemple une erreur de « copier-coller » dans la
+   configuration AFFE_CHAR_MECA / PRES_REP / FISSURE, qui conduit à créer une charge à partir
+   d'une fissure et du modèle sain, ce que le code ne devrait pas tolérer. Il se trouve que
+   comme le modèle sain et le modèle enrichi sont construits sur le même maillage, la carte
+   de charge est identique à celle qui aurait été obtenue avec le modèle enrichi.
+   
+   Je propose donc de blinder le code en s'assurant des points 1) et 2), et de renvoyer un
+   message d'erreur si les données sont incohérentes
+   
+   ########################
+   Risque de résultats faux
+   
+   ########################
+   
+   Il n'y a donc pas de risque de résultats faux à proprement parler, mais on laisse à
+   l'utilisateur la possibilité d'utiliser une syntaxe incohérente.
+   
+   #############
+   impact source 
+   #############
+   
+   (A) xvelfm.f : routine utilitaire permettant de s'assurer des points 1) et 2)
+   (M) capres.f : appel à cette nouvelle routine (xvelfm) avant de remplir la carte de charge
+   (M) xfem.py  : messages d'erreur (un pour le point 1, un autre pour le point 2)
+   
+   ###########
+   Validation
+   ###########
+   
+   ssnv185c.commm : correcion de l'erreur de copier/coller mentionnée ci-dessus (sans quoi on
+   a une erreur fatale)
+   
+   ###########
+   impact doc
+   ###########
+   
+   Aucun
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    ssnv185c
+DEJA RESTITUE DANS : 11.3.16
+NB_JOURS_TRAV  : 0.25
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF sslv04i                        ladier A.LADIER           482    114      2
+ CASTEST MODIF ssnv185c                       ladier A.LADIER           510      5      4
+ FORTRAN AJOUT modelisa/xvelfm                ladier A.LADIER            99     99      0
+ FORTRAN MODIF algeline/refode                ladier A.LADIER           449      4      3
+ FORTRAN MODIF algorith/disell                ladier A.LADIER           213     15      7
+ FORTRAN MODIF algorith/xtmafi                ladier A.LADIER           158     17     10
+ FORTRAN MODIF calculel/calcul                ladier A.LADIER           568     12      5
+ FORTRAN MODIF jeveux/jelibz                  ladier A.LADIER           151     28      5
+ FORTRAN MODIF modelisa/capres                ladier A.LADIER           153      4      2
+ FORTRAN MODIF postrele/rcevo0                ladier A.LADIER           105      6      5
+ FORTRAN MODIF prepost/op0039                 ladier A.LADIER          1040     24      8
+  PYTHON MODIF Messages/med2                  ladier A.LADIER            79     16      2
+  PYTHON MODIF Messages/xfem                  ladier A.LADIER           471     17      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    1          99        99               +99
+ MODIF :   12        4379       262      55      +207
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   13        4478       361      55      +306 
