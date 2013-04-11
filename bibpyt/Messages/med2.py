@@ -1,8 +1,8 @@
-#@ MODIF med2 Messages  DATE 21/02/2011   AUTEUR SELLENET N.SELLENET 
+#@ MODIF med2 Messages  DATE 10/04/2013   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -60,6 +60,20 @@ format MED.
   -> Conseil :
      Restreignez l'impression demandée aux éléments ne contenant pas
      la famille de point de Gauss incriminée.
+"""),
+
+8 : _("""
+  Vous utilisez IMPR_RESU avec le mot-clé RESTREINT. Or vous avez
+  déjà utilisé cette commande avec ce même mot-clé sur ce même
+  fichier précédemment.
+  
+  Cet usage est interdit en raison des risques de résultats
+  inattendus que cela peut provoquer.
+
+  -> Conseils :
+     - Utilisez EXTR_RESU pour restreindre vos résultats,
+     - Faites votre deuxième IMPR_RESU RESTREINT sur un nouveau
+       fichier.
 """),
 
 }

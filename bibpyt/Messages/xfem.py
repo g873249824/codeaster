@@ -1,8 +1,8 @@
-#@ MODIF xfem Messages  DATE 05/07/2011   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF xfem Messages  DATE 10/04/2013   AUTEUR LADIER A.LADIER 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -451,6 +451,21 @@ cata_msg={
      une grille auxiliaire à la fissure à propager, grille héritée de la fissure de laquelle
      les deux level sets ont été extraites (mot-clé FISS_GRILLE de DEFI_FISS_XFEM).
      
+"""),
+
+70: _("""
+  -> Vous utilisez le mot-clé FISSURE, or le modèle %(k1)s que vous avez renseigné 
+     pour le mot clé MODELE n'est pas un modèle X-FEM.
+  -> Conseil:
+     Veuillez utiliser un autre mot-clé ou revoyez la définition de votre modèle.
+"""),
+
+71: _("""
+  -> Vous avez renseigné %(k1)s pour le mot-clé FISSURE, or cette fissure est absente
+     du modèle %(k2)s que vous avez renseigné pour le mot-clé MODELE.
+  -> Conseil:
+     Assurez vous de renseigner pour le mot-clé FISSURE une liste de fissures 
+     présentes dans le modèle ou revoyez la définition de votre modèle.
 """),
 
 }

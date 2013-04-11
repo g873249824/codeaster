@@ -6,9 +6,9 @@
       REAL*8                  ANGLE,                    COEF(*)
 C     ------------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGELINE  DATE 29/09/2006   AUTEUR VABHHTS J.PELLET 
+C MODIF ALGELINE  DATE 10/04/2013   AUTEUR LADIER A.LADIER 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -84,7 +84,8 @@ C     ------------------------------------------------------------------
       LMECA = .FALSE.
       LTHER = .FALSE.
       CALL DISMOI('F','NOM_GD',CH19,'CHAMP',IBID,NOMGD,IE)
-      IF ( NOMGD.EQ.'DEPL_R' .OR. NOMGD.EQ.'SIEF_R' ) THEN
+      IF ( NOMGD.EQ.'DEPL_R' .OR. NOMGD.EQ.'SIEF_R' .OR.
+     &      NOMGD.EQ.'EPSI_R' ) THEN
          LMECA = .TRUE.
       ELSEIF( NOMGD.EQ.'TEMP_R' .OR. NOMGD.EQ.'FLUX_R' ) THEN
          LTHER = .TRUE.

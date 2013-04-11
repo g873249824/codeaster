@@ -2,10 +2,10 @@
      &                  LPAOU,BASE,MPIC)
       IMPLICIT NONE
 
-C MODIF CALCULEL  DATE 26/10/2011   AUTEUR MACOCCO K.MACOCCO 
+C MODIF CALCULEL  DATE 10/04/2013   AUTEUR LADIER A.LADIER 
 C ======================================================================
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -458,9 +458,16 @@ C                    TOUT (C'EST DEJA ASSEZ COMPLIQUE COMME CELA !)
               ELSEIF (LDIST) THEN
 C              - LIGREL DE MODELE, ON TAG EN SE BASANT SUR
 C               PARTIT//'.NUPROC.MAILLE'
-                IF (((IMA.LT.0).AND.(RANG.EQ.0)) .OR.
-     &              ((IMA.GT.0).AND.(ZI(JNUMSD-1+IMA).EQ.RANG)))
-     &              ZL(JPARAL-1+IEL)=.TRUE.
+                  IF (IMA.LT.0) THEN
+                     IF(RANG.EQ.0) THEN
+                        ZL(JPARAL-1+IEL)=.TRUE.
+                     ENDIF
+                  ELSEIF (IMA.GT.0) THEN
+                     IF(ZI(JNUMSD-1+IMA).EQ.RANG) THEN
+                        ZL(JPARAL-1+IEL)=.TRUE.
+                     ENDIF
+                  ENDIF
+
               ENDIF
    80       CONTINUE
 
