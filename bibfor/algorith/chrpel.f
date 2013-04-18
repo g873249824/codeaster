@@ -1,8 +1,8 @@
       SUBROUTINE CHRPEL(CHAMP1, REPERE, NBCMP, ICHAM, TYPE, NOMCH)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
+C MODIF ALGORITH  DATE 17/04/2013   AUTEUR CHANSARD F.CHANSARD 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -52,7 +52,7 @@ C ----- DEBUT COMMUNS NORMALISES  JEVEUX  ------------------------------
 C ----- FIN COMMUNS NORMALISES  JEVEUX  -------------------------------
 C ---------------------------------------------------------------------
 C
-      INTEGER      I     , II    , INO   , IAD   , IPT   , ISP
+      INTEGER      I     , II    , INO   , IAD   , IPT   , ISP, IGAAXE
       INTEGER      JCESD , JCESV , JCESL , NBPT  , AXYZM , NCMP
       INTEGER      JCONX1, JCONX2, NBSP  , INEL  , JCMP  , IPT2
       INTEGER      IBID  , NBMA  , JCESK , IRET  , INOT  , INBNO
@@ -79,6 +79,7 @@ C
 C
       CALL JEMARQ()
       EPSI = 1.0D-6
+      IGAAXE = 0
       MOTCLE(1) = 'GROUP_MA'
       TYPMCL(1) = 'GROUP_MA'
       MOTCLE(2) = 'MAILLE'
@@ -699,7 +700,19 @@ C
                      XNORMR = 0.0D0
                      CALL NORMEV(AXER,XNORMR)
                      IF (XNORMR .LT. EPSI) THEN
-                        CALL ASSERT (.FALSE.)
+C   SI LE PT DE GAUSS EST SUR L'AXE ALORS L'AXE R N'EST PAS DEFINI
+C   ON PREND UN AXE ARBITRAIRE ORTHOGONAL A OZ POUR DEFINIR LE REPERE 
+C   CYLINDRIQUE EN CE POINT
+                        IF(AXEZ(1).NE.0.D0.OR.AXEZ(2).NE.0.D0) THEN
+                          AXER(1) = AXEZ(2)
+                          AXER(2) = -AXEZ(1)
+                          AXER(3) = 0.0D0
+                        ELSE
+                          AXER(1) = 1.0D0
+                          AXER(2) = 0.0D0
+                          AXER(3) = 0.0D0
+                        ENDIF
+                        IGAAXE = IGAAXE + 1
                      ENDIF
                      CALL PROVEC(AXEZ,AXER,AXET)
                      XNORMR = 0.0D0
@@ -937,6 +950,9 @@ C CHAMP COMPLEXE
  30            CONTINUE
  29         CONTINUE
          ENDIF
+         IF(IGAAXE.NE.0) THEN
+            CALL U2MESI('A','ALGORITH17_18',1,IGAAXE)
+         ENDIF         
       ENDIF
       CALL DISMOI ( 'F', 'NOM_OPTION', CHAMP1, 'CHAM_ELEM',
      &              IBID, OPTION, IBID )

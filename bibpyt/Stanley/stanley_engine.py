@@ -1,8 +1,8 @@
-#@ MODIF stanley_engine Stanley  DATE 06/12/2012   AUTEUR LEFEBVRE J-P.LEFEBVRE 
+#@ MODIF stanley_engine Stanley  DATE 17/04/2013   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -3113,8 +3113,6 @@ class PRE_STANLEY :
                                     types='cham_mater', append_to=t_cham_mater)
          concept_exists_and_intypes(i, self.macro,
                                     types='cara_elem', append_to=t_cara_elem)
-         concept_exists_and_intypes(i, self.macro,
-                                    types='para_sensi', append_to=t_para_sensi)
 
     self.t_maillage=t_maillage
     self.t_modele=t_modele
@@ -3170,7 +3168,7 @@ class PRE_STANLEY :
 
     dico = {}
 
-    for evol in t_evol:
+    for evol in t_evol[:]:
        dico[evol] = []
 
        iret, ibid, nomsd = aster.dismoi('F','MODELE_1',evol,'RESULTAT')
@@ -3190,7 +3188,9 @@ class PRE_STANLEY :
        dico[evol].append( n_caraelem )    # cara_elem
 
        # Si le resultat ne contient pas de modele ou de chammater on le supprime de la liste
-       if not n_modele or not n_chammater: dico.pop(evol)
+       if not n_modele or not n_chammater:
+           dico.pop(evol)
+           t_evol.remove(evol)
 
     # Si on n'a pas un seul resultat exploitable
     if not dico:

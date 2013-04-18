@@ -1,8 +1,8 @@
-#@ MODIF algorith17 Messages  DATE 22/03/2011   AUTEUR DESOZA T.DESOZA 
+#@ MODIF algorith17 Messages  DATE 17/04/2013   AUTEUR CHANSARD F.CHANSARD 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -91,6 +91,11 @@ cata_msg={
   La partition %(k1)s que vous utilisez pour partitionner le modèle %(k2)s en sous-domaines a été construite sur un autre modèle (%(k3)s).
   
   Conseil : vérifiez la cohérence des modèles.
+"""),
+
+18 : _("""
+  Il y a %(i1)d points de Gauss sur l'axe d'axisymétrie. En ces points les axes Or et Otheta ne sont pas définis.On prend
+   un axe Or quelconque normal à Oz pour continuer le changement de repère mais seules les composantes suivant z ont un sens en ces points.
 """),
 
 }
