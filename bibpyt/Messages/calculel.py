@@ -1,8 +1,8 @@
-#@ MODIF calculel Messages  DATE 11/01/2012   AUTEUR MACOCCO K.MACOCCO 
+#@ MODIF calculel Messages  DATE 25/04/2013   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -403,6 +403,10 @@ Risques et conseils :
 
 
 
+90 : _(u"""
+ Le champ %(k2)s ne peut pas être créé à partir de %(k1)s car il est décrit sur des
+ mailles n'existant pas dans %(k1)s et il est de type VARI_ELGA.
+"""),
 
 91 : _("""
  incohérence des familles de points de Gauss pour la maille  %(k1)s
