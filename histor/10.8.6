@@ -1,0 +1,216 @@
+========================================================================
+Version 10.8.6 du : 26/04/2013
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 04/25/2013 - 09:21:02
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020760 DU 2013-04-19 08:59:21
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    En NEW10.08.05, le cas-test perf011b s'arrete en erreur fatale sur Aster4_MPI.
+FONCTIONNALITE
+   Contexte
+   ========
+   
+   En NEW10.08.05, le cas-test perf011b s'arrete en erreur fatale sur Aster4_MPI.
+   
+   # TITRE CALCUL DE PERFORMANCE : CYLINDRE BIMETALLIQUE ELASTIQUE
+   
+   Analyse
+   =======
+   
+   Il présente des NOOK très importants.
+   Il s'agit vraisemblablement du même problème que issue19137 qui concernait ce même test en
+   version 11.
+   
+   Correction
+   ==========
+   
+   On corrige donc de la même manière : on bascule en NPREC=8 (qui est le réglage par défaut)
+   ce qui a pour effet de désactiver la bibliothèque Scalapack dans MUMPS qui semble poser
+   problème quand elle est utilisée conjointement avec le mode 'OUT_OF_CORE'.
+   
+   On ré-active de plus la vérification de la qualité de la solution (réglage par défaut dans
+   MECA_STATIQUE).
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  NON
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    perf011b
+NB_JOURS_TRAV  : 0.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 04/25/2013 - 09:21:03
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 018501 DU 2012-03-05 12:54:59
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    CHLIGR pas assez blinde
+FONCTIONNALITE
+   Problème
+   ========
+   
+   La routine CHLIGR permet de transférer un CHAM_ELEM d'un LIGREL à l'autre.
+   Cette routine n'est pas blindée dans le cas de l'extension d'un ligrel avec un champ de
+   type VARI_R (variables internes).
+   En effet, dans ce cas, il n'est pas possible à Aster de "deviner" le nombre de variables
+   internes sur les mailles supplémentaires.
+   Il faut arrêter en erreur fatale pour éviter les accidents.
+   
+   Correction
+   ==========
+   
+   Dans chligr.f, Il y a déjà une vérification de la cohérence entre les champs ELGA: on
+   reporte cette correction dans une routine dédiée (chvepg.f)
+   On ajoute une routine qui compare deux LIGRELs (chveva): cette routine retourne -1 si le
+   second ligrel n'est pas inclu dans le premier (c'est-à-dire que des mailles du maillage
+   complet sont affectées dans le second ligrel alors qu'elles ne l'étaient pas dans le premier)
+   Si le champ projeté dans CHLIGR est de type VARI_ELGA, alors on impose que le second
+   ligrel soit inclu dans le premier.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cas-test perso
+DEJA RESTITUE DANS : 11.3.20
+NB_JOURS_TRAV  : 5.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 04/25/2013 - 09:21:04
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020654 DU 2013-04-03 15:11:08
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    IMPR_RESU au format RESULTAT avec l'option FORM_TABL
+FONCTIONNALITE
+   Problème :
+   ========
+   En STA10, lorsqu'on cherche à imprimer des champs au format RESULTAT avec IMPR_RESU, le
+   mot clé FORM_TABL permet de choisir le format d'impression.
+   
+   Or, quelque soit l'option choisie sous FORM_TABL, le format d'écriture reste le même (avec
+   un retour à la ligne).
+   
+   De plus, le mot clé FORM_TABL n'est pas reconnu si le RESU est un CHAM_GD. Ceci n'est pas
+   cohérent avec la doc U4.91.01.
+   
+   Correction :
+   ==========
+   Le mot-clé FORM_TABL permet de choisir le format d'impression des paramètres et seulement
+   des paramètres. Si on n'imprime pas les paramètres, il n'a aucun effet.
+   
+   Comme les paramètres n'ont de sens que pour une SD, ce mot-clé ne fonctionne pas avec
+   CHAM_GD. Sur ce point, la doc est claire.
+   
+   Ainsi lorsqu'on imprime les paramètres, FORM_TABL a bien un effet.
+   On note toutefois que pour l'impression "synthétique" pour tous les instants en début de
+   fichier, le format utilisé était pour FORM_TABL='NON' comme pour FORM_TABL='OUI'. Par
+   contre pour chaque instant, l'affichage est correct.
+   
+   Le problème est dans la routine IRECRI où IRPARA n'est pas correctement appelée. On
+   corrige cet appel.
+   
+   Impact :
+   ======
+   irecri.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    visuel
+DEJA RESTITUE DANS : 11.3.20
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020182 DU 2013-01-11 11:36:22
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    Comportement ELAS non trouvxc3xa9
+FONCTIONNALITE
+   Problème :
+   ========
+   Un utilisateur effectue un calcul non linéaire en OLD11 avec la relation MONOCRISTAL sur
+   un materiau ELAS_ORTH.
+   Elle demande le calcul des déformations (EPSI_ELGA,EPSI_ELNO). Aster refuse avec le message : 
+   "comportement ELAS" non trouvé.
+   
+   Correction :
+   ==========
+   Ce problème est une erreur d'utilisation.
+   
+   En effet, on se plante au calcul de l'option EPSI_ELGA dans rccoma car on ne trouve pas le
+   comportement ELAS. Ce plantage a lieu au premier pas de temps.
+   
+   Or ce premier pas de temps n'a pas été calculé par STAT_NON_LINE mais est issu d'une
+   relecture de champs via LIRE_RESU pour lequel on ne précise pas CHAM_MATER.
+   
+   Pour contourner ce problème, il faut dans le calcul de EPSI_ELGA préciser le champ de
+   matériau.
+   
+   C'est un mauvais concours de circonstance :
+   * Dans le TE0025, le programmeur a été imprudent car on fait un TECACH('NNN' : on ne
+   s'arrête pas si le champ n'existe pas. Avec un JEVECH on se serait arrêté avec un message
+   très clair indiquant qu'il faut ajouter CHAM_MATER.
+   * On ne peut pas lui en vouloir car dans la plupart des cas, on n'a pas besoin du matériau
+   pour calculer les déformations.
+   
+   Même si le matériau n'est pas nécessaire (en principe) pour calculer les déformations, on
+   en a besoin car on utilise des routines génériques (peut-être pas très bien programmées).
+   On remplace TECACH par JEVECH dans le te0025 (comme c'est fait pour le te0087 qui fait la
+   même chose en 2D). Ainsi dans ce cas on plante avec un message clair qui indique qu'il
+   manque CHAM_MATER.
+   
+   Impact :
+   ======
+   te0025.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste des tests utilisant te0025
+DEJA RESTITUE DANS : 11.3.20
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF perf011b                      macocco K.MACOCCO          217      5      4
+ FORTRAN AJOUT calculel/chvepg               macocco K.MACOCCO          102    102      0
+ FORTRAN AJOUT calculel/chveva               macocco K.MACOCCO          117    117      0
+ FORTRAN AJOUT calculel/liglma               macocco K.MACOCCO           90     90      0
+ FORTRAN MODIF calculel/chligr               macocco K.MACOCCO          152     67     67
+ FORTRAN MODIF elements/te0025               macocco K.MACOCCO          171      3      3
+ FORTRAN MODIF prepost/irecri                macocco K.MACOCCO          480      3      7
+  PYTHON MODIF Messages/calculel             macocco K.MACOCCO          428      6      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    3         309       309              +309
+ MODIF :    5        1448        84      83        +1
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    8        1757       393      83      +310 
