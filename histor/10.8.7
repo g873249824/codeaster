@@ -1,0 +1,137 @@
+========================================================================
+Version 10.8.7 du : 03/05/2013
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR laverne      LAVERNE Jérôme       DATE 05/02/2013 - 05:44:57
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020461 DU 2013-02-26 16:28:35
+TYPE anomalie concernant Code_Aster (VERSION 11.3)
+TITRE
+    POST_ELEM/WEIBULL : Probleme en 3D et presence de temperature
+FONCTIONNALITE
+   Aurore a trouvé le bug, cela permet de résoudre les problèmes évoqués dans cette fiche et
+   notamment ceux liés à l'étude NESC7. A priori ce bug n'a pas affecté d'autres études avec
+   Beremin.
+   
+   RISQUE DE RESULTATS FAUX : 
+   **************************
+   POST_ELEM/WEIBULL en 3D avec présence de température (MATER WEIBULL_FO) et option de
+   calcul SIGM_ELMOY (ce cas de figure n'était pas testé dans le code).
+   
+   ANALYSE :
+   *********
+   Dans le te0338, mauvais calcul de la température moyenne TMOY sur l'élément suite au
+   passage de la température en variable de commande en 9.0.15 (erreur : TMOY = TG*POIDS au
+   lieu de TMOY = TMOY + TG*POIDS). On en profite pour corriger deux autres petits bug
+   apparemment sans conséquence (voir ci-dessous).
+   Remarque : ces bugs n'existent pas en 2D (te0331).
+   
+   MODIF DU FORTAN :
+   *****************
+   
+   te0338.f (OPTION POST_ELEM/WEIBULL en 3D)
+   
+   Bug principal :
+    - Cas SIGM_ELMOY  et (CORR_PLAS=OUI ou CORR_PLAS=NON)
+      Modif du calcul de TMOY 
+   
+   Bugs secondaires :   
+    - Cas SIGM_ELMOY  et CORR_PLAS=OUI 
+      Modif du calcul du volume plastique actif VKPACT
+   
+    - Cas SIGM_ELMOY et (CORR_PLAS=OUI ou CORR_PLAS=NON)
+   Dans le cas où la température n'est pas présente on impose cette dernière à 0 (comme en
+   2D) au lieu de planter en erreur fatale CALCULEL_31. L'utilisation de la température ici
+   ne sert qu'a évaluer le paramètre SIGM_REFE qui ne dépend pas nécessairement de celle-ci.
+   
+   MODIF DES TESTS :
+   *****************
+   
+   Tests POST_ELEM/WEIBULL existants :
+   cente01a    2D_PLAN   MATER=WEIBULL     SIGM_ELMOY   CORR_PLAS=NON
+   ssna108a    2D_AXIS   MATER=WEIBULL     SIGM_ELGA    CORR_PLAS=NON
+   ssnv148a    3D        MATER=WEIBULL_FO  SIGM_ELGA    CORR_PLAS=NON
+   ssnv171c    3D        MATER=WEIBULL     SIGM_ELGA    CORR_PLAS=OUI
+   
+   On ajoute des tests dans les configurations suivantes :
+   ssna108a    2D_AXIS   MATER=WEIBULL     SIGM_ELMOY    CORR_PLAS=NON
+               2D_AXIS   MATER=WEIBULL     SIGM_ELMOY    CORR_PLAS=OUI           
+   ssnv148a    3D        MATER=WEIBULL_FO  SIGM_ELMOY    CORR_PLAS=NON
+               3D        MATER=WEIBULL_FO  SIGM_ELMOY    CORR_PLAS=OUI
+   ssnv171c    3D        MATER=WEIBULL     SIGM_ELMOY    CORR_PLAS=OUI
+               3D        MATER=WEIBULL     SIGM_ELMOY    CORR_PLAS=NON
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 9.0.15
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 9.0.15
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    cente01a,ssna108a,snv148a,ssnv171c
+DEJA RESTITUE DANS : 11.3.21
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR corus        CORUS Mathieu          DATE 05/02/2013 - 05:44:58
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020680 DU 2013-04-09 11:15:43
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    Noeuds redondants dans DEFI_INTERF_DYNA
+FONCTIONNALITE
+   Probleme :
+   ----------
+   
+   Pour se simplifier la construction d'un modele reduit de table de groupe avec GTA, Mohamed
+   a introduit des doublons de numeros de noeuds dans la liste NOEUD=() de DEFI_INTERF_DYNA.
+   Ca lui permettait d'avoir le meme nombre de noeud pour les interfces des deux
+   sous-structures. Cette redondance n'est pas detectee dans DEFI_INTERF_DYNA, et induit un
+   plantage dans DEFI_MODELE_GENE qui n'est pas explicite (message qui fait reference a des
+   noeuds en vis a vis qui n'y sont pas). Il faudrait donc introduire une verif de la liste
+   des numeros de noeuds fournie a DEFI_INTERF_DYNA.
+   
+   Solution :
+   ----------
+   
+   On interdit les doublons dans les listes de noeuds rentrees a DEFI_INTERF_DYNA avec un
+   "validators=NoRepeat()" dans le catalogue.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    aucune
+DEJA RESTITUE DANS : 11.3.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+ CASTEST MODIF ssna108a                      macocco K.MACOCCO          403    101      9
+ CASTEST MODIF ssnv148a                      macocco K.MACOCCO          456     78      2
+ CASTEST MODIF ssnv171c                      macocco K.MACOCCO          494    100      2
+CATALOPY MODIF commande/defi_interf_dyna     macocco K.MACOCCO           39      3      3
+ FORTRAN MODIF elements/te0338               macocco K.MACOCCO          367      7      8
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    0           0         0                +0
+ MODIF :    5        1759       289      24      +265
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :    5        1759       289      24      +265 
