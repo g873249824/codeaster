@@ -3,9 +3,9 @@
       CHARACTER*(*) OPTION,NOMTE
 C     -----------------------------------------------------------------
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 07/10/2008   AUTEUR PELLET J.PELLET 
+C MODIF ELEMENTS  DATE 02/05/2013   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -160,8 +160,8 @@ C VOLUME PLASTIFIE
    20       CONTINUE
 C           --- TEMPERATURE MOYENNE
             CALL RCVARC(' ','TEMP','+','RIGI',KP,1,TG,IRET)
-            IF (IRET.EQ.1) CALL U2MESS('F','CALCULEL_31')
-            TMOY = TG * DVPG
+            IF (IRET.NE.0) TG = 0.D0
+            TMOY = TMOY + TG * DVPG
           END IF
 C VOLUME PLASTIQUE ACTIF
           IF ((ZK16(ICOMPO).EQ.'LEMAITRE').AND.(PP.GE.SEUIL)) THEN
@@ -171,7 +171,7 @@ C VOLUME PLASTIQUE ACTIF
           END IF
           IF (PPT.GE. (1.D0)) THEN
             DVPG = POIDS
-            VKPACT = VKP + DVPG
+            VKPACT = VKPACT + DVPG
           END IF
 
    40   CONTINUE
@@ -228,8 +228,8 @@ C VOLUME PLASTIFIE
    60       CONTINUE
 C           --- TEMPERATURE AU PG
             CALL RCVARC(' ','TEMP','+','RIGI',KP,1,TG,IRET)
-            IF (IRET.EQ.1) CALL U2MESS('F','CALCULEL_31')
-            TMOY = TG * DVPG
+            IF (IRET.NE.0) TG = 0.D0
+            TMOY = TMOY + TG * DVPG
           ENDIF
 C VOLUME PLASTIQUE ACTIF
           IF ((ZK16(ICOMPO).EQ.'LEMAITRE').AND.(PP.GE.SEUIL)) THEN
@@ -297,7 +297,6 @@ C     -------------------------------------------------------------
                 EPSG(I) = ZR(IDEFG+6*KP+I-7)
   100         CONTINUE
               CALL EPDCP(SIGM,EPSG,SIG1,EPS1)
-C           --- TEMPERATURE AU PG
               CALL RCVALB(FAMI,KP,1,'+',ZI(IMATE),' ',PHENOM,0,' ',0.D0,
      &                  1,NOMRES(4),VALRES(4),CODRET(4),'FM')
               SREF = VALRES(4)
