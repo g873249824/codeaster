@@ -1,0 +1,482 @@
+========================================================================
+Version 10.8.8 du : 16/05/2013
+========================================================================
+
+
+-----------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR desoza       DE SOZA Thomas         DATE 05/14/2013 - 01:58:20
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020671 DU 2013-04-08 14:53:27
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    [FORUM] Contraintes de cisaillement fausses avec ELAS_HYPER
+FONCTIONNALITE
+   Contexte
+   ========
+   
+   Un bug dans la loi de comportement 'ELAS_HYPER' nous a été signalé par Ralf Frotscher sur
+   le forum. Les contraintes calculées par cette loi hyperélastique sont fausses lorsqu'on
+   les compare à un calcul linéaire élastique en HPP particulièrement les contraintes de
+   cisaillement (SIXY, SIXZ et SIYZ) .
+   
+   Analyse
+   =======
+   
+   Il y a plusieurs problèmes.
+   
+   1. Dans la routine d'intégration de cette loi, on ne tient pas compte du fait que les
+   déformations données en entrée des routines de comportement sont (EPXX EPYY EPZZ
+   sqrt(2)*EPXY sqrt(2)*EPXZ sqrt(2)*EPYZ) et utilisent la notation de Voigt.
+   Ainsi on calcule mal les élongations (Ft.F == tenseur de Cauchy-Green droit) dans les
+   routines hypinc.f et hypela.f
+   Mais si l'on corrige cela, les calculs sont encore plus faux car il ne pas oublier autre
+   chose (merci Ludovic !) : les contraintes produites par les routines d'intégration du
+   comportement hyperélastique ne sont alors elles aussi plus en notation de Voigt. Il faut
+   donc les post-traiter afin de multiplier par sqrt(2) les termes extra-diagonaux.
+   Ce facteur sqrt(2) est en effet ôté au niveau TE (soit directement soit via des
+   transformations PKII->Cauchy).
+   
+   Le problème c'est qu'en petites perturbations tout est linéaire et tenir compte de ces
+   observations ne changent pas les résultats (puisqu'elles s'annulent) ! Le problème observé
+   par l'utilisateur ne vient donc pas de là. Mais il faut tout de même corriger.
+   
+   2. Si l'on refait les calculs analytiques à la main pour la contrainte 3D, on s'aperçoit
+   qu'il y a carrément une erreur dans les expressions programmées. En effet il y a un
+   facteur 2 en trop dans les expressions des contraintes de cisaillement (SIXY SIXZ SIYZ) !
+   Il est possible que ce facteur 2 vienne d'une notation de Voigt unilatérale (que sur un
+   seul tenseur par exemple) mais en tout cas c'est faux dans Aster.
+   
+   Correction
+   ==========
+   
+   1. On corrige le calcul des élongations et on ajoute un post-traitement des contraintes.
+   2. Comme les routines d'intégration sont difficiles à modifier (elles ont été générées
+   automatiquement à partir d'un logiciel de calcul formel), on choisit de diviser par 2 les
+   contraintes en sortie de ces routines.
+   On fait de même pour la matrice tangente (division par 2 des termes diagonaux et par
+   sqrt(2) des termes extra-diagonaux).
+   
+   Validation
+   ==========
+   
+   On valide le calcul des contraintes avec la loi hyper-élastique par une comparaison avec
+   un calcul en HPP (référence AUTRE_ASTER) sur un nouveau test (ZZZ342).
+   Il s'agit du même test qui sert pour issue20672.
+   Dans ce cadre, on a en effet une relation entre le module d'Young et les paramètres de la loi.
+   Avant correction, les contraintes calculées sont fausses (d'un facteur environ 2 pour les
+   contraintes de cisaillement, un peu moins pour les contraintes axiales).
+   
+   Cas-tests cassés
+   ================
+   
+   Après passage des tests utilisant ELAS_HYPER, on dénombre 5 cas-tests cassés :
+   
+   * SSNV189, modélisations A, B et C
+   
+   Il s'agit d'un test avec une référence de type SOURCE_EXTERNE, en l'occurrence obtenue
+   avec ANSYS.
+   Les valeurs de non-régression changent ce qui est normal, on les ajuste.
+   En revanche, on s'éloigne de la référence sur la modélisation A 3D (passage de 0.5% à 2%)
+   et on s'en rapproche pour la modélisation B (passage de 0.3% à 0.1%). La modélisation C
+   est inchangée.
+   J'ai observé que ce test était réalisé avec un maillage quadratique, mais avec une
+   intégration complète. Or si en passe en intégration réduite dans la modélisation A,
+   l'erreur par rapport à la référence ANSYS passe à 0.8%. Je le fais donc, c'est d'ailleurs
+   plus cohérent avec le calcul ANSYS qui était fait avec une formulation mixte.
+   
+   * SSNV187, modélisation A
+   
+   Seules les valeurs de non-régression de ce test changent, les tests par rapport aux
+   valeurs analytiques sont inchangés (on ne dégrade pas, on n'améliore pas notamment l'écart
+   à 7.5% du modèle de Signorini, sans doute du au mauvais traitement de l'incompressibilité,
+   car les maillages sont linéaires).
+   
+   * SSNP157, modélisation A
+   
+   La référence est obtenue avec les codes Abaqus et MARC. On est maintenant plus en accord
+   avec la référence (passage de 1% à 0.5%). On ajuste donc les valeurs de non-régression.
+   À noter une dégradation du temps du test:
+   - la première phase de mise en contact du pain de caoutchouc avec le rouleau est 3 fois
+   plus rapide (plus d'échec d'intégration du comportement en particulier)
+   - pourtant la seconde phase de mise en rotation du rouleau est 1,5 fois plus longue (échec
+   dans la boucle de Newton à plusieurs reprises, liste d'instants efficace à 80%)
+   
+   Le ralentissement observé dans la seconde phase n'est pas lié au coefficient du Lagrangien
+   Augmenté pour le frottement qui avait du être modifié dans ce test. En effet on a vérifié
+   que ce besoin était toujours d'actualité.
+   En revanche il semblerait bien que l'algorithme de résolution de la non-linéarité
+   géométrique du contact par Newton est en cause (cf. issue20805). On rebascule donc en mode
+   'POINT_FIXE' qui nécessite plus de temps qu'avant mais moins qu'en 'NEWTON' après
+   correction de cette fiche.
+   
+   Résultats faux
+   ==============
+   
+   Les contraintes calculées par ELAS_HYPER sont fausses depuis que cette loi existe dans
+   Code_Aster particulièrement celles de de cisaillement (SIXY SIXZ SIYZ) qui étaient 2 fois
+   trop grandes.
+   Comme cette loi est non-linéaire, les déplacements étaient aussi légèrement faux.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.0.0
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 11.0.0
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.342,V6.04.187,V6.04.189,V6.03.157
+VALIDATION
+    zzzz342
+NB_JOURS_TRAV  : 8.0
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020672 DU 2013-04-08 16:41:25
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    Mauvais calcul du module de compressibilite dans ELAS_HYPER
+FONCTIONNALITE
+   Contexte
+   ========
+   
+   En parcourant les sources autour de ELAS_HYPER j'ai remarqué que le module de
+   compressibilité K calculé dans ELAS_HYPER quand seul NU est fourni dans le matériau
+   suppose que ce dernier vaut 0.5 alors que rien ne l'impose :
+   
+   K = 6.D0*(C10+C01)/(3*(1-2*NU))
+   
+   Analyse
+   =======
+   
+   On devrait avoir E=4*(C10+C01)*(1+NU) et donc K = 4*(C10+01)*(1+NU)/(3*(1-2*NU))
+   
+   La documentation de référence donne K tel qu'il est écrit dans le Fortran (elle fait donc
+   aussi l'hypothèse que NU=0.5). Ainsi on peut obtenir des résultats différents selon que
+   l'on entre un NU=0.3 ou si on rentre le K équivalent.
+   
+   On retrouve un problème similaire dans les routines dmatdp.f, dmatcp.f, dmat3d.f qui
+   calculent une matrice de Hooke pour les comportements élastiques. E est calculé en faisant
+   l'hypothèse de NU=0.5.
+   
+   Correction et validation
+   ========================
+   
+   On rétablit la bonne expression du module de compressibilité et on ajoute un nouveau test
+   de validation par comparaison AUTRE_ASTER en HPP. On écrase pour cela un cube élastique
+   compressible encastré sur une face et l'on vérifie que l'on obtient les mêmes résultats
+   qu'avec un calcul MECA_STATIQUE.
+   
+   Résultats faux
+   ==============
+   
+   Si les conditions suivantes sont réunies :
+   
+   - utilisation de NU dans DEFI_MATERIAU/ELAS_HYPER
+   - NU très différent de 0.5
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : V1.01.342,R5.03.19
+VALIDATION
+    nouveau test
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR delmas       DELMAS Josselin        DATE 05/14/2013 - 01:58:22
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020285 DU 2013-01-29 17:05:20
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TMA : Phimeca
+TITRE
+    Anomalie probable dans MODI_REPERE
+FONCTIONNALITE
+   Problème 
+   ========
+   Une anomalie est présente dans MODI_REPERE/VECT_X et VECT_Y. Il ne fonctionne 
+   qu'en 3D.
+   Dans les autres dimensions, il n'y a aucun changement de repère opéré.
+   Cette anomalie a été déceler grace à un message d'alarme inadapté:
+   
+   
+      !------------------------------------------------------------------------!
+      ! <A> <ALGORITH12_43>                                                    !
+      !                                                                        !
+      !  La modélisation est de dimension 2 (2D)                               !
+      !  Seule la première valeur de l'angle nautique est retenue :  0.0000000 !
+      !                                                                        !
+      !                                                                        !
+      ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette         !
+      ! alarme, vous pouvez obtenir des résultats inattendus !                 !
+      !------------------------------------------------------------------------!
+   
+   Cette anomalie est due à un test erroné sur la dimension du modèle lorsque VECT_X 
+   est renseigné.
+   
+   Résultat faux :
+   =============
+   Il y a résultat faux en 2D lors de l'utilisation d'un repère utilisateur
+   défini avec VECT_X et VECT_Y car aucune opération de rotation n'est réalisée.
+   
+   Impacts :
+   =======
+   *Les routines chrpel.f et chrpno.f ont été modifiées de la manière suivante pour interdire l'utilisation du 2D 
+   avec VECT_X et VECT_Y.
+   
+   Pour chrpel.f:
+   182c182
+   <          IF ((IBID.EQ.3).AND.(NDIM.EQ.3)) THEN
+   ---
+   >          IF (IBID.NE.0) THEN
+   183a184,186
+   >             IF (NDIM.NE.3) THEN
+   >               CALL U2MESS('F','ALGORITH2_4')
+   >             ENDIF
+   
+   
+   Pour chrpno.f:
+   154c154
+   <          IF ((IBID.EQ.3).AND.(NDIM.EQ.3)) THEN
+   ---
+   >          IF (IBID.NE.0) THEN
+   155a156,158
+   >             IF (NDIM.NE.3) THEN
+   >               CALL U2MESS('F','ALGORITH2_4')
+   >             ENDIF
+   
+   Avec le message d'erreur suivant:
+   4 : _(u"""
+    Le repère utilisateur défini par VECT_X et VECT_Y ne peut être utilisé qu'en 3D.
+   """),
+   
+   De plus, le catalogue de commande a été modifié afin d'avoir en 3D si VECT_X alors VECT_Y aussi.
+RESU_FAUX_VERSION_EXPLOITATION    :  OUI   DEPUIS : 10.1.13
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  OUI   DEPUIS : 10.1.13
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : u4.74.01
+VALIDATION
+    cas-test utilisant MODI_REPERE
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR abbas        ABBAS Mickael          DATE 05/14/2013 - 01:58:23
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020787 DU 2013-04-25 08:40:15
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    En NEW11.03.20, le cas-test hsnv124e s'arrete en erreur fatale sur Aster4 Calibre 7 et Rocks.
+FONCTIONNALITE
+   Problème
+   ========
+   
+   En NEW11.03.20, le cas-test hsnv124e s'arrete en erreur fatale sur Aster4 
+   Calibre 7 et Rocks. 
+    
+   Cette anomalie est liée à la fiche 20179 sur la recherche linéaire.
+   
+   Solution
+   ========
+   
+   Il y a un double-bug dans la routine de recherche linéaire NMRELP.F
+   1/ On ne recopie pas toujours la valeur du RHO optimal en sortie de la routine, or cette
+   valeur est, par précaution, initialisée à R8VIDE 
+   2/ Cette valeur optimale n'est pas initialisée dans le cas de la méthode CORDE
+   
+   L'initialisation à R8VIDE provoque un déplacement infini qui fait, soit planter dans
+   l'intégration de la LdC, soit au moment du TEST_RESU -> ce qui explique le bug dans nmecmi
+   en V10 lors du report de la fiche 20179
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    hsnv124e
+DEJA RESTITUE DANS : 11.3.21
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020179 DU 2013-01-10 18:01:47
+TYPE anomalie concernant Code_Aster (VERSION 10.9)
+TITRE
+    petsc01i ne converge pas si on ajoute de la recherche lineaire
+FONCTIONNALITE
+   Problème
+   ========
+   
+   Il s'agit d'un test en dynamique avec un comportement linéaire. Si on active la recherche
+   linéaire, on ne 
+   converge pas bien que le coefficient de recherche linéaire soit de 1.d0.
+   Il y a clairement un bug.
+   
+   Solution
+   ========
+   
+   La programmation de la routine nmpild.f (actualisation des champs après recherche linéaire
+   et pilotage) est bugguée.
+   Elle est d'ailleurs bcp trop compliquée (des GOTO dans tous les sens)
+   Les champs de vitesse et d'accélération étaient donc faux après recherche linéaire.
+   Après simplification, le problème est corrigé: les résidus et les solutions sont
+   identiques entre le calcul sans recherche linéaire et avec recherche linéaire en imposant
+   RHO = 1.
+   Cette correction devrait permettre à la recherche linéaire de bcp mieux fonctionner en
+   dynamique non linéaire.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    liste restreinte
+DEJA RESTITUE DANS : 11.3.20
+NB_JOURS_TRAV  : 0.5
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR pellet       PELLET Jacques         DATE 05/14/2013 - 01:58:24
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020837 DU 2013-05-07 08:02:57
+TYPE express concernant Code_Aster (VERSION 10.9)
+TITRE
+    un call assert abusif dans op0152.f
+FONCTIONNALITE
+   Problème :
+   ----------
+   G. Devesa a été arreté dans CALC_MATR_AJOU (routine op0152.f) par la ligne 326 :
+           CALL ASSERT(NBLOC.EQ.1)
+                                                                                            
+                                     
+   Analyse :
+   ---------
+   Ce "call assert" a été ajouté (par erreur et par moi) en 8.2.10.
+   Je pense que je voulais vérifier que les matrices fabriquées par CALC_MATR_AJOU étaient
+   "symétriques", mais j'ai confondu le stockage MORSE (2 blocs => matrice non symétrique)
+   avec le stockage LIGN_CIEL qui a autant de blocs que nécessaire.
+                                                                                            
+                                     
+   Ce bug n'a pas été remarqué jusqu'ici car les matrices produites étaient "petites" et ne
+   dépassaient pas la taille par défaut (mot clé DEBUT / TAILLE_BLOC = 800 kR8).
+                                                                                            
+                                     
+   Correction :
+   ------------
+   Je retire le "call assert" coupable.
+                                                                                            
+                                     
+   Validation :
+   ------------
+   Georges a observé que tout se passait bien avec NBLOC=3
+    
+    
+   Liste des fichiers impactés par la correction de la fiche:  20837
+     op0152.f
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    essai perso
+NB_JOURS_TRAV  : 0.05
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--- AUTEUR greffet      GREFFET Nicolas        DATE 05/14/2013 - 01:58:25
+
+--------------------------------------------------------------------------------
+RESTITUTION FICHE 020452 DU 2013-02-22 17:57:56
+TYPE evolution concernant Code_Aster (VERSION )
+TITRE
+    Spectres de plancher - PB Basses frequences et forts amortissements (NIGAM)
+FONCTIONNALITE
+   Les SRO calculés avec CALC_FONCTION, en très basse fréquence (en dessous de 0,5 Hz) et
+   pour des amortissements forts (plus de 10%) peuvent présenter des allures déroutantes et
+   peu en accord avec la théorie.
+   
+   
+   Après analyse détaillée et comparaison de différentes méthodes (intégration directe, FFT),
+   il ressort que la formule de calcul implantée dans spec_osci.c présente une petite
+   approximation : on fait l'hypothèse que la fréquence de résonance Wr (tenant compte de
+   l'amortissement) se confond avec la fréquence propre W0 (sans amortissement).
+   C'est approximation est très courante et reste valide tant que l'amortissement est faible.
+   On a en effet :
+   Wr = W0 . sqrt(1-ksi^2) 
+   avec Wr : fréquence de résonance et ksi : coefficient d'amortissement.
+   Globalement, on commet donc une erreur en sqrt(1-ksi^2).
+   
+   On corrige donc la formule dans la routine, afin de se baser sur la vraie fréquence de
+   résonance.
+   
+   Conséquence :
+   des valeurs changent dans des cas-tests (33). Dans la très grande majorité des cas il
+   s'agit de valeurs de non-regression. On les corrige donc, sachant que les variations sont
+   de l'ordre de 0,1%.
+   Quelques tolérances sont aussi adaptées pour deux tests (miss03b et zzzz100a) par rapport
+   à des références. Mais même dans ces cas, l'erreur reste très proche de la valeur précédente.
+   
+   Pas d'impact doc, car la formule donnée dans la doc est la bonne.
+   
+   Report en 10 à faire.
+RESU_FAUX_VERSION_EXPLOITATION    :  NON
+RESU_FAUX_VERSION_DEVELOPPEMENT   :  NON
+RESTITUTION_VERSION_EXPLOITATION  :  OUI
+RESTITUTION_VERSION_DEVELOPPEMENT :  OUI
+IMPACT_DOCUMENTAIRE : 
+VALIDATION
+    Tests persos et de la fiche
+DEJA RESTITUE DANS : 11.3.21
+NB_JOURS_TRAV  : 3.0
+--------------------------------------------------------------------------------
+
+
+
+========================================================================
+=== Recapitulation des operations demandees pour toutes les restitutions
+========================================================================
+
+
+    TYPE Action    unite                      user      Auteur         nblg  ajout suppr.
+
+       C MODIF supervis/spec_osci            macocco K.MACOCCO          174      9      6
+ CASTEST AJOUT zzzz342a                      macocco K.MACOCCO          596    596      0
+ CASTEST AJOUT zzzz342b                      macocco K.MACOCCO          507    507      0
+ CASTEST AJOUT zzzz342c                      macocco K.MACOCCO          599    599      0
+ CASTEST MODIF fdlv112a                      macocco K.MACOCCO          304      5      4
+ CASTEST MODIF miss01a                       macocco K.MACOCCO          201      2      2
+ CASTEST MODIF miss03a                       macocco K.MACOCCO          260      2      2
+ CASTEST MODIF miss04b                       macocco K.MACOCCO          475     14     14
+ CASTEST MODIF miss05a                       macocco K.MACOCCO          762     21     20
+ CASTEST MODIF sdls118b                      macocco K.MACOCCO          477      6      6
+ CASTEST MODIF sdns01b                       macocco K.MACOCCO          374     12     12
+ CASTEST MODIF ssns106i                      macocco K.MACOCCO          983      4      2
+ CASTEST MODIF ssnv187a                      macocco K.MACOCCO          254      4      4
+ CASTEST MODIF ssnv189a                      macocco K.MACOCCO          126      4     13
+ CASTEST MODIF ssnv189b                      macocco K.MACOCCO          126      3     12
+ CASTEST MODIF ssnv189c                      macocco K.MACOCCO          135      2     12
+ CASTEST MODIF zzzz100a                      macocco K.MACOCCO         2035      6      5
+ CASTEST MODIF zzzz100d                      macocco K.MACOCCO          433      5      5
+ CASTEST MODIF zzzz102a                      macocco K.MACOCCO         1545      8      8
+ FORTRAN MODIF algorith/chrpel               macocco K.MACOCCO          970      5      2
+ FORTRAN MODIF algorith/chrpno               macocco K.MACOCCO          625      6      3
+ FORTRAN MODIF algorith/hypela               macocco K.MACOCCO          212     57     68
+ FORTRAN MODIF algorith/hypinc               macocco K.MACOCCO          225     67     59
+ FORTRAN MODIF algorith/hypmat               macocco K.MACOCCO          116      2      5
+ FORTRAN MODIF algorith/lc0019               macocco K.MACOCCO           38      6      5
+ FORTRAN MODIF algorith/nmdepl               macocco K.MACOCCO          235      5      4
+ FORTRAN MODIF algorith/nmpild               macocco K.MACOCCO          145      4     29
+ FORTRAN MODIF algorith/nmrelp               macocco K.MACOCCO          379      3      2
+ FORTRAN MODIF algorith/op0152               macocco K.MACOCCO          435      2      3
+ FORTRAN MODIF elements/dmat3d               macocco K.MACOCCO          284      4      9
+ FORTRAN MODIF elements/dmatcp               macocco K.MACOCCO          202      4      5
+ FORTRAN MODIF elements/dmatdp               macocco K.MACOCCO          273      4      4
+  PYTHON MODIF Messages/algorith2            macocco K.MACOCCO          303      7      2
+
+
+        nb unites  nb lignes  ajouts  suppr.  difference
+ AJOUT :    3        1702      1702             +1702
+ MODIF :   30       13106       283     327       -44
+ SUPPR :    0           0                 0        +0
+ DEPLA :    0           0 
+         ----      ------     ------  ------   ------
+ TOTAL :   33       14808      1985     327     +1658 
