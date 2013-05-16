@@ -2,10 +2,10 @@
      &              INSTAP,EPSM,DEPS,SIGM,VIM,OPTION,ANGMAS,SIGP,VIP,
      &                  TAMPON,TYPMOD,ICOMP,NVI,DSIDEP,CODRET)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ALGORITH  DATE 07/07/2009   AUTEUR PROIX J-M.PROIX 
+C MODIF ALGORITH  DATE 14/05/2013   AUTEUR MACOCCO K.MACOCCO 
 C TOLE CRP_21
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2008  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
@@ -31,7 +31,8 @@ C ======================================================================
       CHARACTER*16    COMPOR(*),OPTION
       CHARACTER*8     TYPMOD(*)
       CHARACTER*(*)   FAMI
-              CALL HYPINC(FAMI,KPG,KSP,'-',NDIM,TYPMOD,IMATE,COMPOR,
-     &                    CRIT,OPTION,EPSM,DEPS,SIGM,
-     &                    SIGP,DSIDEP,CODRET)
+C ======================================================================
+      CALL HYPINC(FAMI  ,KPG   ,KSP   ,'-'   ,NDIM  ,
+     &            TYPMOD,IMATE ,COMPOR,CRIT  ,EPSM  ,
+     &            DEPS  ,SIGM  ,SIGP  ,DSIDEP,CODRET)
       END

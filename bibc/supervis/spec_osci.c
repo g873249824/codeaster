@@ -1,7 +1,7 @@
 /*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* MODIF spec_osci supervis  DATE 19/05/2011   AUTEUR LEFEBVRE J-P.LEFEBVRE */
+/* MODIF spec_osci supervis  DATE 14/05/2013   AUTEUR MACOCCO K.MACOCCO */
 /* ================================================================== */
-/* COPYRIGHT (C) 1991 - 2011  EDF R&D              WWW.CODE-ASTER.ORG */
+/* COPYRIGHT (C) 1991 - 2013  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
 /* THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR      */
 /* MODIFY IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS     */
@@ -31,7 +31,8 @@ void calc_SPEC_OSCI( int nbpts, double* vale_x, double* vale_y,
    double   pas, DELTAT, eps, ecart;
    double   XSI, XSI2, W, W2, UNSW2, WDT, COSWDT, SINWDT, A, B, C, D, E, F;
    double   EXPXWT, EXPSA, D1, D2, D3, V2, V3, F1, F2, FSDT, DEUXPI;
-   
+   double   WDDT;
+
    eps = 1.e-6;
 
 #ifdef __DEBUG__
@@ -71,9 +72,10 @@ void calc_SPEC_OSCI( int nbpts, double* vale_x, double* vale_y,
             W2 = W * W;
             UNSW2 = 1. / W2;
             WDT = W * DELTAT;
-            COSWDT = cos( WDT );
-            SINWDT = sin( WDT );
             A = W * sqrt( 1. - XSI2 );
+            WDDT = A * DELTAT;
+            COSWDT = cos( WDDT );
+            SINWDT = sin( WDDT );
             B = 2. * XSI / W;
             C = ( ( 2. * XSI2 ) - 1. ) / A;
             D = XSI * W;
@@ -134,9 +136,10 @@ void calc_SPEC_OSCI( int nbpts, double* vale_x, double* vale_y,
                DELTAT = vale_x[i] - vale_x[i-1];
                F2 = vale_y[i];
                WDT = W * DELTAT;
-               COSWDT = cos( WDT );
-               SINWDT = sin( WDT );
                A = W * sqrt( 1. - XSI2 );
+               WDDT = A * DELTAT;
+               COSWDT = cos( WDDT );
+               SINWDT = sin( WDDT );
                B = 2. * XSI / W;
                C = ( ( 2. * XSI2 ) - 1. ) / A;
                D = XSI * W;

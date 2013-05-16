@@ -1,9 +1,9 @@
       SUBROUTINE DMAT3D(FAMI,MATER,INSTAN,POUM,IGAU,ISGAU,REPERE,
      &                  XYZGAU,D)
 C            CONFIGURATION MANAGEMENT OF EDF VERSION
-C MODIF ELEMENTS  DATE 27/09/2010   AUTEUR PROIX J-M.PROIX 
+C MODIF ELEMENTS  DATE 14/05/2013   AUTEUR MACOCCO K.MACOCCO 
 C ======================================================================
-C COPYRIGHT (C) 1991 - 2001  EDF R&D                  WWW.CODE-ASTER.ORG
+C COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 C THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 C IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 C THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -73,7 +73,6 @@ C      ---------------
       CALL MATINI(6,6,ZERO,DORTH)
       CALL MATINI(6,6,ZERO,WORK)
 
-
 C ---- RECUPERATION DU TYPE DU MATERIAU DANS PHENOM
 C      --------------------------------------------
       CALL RCCOMA(MATER,'ELAS',PHENOM,CODRET)
@@ -121,12 +120,10 @@ C ---- CAS ELAS_HYPER
 C      ------------
       ELSEIF (PHENOM.EQ.'ELAS_HYPER') THEN
 
-
          CALL HYPMAT(FAMI,IGAU,ISGAU,POUM,MATER,C10,C01,C20,K)
 
-         E  = 6.D0*(C10+C01)
-         NU = 0.5D0-E/K/6.D0
-
+        NU =(3.D0*K-4.0D0*(C10+C01))/(6.D0*K+4.0D0*(C10+C01))
+        E  = 4.D0*(C10+C01)*(UN+NU)
 
         COEF = UN/ ((UN+NU)* (UN-DEUX*NU))
         COEF1 = E* (UN-NU)*COEF
@@ -148,8 +145,6 @@ C      ------------
         D(4,4) = 0.5D0*COEF3
         D(5,5) = 0.5D0*COEF3
         D(6,6) = 0.5D0*COEF3
-
-         
 
 C      --------------
 C ---- CAS ORTHOTROPE

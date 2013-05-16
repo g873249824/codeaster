@@ -1,8 +1,8 @@
-#@ MODIF algorith2 Messages  DATE 07/08/2012   AUTEUR CHANSARD F.CHANSARD 
+#@ MODIF algorith2 Messages  DATE 14/05/2013   AUTEUR MACOCCO K.MACOCCO 
 # -*- coding: iso-8859-1 -*-
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -216,6 +216,11 @@ Erreur utilisateur dans la commande CREA_RESU / AFFE :
 50 : _("""
  CMP non traitée
 """),
+
+51 : _("""
+Le repère utilisateur défini par VECT_X et VECT_Y ne peut être utilisé qu'en 3D.
+"""),
+
 
 54 : _("""
   increment de déformation cumulée (dp) = - %(k1)s
