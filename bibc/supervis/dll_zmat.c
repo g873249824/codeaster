@@ -157,4 +157,3 @@ void DEF0(ZASWRI,zaswri)
     (*f_zasini)();
 #endif
 }
-

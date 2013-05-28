@@ -106,8 +106,6 @@ OPTF90_O       | compil  | -     | %(FCFLAGS)s
 #
 # for as_run --messages, --get, --show..., and astout
 SRCFOR         | src     | -     | %(SRC)s/bibfor
-SRCF90         | src     | -     | %(SRC)s/bibf90
-SRCFERM        | src     | -     | %(SRC)s/fermetur
 SRCC           | src     | -     | %(SRC)s/bibc
 SRCPY          | src     | -     | %(PYTHONARCHDIR)s
 SRCCATA        | src     | -     | %(SRC)s/catalo

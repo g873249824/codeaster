@@ -148,4 +148,3 @@ void DEFUMATWRAP(UMATWP, umatwp,
     abort();
 #endif
 }
-
