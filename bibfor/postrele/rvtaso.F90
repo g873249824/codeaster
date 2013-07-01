@@ -50,13 +50,13 @@ subroutine rvtaso(releve, nomcmp, nbcmp, nbco, nbsp,&
 ! IN  : NBSP   : NOMBRE DE SOUS-PT PAR POINT
 ! IN  : NOMTAB : INTITULE DE LA TABLE
 !     ------------------------------------------------------------------
-    integer :: nbpar, ilign, ls, lc, isp, icp, ico, n1, nc, adrval, adracc, jacc
-    integer :: ik, ir, ii, valei(12), nbacc, nbpr, jaces, iac, iadr
+    integer :: nbpar, ilign, ls, lc, isp, icp, ico, n1, nc, adrval, adracc, jacc, ik, ir, ii
+    integer :: valei(12), nbacc, nbpr, jaces, iac, iadr
     real(kind=8) :: valer(10)
     complex(kind=8) :: c16b
     logical :: exist
     character(len=3) :: typpar
-    character(len=8) :: k8b, acces, nomres, ctype, nopase, courbe
+    character(len=8) :: k8b, acces, nomres, ctype, courbe
     character(len=16) :: intitu
     character(len=24) :: nomval, nomacc, nnores, nopara(18), nomjv
     character(len=80) :: valek(11)
@@ -65,10 +65,8 @@ subroutine rvtaso(releve, nomcmp, nbcmp, nbco, nbsp,&
 !
     call jemarq()
 !
-    call getvtx('ACTION', 'INTITULE', iocc, iarg, 1,&
-                intitu, n1)
-    call getvid('ACTION', 'CHEMIN', iocc, iarg, 1,&
-                courbe, nc)
+    call getvtx('ACTION', 'INTITULE', iocc, iarg, 1, intitu, n1)
+    call getvid('ACTION', 'CHEMIN', iocc, iarg, 1, courbe, nc)
 !
     nomval = ncheff//'.VALACCE'
     nomacc = ncheff//'.TYPACCE'
@@ -106,16 +104,10 @@ subroutine rvtaso(releve, nomcmp, nbcmp, nbco, nbsp,&
     else
         call jeveuo(nnores, 'L', jacc)
         nomres = zk16(jacc)(1:8)
-        nopase = zk16(jacc+3)(1:8)
-        if (nopase .eq. '        ') then
-            k8b = nomres
-        else
-            k8b = zk16(jacc+2)(1:8)
-        endif
         nbpar = nbpar + 1
         nopara(nbpar) = 'RESU'
         ik = ik + 1
-        valek(ik) = k8b
+        valek(ik) = nomres
         nbpar = nbpar + 1
         nopara(nbpar) = 'NOM_CHAM'
         ik = ik + 1

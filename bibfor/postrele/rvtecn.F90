@@ -64,7 +64,7 @@ subroutine rvtecn(releve, absc, itcopt, itsppt, coor,&
     integer :: nc, nbacc, nbpr, jaces, iac, iadr
     logical :: exist
     character(len=3) :: typpar
-    character(len=8) :: k8b, acces, nomres, ctype, nopase, courbe
+    character(len=8) :: k8b, acces, nomres, ctype, courbe
     character(len=16) :: intitu
     character(len=24) :: nomval, nomacc, nnores, nomjv
     complex(kind=8) :: c16b
@@ -80,15 +80,12 @@ subroutine rvtecn(releve, absc, itcopt, itsppt, coor,&
     if (nbvari .ne. 0) then
         call rvtec2(releve, absc, itcopt, itsppt, coor,&
                     nomnoe, nbcmp, nbpoin, docu, nomtab,&
-                    iocc, xnovar, ncheff, i1, ioc,&
-                    isd)
+                    iocc, xnovar, ncheff, i1, ioc, isd)
         goto 9999
     endif
 !
-    call getvtx('ACTION', 'INTITULE', iocc, iarg, 1,&
-                intitu, n1)
-    call getvid('ACTION', 'CHEMIN', iocc, iarg, 1,&
-                courbe, nc)
+    call getvtx('ACTION', 'INTITULE', iocc, iarg, 1, intitu, n1)
+    call getvid('ACTION', 'CHEMIN', iocc, iarg, 1, courbe, nc)
 !
     nomval = ncheff//'.VALACCE'
     nomacc = ncheff//'.TYPACCE'
@@ -131,16 +128,10 @@ subroutine rvtecn(releve, absc, itcopt, itsppt, coor,&
     else
         call jeveuo(nnores, 'L', jacc)
         nomres = zk16(jacc)(1:8)
-        nopase = zk16(jacc+3)(1:8)
-        if (nopase .eq. '        ') then
-            k8b = nomres
-        else
-            k8b = zk16(jacc+2)(1:8)
-        endif
         nbpar = nbpar + 1
         zk24(jvalk-1+nbpar) = 'RESU'
         ik = ik + 1
-        valek(ik) = k8b
+        valek(ik) = nomres
         nbpar = nbpar + 1
         zk24(jvalk-1+nbpar) = 'NOM_CHAM'
         ik = ik + 1
