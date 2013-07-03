@@ -19,9 +19,9 @@
 # ======================================================================
 #     IDENTIFICATION DE LA VERSION
 #----------------------------------------------------------------------
-version = "11.3.22"
-date = "15/05/2013"
-exploit = False
+version = "11.4.1"
+date = "03/07/2013"
+exploit = True
 
 parentid, branch, from_branch = ['?'] * 3
 changes, uncommitted = 0, None
