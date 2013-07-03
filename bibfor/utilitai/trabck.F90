@@ -1,6 +1,4 @@
 subroutine trabck(cmess, iexit)
-! aslint: disable=W0104
-! Dummy argument si _USE_INTEL_IFORT n'est pas defini
 ! ----------------------------------------------------------------------
 ! IMPRIME LA REMONTEE DES APPELS
 !
@@ -8,7 +6,6 @@ subroutine trabck(cmess, iexit)
 ! IN  IEXIT  : CONDITION DE SORTIE DE LA ROUTINE DE TRACEBACK
 !              AVEC LE COMPILO INTEL <0 ON REDONNE LA MAIN
 ! ----------------------------------------------------------------------
-#ifdef _USE_INTEL_IFORT
 !
 ! COPYRIGHT (C) 1991 - 2013  EDF R&D                WWW.CODE-ASTER.ORG
 !
@@ -26,15 +23,22 @@ subroutine trabck(cmess, iexit)
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 ! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 !
+! aslint: disable=W1304
+#include "asterf_config.h"
+#if _USE_INTEL_IFORT && HAVE_TRACEBACKQQ == 1
     use ifcore
 #endif
     implicit none
     character(len=*) :: cmess
     integer(kind=4) :: iexit
-#ifdef _USE_INTEL_IFORT
+!   Dummy argument si HAVE_TRACEBACKQQ n'est pas defini
+    integer :: dummy
+#if _USE_INTEL_IFORT && HAVE_TRACEBACKQQ == 1
     call TRACEBACKQQ(string=cmess, USER_EXIT_CODE=iexit)
+#elif HAVE_BACKTRACE == 1
+    call backtrace
 #else
-!     ON NE PEUT PAS APPELER U2MESS (RECURSIVITE)
+!   ON NE PEUT PAS APPELER U2MESS (RECURSIVITE)
     write(6,*) 'Traceback is not provided by the compiler'
 #endif
 !
