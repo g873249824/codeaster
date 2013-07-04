@@ -27,7 +27,7 @@
  * 
  *  source: http://docs.python.org/c-api/intro.html
  */
-#include "Python.h"
+#include "aster.h"
 
 #ifdef _USE_MPI
 #   include <stdio.h>
