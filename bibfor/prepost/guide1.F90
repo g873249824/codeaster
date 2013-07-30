@@ -1,8 +1,8 @@
 subroutine guide1(rcarte, d, thet, rayo)
     implicit none
-    include 'asterc/r8dgrd.h'
-    include 'asterc/r8pi.h'
-    include 'asterfort/trigom.h'
+#include "asterc/r8dgrd.h"
+#include "asterc/r8pi.h"
+#include "asterfort/trigom.h"
     real(kind=8) :: theta, pas, alpha1, alpha2, rcarte, d, pi, rho, rad
     real(kind=8) :: thet(801), rayo(801)
 !-----------------------------------------------------------------------

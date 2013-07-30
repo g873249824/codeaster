@@ -2,43 +2,43 @@ subroutine peweib(resu, modele, mate, cara, chmat,&
                   nchar, lchar, nh, nbocc, iresu,&
                   nomcmd)
     implicit none
-    include 'jeveux.h'
+#include "jeveux.h"
 !
-    include 'asterc/gettco.h'
-    include 'asterc/getvid.h'
-    include 'asterc/getvr8.h'
-    include 'asterc/getvtx.h'
-    include 'asterfort/calcul.h'
-    include 'asterfort/chmrck.h'
-    include 'asterfort/chpve2.h'
-    include 'asterfort/copisd.h'
-    include 'asterfort/detrsd.h'
-    include 'asterfort/exlim3.h'
-    include 'asterfort/getvem.h'
-    include 'asterfort/infniv.h'
-    include 'asterfort/jedema.h'
-    include 'asterfort/jedetr.h'
-    include 'asterfort/jeexin.h'
-    include 'asterfort/jelira.h'
-    include 'asterfort/jemarq.h'
-    include 'asterfort/jenonu.h'
-    include 'asterfort/jerecu.h'
-    include 'asterfort/jeveuo.h'
-    include 'asterfort/jexnom.h'
-    include 'asterfort/mecact.h'
-    include 'asterfort/mecham.h'
-    include 'asterfort/mesomm.h'
-    include 'asterfort/rsadpa.h'
-    include 'asterfort/rsexch.h'
-    include 'asterfort/rsutnu.h'
-    include 'asterfort/tbajli.h'
-    include 'asterfort/tbajpa.h'
-    include 'asterfort/tbcrsd.h'
-    include 'asterfort/u2mesg.h'
-    include 'asterfort/u2mesk.h'
-    include 'asterfort/u2mess.h'
-    include 'asterfort/vrcins.h'
-    include 'asterfort/wkvect.h'
+#include "asterc/gettco.h"
+#include "asterc/getvid.h"
+#include "asterc/getvr8.h"
+#include "asterc/getvtx.h"
+#include "asterfort/calcul.h"
+#include "asterfort/chmrck.h"
+#include "asterfort/chpve2.h"
+#include "asterfort/copisd.h"
+#include "asterfort/detrsd.h"
+#include "asterfort/exlim3.h"
+#include "asterfort/getvem.h"
+#include "asterfort/infniv.h"
+#include "asterfort/jedema.h"
+#include "asterfort/jedetr.h"
+#include "asterfort/jeexin.h"
+#include "asterfort/jelira.h"
+#include "asterfort/jemarq.h"
+#include "asterfort/jenonu.h"
+#include "asterfort/jerecu.h"
+#include "asterfort/jeveuo.h"
+#include "asterfort/jexnom.h"
+#include "asterfort/mecact.h"
+#include "asterfort/mecham.h"
+#include "asterfort/mesomm.h"
+#include "asterfort/rsadpa.h"
+#include "asterfort/rsexch.h"
+#include "asterfort/rsutnu.h"
+#include "asterfort/tbajli.h"
+#include "asterfort/tbajpa.h"
+#include "asterfort/tbcrsd.h"
+#include "asterfort/u2mesg.h"
+#include "asterfort/u2mesk.h"
+#include "asterfort/u2mess.h"
+#include "asterfort/vrcins.h"
+#include "asterfort/wkvect.h"
     integer :: iresu, nchar, nh, nbocc
     character(len=*) :: resu, modele, mate, cara, nomcmd, lchar(*)
 !     ------------------------------------------------------------------

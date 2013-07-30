@@ -30,14 +30,14 @@ subroutine imbamo(nomres, ifm)
 !
 !
 !
-    include 'jeveux.h'
+#include "jeveux.h"
 !
 !-----------------------------------------------------------------------
-    include 'asterfort/dismoi.h'
-    include 'asterfort/jedema.h'
-    include 'asterfort/jemarq.h'
-    include 'asterfort/jeveuo.h'
-    include 'asterfort/rsadpa.h'
+#include "asterfort/dismoi.h"
+#include "asterfort/jedema.h"
+#include "asterfort/jemarq.h"
+#include "asterfort/jeveuo.h"
+#include "asterfort/rsadpa.h"
     integer :: i, ibid, iret, nbdef, nbmod, nbpabm, nbtot
 !
     real(kind=8) :: freq, genek, genem

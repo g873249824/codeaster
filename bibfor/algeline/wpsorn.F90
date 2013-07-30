@@ -102,16 +102,16 @@ subroutine wpsorn(appr, lmasse, lamor, lmatra, nbeq,&
 !
 !
 ! DECLARATION PARAMETRES D'APPELS
-    include 'jeveux.h'
-    include 'asterfort/dnaupd.h'
-    include 'asterfort/dneupd.h'
-    include 'asterfort/jedema.h'
-    include 'asterfort/jedetr.h'
-    include 'asterfort/jemarq.h'
-    include 'asterfort/u2mesg.h'
-    include 'asterfort/u2mess.h'
-    include 'asterfort/wkvect.h'
-    include 'asterfort/wp2ay1.h'
+#include "jeveux.h"
+#include "asterfort/dnaupd.h"
+#include "asterfort/dneupd.h"
+#include "asterfort/jedema.h"
+#include "asterfort/jedetr.h"
+#include "asterfort/jemarq.h"
+#include "asterfort/u2mesg.h"
+#include "asterfort/u2mess.h"
+#include "asterfort/wkvect.h"
+#include "asterfort/wp2ay1.h"
     character(len=1) :: appr
     integer :: lmasse, lmatra, nbeq, nbvect, nfreq, lonwl, ddlexc(*), ddllag(*)
     integer :: neqact, maxitr, ifm, niv, priram(8), nconv, lamor

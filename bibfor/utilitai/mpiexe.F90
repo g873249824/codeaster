@@ -57,13 +57,13 @@ subroutine mpiexe(optmpi, mpico8, mpicou, intcou, intkey)
 !
     implicit none
 ! DECLARATION PARAMETRES D'APPELS
-    include 'jeveux.h'
-    include 'asterfort/assert.h'
-    include 'asterfort/infniv.h'
-    include 'asterfort/jeexin.h'
-    include 'asterfort/jeveuo.h'
-    include 'asterfort/mpierr.h'
-    include 'asterfort/wkvect.h'
+#include "jeveux.h"
+#include "asterfort/assert.h"
+#include "asterfort/infniv.h"
+#include "asterfort/jeexin.h"
+#include "asterfort/jeveuo.h"
+#include "asterfort/mpierr.h"
+#include "asterfort/wkvect.h"
     integer :: mpico8, mpicou, intcou, intkey
     character(len=*) :: optmpi
 !
@@ -77,7 +77,7 @@ subroutine mpiexe(optmpi, mpico8, mpicou, intcou, intkey)
 !
 #ifdef _USE_MPI
 !
-    include       'mpif.h'
+#include "mpif.h"
 !     FLAG POUR DEBUG
     dbg=.false.
     if (dbg) call infniv(ifm, niv)

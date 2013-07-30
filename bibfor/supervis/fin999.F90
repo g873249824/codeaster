@@ -25,11 +25,11 @@ subroutine fin999()
 !        * LES COMMUNICATEURS MPI
 !
 !-----------------------------------------------------------------------
-    include 'asterc/chkmsg.h'
-    include 'asterc/dllcls.h'
-    include 'asterfort/apetsc.h'
-    include 'asterfort/mpialr.h'
-    include 'asterfort/mpiexe.h'
+#include "asterc/chkmsg.h"
+#include "asterc/dllcls.h"
+#include "asterfort/apetsc.h"
+#include "asterfort/mpialr.h"
+#include "asterfort/mpiexe.h"
     integer :: iret, ichk, ibid
     real(kind=8) :: r8b
 !-----------------------------------------------------------------------
