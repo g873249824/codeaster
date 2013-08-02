@@ -1,6 +1,6 @@
 # coding=utf-8
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
-# person_in_charge: J-pierre.lefebvre at edf.fr
+# person_in_charge: mathieu.courtois@edf.fr
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -19,8 +19,8 @@
 # ======================================================================
 #     IDENTIFICATION DE LA VERSION
 #----------------------------------------------------------------------
-version = "11.4.1"
-date = "03/07/2013"
+version = "11.4.2"
+date = "02/08/2013"
 exploit = True
 
 parentid, branch, from_branch = ['?'] * 3
