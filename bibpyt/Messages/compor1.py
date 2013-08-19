@@ -414,4 +414,10 @@ DELTA2 = %(r1)f doit toujours rester entre 0 et 1.
 82 : _(u"""
 La température est obligatoire pour le comportement cristallin %(k1)s.
 """),
+
+84 : _(u"""
+Comportement  %(k1)s : le paramètre %(k2)s devrait rester positif. Il vaut actuellement <%(r1).15E>.
+Conseils: modifiez sa valeur dans CIN1_CHAB / CIN2_CHAB.
+"""),
+
 }
