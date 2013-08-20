@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -26,6 +25,7 @@ import traceback
 import cPickle as pickle
 import re
 from math import sqrt, pi, atan2, tan, log, exp
+from glob import glob
 
 # Modules Eficas
 import Accas
@@ -87,14 +87,24 @@ def commun_DEBUT_POURSUITE(jdc, PAR_LOT, IMPR_MACRO, CODE, DEBUG, IGNORE_ALARM, 
 
 
 def DEBUT(self, PAR_LOT, IMPR_MACRO, CODE, DEBUG, IGNORE_ALARM, LANG, INFO, **args):
-   """
+    """
        Fonction sdprod de la macro DEBUT
-   """
-   # La commande DEBUT ne peut exister qu'au niveau jdc
-   if self.jdc is not self.parent :
-      raise Accas.AsException("La commande DEBUT ne peut exister qu'au niveau jdc")
-   commun_DEBUT_POURSUITE(self.jdc, PAR_LOT, IMPR_MACRO, CODE, DEBUG, IGNORE_ALARM, LANG, INFO)
+    """
+    # La commande DEBUT ne peut exister qu'au niveau jdc
+    if self.jdc is not self.parent :
+        raise Accas.AsException("La commande DEBUT ne peut exister qu'au niveau jdc")
+    commun_DEBUT_POURSUITE(self.jdc, PAR_LOT, IMPR_MACRO, CODE, DEBUG, IGNORE_ALARM, LANG, INFO)
 
+    suppr = False
+    for fname in glob('pick.*') + glob('glob.*'):
+        try:
+            UTMESS('I', 'SUPERVIS_4', valk=fname)
+            os.remove(fname)
+            suppr = True
+        except OSError:
+            UTMESS('A', 'SUPERVIS_5', valk=fname)
+    if suppr:
+        UTMESS('I', 'SUPERVIS_6')
 
 def build_debut(self,**args):
    """
@@ -125,6 +135,7 @@ def POURSUITE(self, PAR_LOT, IMPR_MACRO, CODE, DEBUG, IGNORE_ALARM, LANG, INFO, 
       raise Accas.AsException("La commande POURSUITE ne peut exister qu'au niveau jdc")
 
    commun_DEBUT_POURSUITE(self.jdc, PAR_LOT, IMPR_MACRO, CODE, DEBUG, IGNORE_ALARM, LANG, INFO)
+   self.jdc.set_poursuite(True)
 
    if self.codex:
      base = 'glob.1'

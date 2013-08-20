@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -36,6 +35,13 @@ cata_msg={
 3: _(u"""
   Erreur programmeur : %(k1)s non appariés.
 """),
+
+4 : _(u"""Suppression du fichier: %(k1)s"""),
+
+5 : _(u"""Échec lors de la suppression du fichier: %(k1)s"""),
+
+6 : _(u"""
+Ces fichiers n'ont pas de sens lors d'un nouveau calcul (DEBUT)."""),
 
 8: _(u"""
   Un nom de concept intermédiaire doit commencer par '.' ou '_' et non :  %(k1)s
