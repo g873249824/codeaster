@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -367,6 +366,9 @@ cata_msg={
         pour ne plus avoir ce message.
      -  Si vous souhaitiez définir une fissure, il doit y avoir une erreur lors de la définition
         de la level-set tangente Vérifier la définition des level-sets.
+     -  S'il s'agit d'un calcul de propagation, cela signifie que la fissure débouche et traverse
+        entièrement la structure (risque de pivot nul dans le prochain calcul mécanique pour cause
+        de modes de corps rigides non bloqués).
 """),
 
 59: _(u"""
