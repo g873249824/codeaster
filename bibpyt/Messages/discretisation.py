@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -88,6 +87,12 @@ Conseils :
 42 : _(u"""
   Le solveur <%(k1)s> n'est pas un solveur itératif.
   La réactualisation du préconditionneur n'est donc pas possible.
+"""),
+
+43 : _(u"""
+  Vous n'avez pas activé la détection de singularité (NPREC est négatif).
+  La découpe du pas de temps en cas d'erreur sur matrice singulière (pivot nul) ne sera
+donc pas possible.
 """),
 
 86 : _(u"""
