@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -119,7 +118,7 @@ dernière au format HDF (mot clé FORMAT_HDF="OUI" dans la commande FIN).
         'flags' : 'CENTER | ALL_UNIT',
 },
 
-18 : {  'message' : _(u"""Librairie MUMPS : installée"""),
+18 : {  'message' : _(u"""Version de la librairie MUMPS : %(k1)s"""),
         'flags' : 'CENTER | ALL_UNIT',
 },
 
