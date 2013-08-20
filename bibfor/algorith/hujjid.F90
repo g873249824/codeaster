@@ -96,12 +96,12 @@ subroutine hujjid(mod, mater, indi, deps, prox,&
     logical :: debug, prox(4), proxc(4), dila
 ! =====================================================================
     parameter   ( d12    = 0.5d0  )
-    parameter   ( d13    = 0.333333333334D0  )
+    parameter   ( d13    = 0.333333333334d0  )
     parameter   ( un     = 1.d0   )
     parameter   ( zero   = 0.d0   )
     parameter   ( deux   = 2.d0   )
     parameter   ( tole1   = 1.d-7 )
-    parameter   ( degr = 0.0174532925199D0 )
+    parameter   ( degr = 0.0174532925199d0 )
 !
 ! =====================================================================
     common /tdim/   ndt, ndi
@@ -195,7 +195,7 @@ subroutine hujjid(mod, mater, indi, deps, prox,&
         else if (indi(k) .eq. 4) then
 !
             ksi(k) = un
-            p(k) = (yf(1)+yf(2)+yf(3))*d13
+            p(k) = i1f
 !
         else if ((indi(k) .lt. 8) .and. (indi(k) .gt. 4)) then
 !
