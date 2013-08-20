@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -55,7 +54,9 @@ class Language(Singleton):
         from E_Core import get_version_name
         try:
             shortname = get_version_name()
-            if shortname in ('?', 'default'):
+            if shortname.startswith('stable'):
+                shortname = 'stable'
+            elif shortname in ('?', 'default'):
                 shortname = 'unstable'
         except (ImportError, AttributeError):
             shortname = 'stable'
