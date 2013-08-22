@@ -550,8 +550,7 @@ subroutine dxglrc(nomte, opt, compor, xyzl, ul,&
                         r8bid, codret)
         else
             valk = compor(1)
-            call u2mesg('F', 'ELEMENTS4_79', 1, valk, 0,&
-                        0, 0, 0.d0)
+            call u2mesg('F', 'ELEMENTS4_79', 1, valk, 0,0, 0, 0.d0)
         endif
 !
         if (.not. lrgm) then
