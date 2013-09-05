@@ -1,0 +1,131 @@
+# TITRE GUIDE D'ONDE INCIDENTE A SORTIE ANECHOIQUE EN U,P,PHI-CAS AXIS
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+#
+
+#  GUIDE D'ONDE INCIDENTE A SORTIE ANECHOIQUE
+
+#           EN U,P,PHI - CAS AXIS
+
+#           CAS TEST AHLV101C
+
+#
+
+DEBUT(CODE=_F( NOM = 'AHLV101C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+F=500.
+
+# CREA_GROUP_COUL juste pour tester la fonctionnalite pas utile ici
+PRE_IDEAS(CREA_GROUP_COUL='OUI')
+
+MAIL=LIRE_MAILLAGE( )
+
+AIR=DEFI_MATERIAU( FLUIDE=_F( RHO = 1.3, CELE_R = 343.))
+
+CHAMPMAT=AFFE_MATERIAU(  MAILLAGE=MAIL,
+                                 AFFE=_F( TOUT = 'OUI',  MATER = AIR) )
+
+GUIDE=AFFE_MODELE(  MAILLAGE=MAIL,     VERIF='MAILLE',
+                         AFFE=_F( TOUT = 'OUI', MODELISATION = 'AXIS_FLUIDE',
+                                     PHENOMENE = 'MECANIQUE') )
+
+#
+
+CHARMECA=AFFE_CHAR_MECA(      MODELE=GUIDE,
+                 ONDE_FLUI=_F( GROUP_MA = 'ENTREE', PRES = 1.))
+
+#
+
+IMPEMECA=AFFE_CHAR_MECA(      MODELE=GUIDE,
+                  IMPE_FACE=_F( GROUP_MA = 'SORTIE', IMPE = 445.9))
+
+#
+
+ASSEMBLAGE(
+                      MODELE=GUIDE,         CHARGE=CHARMECA,
+                      CHAM_MATER=CHAMPMAT,
+                      NUME_DDL=CO("NUM"),MATR_ASSE=(
+                      _F(  MATRICE = CO("MATASK"), OPTION = 'RIGI_MECA'),
+                                _F(  MATRICE = CO("MATASM"), OPTION = 'MASS_MECA'),
+                                _F(  MATRICE = CO("MATASI1"), OPTION = 'ONDE_FLUI')),
+                      VECT_ASSE=(_F(VECTEUR=CO("VECTASS"),OPTION='CHAR_MECA')),
+                   )
+
+ASSEMBLAGE(
+                      MODELE=GUIDE,         CHARGE=IMPEMECA,
+                      CHAM_MATER=CHAMPMAT,
+                      NUME_DDL=NUM,
+                      MATR_ASSE=_F(  MATRICE = CO("MATASI2"), OPTION = 'IMPE_MECA')
+                   )
+
+#
+
+MATASI=COMB_MATR_ASSE( COMB_R=(_F( MATR_ASSE = MATASI1, COEF_R = 1.),
+                                     _F( MATR_ASSE = MATASI2, COEF_R = 1.))
+                             )
+
+#
+
+DYNAHARM=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                             MATR_MASS=MATASM,  MATR_RIGI=MATASK,
+                             MATR_IMPE_PHI=MATASI,  NOM_CHAM='DEPL',
+                             FREQ=F,
+                             EXCIT=_F( VECT_ASSE = VECTASS,  COEF_MULT = 1.,
+                                    PUIS_PULS = 1,  PHAS_DEG = 90.))
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   VALE_REFE_C=(0.5+0j),
+                   VALE_CALC_C=0.49999652259292+1.2737649793476E-05j,
+                   PRECISION=1.E-3,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DYNAHARM,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N1',
+                   NOM_CMP='PRES',),
+                _F(NUME_ORDRE=1,
+                   VALE_REFE_C=(0.5+0j),
+                   VALE_CALC_C=0.49999652259292+1.2737649793103E-05j,
+                   PRECISION=1.E-3,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DYNAHARM,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N3',
+                   NOM_CMP='PRES',),
+                _F(NUME_ORDRE=1,
+                   VALE_REFE_C=(-0.4825-0.1313j),
+                   VALE_CALC_C=-0.48235155969704-0.13166993841987j,
+                   PRECISION=1.E-3,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DYNAHARM,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N151',
+                   NOM_CMP='PRES',),
+                _F(NUME_ORDRE=1,
+                   VALE_REFE_C=(-0.4825-0.1313j),
+                   VALE_CALC_C=-0.48235155969704-0.13166993841987j,
+                   PRECISION=1.E-3,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DYNAHARM,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N153',
+                   NOM_CMP='PRES',),
+                ),
+          )
+
+FIN()
+#

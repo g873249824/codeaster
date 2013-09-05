@@ -1,0 +1,146 @@
+# TITRE METHODE DES SOLUTIONS MANUFACTUREES : THERMIQUE 2D
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+
+DEBUT(CODE=_F(NOM='TPLP107A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+# Conductivite thermique
+Lambda=15;
+
+#================================================================================================
+#          Creation de la solution manufacturee
+#================================================================================================
+
+INCLUDE(UNITE=38)
+
+# ========================================================================================
+#          Definition du probleme EF
+# ========================================================================================
+
+#Lecture du maillage de depart au format MED
+MA=LIRE_MAILLAGE( FORMAT='MED');
+
+
+#Definition du modele
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT = 'OUI',
+                       PHENOMENE='THERMIQUE',
+                       MODELISATION='PLAN',),
+              );
+
+
+#Definition du materiau
+ACIER=DEFI_MATERIAU(THER=_F(LAMBDA=Lambda),);
+
+
+# Affectation du champ de materiau
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=ACIER,),
+                    );
+
+
+# Definition des chargements et conditions aux limites
+CLIMIT=AFFE_CHAR_THER_F(MODELE=MO,
+                        TEMP_IMPO=(_F(GROUP_MA='GAUCHE',
+                                      TEMP=TT,),
+                                   _F(GROUP_MA='BAS',
+                                      TEMP=TT,),
+                                   _F(GROUP_MA='HAUT',
+                                      TEMP=TT,),),
+                        FLUX_REP=_F(GROUP_MA='DROITE',
+                                    FLUN=NN,),
+                        SOURCE=_F(GROUP_MA='SURFACE',
+                                  SOUR=SS,),
+                       );
+
+# Resolution
+RESO=THER_LINEAIRE(MODELE=MO,
+                   CHAM_MATER=CHMAT,
+                   EXCIT=_F(CHARGE=CLIMIT,),
+                   );
+
+# ========================================================================================
+#          Creation de la solution analytique
+# ========================================================================================
+
+CHXN=CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='NOEU_GEOM_R',
+                NOM_CHAM='GEOMETRIE', MAILLAGE=MA, INFO=1);
+
+TEMP1=CREA_CHAMP(OPERATION='AFFE',
+                 TYPE_CHAM='NOEU_NEUT_F',
+                 MAILLAGE=MA,
+                 AFFE=_F( GROUP_MA='SURFACE', NOM_CMP = 'X1', VALE_F = TT),
+                );
+
+TEMP2=CREA_CHAMP(OPERATION='EVAL',
+                 TYPE_CHAM='NOEU_NEUT_R',
+                 CHAM_F=TEMP1,
+                 CHAM_PARA=CHXN);
+
+Uana=CREA_CHAMP(OPERATION='ASSE',
+                TYPE_CHAM='NOEU_TEMP_R',
+                MAILLAGE=MA,
+                ASSE=_F(GROUP_MA='SURFACE',
+                         CHAM_GD = TEMP2,
+                         NOM_CMP = 'X1',
+                         NOM_CMP_RESU = 'TEMP',),
+                );
+
+# ========================================================================================
+#          Calcul de l'erreur DIFF = Uana - Ucalc
+# ========================================================================================
+
+Ucalc = CREA_CHAMP(OPERATION='EXTR',
+                   NOM_CHAM = 'TEMP' , TYPE_CHAM = 'NOEU_TEMP_R',
+                   RESULTAT = RESO ,);
+
+
+DIFF=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='NOEU_TEMP_R',MODELE=MO,
+
+                ASSE=(_F(GROUP_MA='SURFACE', CHAM_GD = Ucalc,CUMUL='OUI',COEF_R=1.,
+                         NOM_CMP='TEMP',NOM_CMP_RESU='TEMP',),
+                      _F(GROUP_MA='SURFACE', CHAM_GD = Uana,CUMUL='OUI',COEF_R=-1.,
+                         NOM_CMP='TEMP',NOM_CMP_RESU='TEMP',),
+                      ),
+                );
+
+# ========================================================================================
+#          Verification
+# ========================================================================================
+
+TEST_RESU(CHAM_NO=_F(REFERENCE='ANALYTIQUE',
+                     PRECISION=1.E-10,
+                     TYPE_TEST='SOMM_ABS',
+                     CHAM_GD=DIFF,
+                     VALE_CALC=0.59734630435,
+                     VALE_REFE=0.59734630434863001,
+                     ),
+          )
+
+IMPR_RESU(FORMAT='MED',
+          UNITE=80,
+          RESU=(_F(CHAM_GD=DIFF,),
+                _F(CHAM_GD=Uana,),
+                _F(CHAM_GD=Ucalc,),
+               ),
+          );
+
+
+
+FIN();

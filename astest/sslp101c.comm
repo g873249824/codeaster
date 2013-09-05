@@ -1,0 +1,509 @@
+# TITRE PLAQUE FISSUREE AVEC PRESSION LEVRE FISSURE (CALCUL G,K1,K2 )
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# SSLP20C
+# PLAQUE FISSUREE EN TRACTION (MAILLAGE ALIBABA )
+# CALCUL DE L'INTEGRALE G ET DES COEFFICIENTS D'INTENSITE DE CONTRAINTES
+# K1 ET K2 AVEC PRESSION SUR LA LEVRE FISSURE
+#
+DEBUT(CODE=_F(NOM='SSLP101C', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE(FORMAT='MED',  )
+
+MO=AFFE_MODELE(  MAILLAGE=MA,
+                             AFFE=_F( TOUT = 'OUI',
+                                   PHENOMENE = 'MECANIQUE',
+                                   MODELISATION = 'C_PLAN'))
+
+MAT=DEFI_MATERIAU(ELAS=_F(  E = 200000., NU = 0.3, RHO = 0., ALPHA = 0.))
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MA,AFFE=_F(  TOUT = 'OUI',MATER = MAT))
+
+CH=AFFE_CHAR_MECA(  MODELE=MO,DDL_IMPO=(
+                            _F(  GROUP_NO = 'GRNM5', DY = 0.),
+                                     _F(  NOEUD = 'N451',  DX = 0.)),
+                            PRES_REP=_F(  GROUP_MA = 'GRMA4', PRES = 1.) )
+
+L_INST=DEFI_LIST_REEL(  DEBUT=0.0,
+               INTERVALLE=_F( JUSQU_A = 2.0, NOMBRE = 2)
+              )
+
+RESU=STAT_NON_LINE(
+                            MODELE=MO,
+                        CHAM_MATER=CHMAT,
+                             EXCIT=_F(
+                CHARGE = CH),
+                         COMP_ELAS=_F(
+                RELATION = 'ELAS'),
+                         INCREMENT=_F(
+                LIST_INST = L_INST),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+RESU=CALC_CHAMP(reuse=RESU,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=RESU)
+
+
+THETA1=CALC_THETA(      MODELE=MO,
+                        THETA_2D=_F(  NOEUD = 'N668', MODULE = 1.,
+                                 R_INF = 22.04078,
+                                 R_SUP = 30.),
+                       DIRECTION=( 1., 0., 0.,) )
+
+THETA2=CALC_THETA(     MODELE=MO,
+                       THETA_2D=_F(  NOEUD = 'N668', MODULE = 1.,
+                                  R_SUP = 22.04078,
+                                  R_INF = 15.3061094),
+                       DIRECTION=( 1., 0., 0.,))
+
+THETA3=CALC_THETA(     MODELE=MO,
+                       THETA_2D=_F(  NOEUD = 'N668', MODULE = 1.,
+                                  R_INF = 9.79591846,
+                                  R_SUP = 15.3061094),
+                       DIRECTION=( 1., 0., 0.,))
+
+THETA4=CALC_THETA(     MODELE=MO,
+                       THETA_2D=_F(  NOEUD = 'N668', MODULE = 1.,
+                                  R_SUP = 9.79591846,
+                                  R_INF = 5.510197639),
+                       DIRECTION=( 1., 0., 0.,))
+
+THETA5=CALC_THETA(     MODELE=MO,
+                       THETA_2D=_F(  NOEUD = 'N668', MODULE = 1.,
+                                  R_INF = 2.448979377,
+                                  R_SUP = 5.510197639),
+                       DIRECTION=( 1., 0., 0.,))
+
+THETA6=CALC_THETA(     MODELE=MO,
+                       THETA_2D=_F(  NOEUD = 'N668', MODULE = 1.,
+                                  R_SUP = 2.448979377,
+                                  R_INF = 0.61225116),
+                       DIRECTION=( 1., 0., 0.,))
+
+FOND=DEFI_FOND_FISS( MAILLAGE=MA,
+                     FOND_FISS=_F( NOEUD = 'N668'),
+                     SYME='OUI',
+                     LEVRE_SUP=_F(MAILLE='M306'),
+)
+
+G1=CALC_G(              RESULTAT=RESU,
+                        THETA=_F(THETA=THETA1,SYME='OUI'),)
+
+GK1=CALC_G(                  RESULTAT=RESU,
+                             THETA=_F(
+                                 R_INF = 22.04078,
+                                 R_SUP = 30.,
+                                 DIRECTION=( 1., 0., 0.,),
+                                 FOND_FISS=FOND),
+                            OPTION='CALC_K_G')
+
+G2=CALC_G(                  RESULTAT=RESU,
+                            THETA=_F(THETA=THETA2,SYME='OUI'),)
+
+GK2=CALC_G(                  RESULTAT=RESU,
+                             THETA=_F(
+                                  R_SUP = 22.04078,
+                                  R_INF = 15.3061094,
+                                  DIRECTION=( 1., 0., 0.,),
+                                  FOND_FISS=FOND),
+                             OPTION='CALC_K_G')
+
+G3=CALC_G(                  RESULTAT=RESU,
+                            THETA=_F(THETA=THETA3,SYME='OUI'),)
+
+GK3=CALC_G(                  RESULTAT=RESU,
+                             THETA=_F(
+                                  R_INF = 9.79591846,
+                                  R_SUP = 15.3061094,
+                                  DIRECTION=( 1., 0., 0.,),
+                                  FOND_FISS=FOND),
+                            OPTION='CALC_K_G')
+
+G4=CALC_G(                  RESULTAT=RESU,
+                            THETA=_F(THETA=THETA4,SYME='OUI'),)
+
+GK4=CALC_G(                  RESULTAT=RESU,
+                             THETA=_F(
+                                  R_SUP = 9.79591846,
+                                  R_INF = 5.510197639,
+                                  DIRECTION=( 1., 0., 0.,),
+                                  FOND_FISS=FOND),
+                             OPTION='CALC_K_G')
+
+G5=CALC_G(                  RESULTAT=RESU,
+                            THETA=_F(THETA=THETA5,SYME='OUI'),)
+
+GK5=CALC_G(                  RESULTAT=RESU,
+                             THETA=_F(
+                                  R_INF = 2.448979377,
+                                  R_SUP = 5.510197639,
+                                  DIRECTION=( 1., 0., 0.,),
+                                  FOND_FISS=FOND),
+                            OPTION='CALC_K_G')
+
+G6=CALC_G(                  RESULTAT=RESU,
+                            THETA=_F(THETA=THETA6,SYME='OUI'),)
+
+GK6=CALC_G(                  RESULTAT=RESU,
+                             THETA=_F(
+                                  R_SUP = 2.448979377,
+                                  R_INF = 0.61225116,
+                                  DIRECTION=( 1., 0., 0.,),
+                                  FOND_FISS=FOND),
+                            OPTION='CALC_K_G')
+
+GK7=CALC_G(                  RESULTAT=RESU,
+                             THETA=_F(
+                                  DIRECTION=( 1., 0., 0.,),
+                                  FOND_FISS=FOND),
+                            OPTION='CALC_K_G')
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.299406754685E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=G1,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.299406754685E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GK1,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2989988883347E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G_IRWIN',
+           TABLE=GK1,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=0.050000000000000003,
+           VALE_CALC=21.442942374286,
+           VALE_REFE=22.529,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='K1',
+           TABLE=GK1,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.0E+00,
+           
+           NOM_PARA='K2',
+           TABLE=GK1,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2993459595304E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=G2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2993459595304E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GK2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2989368172851E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G_IRWIN',
+           TABLE=GK2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=0.050000000000000003,
+           VALE_CALC=21.442652901566,
+           VALE_REFE=22.529,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='K1',
+           TABLE=GK2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.0E+00,
+           
+           NOM_PARA='K2',
+           TABLE=GK2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2992900203629E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=G3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2992900203629E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GK3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2988781898629E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G_IRWIN',
+           TABLE=GK3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=0.050000000000000003,
+           VALE_CALC=21.442379484856,
+           VALE_REFE=22.529,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='K1',
+           TABLE=GK3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.0E+00,
+           
+           NOM_PARA='K2',
+           TABLE=GK3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.299068709826E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=G4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.299068709826E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GK4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2986410862858E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G_IRWIN',
+           TABLE=GK4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=0.050000000000000003,
+           VALE_CALC=21.441273685515,
+           VALE_REFE=22.529,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='K1',
+           TABLE=GK4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.0E+00,
+           
+           NOM_PARA='K2',
+           TABLE=GK4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2981310698849E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=G5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.0000000000000001E-3,
+           VALE_CALC=2.2981310698849E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GK5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=5.1000000000000004E-3,
+           VALE_CALC=2.2975985627967E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G_IRWIN',
+           TABLE=GK5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=0.050000000000000003,
+           VALE_CALC=21.436410906664,
+           VALE_REFE=22.529,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='K1',
+           TABLE=GK5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.0E+00,
+           
+           NOM_PARA='K2',
+           TABLE=GK5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=2.2906245590499E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=G6,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=2.2906245590499E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GK6,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=2.2890465521244E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G_IRWIN',
+           TABLE=GK6,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=0.050999999999999997,
+           VALE_CALC=21.396478925863,
+           VALE_REFE=22.529,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='K1',
+           TABLE=GK6,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.0E+00,
+           
+           NOM_PARA='K2',
+           TABLE=GK6,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=2.3102151409678E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GK7,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=2.3093934594373E-03,
+           VALE_REFE=2.3092999999999998E-3,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G_IRWIN',
+           TABLE=GK7,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(PRECISION=0.050999999999999997,
+           VALE_CALC=21.491363192861,
+           VALE_REFE=22.529,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='K1',
+           TABLE=GK7,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.0E+00,
+           
+           NOM_PARA='K2',
+           TABLE=GK7,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+FIN( )
+#

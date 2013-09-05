@@ -1,0 +1,505 @@
+# TITRE FISSURE DEBOUCHANTE DANS UNE PLAQUE 3D DE LARGEUR FINIE AVEC X-FEM
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSNV185L',NIV_PUB_WEB='INTERNET',VISU_EFICAS='NON'),DEBUG=_F(SDVERI='OUI'),
+      IGNORE_ALARM=('CALCULEL2_63'))
+
+# <CALCULEL2_63> : DANS UN MODELE, IL EXISTE DES ELEMENTS DE TYPE "BORD" QUI N'ONT PAS DE VOISIN AVEC RIGIDITE
+#  LE MODELE PROVOQUANT CES ALARMES NE SERT QU'A LA VISUALISATION
+
+# MODELISATION L : X-FEM - CHARGEMENT MIXTE (CHAMP ASYMPTOTIQUE NEUMAN II ET III)
+
+#----------------------------------------------
+#             MAILLAGE : hexa_3_11_31.mgib
+#----------------------------------------------
+
+MAILLAG1=LIRE_MAILLAGE(FORMAT='MED',INFO=1,);
+
+#----------------------------------------
+# epaisseur (suivant x)
+lx = 1.
+
+# largeur (suivant y)
+ly = 10.
+
+# hauteur (suivant z)
+lz = 30.
+
+
+# nb element suivant la largeur
+ny = 11.
+
+# nb element suivant la hauteur
+nz = 31.
+#----------------------------------------
+
+
+# tailles des elements suivant y et z
+hy = ly/ny
+hz = lz/nz
+
+# creation des noeuds servant a bloquer les modes rigides
+MAILLAG1=DEFI_GROUP(reuse =MAILLAG1,
+                 MAILLAGE=MAILLAG1,
+                 CREA_GROUP_NO=(
+                                 _F(NOM='A1',OPTION='ENV_SPHERE',POINT=(lx, 0., (lz-hz)/2.),PRECISION=1/(8.*nz),RAYON=1/(8.*nz)),
+                                 _F(NOM='A2',OPTION='ENV_SPHERE',POINT=(lx, 0., (lz+hz)/2.),PRECISION=1/(8.*nz),RAYON=1/(8.*nz)),
+                                 _F(NOM='B1',OPTION='ENV_SPHERE',POINT=(0., 0., (lz-hz)/2.),PRECISION=1/(8.*nz),RAYON=1/(8.*nz)),
+                                 _F(NOM='B2',OPTION='ENV_SPHERE',POINT=(0., 0., (lz+hz)/2.),PRECISION=1/(8.*nz),RAYON=1/(8.*nz)),
+                                 _F(NOM='C1',OPTION='ENV_SPHERE',POINT=(lx, 1.*hy, (lz-hz)/2.),PRECISION=1/(8.*nz),RAYON=1/(8.*nz)),
+                                 _F(NOM='C2',OPTION='ENV_SPHERE',POINT=(lx, 1.*hy, (lz+hz)/2.),PRECISION=1/(8.*nz),RAYON=1/(8.*nz)),
+                                ),
+                 );
+
+
+#----------------------------------------------
+#                   MODELE ET FISSURE
+#----------------------------------------------
+
+MODELEIN=AFFE_MODELE(MAILLAGE=MAILLAG1,
+                     AFFE=_F(GROUP_MA=('VOL','SURFGAU','SURFDRO','SURFFRO','SURFBAC','SURFINF','SURFSUP'),
+                             PHENOMENE='MECANIQUE',
+                             MODELISATION='3D',),
+                    );
+
+LN=FORMULE(NOM_PARA=('X','Y','Z'),VALE='Z-lz/2.');
+LT=FORMULE(NOM_PARA=('X','Y','Z'),VALE='-Y+ly/2.');
+
+FISS=DEFI_FISS_XFEM(MODELE=MODELEIN,
+                    DEFI_FISS=_F(FONC_LT=LT,FONC_LN=LN,),
+                   );
+
+MODELEK=MODI_MODELE_XFEM(MODELE_IN=MODELEIN,FISSURE=FISS,INFO=1,);
+
+
+#----------------------------------------------
+#                   MATERIAU
+#----------------------------------------------
+
+E=100.0E6
+nu=0.
+rho=7800.
+ACIER=DEFI_MATERIAU(ELAS=_F(E=E,NU=nu,RHO=rho,),);
+
+CHAMPMA1=AFFE_MATERIAU(MAILLAGE=MAILLAG1,
+                       MODELE=MODELEK,
+                       AFFE=_F(TOUT = 'OUI',
+                                MATER=ACIER,
+                                ),
+                             );
+
+
+#----------------------------------------------------------
+#                   CHARGEMENTS COMMUNS
+#----------------------------------------------------------
+
+# blocage des modes rigides
+CHBLO=AFFE_CHAR_MECA(MODELE=MODELEK,
+                     LIAISON_DDL=(
+                                  _F(GROUP_NO=('A1','A2',),DDL=('DX','DX',),COEF_MULT=(0.5,0.5),COEF_IMPO=0.,),
+                                  _F(GROUP_NO=('A1','A2',),DDL=('DY','DY',),COEF_MULT=(0.5,0.5),COEF_IMPO=0.,),
+                                  _F(GROUP_NO=('A1','A2',),DDL=('DZ','DZ',),COEF_MULT=(0.5,0.5),COEF_IMPO=0.,),
+                                  _F(GROUP_NO=('B1','B2',),DDL=('DZ','DZ',),COEF_MULT=(0.5,0.5),COEF_IMPO=0.,),
+                                  _F(GROUP_NO=('C1','C2',),DDL=('DX','DX',),COEF_MULT=(0.5,0.5),COEF_IMPO=0.,),
+                                  _F(GROUP_NO=('C1','C2',),DDL=('DZ','DZ',),COEF_MULT=(0.5,0.5),COEF_IMPO=0.,),
+                                 ),
+                  );
+
+# formule des coordonnees polaires dans la base locale au fond de fissure
+R = FORMULE(NOM_PARA=('X','Y','Z'),VALE='sqrt((Y-5.)**2+(Z-15.)**2)');
+T = FORMULE(NOM_PARA=('X','Y','Z'),VALE='atan2(Z-15.,-Y+5.)');
+
+coef=1./sqrt(2.*pi)
+
+
+
+#----------------------------------------------------------
+#                   CHARGEMENT 2 : CHAMP AUXILIAIRE MODE II
+#----------------------------------------------------------
+
+# definition des contraintes analytiques SIG11, SIG12 et SIG22 du mode 2
+SIG11M2 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='-1.*coef/sqrt(R(X,Y,Z))*sin(T(X,Y,Z)/2.)*(2.+cos(T(X,Y,Z)/2.)*cos(3.*T(X,Y,Z)/2.))');
+SIG12M2 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='    coef/sqrt(R(X,Y,Z))*cos(T(X,Y,Z)/2.)*(1.-sin(T(X,Y,Z)/2.)*sin(3.*T(X,Y,Z)/2.))');
+SIG22M2 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='    coef/sqrt(R(X,Y,Z))*sin(T(X,Y,Z)/2.)*cos(T(X,Y,Z)/2.)*cos(3.*T(X,Y,Z)/2.)');
+
+# definition des opposees des contraintes analytiques -SIG11, -SIG12 et -SIG22 du mode 2
+OSIG11M2 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='    coef/sqrt(R(X,Y,Z))*sin(T(X,Y,Z)/2.)*(2.+cos(T(X,Y,Z)/2.)*cos(3.*T(X,Y,Z)/2.))');
+OSIG12M2 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='-1.*coef/sqrt(R(X,Y,Z))*cos(T(X,Y,Z)/2.)*(1.-sin(T(X,Y,Z)/2.)*sin(3.*T(X,Y,Z)/2.))');
+OSIG22M2 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='-1.*coef/sqrt(R(X,Y,Z))*sin(T(X,Y,Z)/2.)*cos(T(X,Y,Z)/2.)*cos(3.*T(X,Y,Z)/2.)');
+
+# chargement correspondant a un mode II pur
+CHF2=AFFE_CHAR_MECA_F(MODELE=MODELEK,
+                     FORCE_FACE=(
+                                 _F(GROUP_MA='SURFGAU',FY=OSIG11M2,FZ= SIG12M2),
+                                 _F(GROUP_MA='SURFDRO',FY= SIG11M2,FZ=OSIG12M2),
+                                 _F(GROUP_MA='SURFSUP',FY=OSIG12M2,FZ= SIG22M2),
+                                 _F(GROUP_MA='SURFINF',FY= SIG12M2,FZ=OSIG22M2),
+                                ),
+                      );
+
+#----------------------------------------------------------
+#                   CHARGEMENT 3 : CHAMP AUXILIAIRE MODE III
+#----------------------------------------------------------
+
+# definition des contraintes analytiques SIG13 et SIG23 du mode 3
+SIG13M3 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='-1.*coef/sqrt(R(X,Y,Z))*sin(T(X,Y,Z)/2.)');
+SIG23M3 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='coef/sqrt(R(X,Y,Z))*cos(T(X,Y,Z)/2.)');
+
+# definition des opposees des contraintes analytiques -SIG13 et -SIG23  du mode 3
+OSIG13M3 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='coef/sqrt(R(X,Y,Z))*sin(T(X,Y,Z)/2.)');
+OSIG23M3 = FORMULE(NOM_PARA=('X','Y','Z'),VALE='-1.*coef/sqrt(R(X,Y,Z))*cos(T(X,Y,Z)/2.)');
+
+# chargement correspondant a un mode III pur
+CHF3=AFFE_CHAR_MECA_F(MODELE=MODELEK,
+                     FORCE_FACE=(
+                                 _F(GROUP_MA='SURFGAU',FX=OSIG13M3,),
+                                 _F(GROUP_MA='SURFDRO',FX= SIG13M3,),
+                                 _F(GROUP_MA='SURFSUP',FX=OSIG23M3,),
+                                 _F(GROUP_MA='SURFINF',FX= SIG23M3,),
+                                 _F(GROUP_MA='SURFFRO',FZ=OSIG23M3,FY= SIG13M3),
+                                 _F(GROUP_MA='SURFBAC',FZ= SIG23M3,FY=OSIG13M3),
+                                ),
+                      );
+
+
+#----------------------------------------------
+#                   RESOLUTION
+#----------------------------------------------
+
+UTOT2=MECA_STATIQUE(MODELE=MODELEK,
+                   CHAM_MATER=CHAMPMA1,
+                   EXCIT=(
+                          _F(CHARGE=CHF2),
+                          _F(CHARGE=CHBLO),
+                          ),
+                   INFO=1,
+                   ); 
+UTOT3=MECA_STATIQUE(MODELE=MODELEK,
+                   CHAM_MATER=CHAMPMA1,
+                   EXCIT=(
+                          _F(CHARGE=CHF3),
+                          _F(CHARGE=CHBLO),
+                          ),
+                   INFO=1,
+                   ); 
+# -------------------------------------------------------------
+#            POST-TRAITEMENT POUR LA VISUALISATION X-FEM
+# -------------------------------------------------------------
+
+MA_XFEM=POST_MAIL_XFEM(
+                       MODELE        = MODELEK,
+                       INFO          = 2)
+
+# CREATION DES NOEUDS DE LA FACE DROITE FISSUREE
+MA_XFEM=DEFI_GROUP(reuse =MA_XFEM,
+                   MAILLAGE=MA_XFEM,
+                   CREA_GROUP_NO=_F(GROUP_MA='SURFDRO'),
+                   INFO=2);
+
+MOD_VISU=AFFE_MODELE(MAILLAGE=MA_XFEM,
+                     AFFE=_F(TOUT='OUI',
+                              PHENOMENE='MECANIQUE',
+                              MODELISATION='3D',),)
+
+RES_XFEM=POST_CHAM_XFEM(MODELE_VISU   = MOD_VISU,
+                        RESULTAT      = UTOT2,
+                        
+                        INFO          = 2)
+
+#IMPR_RESU(FORMAT='GMSH',UNITE=37,RESU=_F(RESULTAT=RES_XFEM,NOM_CHAM='DEPL'));
+
+TABDEP=POST_RELEVE_T(ACTION=_F(INTITULE='DEPLACEMENT SUR LA FACE DE DROITE',
+                               GROUP_NO='SURFDRO',
+                               RESULTAT=RES_XFEM,
+                               NOM_CHAM='DEPL',
+                               TOUT_CMP='OUI',
+                               OPERATION='EXTRACTION',),);
+
+# FILTRE SUR LES NOMS DES NOEUDS POUR NE GARDER QUE LES NP
+# NOEUDS DE LA LEVRE SUP APPARTENANT A LA FACE DE DROITE
+TABDEP = CALC_TABLE(reuse = TABDEP,
+                    TABLE = TABDEP,
+                    ACTION = _F(OPERATION = 'FILTRE',
+                                NOM_PARA  = 'NOEUD',
+                                CRIT_COMP = 'REGEXP',
+                                VALE_K    = 'NP',),
+                                )
+
+IMPR_TABLE(TABLE=TABDEP);
+
+# TEST POUR VALIDER LE POST-TRAITEMENT DES GROUP_MA
+# ON TESTE LES CORRDONNEES DES NOEUDS DE LA LEVRE SUP APPARTENANT A LA FACE DE DROITE
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC=10.0,
+           VALE_REFE=ly,
+           NOM_PARA='COOR_Y',
+           TYPE_TEST='MAX',
+           TABLE=TABDEP,)
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC=10.0,
+           VALE_REFE=ly,
+           NOM_PARA='COOR_Y',
+           TYPE_TEST='MIN',
+           TABLE=TABDEP,)
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC=15.0,
+           VALE_REFE=lz/2.,
+           NOM_PARA='COOR_Z',
+           TYPE_TEST='MAX',
+           TABLE=TABDEP,)
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC=15.0,
+           VALE_REFE=lz/2.,
+           NOM_PARA='COOR_Z',
+           TYPE_TEST='MIN',
+           TABLE=TABDEP,)
+
+#------------------------------------------------------------------------
+# POST-TRAITEMENT : CALCUL DES SIFS PAR LA METHODE ENERGETIQUE AVEC X-FEM
+#------------------------------------------------------------------------
+
+# TEST AVEC PLUSIEURS COURONNES
+RI=[2. , 0.666 , 1. , 1. , 1. , 2.1]
+RS=[4. , 1.666 , 2. , 3. , 4. , 3.9]
+
+nbc=len(RI)
+SIF2 = [None]*(nbc+1)
+SIF3 = [None]*(nbc+1)
+
+for i in range(0,nbc) :
+
+   SIF2[i]=CALC_G(RESULTAT=UTOT2,
+                  OPTION='CALC_K_G',
+                  THETA=_F(FISSURE=FISS,
+                           R_INF=RI[i],
+                           R_SUP=RS[i],),
+                  LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                             LISSAGE_G='LAGRANGE',),
+                  INFO=2,);
+
+   IMPR_TABLE(TABLE=SIF2[i],);
+
+   SIF3[i]=CALC_G(RESULTAT=UTOT3,
+                  OPTION='CALC_K_G',
+                  THETA=_F(FISSURE=FISS,
+                           R_INF=RI[i],
+                           R_SUP=RS[i],),
+                  LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                             LISSAGE_G='LAGRANGE',),
+                  INFO=2,);
+
+   IMPR_TABLE(TABLE=SIF3[i],);
+
+SIF2[nbc]=CALC_G(RESULTAT=UTOT2,
+                  OPTION='CALC_K_G',
+                  THETA=_F(FISSURE=FISS,),
+                  LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                             LISSAGE_G='LAGRANGE',),
+                  INFO=2,);
+
+IMPR_TABLE(TABLE=SIF2[nbc],);
+
+SIF3[nbc]=CALC_G(RESULTAT=UTOT3,
+                  OPTION='CALC_K_G',
+                  THETA=_F(FISSURE=FISS,),
+                  LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                             LISSAGE_G='LAGRANGE',),
+                  INFO=2,);
+
+IMPR_TABLE(TABLE=SIF3[nbc],);
+
+# SOLUTION ANALYTIQUE DU CHARGEMENT 2 (MODE II PUR)
+K1REF2=0.
+K2REF2=1.
+K3REF2=0.
+
+VALE_CALC=[
+ 6.3840667920672E-04,
+ 0.98678919179555,
+ -2.9924414485458E-03,
+ 6.5604283791418E-04,
+ 1.0110666573018,
+ -3.0028720958186E-03,
+ 6.0250569985969E-04,
+ 1.000987746148,
+ -2.9991925478259E-03,
+ 6.1942669739418E-04,
+ 0.99377661645165,
+ -2.9955254886188E-03,
+ 6.2643968609104E-04,
+ 0.99152204324636,
+ -2.9946918149727E-03,
+ 6.3888238919424E-04,
+ 0.98685928869104,
+ -2.9925889519167E-03,
+ 6.2907099113646E-04,
+ 0.98670704012152,
+ -2.9925812908352E-03,
+]
+
+prec_k2 = 0.015
+
+for i in range(0,nbc+1) :
+
+   TEST_TABLE(TABLE=SIF2[i],
+              NOM_PARA='K1',
+              TYPE_TEST='MAX',
+              VALE_CALC=VALE_CALC[i*3+0], VALE_REFE=K1REF2,
+              CRITERE='ABSOLU',
+              PRECISION=0.02, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF2[i],
+              NOM_PARA='K1',
+              TYPE_TEST='MIN',
+              VALE_CALC=VALE_CALC[i*3+0], VALE_REFE=K1REF2,
+              CRITERE='ABSOLU',
+              PRECISION=0.02, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF2[i],
+              NOM_PARA='K2',
+              TYPE_TEST='MAX',
+              VALE_CALC=VALE_CALC[i*3+1], VALE_REFE=K2REF2,
+              CRITERE='RELATIF',
+              PRECISION=prec_k2, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF2[i],
+              NOM_PARA='K2',
+              TYPE_TEST='MIN',
+              VALE_CALC=VALE_CALC[i*3+1], VALE_REFE=K2REF2,
+              CRITERE='RELATIF',
+              PRECISION=prec_k2, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF2[i],
+              NOM_PARA='K3',
+              TYPE_TEST='MAX',
+              VALE_CALC=VALE_CALC[i*3+2], VALE_REFE=K3REF2,
+              CRITERE='ABSOLU',
+              PRECISION=0.02, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF2[i],
+              NOM_PARA='K3',
+              TYPE_TEST='MIN',
+              VALE_CALC=VALE_CALC[i*3+2], VALE_REFE=K3REF2,
+              CRITERE='ABSOLU',
+              PRECISION=0.02, 
+              REFERENCE='ANALYTIQUE',);
+
+
+
+
+# SOLUTION ANALYTIQUE DU CHARGEMENT 3 (MODE III PUR)
+K1REF3=0.
+K2REF3=0.
+K3REF3=1.
+
+VALE_CALC=[
+ 0.010311457980424,
+ -0.016490443184888,
+ 0.92556236709680,
+ 0.010490573760637,
+ -0.016478824355619,
+ 0.94669868237547,
+ 0.010378242134567,
+ -0.016468864857965,
+ 0.93848173748820,
+ 0.010389049581960,
+ -0.016461572405244,
+ 0.93203345162839,
+ 0.010333719365138,
+ -0.016483250409247,
+ 0.92986882389393,
+ 0.010322850935009,
+ -0.016487511162015,
+ 0.92560038447031,
+ 0.010336144447723,
+ -0.016475052711499,
+ 0.92568574937568,
+]
+
+prec_k3 = 0.08
+
+for i in range(0,nbc+1) :
+
+   TEST_TABLE(TABLE=SIF3[i],
+              NOM_PARA='K1',
+              TYPE_TEST='MAX',
+              VALE_CALC=VALE_CALC[i*3+0], VALE_REFE=K1REF3,
+              CRITERE='ABSOLU',
+              PRECISION=0.02, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF3[i],
+              NOM_PARA='K1',
+              TYPE_TEST='MIN',
+              VALE_CALC=VALE_CALC[i*3+0], VALE_REFE=K1REF3,
+              CRITERE='ABSOLU',
+              PRECISION=0.02, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF3[i],
+              NOM_PARA='K2',
+              TYPE_TEST='MAX',
+              VALE_CALC=VALE_CALC[i*3+1], VALE_REFE=K2REF3,
+              CRITERE='ABSOLU',
+              PRECISION=0.02, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF3[i],
+              NOM_PARA='K2',
+              TYPE_TEST='MIN',
+              VALE_CALC=VALE_CALC[i*3+1], VALE_REFE=K2REF3,
+              CRITERE='ABSOLU',
+              PRECISION=0.02, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF3[i],
+              NOM_PARA='K3',
+              TYPE_TEST='MAX',
+              VALE_CALC=VALE_CALC[i*3+2], VALE_REFE=K3REF3,
+              CRITERE='ABSOLU',
+              PRECISION=prec_k3, 
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF3[i],
+              NOM_PARA='K3',
+              TYPE_TEST='MIN',
+              VALE_CALC=VALE_CALC[i*3+2], VALE_REFE=K3REF3,
+              CRITERE='RELATIF',
+              PRECISION=prec_k3, 
+              REFERENCE='ANALYTIQUE',);
+
+
+
+
+FIN();

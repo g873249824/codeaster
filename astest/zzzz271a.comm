@@ -1,0 +1,371 @@
+# TITRE PROJECTION DE CONTRAINTES ET DE VARIABLES INTERNES EN 2D ET 3D
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='ZZZZ271A',NIV_PUB_WEB='INTERNET'),
+      DEBUG=_F(SDVERI='OUI'),)
+
+##########
+# CAS 2D #
+##########
+
+
+# 1. Lecture des maillages
+#----------------------
+
+MA1=LIRE_MAILLAGE(FORMAT='MED',UNITE=11)
+MA2=LIRE_MAILLAGE(FORMAT='MED',UNITE=12)
+
+
+# 2. Affectation des modeles
+#------------------------
+
+MO1=AFFE_MODELE(MAILLAGE=MA1, AFFE=_F( TOUT='OUI',PHENOMENE='MECANIQUE',MODELISATION='C_PLAN'))
+MO2=AFFE_MODELE(MAILLAGE=MA2, AFFE=_F( TOUT='OUI',PHENOMENE='MECANIQUE',MODELISATION='C_PLAN'))
+
+
+# 3.1. Creation du champ de contraintes
+#---------------------------------
+
+FONC = FORMULE(NOM_PARA=('X','Y'),VALE='1+X+Y')
+
+CHFONC=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='ELGA_NEUT_F', MODELE=MO1,PROL_ZERO='OUI',
+              AFFE=_F(  TOUT = 'OUI', NOM_CMP = ('X1', ), VALE_F = FONC))
+
+CHXN=CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='NOEU_GEOM_R',
+                    NOM_CHAM='GEOMETRIE', MAILLAGE=MA1)
+
+CHXG1=CREA_CHAMP(OPERATION='DISC', TYPE_CHAM='ELGA_GEOM_R',PROL_ZERO='OUI',
+                     MODELE=MO1,   CHAM_GD=CHXN)
+
+CHREEL=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='ELGA_NEUT_R',
+              CHAM_F=CHFONC,CHAM_PARA=CHXG1)
+
+CHSIEFR=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELGA_SIEF_R',
+          MODELE=MO1 , PROL_ZERO='OUI',
+           ASSE=_F(TOUT='OUI', CHAM_GD=CHREEL,
+              NOM_CMP= ('X1' ),
+           NOM_CMP_RESU=('SIXX'),))
+
+DETRUIRE(CONCEPT=(_F(NOM=CHFONC),
+                  _F(NOM=CHXN),
+                  _F(NOM=CHXG1),
+                  _F(NOM=CHREEL),))
+
+
+# 3.2. Projection du champ de contraintes
+#----------------------------------------
+
+PJSIEF=PROJ_CHAMP(CHAM_GD=CHSIEFR,MODELE_1=MO1, MODELE_2=MO2,METHODE='ECLA_PG')
+
+
+# 3.3. Validation de la projection du champ de contraintes
+#---------------------------------------------------------
+
+TEST_RESU(CHAM_ELEM=(_F(REFERENCE='ANALYTIQUE',
+                        POINT=2,
+                        NOM_CMP='SIXX',
+                        PRECISION=0.025000000000000001,
+                        MAILLE='M69',
+                        CHAM_GD=PJSIEF,
+                        VALE_CALC=2.888888889,
+                        VALE_REFE=2.83094,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=4,
+                        NOM_CMP='SIXX',
+                        PRECISION=0.02,
+                        MAILLE='M77',
+                        CHAM_GD=PJSIEF,
+                        VALE_CALC=1.148032306,
+                        VALE_REFE=1.16906,),
+                     ),
+          )
+
+# 4.1. Creation du champ de variables internes
+#----------------------------------------
+CHFONC=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='CART_NEUT_F', MODELE=MO1,
+                 AFFE=_F(TOUT= 'OUI', NOM_CMP= 'X1', VALE_F = FONC))
+
+CHFON2=CREA_CHAMP(OPERATION='DISC', TYPE_CHAM='ELGA_NEUT_F',PROL_ZERO='OUI',
+                     MODELE=MO1,   CHAM_GD=CHFONC)
+
+CHXN=CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='NOEU_GEOM_R',
+                    NOM_CHAM='GEOMETRIE', MAILLAGE=MA1)
+
+CHXG1=CREA_CHAMP(OPERATION='DISC', TYPE_CHAM='ELGA_GEOM_R',PROL_ZERO='OUI',
+                     MODELE=MO1,   CHAM_GD=CHXN)
+
+CHREEL=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='ELGA_NEUT_R',
+              CHAM_F=CHFON2,CHAM_PARA=CHXG1)
+
+CHVARIR=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELGA_VARI_R',
+          MODELE=MO1 , PROL_ZERO='OUI',
+           ASSE=_F(TOUT='OUI', CHAM_GD=CHREEL,
+             NOM_CMP= 'X1',
+           NOM_CMP_RESU= 'V1'))
+
+DETRUIRE(CONCEPT=(_F(NOM=CHFONC),
+                  _F(NOM=CHFON2),
+                  _F(NOM=CHXN),
+                  _F(NOM=CHXG1),
+                  _F(NOM=CHREEL),))
+
+
+
+# 4.2. Projection du champ de variables internes
+#-----------------------------------------------
+
+PJVARI=PROJ_CHAMP(CHAM_GD=CHVARIR,MODELE_1=MO1, MODELE_2=MO2,METHODE='ECLA_PG')
+
+
+
+# 4.3. Validation de la projection du champ de variables internes
+#----------------------------------------------------------------
+
+TEST_RESU(CHAM_ELEM=(_F(REFERENCE='ANALYTIQUE',
+                        POINT=2,
+                        NOM_CMP='V1',
+                        PRECISION=0.025000000000000001,
+                        MAILLE='M69',
+                        CHAM_GD=PJVARI,
+                        VALE_CALC=2.888888889,
+                        VALE_REFE=2.83094,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=4,
+                        NOM_CMP='V1',
+                        PRECISION=0.02,
+                        MAILLE='M77',
+                        CHAM_GD=PJVARI,
+                        VALE_CALC=1.148032306,
+                        VALE_REFE=1.16906,),
+                     ),
+          )
+
+DETRUIRE(CONCEPT=(_F(NOM=PJSIEF),
+                  _F(NOM=PJVARI),
+                  _F(NOM=CHSIEFR),
+                  _F(NOM=CHVARIR),
+                  _F(NOM=FONC)))
+
+
+
+##########
+# CAS 3D #
+##########
+
+
+# 1. Lecture des maillages
+#----------------------
+MA4=LIRE_MAILLAGE(FORMAT='MED',UNITE=14)
+MA3_0=LIRE_MAILLAGE(FORMAT='MED',UNITE=13)
+# on raffine le maillage trop grossier forme de TETRA4 (1 PG par maille) :
+MACR_ADAP_MAIL(MAILLAGE_N=MA3_0, MAILLAGE_NP1=CO('MA3_1'), ADAPTATION='RAFFINEMENT_UNIFORME',);
+MACR_ADAP_MAIL(MAILLAGE_N=MA3_1, MAILLAGE_NP1=CO('MA3_2'), ADAPTATION='RAFFINEMENT_UNIFORME',);
+MACR_ADAP_MAIL(MAILLAGE_N=MA3_2, MAILLAGE_NP1=CO('MA3'),   ADAPTATION='RAFFINEMENT_UNIFORME',);
+
+
+# 2. Affectation des modeles
+#------------------------
+
+MO3=AFFE_MODELE(MAILLAGE=MA3, AFFE=_F( TOUT='OUI',PHENOMENE='MECANIQUE',MODELISATION='3D'))
+MO4=AFFE_MODELE(MAILLAGE=MA4, AFFE=_F( TOUT='OUI',PHENOMENE='MECANIQUE',MODELISATION='3D'))
+
+
+# 3.1. Creation du champ de contraintes
+#---------------------------------
+
+FONC = FORMULE(NOM_PARA=('X','Y','Z'),VALE='1+X')
+
+CHFONC=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='ELGA_NEUT_F', MODELE=MO3,PROL_ZERO='OUI',
+              AFFE=_F(  TOUT = 'OUI', NOM_CMP = ('X1', ), VALE_F = FONC))
+
+CHXN=CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='NOEU_GEOM_R',
+                    NOM_CHAM='GEOMETRIE', MAILLAGE=MA3)
+
+CHXG1=CREA_CHAMP(OPERATION='DISC', TYPE_CHAM='ELGA_GEOM_R',PROL_ZERO='OUI',
+                     MODELE=MO3,   CHAM_GD=CHXN)
+
+CHREEL=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='ELGA_NEUT_R',
+              CHAM_F=CHFONC,CHAM_PARA=CHXG1)
+
+CHSIEFR=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELGA_SIEF_R',
+          MODELE=MO3 , PROL_ZERO='OUI',
+           ASSE=_F(TOUT='OUI', CHAM_GD=CHREEL,
+              NOM_CMP= ('X1' ), NOM_CMP_RESU=('SIXX'),))
+
+DETRUIRE(CONCEPT=(_F(NOM=CHFONC),
+                  _F(NOM=CHXN),
+                  _F(NOM=CHXG1),
+                  _F(NOM=CHREEL),))
+
+
+# 3.2. Projection du champ de contraintes
+#----------------------------------------
+
+PJSIEF=PROJ_CHAMP(CHAM_GD=CHSIEFR,MODELE_1=MO3, MODELE_2=MO4,METHODE='ECLA_PG')
+
+
+# 3.3. Validation de la projection du champ de contraintes
+#----------------------------------------------------------
+
+# Coordonnees des points de gauss de la maille M272 pour evaluer la formule : 1+X
+# MAILLE   M272   POINT      COOR_X       COOR_Y       COOR_Z
+# M272                1   5.28312E-02  5.28312E-02  5.28312E-02
+# M272                2   5.28312E-02  1.97169E-01  5.28312E-02
+# M272                3   1.97169E-01  5.28312E-02  5.28312E-02
+# M272                4   1.97169E-01  1.97169E-01  5.28312E-02
+# M272                5   5.28312E-02  5.28312E-02  1.97169E-01
+# M272                6   5.28312E-02  1.97169E-01  1.97169E-01
+# M272                7   1.97169E-01  5.28312E-02  1.97169E-01
+# M272                8   1.97169E-01  1.97169E-01  1.97169E-01
+# => sur le point 3,4,7,8 : 1.197169
+# => sur le point 1,2,5,6 : 1.0528312
+
+
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=3,
+                       NOM_CMP='SIXX',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJSIEF,
+                       VALE_CALC=1.212625000,
+                       VALE_REFE=1.1971689999999999,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=4,
+                       NOM_CMP='SIXX',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJSIEF,
+                       VALE_CALC=1.212625000,
+                       VALE_REFE=1.1971689999999999,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=7,
+                       NOM_CMP='SIXX',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJSIEF,
+                       VALE_CALC=1.197437500,
+                       VALE_REFE=1.1971689999999999,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=8,
+                       NOM_CMP='SIXX',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJSIEF,
+                       VALE_CALC=1.200057452,
+                       VALE_REFE=1.1971689999999999,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=1,
+                       NOM_CMP='SIXX',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJSIEF,
+                       VALE_CALC=1.045562500,
+                       VALE_REFE=1.0528312,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=2,
+                       NOM_CMP='SIXX',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJSIEF,
+                       VALE_CALC=1.030375000,
+                       VALE_REFE=1.0528312,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=5,
+                       NOM_CMP='SIXX',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJSIEF,
+                       VALE_CALC=1.045562500,
+                       VALE_REFE=1.0528312,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=6,
+                       NOM_CMP='SIXX',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJSIEF,
+                       VALE_CALC=1.045562500,
+                       VALE_REFE=1.0528312,),
+          )
+
+# 4.1. Creation du champ de variables internes
+#----------------------------------------
+CHFONC=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='CART_NEUT_F', MODELE=MO3,
+                 AFFE=_F(TOUT= 'OUI', NOM_CMP= 'X1', VALE_F = FONC))
+
+CHFON2=CREA_CHAMP(OPERATION='DISC', TYPE_CHAM='ELGA_NEUT_F',PROL_ZERO='OUI',
+                     MODELE=MO3,   CHAM_GD=CHFONC)
+
+CHXN=CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='NOEU_GEOM_R',
+                    NOM_CHAM='GEOMETRIE', MAILLAGE=MA3)
+
+CHXG1=CREA_CHAMP(OPERATION='DISC', TYPE_CHAM='ELGA_GEOM_R',PROL_ZERO='OUI',
+                     MODELE=MO3,   CHAM_GD=CHXN)
+
+CHREEL=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='ELGA_NEUT_R',
+              CHAM_F=CHFON2,CHAM_PARA=CHXG1)
+
+CHVARIR=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELGA_VARI_R',
+          MODELE=MO3 , PROL_ZERO='OUI',
+           ASSE=_F(TOUT='OUI', CHAM_GD=CHREEL,
+             NOM_CMP= 'X1',
+           NOM_CMP_RESU= 'V1'))
+
+DETRUIRE(CONCEPT=(_F(NOM=CHFONC),
+                  _F(NOM=CHFON2),
+                  _F(NOM=CHXN),
+                  _F(NOM=CHXG1),
+                  _F(NOM=CHREEL),))
+
+
+
+# 4.2. Projection du champ de variables internes
+#-----------------------------------------------
+
+PJVARI=PROJ_CHAMP(CHAM_GD=CHVARIR,MODELE_1=MO3, MODELE_2=MO4,METHODE='ECLA_PG')
+
+
+
+# 4.3. Validation de la projection du champ de variables internes
+#----------------------------------------------------------------
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=8,
+                       NOM_CMP='V1',
+                       PRECISION=0.023,
+                       MAILLE='M272',
+                       CHAM_GD=PJVARI,
+                       VALE_CALC=1.200057452,
+                       VALE_REFE=1.1971689999999999,),
+          )
+
+FIN();

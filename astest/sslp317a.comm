@@ -1,0 +1,245 @@
+# TITRE VALIDATION DE LA MACRO-COMMANDE RAFF_XFEM SUR UNE PLAQUE MULTI-FISSUREE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
+# (AT YOUR OPTION) ANY LATER VERSION.                                                    
+#                                                                       
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
+#                                                                       
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSLP317A',NIV_PUB_WEB='INTERNET',VISU_EFICAS='NON'),DEBUG=_F(SDVERI='OUI'));
+
+# MODELISATION A : RAFFINEMENT AVEC UN CRITERE EN POURCENTAGE DU NOMBRE DE MAILLES
+
+# nbre de raffinement
+nb_raff = 3          
+
+# initialisation
+MA    = [None]*(nb_raff+1)
+MO    = [None]*(nb_raff+1)
+CHERR = [None]*(nb_raff+1)
+DEP1  = [None]*(nb_raff+1)
+DEP2  = [None]*(nb_raff+1)
+DEP3  = [None]*(nb_raff+1)
+DEP4  = [None]*(nb_raff+1)
+FISS1 = [None]*(nb_raff+1)
+FISS2 = [None]*(nb_raff+1)
+FISS3 = [None]*(nb_raff+1)
+FISS4 = [None]*(nb_raff+1)
+
+r2 = 0.05
+
+num_calc=0   
+
+MA[num_calc]=LIRE_MAILLAGE(FORMAT='MED',);
+
+for num_calc in range(nb_raff+1) :
+
+   MO[num_calc]=AFFE_MODELE(MAILLAGE=MA[num_calc],
+                            AFFE=(_F(GROUP_MA=('SURF','LIG2','LIG3','LIG4'),
+                                     PHENOMENE='MECANIQUE',
+                                     MODELISATION='D_PLAN',),),);
+
+   # entaille
+   FISS1[num_calc]=DEFI_FISS_XFEM(MODELE=MO[num_calc],  
+                                  TYPE_DISCONTINUITE='INTERFACE', 
+                                  DEFI_FISS=_F(FORM_FISS     = 'ENTAILLE',
+                                               DEMI_LONGUEUR = 0.3,
+                                               RAYON_CONGE   = 0.05,
+                                               CENTRE        = (0., -0.3, 0.),
+                                               VECT_X        = (1., 0., 0.),
+                                               VECT_Y        = (0., 1., 0.),
+                                               ))
+
+   # inclusion circulaire
+   FISS2[num_calc]=DEFI_FISS_XFEM(MODELE=MO[num_calc],  
+                                  TYPE_DISCONTINUITE='INTERFACE',
+                                  DEFI_FISS=_F(FORM_FISS      = 'ELLIPSE',
+                                               DEMI_GRAND_AXE = r2,
+                                               DEMI_PETIT_AXE = r2,
+                                               CENTRE         = (0., 0., 0.),
+                                               VECT_X         = (1., 0., 0. ),
+                                               VECT_Y         = (0., 1., 0. ),
+                                               ),)
+
+   FISS3[num_calc]=DEFI_FISS_XFEM(MODELE=MO[num_calc],  
+                                  DEFI_FISS=_F(FORM_FISS  = 'SEGMENT',
+                                               PFON_ORIG  = (0.2, 0.25, 0.),
+                                               PFON_EXTR  = (0.4, 0.25, 0.),))
+
+
+   FISS4[num_calc]=DEFI_FISS_XFEM(MODELE=MO[num_calc],  
+                                  DEFI_FISS=_F(FORM_FISS  = 'SEGMENT',
+                                               PFON_ORIG  = (-0.3, 0.25, 0.),
+                                               PFON_EXTR  = (-0.1, 0.25, 0.),))
+
+
+   # on ne raffine pas la derniere iteration
+   if num_calc < nb_raff :
+
+      CHERR[num_calc] = RAFF_XFEM(FISSURE=(FISS1[num_calc],FISS2[num_calc],FISS3[num_calc],FISS4[num_calc]),)
+
+#      IMPR_RESU(RESU=_F(CHAM_GD=CHERR[num_calc],FORMAT_R='1PE21.14'))
+
+      # test des valeurs du champ d'erreur aux 4 somments de la plaque
+      # Remarque : si on cree une seule table, on sera oblige de nommer les noeuds a tester dans le TEST_TABLE (c'est mal).
+      # donc on cree 4 tables
+      DEP1[num_calc]=POST_RELEVE_T(ACTION=_F(INTITULE='DEPL_P1',
+                                             GROUP_NO='P1',
+                                             CHAM_GD=CHERR[num_calc],
+                                             TOUT_CMP='OUI',
+                                             OPERATION='EXTRACTION',),)
+
+      DEP2[num_calc]=POST_RELEVE_T(ACTION=_F(INTITULE='DEPL_P2',
+                                             GROUP_NO='P2',
+                                             CHAM_GD=CHERR[num_calc],
+                                             TOUT_CMP='OUI',
+                                             OPERATION='EXTRACTION',),)
+
+      DEP3[num_calc]=POST_RELEVE_T(ACTION=_F(INTITULE='DEPL_P3',
+                                             GROUP_NO='P3',
+                                             CHAM_GD=CHERR[num_calc],
+                                             TOUT_CMP='OUI',
+                                             OPERATION='EXTRACTION',),)
+
+      DEP4[num_calc]=POST_RELEVE_T(ACTION=_F(INTITULE='DEPL_P4',
+                                             GROUP_NO='P4',
+                                             CHAM_GD=CHERR[num_calc],
+                                             TOUT_CMP='OUI',
+                                             OPERATION='EXTRACTION',),)
+
+      IMPR_TABLE(TABLE=DEP1[num_calc])                                 
+      IMPR_TABLE(TABLE=DEP2[num_calc])                                 
+      IMPR_TABLE(TABLE=DEP3[num_calc])                                 
+      IMPR_TABLE(TABLE=DEP4[num_calc])                                 
+
+      REF1 = -2.70156E-01
+      REF2 = -2.70156E-01
+      REF3 = -2.69258E-01
+      REF4 = -3.20156E-01
+      CAL1 = -0.27015621187164
+      CAL2 = -0.27015621187164
+      CAL3 = -0.26925824035673
+      CAL4 = -0.32015621187164
+
+      TEST_TABLE(REFERENCE='ANALYTIQUE',
+                 VALE_REFE=REF1,
+                 VALE_CALC=CAL1,
+                 PRECISION=1.e-3,
+                 NOM_PARA='X1',
+                 TABLE=DEP1[num_calc],)
+
+      TEST_TABLE(REFERENCE='ANALYTIQUE',
+                 VALE_REFE=REF2,
+                 VALE_CALC=CAL2,
+                 PRECISION=1.e-3,
+                 NOM_PARA='X1',
+                 TABLE=DEP2[num_calc])
+
+      TEST_TABLE(REFERENCE='ANALYTIQUE',
+                 VALE_REFE=REF3,
+                 VALE_CALC=CAL3,
+                 PRECISION=1.e-3,
+                 NOM_PARA='X1',
+                 TABLE=DEP3[num_calc])
+
+      TEST_TABLE(REFERENCE='ANALYTIQUE',
+                 VALE_REFE=REF4,
+                 VALE_CALC=CAL4,
+                 PRECISION=1.e-3,
+                 NOM_PARA='X1',
+                 TABLE=DEP4[num_calc])
+
+      # SUBTILITE MACRO_COMMANDE VIS A VIS DES ENTREES  
+      MA[num_calc+1]=CO('MA_%d' % (num_calc+1))
+
+      MACR_ADAP_MAIL(ADAPTATION='RAFFINEMENT',
+                  CHAM_GD = CHERR[num_calc],
+                  CRIT_RAFF_PE = 0.2,
+                  USAGE_CMP = 'RELATIF',
+                  MAILLAGE_N = MA[num_calc],
+                  MAILLAGE_NP1 = MA[num_calc+1])
+
+# definition group de noeuds pour bloquer l'inclusion centrale
+MA[nb_raff]=DEFI_GROUP( reuse =MA[nb_raff],
+                        MAILLAGE=MA[nb_raff],
+                        CREA_GROUP_NO=_F(NOM='NC',OPTION='ENV_SPHERE',
+                        POINT=(0.,0.),PRECISION=1/50.,RAYON=1/50.),
+                        INFO=2 )
+       
+# definition group de noeuds pour bloquer l'entaille
+MA[nb_raff]=DEFI_GROUP( reuse =MA[nb_raff],
+                        MAILLAGE=MA[nb_raff],
+                        CREA_GROUP_NO=_F(NOM='NE1',OPTION='ENV_SPHERE',
+                        POINT=(0.,-0.3),PRECISION=1/200.,RAYON=1/200.),
+                        INFO=2 )
+
+MA[nb_raff]=DEFI_GROUP( reuse =MA[nb_raff],
+                        MAILLAGE=MA[nb_raff],
+                        CREA_GROUP_NO=_F(NOM='NE2',OPTION='ENV_SPHERE',
+                        POINT=(0.1,-0.3),PRECISION=1/200.,RAYON=1/200.),
+                        INFO=2 )
+
+                              
+# impression du dernier maillage
+IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MA[nb_raff]));
+
+#*********************************************************************
+#                          CALCUL                                    *
+#*********************************************************************
+
+MODELEK=MODI_MODELE_XFEM(MODELE_IN=MO[nb_raff],
+                         FISSURE=(FISS1[nb_raff],FISS2[nb_raff],FISS3[nb_raff],FISS4[nb_raff]),);
+
+ACIER=DEFI_MATERIAU(ELAS=_F(E=205000000000.0,
+                            NU=0.3),);
+
+CHAMPMAT=AFFE_MATERIAU(MAILLAGE=MA[nb_raff],
+                       MODELE=MODELEK,
+                       AFFE=_F(GROUP_MA='SURF',MATER=ACIER,),
+                       );
+
+CHARBLO=AFFE_CHAR_MECA(MODELE=MODELEK,
+                       DDL_IMPO=_F(GROUP_MA='LIG1',
+                                   DX=0.0,
+                                   DY=0.0,),
+                       );
+
+# pour bloquer les modes rigides de l'inclusion centrale et de l'entaille
+CHARINC=AFFE_CHAR_MECA(MODELE=MODELEK,
+                       DDL_IMPO=_F(GROUP_NO=('NC','NE1','NE2'),
+                                   DX=0.0,DY=10.0,),
+                       );
+
+CHPRES=AFFE_CHAR_MECA(MODELE=MODELEK,
+                      PRES_REP=_F(GROUP_MA=('LIG2','LIG3','LIG4'),PRES=-1.e6,),);
+
+RESU=MECA_STATIQUE(MODELE=MODELEK,
+                   CHAM_MATER=CHAMPMAT,
+                   EXCIT=(_F(CHARGE=CHARBLO),
+                          _F(CHARGE=CHARINC),
+                          _F(CHARGE=CHPRES))
+                   )
+
+#---------------POST--------------------------------------------
+
+MA_XFEM=POST_MAIL_XFEM(MODELE=MODELEK)
+
+MOD_VISU=AFFE_MODELE(MAILLAGE=MA_XFEM,
+                     AFFE=_F(TOUT='OUI',
+                              PHENOMENE='MECANIQUE',
+                              MODELISATION='D_PLAN',),) 
+
+RES_XFEM=POST_CHAM_XFEM(MODELE_VISU = MOD_VISU,
+                        RESULTAT    = RESU)
+
+FIN();

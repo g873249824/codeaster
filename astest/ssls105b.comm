@@ -1,0 +1,293 @@
+# TITRE HEMISPHERE DOUBLEMENT PINCE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSLS105B',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+# HEMISPHERE DOUBLEMENT PINCE
+# MAILLAGE 1/4 DE L'HEMISPHERE
+#
+# MODELISATION MEC3QU9H: 256 NOEUDS --  75 MAILLES QUAD9
+#
+
+
+MATERI_1=DEFI_MATERIAU( ELAS=_F(  E = 6.825E+7,     NU = 0.3000) )
+
+MAILLA_1=LIRE_MAILLAGE(FORMAT='MED',INFO=2   )
+
+MAILLA_1=DEFI_GROUP( reuse=MAILLA_1,   MAILLAGE=MAILLA_1,
+  CREA_GROUP_MA=_F(  NOM = 'TOUT', TOUT = 'OUI'))
+
+CH_MAT_1=AFFE_MATERIAU(  MAILLAGE=MAILLA_1,
+                            AFFE=_F(  TOUT = 'OUI',   MATER = MATERI_1) )
+
+MODELE_1=AFFE_MODELE(  MAILLAGE=MAILLA_1, VERIF='MAILLE',
+                     AFFE=_F( TOUT = 'OUI', MODELISATION = 'COQUE_3D',
+                                PHENOMENE = 'MECANIQUE') )
+
+CHARGE_1=AFFE_CHAR_MECA(MODELE=MODELE_1,DDL_IMPO=(
+                  _F( GROUP_NO = 'ACSANSAC', DY = 0.,
+                                              DRX = 0., DRZ = 0.),
+                           _F( GROUP_NO = 'BCSANSBC', DX = 0.,
+                                              DRY = 0., DRZ = 0.),
+                           _F( GROUP_NO = 'A',        DY = 0.,
+                                              DRX = 0., DRZ = 0.),
+                           _F( GROUP_NO = 'B',        DX = 0.,
+                                              DRY = 0., DRZ = 0.),
+                           _F( GROUP_NO = 'C',        DX = 0., DY = 0., DZ = 0.,
+                                              DRX = 0., DRY = 0., DRZ = 0.)),FORCE_NODALE=(
+                  _F(  GROUP_NO = 'A',  FX = -2.),
+                  _F(  GROUP_NO = 'B',  FY = 2.)) )
+
+CARAC__1=AFFE_CARA_ELEM(   MODELE=MODELE_1,
+                               COQUE=_F(
+       GROUP_MA = 'TOUT',
+  EPAIS = 0.040,
+                                  A_CIS = 0.83333333333333) )
+
+MATELE_1=CALC_MATR_ELEM(   MODELE=MODELE_1,     CHARGE=CHARGE_1,
+                               CARA_ELEM=CARAC__1,
+                               CHAM_MATER=CH_MAT_1,
+                               OPTION='RIGI_MECA' )
+
+VEL=CALC_VECT_ELEM(   CHARGE=CHARGE_1,  OPTION='CHAR_MECA' )
+
+NU=NUME_DDL(   MATR_RIGI=MATELE_1 )
+
+MATASS=ASSE_MATRICE(   MATR_ELEM=MATELE_1,   NUME_DDL=NU )
+
+VECASS=ASSE_VECTEUR(   VECT_ELEM=VEL,        NUME_DDL=NU )
+
+MATASS=FACTORISER( reuse=MATASS,  MATR_ASSE=MATASS )
+
+VECASS=RESOUDRE(reuse=VECASS, MATR=MATASS,     CHAM_NO=VECASS)
+
+TEST_RESU(CHAM_NO=_F(CRITERE='RELATIF',
+                     NOM_CMP='DX',
+                     GROUP_NO='A',
+                     PRECISION=1.E-2,
+                     CHAM_GD=VECASS,
+                     VALE_CALC=-0.18447251131183,
+                     VALE_REFE=-0.185,
+                     REFERENCE='NON_DEFINI',),
+          )
+
+TEST_RESU(CHAM_NO=_F(CRITERE='RELATIF',
+                     NOM_CMP='DY',
+                     GROUP_NO='B',
+                     PRECISION=1.E-2,
+                     CHAM_GD=VECASS,
+                     VALE_CALC=0.18448192537617,
+                     VALE_REFE=0.185,
+                     REFERENCE='NON_DEFINI',),
+          )
+
+RESU=CREA_RESU(OPERATION='AFFE',
+                   TYPE_RESU='EVOL_NOLI',
+                   NOM_CHAM='DEPL',
+                   AFFE=_F(CHAM_GD=VECASS,MODELE=MODELE_1,
+                   CHAM_MATER=CH_MAT_1,
+                   CARA_ELEM=CARAC__1,
+                           INST=0.,),);
+RESU=CALC_CHAMP(reuse=RESU,RESULTAT= RESU, DEFORMATION=('DEGE_ELGA','DEGE_ELNO',), )
+
+# NO000124(X=0.15480D+01,Y=0.15788D+01,Z=0.97525D+01)
+IMPR_RESU(RESU=_F(RESULTAT=RESU,NOM_CHAM=('DEGE_ELGA','DEGE_ELNO',),
+                MAILLE=('MA000055',),))
+TEST_RESU(RESU=(
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='EXX',
+                  MAILLE='MA000055',
+                  NOEUD='NO000124',
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=-6.4844897255537E-08,
+                  VALE_REFE=-6.4844897255537E-08,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='EYY',
+                  MAILLE='MA000055',
+                  NOEUD='NO000124',
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=2.4252654217746E-07,
+                  VALE_REFE=2.4252654217746E-07,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='EXY',
+                  MAILLE='MA000055',
+                  NOEUD='NO000124',
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=7.0176241107029E-07,
+                  VALE_REFE=7.0176241107029E-07,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='KXX',
+                  MAILLE='MA000055',
+                  NOEUD='NO000124',
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=1.3630307035642E-03,
+                  VALE_REFE=1.3630307035642E-03,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='KYY',
+                  MAILLE='MA000055',
+                  NOEUD='NO000124',
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=-1.4074127640743E-03,
+                  VALE_REFE=-1.4074127640743E-03,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='KXY',
+                  MAILLE='MA000055',
+                  NOEUD='NO000124',
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=2.0683668128283E-04,
+                  VALE_REFE=2.0683668128283E-04,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='GAX',
+                  MAILLE='MA000055',
+                  NOEUD='NO000124',
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=9.3303493904462E-07,
+                  VALE_REFE=9.3303493904462E-07,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='GAY',
+                  MAILLE='MA000055',
+                  NOEUD='NO000124',
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=-9.7928755241013E-07,
+                  VALE_REFE=-9.7928755241013E-07,
+                  REFERENCE='NON_DEFINI',),
+          ))
+
+TEST_RESU(RESU=(
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='EXX',
+                  MAILLE='MA000055',
+                  POINT= 3,
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=-9.6474216657884E-08,
+                  VALE_REFE=-9.6474216657884E-08,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='EYY',
+                  MAILLE='MA000055',
+                  POINT= 3,
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=2.4318394458589E-07,
+                  VALE_REFE=2.4318394458589E-07,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='EXY',
+                  MAILLE='MA000055',
+                  POINT= 3,
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=-2.7569390407045E-07,
+                  VALE_REFE=-2.7569390407045E-07,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='KXX',
+                  MAILLE='MA000055',
+                  POINT= 3,
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=1.2329547356948E-03,
+                  VALE_REFE=1.2329547356948E-03,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='KYY',
+                  MAILLE='MA000055',
+                  POINT= 3,
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=-1.3756952890219E-03,
+                  VALE_REFE=-1.3756952890219E-03,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='KXY',
+                  MAILLE='MA000055',
+                  POINT= 3,
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=-4.9987349953294E-04,
+                  VALE_REFE=-4.9987349953294E-04,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='GAX',
+                  MAILLE='MA000055',
+                  POINT= 3,
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=-1.3550775285199E-06,
+                  VALE_REFE=-1.3550775285199E-06,
+                  REFERENCE='NON_DEFINI',),
+               _F(CRITERE='RELATIF',
+                  NUME_ORDRE=1,
+                  NOM_CHAM='DEGE_ELNO',
+                  NOM_CMP='GAY',
+                  MAILLE='MA000055',
+                  POINT= 3,
+                  PRECISION=1.E-6,
+                  RESULTAT=RESU,
+                  VALE_CALC=8.4395596729788E-07,
+                  VALE_REFE=8.4395596729788E-07,
+                  REFERENCE='NON_DEFINI',),
+          ))
+FIN()
+#

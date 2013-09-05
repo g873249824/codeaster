@@ -1,0 +1,426 @@
+# TITRE ESTIMATEUR D'ERREUR SUR UNE PLAQUE TROUEE EN TRACTION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+# MODELISATION 1 : ELEMENTS MECANIQUE C_PLAN TRIA6
+# ----------------------------------------------------------------------
+
+DEBUT(CODE=_F(NOM='SSLV111C',
+              NIV_PUB_WEB='INTERNET',),
+      DEBUG=_F(SDVERI='OUI',),);
+
+M=LIRE_MAILLAGE(FORMAT='MED',);
+
+MO=AFFE_MODELE(MAILLAGE=M,
+               VERIF='MAILLE',
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='C_PLAN',),);
+
+MA=DEFI_MATERIAU(ELAS=_F(E=1000.,
+                         NU=0.3,
+                         ALPHA=0.,),
+                 THER=_F(LAMBDA=0.,
+                         RHO_CP=1.,),);
+
+CM=AFFE_MATERIAU(MAILLAGE=M,
+                 AFFE=_F(TOUT='OUI',
+                         MATER=MA,),);
+
+F1 = FORMULE(VALE=
+"""
+1.-(1.5*cos(2.*atan2(Y,4.))+cos(4.*atan2(Y,4.))) /(16.+Y*Y)
+                            +(3.*cos(4.*atan2(Y,4.)))/(2.*(16.+Y*Y)**2)
+              """,
+             NOM_PARA='Y',);
+
+F2 = FORMULE(VALE=
+"""
+-(0.5*sin(2.*atan2(Y,4.))+sin(4.*atan2(Y,4.))) /(16.+Y*Y)
+                             +(3.*sin(4.*atan2(Y,4.)))/(2.*(16.+Y*Y)**2)
+              """,
+             NOM_PARA='Y',);
+
+F3 = FORMULE(VALE=
+"""
+-(0.5*sin(2.*atan2(4.,X))+sin(4.*atan2(4.,X))) /(16.+X*X)
+                             +(3.*sin(4.*atan2(4.,X)))/(2.*(16.+X*X)**2)
+              """,
+             NOM_PARA='X',);
+
+F4 = FORMULE(VALE=
+"""
+-(0.5*cos(2.*atan2(4.,X))-cos(4.*atan2(4.,X))) /(16.+X*X)
+                             -(3.*cos(4.*atan2(4.,X)))/(2.*(16.+X*X)**2)
+              """,
+             NOM_PARA='X',);
+
+SIXX = FORMULE(VALE="""
+1.-(1.5*cos(2.*TH)+cos(4.*TH)) /(R*R)
+          +(1.5*cos(4.*TH))/(R**4)
+       """,
+               NOM_PARA=('R','TH',),);
+
+SIYY = FORMULE(VALE="""
+-(0.5*cos(2.*TH)-cos(4.*TH)) /(R*R)
+          -(1.5*cos(4.*TH))/(R**4)
+              """,
+               NOM_PARA=('R','TH',),);
+
+SIXY = FORMULE(VALE="""
+-(0.5*sin(2.*TH)+sin(4.*TH)) /(R*R)
+          +(1.5*sin(4.*TH))/(R**4)
+              """,
+               NOM_PARA=('R','TH',),);
+
+CH1=AFFE_CHAR_MECA(MODELE=MO,
+                   FACE_IMPO=(_F(GROUP_MA='GRMA1',
+                                 DY=0.,),
+                              _F(GROUP_MA='GRMA2',
+                                 DX=0.,),),);
+
+CH2=AFFE_CHAR_MECA_F(MODELE=MO,
+                     FORCE_CONTOUR=(_F(GROUP_MA='GRMA3',
+                                       FX=F1,
+                                       FY=F2,),
+                                    _F(GROUP_MA='GRMA4',
+                                       FX=F3,
+                                       FY=F4,),),);
+
+RESU=MECA_STATIQUE(MODELE=MO,
+                   CHAM_MATER=CM,
+                   EXCIT=(_F(CHARGE=CH1,),
+                          _F(CHARGE=CH2,),),);
+
+RESU=CALC_ERREUR(reuse =RESU,
+                 RESULTAT=RESU,
+                 TOUT_ORDRE='OUI',
+                 SOLVEUR=_F(METHODE='MUMPS'),
+                 OPTION=('ERZ1_ELEM','ERZ2_ELEM','ERME_ELEM',),);
+
+SIGZZ1=CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R',
+                  OPERATION='EXTR',
+                  RESULTAT=RESU,
+                  NOM_CHAM='SIZ1_NOEU',
+                  NUME_ORDRE=1,);
+
+SIGZZ2=CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R',
+                  OPERATION='EXTR',
+                  RESULTAT=RESU,
+                  NOM_CHAM='SIZ2_NOEU',
+                  NUME_ORDRE=1,);
+
+TEST_RESU(CHAM_NO=(_F(CRITERE='RELATIF',
+                      NOM_CMP='SIXX',
+                      GROUP_NO='GRNO13',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=2.975164128,
+                      VALE_REFE=SIXX(1.0,1.57079632679,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIXX',
+                      GROUP_NO='GRNO11',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=1.166040454,
+                      VALE_REFE=SIXX(2.0,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIXX',
+                      GROUP_NO='GRNO12',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=1.029630349,
+                      VALE_REFE=SIXX(5.656854,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='ABSOLU',
+                      NOM_CMP='SIXX',
+                      GROUP_NO='GRNO10',
+                      PRECISION=0.10000000000000001,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=-0.091584505,
+                      VALE_REFE=SIXX(1.0,0.0,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='ABSOLU',
+                      NOM_CMP='SIYY',
+                      GROUP_NO='GRNO13',
+                      PRECISION=0.10000000000000001,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=0.068597618,
+                      VALE_REFE=SIYY(1.0,1.57079632679,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIYY',
+                      GROUP_NO='GRNO11',
+                      PRECISION=0.070000000000000007,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=-0.167069683,
+                      VALE_REFE=SIYY(2.0,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIYY',
+                      GROUP_NO='GRNO12',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=-0.029674489,
+                      VALE_REFE=SIYY(5.656854,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIYY',
+                      GROUP_NO='GRNO10',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=-0.955268579,
+                      VALE_REFE=SIYY(1.0,0.0,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='ABSOLU',
+                      NOM_CMP='SIXY',
+                      GROUP_NO='GRNO13',
+                      PRECISION=0.10000000000000001,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=-0.031206048,
+                      VALE_REFE=SIXY(1.0,1.57079632679,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIXY',
+                      GROUP_NO='GRNO11',
+                      PRECISION=0.02,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=-0.126895626,
+                      VALE_REFE=SIXY(2.0,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIXY',
+                      GROUP_NO='GRNO12',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=-0.014972630,
+                      VALE_REFE=SIXY(5.656854,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='ABSOLU',
+                      NOM_CMP='SIXY',
+                      GROUP_NO='GRNO10',
+                      PRECISION=0.10000000000000001,
+                      CHAM_GD=SIGZZ1,
+                      VALE_CALC=0.019808301,
+                      VALE_REFE=SIXY(1.0,0.0,),
+                      REFERENCE='ANALYTIQUE',),
+                   ),
+          )
+
+TEST_RESU(CHAM_NO=(_F(CRITERE='RELATIF',
+                      NOM_CMP='SIXX',
+                      GROUP_NO='GRNO13',
+                      PRECISION=0.02,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=2.956939664,
+                      VALE_REFE=SIXX(1.0,1.57079632679,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIXX',
+                      GROUP_NO='GRNO11',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=1.153349677,
+                      VALE_REFE=SIXX(2.0,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIXX',
+                      GROUP_NO='GRNO12',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=1.029469365,
+                      VALE_REFE=SIXX(5.656854,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='ABSOLU',
+                      NOM_CMP='SIXX',
+                      GROUP_NO='GRNO10',
+                      PRECISION=0.10000000000000001,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=-0.080886805,
+                      VALE_REFE=SIXX(1.0,0.0,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='ABSOLU',
+                      NOM_CMP='SIYY',
+                      GROUP_NO='GRNO13',
+                      PRECISION=0.10000000000000001,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=0.075192441,
+                      VALE_REFE=SIYY(1.0,1.57079632679,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIYY',
+                      GROUP_NO='GRNO11',
+                      PRECISION=0.02,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=-0.153329020,
+                      VALE_REFE=SIYY(2.0,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIYY',
+                      GROUP_NO='GRNO12',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=-0.029494151,
+                      VALE_REFE=SIYY(5.656854,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIYY',
+                      GROUP_NO='GRNO10',
+                      PRECISION=0.059999999999999998,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=-0.949777943,
+                      VALE_REFE=SIYY(1.0,0.0,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='ABSOLU',
+                      NOM_CMP='SIXY',
+                      GROUP_NO='GRNO13',
+                      PRECISION=0.20000000000000001,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=-0.155078747,
+                      VALE_REFE=SIXY(1.0,1.57079632679,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIXY',
+                      GROUP_NO='GRNO11',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=-0.124273141,
+                      VALE_REFE=SIXY(2.0,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='RELATIF',
+                      NOM_CMP='SIXY',
+                      GROUP_NO='GRNO12',
+                      PRECISION=1.E-2,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=-0.015721361,
+                      VALE_REFE=SIXY(5.656854,0.785398163397,),
+                      REFERENCE='ANALYTIQUE',),
+                   _F(CRITERE='ABSOLU',
+                      NOM_CMP='SIXY',
+                      GROUP_NO='GRNO10',
+                      PRECISION=0.20000000000000001,
+                      CHAM_GD=SIGZZ2,
+                      VALE_CALC=0.110394113,
+                      VALE_REFE=SIXY(1.0,0.0,),
+                      REFERENCE='ANALYTIQUE',),
+                   ),
+          )
+
+IMPR_RESU(MODELE=MO,
+          RESU=(_F(RESULTAT=RESU,
+                   NOM_CHAM='SIZ1_NOEU',
+                   NUME_ORDRE=1,
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',
+                   SOUS_TITRE='CONTRAINTES AUX NOEUDS ZZ1',),
+                _F(RESULTAT=RESU,
+                   NOM_CHAM='SIZ2_NOEU',
+                   NUME_ORDRE=1,
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',
+                   SOUS_TITRE='CONTRAINTES AUX NOEUDS ZZ2',),
+                _F(RESULTAT=RESU,
+                   NOM_CHAM='ERZ1_ELEM',
+                   NUME_ORDRE=1,
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',
+                   SOUS_TITRE='ESTIMATEUR DERREUR ZZ1',),
+                _F(RESULTAT=RESU,
+                   NOM_CHAM='ERZ1_ELEM',
+                   NUME_ORDRE=1,
+                   NOM_CMP='NUEST',
+                   BORNE_INF=10.0,
+                   SOUS_TITRE=('ESTIMATEUR DERREUR ZZ1:LISTE DES MAILLES OU LERREUR RELATIVE ','EST SUPERIEURE A 10 POUR CENT',),),
+                _F(RESULTAT=RESU,
+                   NOM_CHAM='ERZ2_ELEM',
+                   NUME_ORDRE=1,
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',
+                   SOUS_TITRE='ESTIMATEUR DERREUR ZZ2',),
+                _F(RESULTAT=RESU,
+                   NOM_CHAM='ERZ2_ELEM',
+                   NUME_ORDRE=1,
+                   NOM_CMP='NUEST',
+                   BORNE_INF=10.0,
+                   SOUS_TITRE=('ESTIMATEUR DERREUR ZZ2:LISTE DES MAILLES OU LERREUR RELATIVE ','EST SUPERIEURE A 10 POUR CENT',),),
+                _F(RESULTAT=RESU,
+                   NOM_CHAM='ERME_ELEM',
+                   NUME_ORDRE=1,
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',
+                   SOUS_TITRE='ESTIMATEUR DERREUR EN RESIDU',),
+                _F(RESULTAT=RESU,
+                   NOM_CHAM='ERME_ELEM',
+                   NUME_ORDRE=1,
+                   NOM_CMP='NUEST',
+                   BORNE_INF=10.0,
+                   SOUS_TITRE=
+                   ('ESTIMATEUR DERREUR EN RESIDU :LISTE DES MAILLES OU LERREUR  ',
+                                'RELATIVE EST SUPERIEURE A 10 POUR CENT',),),),);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   POINT=1,
+                   RESULTAT=RESU,
+                   NOM_CHAM='ERZ1_ELEM',
+                   NOM_CMP='NUEST',
+                   VALE_CALC=3.8747527464257,
+                   VALE_REFE=0.0,
+                   PRECISION=3.9,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   RESULTAT=RESU,
+                   NOM_CHAM='ERZ2_ELEM',
+                   NOM_CMP='NUEST',
+                   VALE_CALC=7.188640801705,
+                   VALE_REFE=0.0,
+                   PRECISION=7.2,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   RESULTAT=RESU,
+                   NOM_CHAM='ERME_ELEM',
+                   NOM_CMP='ERREST',
+                   VALE_CALC= 2.43569866E-04,
+                   VALE_REFE=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   PRECISION=0.02,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   RESULTAT=RESU,
+                   NOM_CHAM='ERME_ELEM',
+                   NOM_CMP='NUEST',
+                   VALE_CALC=0.206219439,
+                   VALE_REFE=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   PRECISION=11.0,
+                   MAILLE='M1',),
+                ),
+          )
+
+FIN();
+
+#

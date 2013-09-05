@@ -1,0 +1,88 @@
+# person_in_charge: jean-michel.proix at edf.fr
+# TITRE  TEST LOI DE COMPORTEMENT 3D VMIS_ISOT_PUIS
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# ELASTOPLASTICITE  ECROUISSAGE ISOTROPE VON MISES
+#......................................................................
+
+DEBUT(CODE=_F(NOM='COMP001H',NIV_PUB_WEB='INTERNET',VISU_EFICAS='NON'),IGNORE_ALARM=('ELEMENTS3_11'));
+
+# donnee materiau et fonction
+
+#parametres elastiques
+YOUNG = 200000.0;
+POISSON = 0.3;
+
+# def des materiaux
+ACIER = [None]*2
+#unite en Pa
+C_Pa = 1.e+6
+YOUNG_Pa = YOUNG * C_Pa
+
+SY=200.0
+SY_Pa=SY*C_Pa
+APUI=0.1
+NPUI=10.
+
+ACIER[0]=DEFI_MATERIAU(ELAS=_F(E=YOUNG_Pa,
+                               NU=POISSON,
+                               ALPHA=11.8e-6),
+                    ECRO_PUIS=_F(A_PUIS=APUI,
+                                 N_PUIS=NPUI,
+                                 SY=SY_Pa),
+                                 );
+#unite en MPa
+
+ACIER[1]=DEFI_MATERIAU(ELAS=_F(E=YOUNG,
+                               NU=POISSON,
+                               ALPHA=11.8e-6),
+                    ECRO_PUIS=_F(A_PUIS=APUI,
+                                 N_PUIS=NPUI,
+                                 SY=SY,
+                                 ),);
+
+compor='VMIS_ISOT_PUIS'
+
+tabresu=TEST_COMPOR(OPTION='MECA',
+
+                   COMP_INCR=_F(RELATION=compor,RESI_INTE_RELA=1.E-6,ITER_INTE_MAXI=50),
+              NEWTON=_F(REAC_ITER=1),
+              LIST_MATER=ACIER,
+              LIST_NPAS=4*[1] + [1, 5, 25],
+              VARI_TEST=('V1','VMIS','TRACE'),
+              #LIST_TOLE=4*[1.E-10] + [1.E-1] + 2*[1.E-2] + [1.E-8]
+              YOUNG=YOUNG,POISSON=POISSON,
+              )
+
+IMPR_TABLE(TABLE=tabresu)
+
+
+tabres2=TEST_COMPOR(OPTION='MECA',
+                    MODELISATION='C_PLAN',SUPPORT='ELEMENT',
+
+                   COMP_INCR=_F(RELATION=compor,RESI_INTE_RELA=1.E-6,ITER_INTE_MAXI=50),
+              NEWTON=_F(REAC_ITER=1),
+              LIST_MATER=ACIER,
+              LIST_NPAS=4*[1] + [1, 5, 25],
+              VARI_TEST=('V1','VMIS','TRACE'),
+              LIST_TOLE=4*[1.E-10] + [2.E-1] + 2*[3.E-2] + [1.E-4],
+              YOUNG=YOUNG,POISSON=POISSON,
+              )
+
+IMPR_TABLE(TABLE=tabres2)
+
+FIN()

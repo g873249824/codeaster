@@ -1,0 +1,278 @@
+
+# TITRE MONOCRISTAL OCTAEDRIQUE MERIC-CAILLETAUD EXPLICITE ET IMPLICITE AVEC SIMU_POINT_MAT
+# person_in_charge: jean-michel.proix at edf.fr
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSNV171B',  NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'),IMPR_MACRO='NON')
+
+TFIN = 1.5;
+
+LINST=DEFI_LIST_REEL(DEBUT=0.0,
+                     INTERVALLE=(_F(JUSQU_A=0.87,
+                                    NOMBRE=1,),
+                                 _F(JUSQU_A=TFIN,
+                                    NOMBRE=300,),),);
+LINST2=DEFI_LIST_REEL(DEBUT=0.0,
+                     INTERVALLE=(_F(JUSQU_A=0.87,
+                                    NOMBRE=1,),
+                                 _F(JUSQU_A=TFIN,
+                                    NOMBRE=1000,),),);
+
+ACIER=DEFI_MATERIAU(ELAS=_F(E=145200.0,
+                            NU=0.3,),
+                    MONO_VISC1=_F(N=10.0,
+                                  K=40.0,
+                                  C=1.0,),
+                    MONO_ISOT1=_F(R_0=75.5,
+                                  Q=9.77,
+                                  B=19.34,
+                                  H=0.0,),
+                    MONO_CINE1=_F(D=36.68,),);
+
+CHARGE=DEFI_FONCTION(NOM_PARA='INST',
+                   VALE=(0.0,0.0,1.0,-140.0,),
+                   PROL_DROITE='LINEAIRE',
+                   PROL_GAUCHE='LINEAIRE',);
+
+    
+
+COMPOR1=DEFI_COMPOR( ROTA_RESEAU='POST',
+                     MONOCRISTAL=(_F(MATER=ACIER,
+                                    ECOULEMENT='MONO_VISC1',
+                                    ECRO_ISOT='MONO_ISOT1',
+                                    ECRO_CINE='MONO_CINE1',
+                                    ELAS='ELAS',
+                                    FAMI_SYST_GLIS='OCTAEDRIQUE',),),);
+
+
+DEFLIST1 =DEFI_LIST_INST(DEFI_LIST=_F(LIST_INST = LINST),
+                        ECHEC=_F(ACTION        = 'DECOUPE',
+                                 SUBD_METHODE  = 'MANUEL',
+                                 SUBD_PAS=10,
+                                 SUBD_NIVEAU=10),)
+MONOIMPL=SIMU_POINT_MAT(INFO=2,
+                   COMP_INCR=_F(RELATION='MONOCRISTAL',
+                                COMPOR=COMPOR1,
+                                ALGO_INTE='NEWTON_RELI',
+                                ),
+                   MASSIF=_F(ANGL_REP=30.0),
+                   ANGLE=0.,
+                   SUPPORT='POINT',
+                   NEWTON=_F(PREDICTION='TANGENTE',
+                             REAC_ITER=1,),
+                   MATER      = ACIER,  
+                   INCREMENT=_F(LIST_INST=DEFLIST1),
+                   ARCHIVAGE=_F(LIST_INST=LINST,PRECISION=1.E-6),
+                   SIGM_IMPOSE=_F(SIXX=CHARGE),
+                        );  
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           VALE_CALC=-210.00000024969,
+           VALE_REFE=-210.0,
+           NOM_PARA='SIXX',
+           TABLE=MONOIMPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           VALE_REFE=-1.8909E-3,
+           VALE_CALC=-1.8913170551231E-3,
+           PRECISION=1.E-3,
+           NOM_PARA='EPXX',
+           TABLE=MONOIMPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           VALE_REFE=5.02667E-4,
+           VALE_CALC=5.0273161612489E-4,
+           PRECISION=1.E-3,
+           NOM_PARA='EPYY',
+           TABLE=MONOIMPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=2.E-3,
+           VALE_CALC=6.884732583738E-05,
+           VALE_REFE=6.878285E-05,
+           NOM_PARA='V2',
+           TABLE=MONOIMPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+# rotation de reseau
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=2.E-3,
+           VALE_CALC= 1.8809439104386E-04,
+           VALE_REFE=1.8799999999999999E-4,
+           NOM_PARA='V58',
+           TABLE=MONOIMPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+# explicite
+
+COMPOR2=DEFI_COMPOR( MONOCRISTAL=(_F(MATER=ACIER,
+                                    ECOULEMENT='MONO_VISC1',
+                                    ECRO_ISOT='MONO_ISOT1',
+                                    ECRO_CINE='MONO_CINE1',
+                                    ELAS='ELAS',
+                                    FAMI_SYST_GLIS='OCTAEDRIQUE',),),);
+
+MONOEXPL=SIMU_POINT_MAT(INFO=2,
+                   COMP_INCR=_F(RELATION='MONOCRISTAL',
+                                COMPOR=COMPOR2,
+                                ALGO_INTE='RUNGE_KUTTA',
+                                RESI_INTE_RELA=1.E-6,
+                                TYPE_MATR_TANG='PERTURBATION',
+                                ),
+                   MASSIF=_F(ANGL_EULER=30.0),
+                   ANGLE=0.,
+                   NEWTON=_F(MATRICE='TANGENTE',
+                             REAC_ITER=1,),
+                   CONVERGENCE=_F(ITER_GLOB_MAXI=20,RESI_GLOB_RELA=1.E-6),
+                   MATER      = ACIER,  
+                   INCREMENT=_F(LIST_INST=LINST2,NUME_INST_FIN=1001),
+                   SIGM_IMPOSE=_F(SIXX=CHARGE),
+                        );  
+                                              
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-06,
+           VALE_CALC=-209.99999907598,
+           VALE_REFE=-210.0,
+           NOM_PARA='SIXX',
+           TABLE=MONOEXPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=7.0000000000000001E-3,
+           VALE_CALC=-1.8787209875375E-03,
+           VALE_REFE=-1.8908E-3,
+           NOM_PARA='EPXX',
+           TABLE=MONOEXPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=7.0000000000000001E-3,
+           VALE_CALC= 5.0078299768811E-04,
+           VALE_REFE=5.0264999999999999E-4,
+           NOM_PARA='EPYY',
+           TABLE=MONOEXPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(REFERENCE='NON_DEFINI',
+           PRECISION=2.E-3,
+           VALE_CALC= 6.884732583738E-05,
+           VALE_REFE=6.8847299999999994E-05,
+           NOM_PARA='V2',
+           TABLE=MONOIMPL,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+# implicite avec NEWTON_PERT
+MONOIMPP=SIMU_POINT_MAT(INFO=2,
+                   COMP_INCR=_F(RELATION='MONOCRISTAL',
+                                COMPOR=COMPOR1,
+                                ALGO_INTE='NEWTON_PERT',
+                                ),
+                   MASSIF=_F(ANGL_REP=30.0),
+                   ANGLE=0.,
+                   SUPPORT='POINT',
+                   NEWTON=_F(PREDICTION='ELASTIQUE',
+                             REAC_ITER=1,),
+                   MATER      = ACIER,  
+                   INCREMENT=_F(LIST_INST=DEFLIST1),
+                   ARCHIVAGE=_F(LIST_INST=LINST,PRECISION=1.E-6),
+                   SIGM_IMPOSE=_F(SIXX=CHARGE),
+                        );
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC=-209.99999982273,
+           VALE_REFE=-210.0,
+           NOM_PARA='SIXX',
+           TABLE=MONOIMPP,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=-1.8913169225647E-3,
+           NOM_PARA='EPXX',
+           TABLE=MONOIMPP,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=5.0273159561842E-4,
+           NOM_PARA='EPYY',
+           TABLE=MONOIMPP,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+TEST_TABLE(REFERENCE='NON_DEFINI',
+           PRECISION=2.E-3,
+           VALE_CALC= 6.8847298342205E-05,
+           VALE_REFE=6.8847299999999994E-05,
+           NOM_PARA='V2',
+           TABLE=MONOIMPP,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+# rotation de reseau
+TEST_TABLE(REFERENCE='NON_DEFINI',
+           PRECISION=2.E-3,
+           VALE_CALC= 1.8809431592564E-04,
+           VALE_REFE=1.8799999999999999E-4,
+           NOM_PARA='V58',
+           TABLE=MONOIMPP,
+           FILTRE=_F(PRECISION=1.E-06,
+                     NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+FIN()

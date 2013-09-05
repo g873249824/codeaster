@@ -1,0 +1,538 @@
+# person_in_charge: marc.kham at edf.fr
+# TITRE CONSTRUCTION PAR COUCHES EN HYDROMECANIQUE DRAINE AVEC LA LOI DE HUJEUX (POURSUITE)
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                WWW.CODE-ASTER.ORG
+#
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+# 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+#
+#
+#                    POST-TRAITEMENT ET VALIDATION
+#                    =============================
+
+# ATTENTION:
+# =========
+#
+# on ne garantit pas la transposabilite de ce post-traitement
+# a un autre maillage.
+
+
+POURSUITE(CODE=_F(NOM='WTNV132B'),PAR_LOT='NON')
+
+#       ---------------
+# FIN-  Post-traitement
+#       ---------------
+
+#    ----------------------------------------------------
+# 1- On cherche d'abord à créer une table de la forme:
+#
+#                    temps noeu_1  noeu_2   ....   noeu_n
+#                t1
+#                t2
+#  noeu_depl =    .
+#                 .
+#                 .
+#                tn
+#    ----------------------------------------------------
+
+
+n_pas_temps_max    = 10000
+n_pas_incr         = 1
+noeu_depl          = dict();
+noeu_depl['TEMPS'] = [0.0]
+cle                = [ ]
+list_pas_temps     = [ ]
+noeu_tass_0        = [ ]
+
+# -->20: début boucle for
+for n in range(nbcouche):
+
+  cle.append('ELEMEN'+str(n));
+  noeu_depl[cle[n]] = [0.0]*n_pas_temps_max
+
+  tab = T_DEP[n].EXTR_TABLE()
+  t = tab.INST.values()
+  dy = tab.DY.values()
+
+  n_pas_temps  = int(len(t)/(n+1));
+
+  n_pas_incr_0 = n_pas_incr
+  n_pas_incr  += n_pas_temps
+
+  list_pas_temps.append(n_pas_incr-2);
+
+  noeu_depl['TEMPS'] += t[::n+1]
+  noeu_tass_0.append(dy[(n+1)*n_pas_temps-1]);
+
+  # -->30: début boucle for
+  for m in range(n+1):
+
+    noeu_depl[cle[m]][n_pas_incr_0:n_pas_incr] = dy[m::n+1]
+
+  # <--30: fin boucle for
+
+  #DETRUIRE(CONCEPT=_F(NOM=(v)));
+
+# <--20: fin boucle for
+
+
+# -->50: début boucle for
+for n in range(nbcouche):
+
+  del(noeu_depl[cle[n]][n_pas_incr:]);
+
+# <--50: fin boucle for
+
+
+#    -------------------------------------------------
+# 2- On calcule le tassement
+#
+#                    temps_1  temps_2   ....   temps_n
+#                H1
+#                H2
+#  noeu_tass =    .
+#                 .
+#                 .
+#                Hn
+#    -------------------------------------------------
+
+
+n_pas_temps = len(noeu_depl['TEMPS']);
+noeu_tass   = dict();
+
+# -->100: début boucle for
+for n in range(n_pas_temps-1):
+
+  noeu_tass['TEMPS'+str(n)] = [ ]
+
+# <--100: fin boucle for
+
+
+# -->300: début boucle for
+for n in range(n_pas_temps-1):
+
+  # -->40: début boucle for
+  for m in range(nbcouche):
+
+    tass_value = 0.
+    if noeu_depl[cle[m]][n+1] != 0. : tass_value = noeu_depl[cle[m]][n+1] - noeu_tass_0[m]
+
+    noeu_tass['TEMPS'+str(n)].append(tass_value);
+
+  # <--40: fin boucle for
+
+# <--300: fin boucle for
+
+
+#    ----------------------------
+# 3- Impression au format XMGRACE
+#    ----------------------------
+
+
+tass       = [0.]*n_pas_temps
+COURBE     = []
+n_pas_temps= len(list_pas_temps);
+
+# -->200: début boucle for
+for n in range(n_pas_temps):
+
+  def_courbe={'ABSCISSE': noeu_tass['TEMPS'+str(list_pas_temps[n])]}
+  def_courbe['ORDONNEE'] = range(1,nbcouche+1)
+  def_courbe['LEGENDE' ] = 'TEMPS'+str(list_pas_temps[n]);
+  def_courbe['COULEUR' ] = list_pas_temps[n]+1
+  def_courbe['MARQUEUR'] = list_pas_temps[n]+1
+
+  COURBE.append(def_courbe);
+
+  l_cote=DEFI_LIST_REEL(TITRE = 'COTE',
+                        VALE  = def_courbe['ORDONNEE']);
+
+  l_tass=DEFI_LIST_REEL(TITRE = 'TASSEMENT',
+                        VALE  = def_courbe['ABSCISSE']);
+
+  tass[n]=DEFI_FONCTION(NOM_PARA  = 'Z',
+                        NOM_RESU  = 'TASSEMENT',
+                        VALE_PARA = l_cote,
+                        VALE_FONC = l_tass);
+
+  IMPR_FONCTION(FORMAT ='TABLEAU',
+                UNITE  =8,
+                COURBE =_F(FONCTION=tass[n]));
+
+  del(def_courbe);
+  DETRUIRE(CONCEPT=_F(NOM=(l_cote,l_tass)));
+
+# <--200: fin boucle for
+
+IMPR_FONCTION(FORMAT='XMGRACE',
+              UNITE=25,
+              COURBE=COURBE);
+
+
+#              ------------------------------------
+# VALIDATION-  Comparaison des valeurs de tassement
+#              par rapport à GEFDYN (ECP)
+#              ------------------------------------
+
+
+# tassement de la première couche
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-4.427212E-03,
+                         VALE_REFE=-4.6480000000000002E-3,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=tass_2,),
+                      _F(VALE_CALC=-8.192141E-03,
+                         VALE_REFE=-8.3909999999999992E-3,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_3,),
+                      _F(VALE_CALC=-0.01176320,
+                         VALE_REFE=-0.011939999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_4,),
+                      _F(VALE_CALC=-0.01529692,
+                         VALE_REFE=-0.015440000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_5,),
+                      _F(VALE_CALC=-0.01885931,
+                         VALE_REFE=-0.01898,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_6,),
+                      _F(VALE_CALC=-0.02253501,
+                         VALE_REFE=-0.02265,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=1.E-2,
+                         FONCTION=tass_7,),
+                      _F(VALE_CALC=-0.02634572,
+                         VALE_REFE=-0.02647,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=1.E-2,
+                         FONCTION=tass_8,),
+                      _F(VALE_CALC=-0.03032347,
+                         VALE_REFE=-0.03049,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_9,),
+                      _F(VALE_CALC=-0.03446913,
+                         VALE_REFE=-0.034729999999999997,
+                         CRITERE='RELATIF',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_10,),
+                      ),
+              )
+
+# tassement de la deuxième couche
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-8.196546E-03,
+                         VALE_REFE=-8.4089999999999998E-3,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.089999999999999997,
+                         FONCTION=tass_3,),
+                      _F(VALE_CALC=-0.01554630,
+                         VALE_REFE=-0.015720000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=tass_4,),
+                      _F(VALE_CALC=-0.02265825,
+                         VALE_REFE=-0.022780000000000002,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.040000000000000001,
+                         FONCTION=tass_5,),
+                      _F(VALE_CALC=-0.02976931,
+                         VALE_REFE=-0.029829999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.040000000000000001,
+                         FONCTION=tass_6,),
+                      _F(VALE_CALC=-0.03701873,
+                         VALE_REFE=-0.03703,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_7,),
+                      _F(VALE_CALC=-0.04452386,
+                         VALE_REFE=-0.044510000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_8,),
+                      _F(VALE_CALC=-0.05232829,
+                         VALE_REFE=-0.052359999999999997,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_9,),
+                      _F(VALE_CALC=-0.06047441,
+                         VALE_REFE=-0.060609999999999997,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_10,),
+                      ),
+              )
+
+# tassement de la troixième couche
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.01176763,
+                         VALE_REFE=-0.011979999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=4.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.12,
+                         FONCTION=tass_4,),
+                      _F(VALE_CALC=-0.02264778,
+                         VALE_REFE=-0.022800000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=4.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.070000000000000007,
+                         FONCTION=tass_5,),
+                      _F(VALE_CALC=-0.03332109,
+                         VALE_REFE=-0.033410000000000002,
+                         CRITERE='RELATIF',
+                         VALE_PARA=4.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.059999999999999998,
+                         FONCTION=tass_6,),
+                      _F(VALE_CALC=-0.04410625,
+                         VALE_REFE=-0.044119999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=4.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=tass_7,),
+                      _F(VALE_CALC=-0.05516538,
+                         VALE_REFE=-0.055149999999999998,
+                         CRITERE='RELATIF',
+                         VALE_PARA=4.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.040000000000000001,
+                         FONCTION=tass_8,),
+                      _F(VALE_CALC=-0.06664599,
+                         VALE_REFE=-0.066650000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=4.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_9,),
+                      _F(VALE_CALC=-0.07859417,
+                         VALE_REFE=-0.078729999999999994,
+                         CRITERE='RELATIF',
+                         VALE_PARA=4.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_10,),
+                      ),
+              )
+
+# tassement de la quatrième couche
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.01530734,
+                         VALE_REFE=-0.015469999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=5.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.089999999999999997,
+                         FONCTION=tass_5,),
+                      _F(VALE_CALC=-0.02976102,
+                         VALE_REFE=-0.029839999999999998,
+                         CRITERE='RELATIF',
+                         VALE_PARA=5.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=tass_6,),
+                      _F(VALE_CALC=-0.04411800,
+                         VALE_REFE=-0.044110000000000003,
+                         CRITERE='RELATIF',
+                         VALE_PARA=5.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.040000000000000001,
+                         FONCTION=tass_7,),
+                      _F(VALE_CALC=-0.05872661,
+                         VALE_REFE=-0.058650000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=5.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_8,),
+                      _F(VALE_CALC=-0.07377350,
+                         VALE_REFE=-0.073690000000000005,
+                         CRITERE='RELATIF',
+                         VALE_PARA=5.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_9,),
+                      _F(VALE_CALC=-0.08941495,
+                         VALE_REFE=-0.089429999999999996,
+                         CRITERE='RELATIF',
+                         VALE_PARA=5.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_10,),
+                      ),
+              )
+
+# tassement de la cinquième couche
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.01886773,
+                         VALE_REFE=-0.019019999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=6.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.059999999999999998,
+                         FONCTION=tass_6,),
+                      _F(VALE_CALC=-0.03699351,
+                         VALE_REFE=-0.03705,
+                         CRITERE='RELATIF',
+                         VALE_PARA=6.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.040000000000000001,
+                         FONCTION=tass_7,),
+                      _F(VALE_CALC=-0.05515905,
+                         VALE_REFE=-0.055149999999999998,
+                         CRITERE='RELATIF',
+                         VALE_PARA=6.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_8,),
+                      _F(VALE_CALC=-0.07374194,
+                         VALE_REFE=-0.073700000000000002,
+                         CRITERE='RELATIF',
+                         VALE_PARA=6.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_9,),
+                      _F(VALE_CALC=-0.09293135,
+                         VALE_REFE=-0.092979999999999993,
+                         CRITERE='RELATIF',
+                         VALE_PARA=6.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=1.E-2,
+                         FONCTION=tass_10,),
+                      ),
+              )
+
+# tassement de la sixième couche
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.02254920,
+                         VALE_REFE=-0.022679999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=7.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.059999999999999998,
+                         FONCTION=tass_7,),
+                      _F(VALE_CALC=-0.04449480,
+                         VALE_REFE=-0.044540000000000003,
+                         CRITERE='RELATIF',
+                         VALE_PARA=7.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_8,),
+                      _F(VALE_CALC=-0.06664426,
+                         VALE_REFE=-0.066650000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=7.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_9,),
+                      _F(VALE_CALC=-0.08938209,
+                         VALE_REFE=-0.089440000000000006,
+                         CRITERE='RELATIF',
+                         VALE_PARA=7.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_10,),
+                      ),
+              )
+
+# tassement de la septième couche
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.02635596,
+                         VALE_REFE=-0.026499999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=8.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=tass_8,),
+                      _F(VALE_CALC=-0.05227377,
+                         VALE_REFE=-0.052380000000000003,
+                         CRITERE='RELATIF',
+                         VALE_PARA=8.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_9,),
+                      _F(VALE_CALC=-0.07856402,
+                         VALE_REFE=-0.078719999999999998,
+                         CRITERE='RELATIF',
+                         VALE_PARA=8.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_10,),
+                      ),
+              )
+
+# tassement de la huitième couche
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.03033722,
+                         VALE_REFE=-0.030519999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=9.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.029999999999999999,
+                         FONCTION=tass_9,),
+                      _F(VALE_CALC=-0.06040634,
+                         VALE_REFE=-0.060630000000000003,
+                         CRITERE='RELATIF',
+                         VALE_PARA=9.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.02,
+                         FONCTION=tass_10,),
+                      ),
+              )
+
+# tassement de la neuvième couche
+TEST_FONCTION(VALEUR=_F(VALE_CALC=-0.03447572,
+                        VALE_REFE=-0.034750000000000003,
+                        CRITERE='RELATIF',
+                        VALE_PARA=10.0,
+                        REFERENCE='SOURCE_EXTERNE',
+                        PRECISION=0.025000000000000001,
+                        FONCTION=tass_10,),
+              )
+
+FIN();

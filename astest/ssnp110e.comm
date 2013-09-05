@@ -1,0 +1,847 @@
+# TITRE  FISSURE DE BORD EN ELASTOPLASTICITE DANS UNE PLAQUE RECTANGULAIRE FINIE SOUMISE A FLEXION CISAILLANTE - EX SSNP310
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSNP110E',NIV_PUB_WEB='INTERNET'),
+      DEBUG=_F(SDVERI='OUI'),
+#      IGNORE_ALARM=('RUPTURE1_47','RUPTURE1_42'),
+      )
+
+# ALARMES EMISES PAR CE TEST : 
+# RUPTURE1_47 : CALC_G SUITE A UN SNL INCREMENTAL
+# RUPTURE1_42 : COMP DIFFERENT ENTRE SNL ET CALC_G
+# CES 2 ALARMES SONT JUSTIFIEES ICI CAR LE CHARGEMENT EST BIEN PROPORTIONNEL,
+# ON POURRAIT DONC LES IGNORER AVEC UN IGNORE_ALARM DANS DEBUT
+# MAIS POUR DES RAISONS PEDAGOGIQUES, ON PREFERE LES LAISSER DANS LE .MESS
+
+
+MA=LIRE_MAILLAGE(FORMAT='MED',VERI_MAIL=_F(VERIF='OUI'), )
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F( TOUT = 'OUI',
+                        PHENOMENE = 'MECANIQUE',
+                        MODELISATION = 'D_PLAN'))
+
+
+
+# DEFINITION DU MATERIAU "DE REFERENCE" (ECROUISSAGE LINEAIRE)
+
+E=2.0601E5
+ET=E/3.
+
+MAT=DEFI_MATERIAU(ELAS=_F(E = E, NU = 0.3, ),
+                  ECRO_LINE=_F(  D_SIGM_EPSI = ET, SY = 808.344)
+                         )
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MA,AFFE=_F(  TOUT = 'OUI',MATER = MAT))
+
+MA=DEFI_GROUP( reuse=MA,   MAILLAGE=MA,
+                     CREA_GROUP_NO=(_F(GROUP_MA = ( 'LPOP11',  'LPOP8', 'LP9P10', )),
+                                    _F(NOM = 'NTEST',
+                                       OPTION='ENV_SPHERE',
+                                       POINT=(-6., 0.),
+                                       PRECISION=0.0001,
+                                       RAYON=0.0001),),
+                )
+
+CL=AFFE_CHAR_MECA(  MODELE=MO,
+            DDL_IMPO=(_F(  GROUP_NO = 'LPOP11', DY = 0.,),
+                      _F(  GROUP_NO = 'PB', DX = 0.),),)
+
+CH=AFFE_CHAR_MECA(  MODELE=MO,
+            DDL_IMPO=_F(  GROUP_NO = 'LP9P10', DY = 1.),)
+
+RAMPE=DEFI_FONCTION(  NOM_PARA='INST',
+                        VALE=(0.,0.,1.,1.,),
+                        PROL_DROITE='LINEAIRE'
+                      )
+
+L_INST=DEFI_LIST_REEL(DEBUT=0.,
+                      INTERVALLE=_F( JUSQU_A = 0.2,  NOMBRE = 10)
+                        )
+
+
+# DEFINITION DE LA COURONNE
+# -------------------------
+
+FOND=DEFI_FOND_FISS(    MAILLAGE=MA,
+                        FOND_FISS=_F( GROUP_NO = ('P0',)),
+                        SYME='OUI',
+                        LEVRE_SUP=_F(MAILLE='M458'),
+                      )
+
+THETA0=CALC_THETA(    MODELE=MO,
+                        THETA_2D=_F(  GROUP_NO = ('P0',),
+                                   MODULE = 1.,
+                                   R_INF = 0.15,
+                                   R_SUP = 0.6),
+                                     DIRECTION=(1., 0., 0.,)
+                     )
+
+
+# CALCUL SERVANT DE REFERENCE
+
+
+CHAMDEP=STAT_NON_LINE( MODELE=MO,
+                       CHAM_MATER=CHMAT,
+                       EXCIT=(_F(CHARGE = CL),
+                              _F(CHARGE = CH,
+                                 FONC_MULT = RAMPE)),
+                       COMP_ELAS=_F(RELATION = 'ELAS_VMIS_LINE',
+                                    DEFORMATION = 'PETIT'),
+                       INCREMENT=_F(LIST_INST = L_INST,),
+                       NEWTON=_F(MATRICE = 'TANGENTE',
+                                 REAC_ITER = 1),
+
+                     );
+
+G_0=CALC_G( THETA=_F(THETA=THETA0,SYME='OUI'),
+            RESULTAT=CHAMDEP,
+            TOUT_ORDRE='OUI',
+            );
+
+
+# TEST DE REFERENCE SERVANT DE COMPARAISON AU CALCUL QUI SUIT
+
+TEST_TABLE(
+           VALE_CALC=3.5947962514067,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=14.470868422635,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=32.883208951196004,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=3,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=59.422747569594002,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=4,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=94.500399710622006,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=5,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=134.98261114275999,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=6,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=178.95209819448999,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=7,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=226.23585323115,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=8,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=276.47167518088997,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=9,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=329.60677792298998,
+           
+           NOM_PARA='G',
+           TABLE=G_0,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=10,),
+           )
+
+# VALIDATION DE LA LOI ELAS_VMIS_TRAC AVEC CALC_G
+
+
+#################"
+
+eps1 = 808.344 / 2.0601E5
+eps2 = 8.e-3
+TRAC1=DEFI_FONCTION(       NOM_PARA='EPSI',
+                                     VALE=(eps1, 808.344 ,
+                                           eps2, 808.344+ET*(eps2-eps1),
+                                          ),
+                              PROL_DROITE='LINEAIRE'
+                         )
+
+#
+MAT2=DEFI_MATERIAU(       ELAS=_F(E = 2.0601E5, NU = 0.3, ),
+                               TRACTION=_F(  SIGM = TRAC1)
+                           )
+
+
+CHMAT2=AFFE_MATERIAU(  MAILLAGE=MA,AFFE=_F(  TOUT = 'OUI',MATER = MAT2))
+
+CHAMDEP2=STAT_NON_LINE( MODELE=MO,
+                       CHAM_MATER=CHMAT2,
+                       EXCIT=(_F(CHARGE = CL),
+                              _F(CHARGE = CH,
+                                 FONC_MULT = RAMPE)),
+                       COMP_ELAS=_F(RELATION = 'ELAS_VMIS_TRAC',
+                                    DEFORMATION = 'PETIT'),
+                       INCREMENT=_F(LIST_INST = L_INST,),
+                       NEWTON=_F(MATRICE = 'TANGENTE',
+                                 REAC_ITER = 1),
+
+                     );
+
+G_0_2=CALC_G( THETA=_F(THETA=THETA0,SYME='OUI'),
+            RESULTAT=CHAMDEP2,
+            TOUT_ORDRE='OUI',
+            );
+
+# TEST DE LA LOI DE COMPORTEMENT ELAS_VMIS_PUIS DANS CALC_G
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=3.594796202,
+           VALE_REFE=3.5947962514067,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=14.470868423,
+           VALE_REFE=14.470868422635,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=32.883201477,
+           VALE_REFE=32.883208951196004,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=3,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=59.422747534,
+           VALE_REFE=59.422747569594002,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=4,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=94.500399714,
+           VALE_REFE=94.500399710622006,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=5,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=134.982609190,
+           VALE_REFE=134.98261114275999,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=6,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=178.952095337,
+           VALE_REFE=178.95209819448999,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=7,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=226.235834358,
+           VALE_REFE=226.23585323115,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=8,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=276.471675488,
+           VALE_REFE=276.47167518088997,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=9,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=329.606778012,
+           VALE_REFE=329.60677792298998,
+           NOM_PARA='G',
+           TABLE=G_0_2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=10,),
+           )
+
+# CALCUL AVEC ELAS_VMIS_PUIS
+
+MAT3=DEFI_MATERIAU(       ELAS=_F(E = 2.0601E5, NU = 0.3,),
+                              ECRO_PUIS=_F(A_PUIS=2.,
+                                 N_PUIS=1.,
+                                 SY=808.344,
+                                 )
+                           )
+
+
+CHMAT3=AFFE_MATERIAU(  MAILLAGE=MA,AFFE=_F(  TOUT = 'OUI',MATER = MAT3))
+
+CHAMDEP3=STAT_NON_LINE( MODELE=MO,
+                       CHAM_MATER=CHMAT3,
+                       EXCIT=(_F(CHARGE = CL),
+                              _F(CHARGE = CH,
+                                 FONC_MULT = RAMPE)),
+                       COMP_ELAS=_F(RELATION = 'ELAS_VMIS_PUIS',
+                                    DEFORMATION = 'PETIT'),
+                       INCREMENT=_F(LIST_INST = L_INST,),
+                       NEWTON=_F(MATRICE = 'TANGENTE',
+                                 REAC_ITER = 1),
+
+                     );
+
+###########################
+
+#################"
+
+
+G_0_3=CALC_G( THETA=_F(THETA=THETA0,SYME='OUI'),
+            RESULTAT=CHAMDEP3,
+            TOUT_ORDRE='OUI',
+            );
+
+# TEST DE LA LOI DE COMPORTEMENT ELAS_VMIS_PUIS DANS CALC_G
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=3.594796202,
+           VALE_REFE=3.5947962514067,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=14.470868423,
+           VALE_REFE=14.470868422635,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=32.883171835,
+           VALE_REFE=32.883208951196004,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=3,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=59.422747534,
+           VALE_REFE=59.422747569594002,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=4,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=94.500399714,
+           VALE_REFE=94.500399710622006,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=5,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=134.982609190,
+           VALE_REFE=134.98261114275999,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=6,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=178.952095337,
+           VALE_REFE=178.95209819448999,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=7,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=226.235834358,
+           VALE_REFE=226.23585323115,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=8,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=276.471675488,
+           VALE_REFE=276.47167518088997,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=9,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=329.606760484,
+           VALE_REFE=329.60677792298998,
+           NOM_PARA='G',
+           TABLE=G_0_3,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=10,),
+           )
+
+# CALCUL ELAS_VMIS_TRAC AVEC UNE COURBE EN PUISSANCE (POUR COMPARER AVEC LE
+# DERNIER CALCUL)
+
+APUI=2.
+NPUI=1.8
+SY=808.344
+
+SIGM = FORMULE(VALE='SY+SY*(E*p/APUI/SY)**(1./NPUI)',
+              NOM_PARA='p',);
+
+Lx=DEFI_LIST_REEL(DEBUT=0,
+                  INTERVALLE=_F(JUSQU_A=1.,
+                                PAS=0.0001,),);
+
+
+SIGM2=CALC_FONC_INTERP(FONCTION=SIGM,
+                      LIST_PARA=Lx,
+                      NOM_PARA='p',);
+
+T1=CREA_TABLE(FONCTION=_F(FONCTION=SIGM2,PARA=('p','SIGM')))
+
+EPSI = FORMULE(VALE='p+SIGM/E',
+              NOM_PARA=('p','SIGM'),);
+
+T1 = CALC_TABLE(reuse=T1,TABLE = T1,
+ACTION = _F (OPERATION = 'OPER',FORMULE = EPSI,
+                     NOM_PARA = ('EPSI')))
+
+TRAC2=RECU_FONCTION(TABLE=T1,PARA_X='EPSI',PARA_Y='SIGM')
+
+
+#
+MAT4=DEFI_MATERIAU(       ELAS=_F(E = 2.0601E5, NU = 0.3),
+                               TRACTION=_F(  SIGM = TRAC2)
+                           )
+
+CHMAT4=AFFE_MATERIAU(  MAILLAGE=MA,AFFE=_F(  TOUT = 'OUI',MATER = MAT4))
+
+CHAMDEP4=STAT_NON_LINE( MODELE=MO,
+                       CHAM_MATER=CHMAT4,
+                       EXCIT=(_F(CHARGE = CL),
+                              _F(CHARGE = CH,
+                                 FONC_MULT = RAMPE)),
+                       COMP_ELAS=_F(RELATION = 'ELAS_VMIS_TRAC',
+                                    DEFORMATION = 'PETIT'),
+                       INCREMENT=_F(LIST_INST = L_INST,),
+                       NEWTON=_F(MATRICE = 'TANGENTE',
+                                 REAC_ITER = 1),
+
+                     );
+
+###########################
+
+#################"
+
+
+G_0_4=CALC_G( THETA=_F(THETA=THETA0,SYME='OUI'),
+            RESULTAT=CHAMDEP4,
+            TOUT_ORDRE='OUI',
+            );
+
+# TEST DE LA LOI DE COMPORTEMENT ELAS_VMIS_PUIS DANS CALC_G
+
+TEST_TABLE(
+           VALE_CALC=3.5912927278361999,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=14.444141788733001,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=32.761550138719002,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=3,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=58.991063873790999,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=4,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=93.763266517031994,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=5,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=136.1388091366,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=6,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=184.03472768248,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=7,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=236.3102565378,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=8,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=292.38439111913999,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=9,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=351.82239283614001,
+           
+           NOM_PARA='G',
+           TABLE=G_0_4,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=10,),
+           )
+
+# CALCUL AVEC LA LOI ELAS_VMIS_PUIS DE NON REGRESSION ( VALIDATION INFORMATIQUE
+# DE LA LOI GENERALE )
+
+
+MAT5=DEFI_MATERIAU(       ELAS=_F(E = 2.0601E5, NU = 0.3,),
+                              ECRO_PUIS=_F(A_PUIS=APUI,
+                                 N_PUIS=NPUI,
+                                 SY=SY,
+                                 )
+                           )
+
+
+CHMAT5=AFFE_MATERIAU(  MAILLAGE=MA,AFFE=_F(  TOUT = 'OUI',MATER = MAT5))
+
+CHAMDEP5=STAT_NON_LINE( MODELE=MO,
+                       CHAM_MATER=CHMAT5,
+                       EXCIT=(_F(CHARGE = CL),
+                              _F(CHARGE = CH,
+                                 FONC_MULT = RAMPE)),
+                       COMP_ELAS=_F(RELATION = 'ELAS_VMIS_PUIS',
+                                    DEFORMATION = 'PETIT'),
+                       INCREMENT=_F(LIST_INST = L_INST,),
+                       NEWTON=_F(MATRICE = 'TANGENTE',
+                                 REAC_ITER = 1),
+
+                     );
+
+###########################
+
+#################"
+
+
+G_0_5=CALC_G(THETA=_F(THETA=THETA0,SYME='OUI'),
+             RESULTAT=CHAMDEP5,
+            )
+
+IMPR_TABLE(TABLE=G_0_5)
+
+# TEST DE LA LOI DE COMPORTEMENT ELAS_VMIS_PUIS DANS CALC_G
+
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=3.591291616,
+           VALE_REFE=3.5912927278361999,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=14.443966875,
+           VALE_REFE=14.444141788733001,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=32.759368603,
+           VALE_REFE=32.761550138719002,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=3,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=58.983333733,
+           VALE_REFE=58.991063873790999,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=4,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=93.771239168,
+           VALE_REFE=93.763266517031994,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=5,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=136.178069448,
+           VALE_REFE=136.1388091366,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=6,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=184.089168532,
+           VALE_REFE=184.03472768248,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=7,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=236.383306399,
+           VALE_REFE=236.3102565378,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=8,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=292.462078297,
+           VALE_REFE=292.38439111913999,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=9,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=351.901071742,
+           VALE_REFE=351.82239283614001,
+           NOM_PARA='G',
+           TABLE=G_0_5,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=10,),
+           )
+
+# ======================================================================
+# VALIDATION 2D DE "CALCUL_CONTRAINTE" (TEST INFORMATIQUE)
+
+# CALCUL AVEC UN COMPORTEMENT INCREMENTAL 
+RESUINCR=STAT_NON_LINE(MODELE=MO,
+                       CHAM_MATER=CHMAT5,
+                       EXCIT=(_F(CHARGE = CL),
+                              _F(CHARGE = CH,
+                                 FONC_MULT = RAMPE)),
+                       COMP_INCR=_F(RELATION = 'VMIS_ISOT_PUIS',
+                                    DEFORMATION = 'PETIT'),
+                       INCREMENT=_F(LIST_INST = L_INST,),
+                       NEWTON=_F(MATRICE = 'TANGENTE',
+                                 REAC_ITER = 1),
+                       )
+
+# calcul INCR, post-traitement INCR -> GTP
+G_I_I=CALC_G(RESULTAT=RESUINCR,
+             THETA=_F(THETA = THETA0,
+                      SYME='OUI'))
+
+IMPR_TABLE(TABLE=G_I_I)
+
+# calcul Incr, post-traitement ELAS -> Genl
+G_I_E=CALC_G(RESULTAT=RESUINCR,
+             THETA=_F(THETA = THETA0,
+                      SYME='OUI'),
+             COMP_ELAS=_F(RELATION='ELAS_VMIS_PUIS'))
+
+IMPR_TABLE(TABLE=G_I_E)
+
+# calcul Incr, post-traitement ELAS, sans re-calcul des contraintes
+G_I_E2=CALC_G(RESULTAT=RESUINCR,
+              THETA=_F(THETA = THETA0,
+                       SYME='OUI'),
+              COMP_ELAS=_F(RELATION='ELAS_VMIS_PUIS'),
+              CALCUL_CONTRAINTE='NON',)
+
+IMPR_TABLE(TABLE=G_I_E2)
+
+# test de G_I_E (non regression)
+TEST_TABLE(VALE_CALC=349.87259814109,
+           NOM_PARA='G',
+           TABLE=G_I_E,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=10,),
+           )
+
+# test de G_I_E2 (par rapport a la valeur de G_I_E)
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=0.01,
+           VALE_REFE=349.87259814109,
+           VALE_CALC=346.7143732655,
+           NOM_PARA='G',
+           TABLE=G_I_E2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=10,),
+           )
+
+# ======================================================================
+
+
+
+FIN()
+#

@@ -1,0 +1,225 @@
+# TITRE PLAQUE ENTAILLEE EN ELASTOPLASTICITE (ELEMENTS QUAD4 SI)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+
+DEBUT(CODE=_F(NOM='SSNP123A', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+# DEFINITION DU PROBLEME
+#=======================
+
+MA=LIRE_MAILLAGE(FORMAT='MED',);
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(GROUP_MA='SURF',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='D_PLAN_SI',),);
+
+MATERIAU=DEFI_MATERIAU(ELAS=_F(E=200000.0,
+                               NU=0.3,),
+                       ECRO_LINE=_F(D_SIGM_EPSI=1000.0,
+                                    SY=200.0,),);
+
+CH_MATER=AFFE_MATERIAU(MAILLAGE=MA,
+                       AFFE=_F(TOUT='OUI',
+                               MATER=MATERIAU,),);
+
+SYMETRIE=AFFE_CHAR_MECA(MODELE=MO,
+                        FACE_IMPO=(_F(GROUP_MA=('LCD','LBC',),
+                                      DY=0.0,),
+                                   _F(GROUP_MA=('LDE','LEF',),
+                                      DX=0.0,),),);
+
+TRACTION=AFFE_CHAR_MECA(MODELE=MO,
+                        FACE_IMPO=_F(GROUP_MA='LFG',
+                                     DY=0.1,),);
+
+INSTANTS=DEFI_LIST_REEL(DEBUT=0.0,
+                        INTERVALLE=_F(JUSQU_A=1.0,
+                                      NOMBRE=5,),);
+
+RAMPE=DEFI_FONCTION(NOM_PARA='INST',
+                    VALE=(0.0, 0.0,
+                          1.0, 1.0,),);
+
+DEFLIST =DEFI_LIST_INST(DEFI_LIST=_F(LIST_INST =INSTANTS ),
+                        ECHEC=_F(EVENEMENT     = 'ERREUR',
+                                 ACTION        = 'DECOUPE',
+                                 SUBD_METHODE  = 'MANUEL',
+                                 SUBD_PAS      = 4,
+                                 SUBD_PAS_MINI = 0.001),)
+
+# CALCUL
+#========
+
+RESU=STAT_NON_LINE(MODELE=MO,
+                   CHAM_MATER=CH_MATER,
+                   EXCIT=(_F(CHARGE=TRACTION,
+                             FONC_MULT=RAMPE,),
+                          _F(CHARGE=SYMETRIE,),),
+                   COMP_INCR=_F(RELATION='VMIS_ISOT_LINE',),
+                   INCREMENT=_F(LIST_INST=DEFLIST),
+                   NEWTON=_F(REAC_ITER=1,),
+                   ARCHIVAGE=_F(LIST_INST=INSTANTS,),);
+
+# POST TRAITEMENT
+#=================
+
+RESU=CALC_CHAMP(reuse=RESU,RESULTAT=RESU,CONTRAINTE=('SIGM_ELNO'))
+
+
+RESU=CALC_ERREUR(reuse =RESU,
+
+               RESULTAT=RESU,
+               OPTION=('ERME_ELEM',
+                       'ERME_ELNO',
+                      ),
+               );
+
+RESU=CALC_CHAMP(reuse =RESU,
+             RESULTAT=RESU,
+             CONTRAINTE='SIGM_NOEU',);
+
+ECHAN=INTE_MAIL_2D(MAILLAGE=MA,
+                   DEFI_SEGMENT=_F(ORIGINE=(0.0,1.0,),
+                                   EXTREMITE=(5.0,1.0,),),
+                   PRECISION=0.001,
+                   INFO=1,);
+
+S_T=POST_RELEVE_T(ACTION=_F(INTITULE='S_EXT',
+                            CHEMIN=ECHAN,
+                            RESULTAT=RESU,
+                            NOM_CHAM='SIGM_NOEU',
+                            INST=1.0,
+                            CRITERE='RELATIF',
+                            NOM_CMP='SIYY',
+                            REPERE='GLOBAL',
+                            MOYE_NOEUD='OUI',
+                            OPERATION='EXTRACTION',),
+                  INFO=1,);
+
+IMPR_TABLE(TABLE=S_T,);
+
+
+# TESTS
+#=======
+
+# ON TESTE PAR RAPPORT A LA MODELISATION B : ELEMENTS QUASI-INCOMPRESSIBLES
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=4.0E-3,
+           VALE_CALC=234.93024142085,
+           VALE_REFE=234.17369549492,
+           NOM_PARA='SIYY',
+           TABLE=S_T,
+           FILTRE=_F(NOM_PARA='COOR_X',
+                     VALE=0.0,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=1.E-3,
+           VALE_CALC=257.20804191469,
+           VALE_REFE=257.41729309271,
+           NOM_PARA='SIYY',
+           TABLE=S_T,
+           FILTRE=_F(NOM_PARA='COOR_X',
+                     VALE=1.54051,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=6.0E-3,
+           VALE_CALC=298.68509589677,
+           VALE_REFE=300.3325184181,
+           NOM_PARA='SIYY',
+           TABLE=S_T,
+           FILTRE=_F(NOM_PARA='COOR_X',
+                     VALE=3.2679499999999999,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=6.0E-3,
+           VALE_CALC=261.74595658436,
+           VALE_REFE=263.21206094076,
+           NOM_PARA='SIYY',
+           TABLE=S_T,
+           FILTRE=_F(NOM_PARA='COOR_X',
+                     VALE=3.8340299999999998,),
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           PRECISION=0.015,
+           VALE_CALC=173.43968316867,
+           VALE_REFE=175.82916193352,
+           NOM_PARA='SIYY',
+           TABLE=S_T,
+           FILTRE=_F(NOM_PARA='COOR_X',
+                     VALE=4.3794199999999996,),
+           )
+
+#--------------------------------------------------------------------------------
+#
+#  TEST SUR L'ESTIMATEUR D'ERREUR EN RESIDU
+
+TEST_RESU(RESU=_F(INST=1.0,
+                  POINT=1,
+                  RESULTAT=RESU,
+                  NOM_CHAM='ERME_ELEM',
+                  NOM_CMP='NUEST',
+                  VALE_CALC=1.7024900211738E-03,
+                  CRITERE='RELATIF',
+                  MAILLE='M20',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(INST=1.0,
+                  RESULTAT=RESU,
+                  NOM_CHAM='ERME_ELNO',
+                  NOEUD='N6',
+                  NOM_CMP='ERREST',
+                  VALE_CALC=4.2158295616228E-04,
+                  CRITERE='RELATIF',
+                  MAILLE='M20',
+                  ),
+          )
+
+#--------------------------------------------------------------------------------
+#
+#  TEST SUR LES CONTRAINTES AU POINT B
+
+TEST_RESU(RESU=_F(INST=1.0,
+                  RESULTAT=RESU,
+                  NOM_CHAM='SIGM_ELNO',
+                  NOEUD='N6',
+                  NOM_CMP='SIYY',
+                  VALE_CALC=436.83702957629,
+                  CRITERE='RELATIF',
+                  MAILLE='M20',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(INST=1.0,
+                  RESULTAT=RESU,
+                  NOM_CHAM='SIGM_ELNO',
+                  NOEUD='N6',
+                  NOM_CMP='SIXX',
+                  VALE_CALC=7.7519646079226,
+                  CRITERE='RELATIF',
+                  MAILLE='M20',
+                  ),
+          )
+
+FIN();

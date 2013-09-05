@@ -1,0 +1,678 @@
+# person_in_charge: xavier.desroches at edf.fr
+# TITRE PLAQUE STRATIFIEE EN FLEXION - DST -
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# SSLS117C
+# PLAQUE DE STRATIFIE RECTANGULAIRE EXCENTREE
+# CALCUL 1 : 1 BICOUCHE , CE CALCUL SERT DE REFERENCE
+# CALCUL 2 : 2 MONOCOUCHES EXCENTRES
+#
+# MODELISATION DST
+#             66 NOEUDS  100 MAILLES TRI3
+#----------------------------------------------------------------------
+#POINTS:  A4                          A3
+#           -------------------------
+#           -                       -
+#           -                       -
+#           -                       -
+#           -                       -
+#           -------------------------
+#         A1                          A2
+#
+# ______________________________________________________________________
+#
+#
+
+
+DEBUT(CODE=_F(NOM='SSLS117C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MA1=LIRE_MAILLAGE(FORMAT='MED',);
+
+DEFI_GROUP(reuse =MA1,
+               MAILLAGE=MA1,
+               CREA_GROUP_MA=_F(NOM='TOUT',
+                                TOUT='OUI',),);
+
+MA=CREA_MAILLAGE(MAILLAGE=MA1,
+                 CREA_GROUP_MA=_F(NOM='PLAQ2',
+                                  GROUP_MA='PLAQ1',
+                                  PREF_MAILLE='MAIL',),);
+
+DEFI_GROUP(reuse =MA,
+              MAILLAGE=MA,
+              CREA_GROUP_NO=(_F(GROUP_MA='PLAQ1',
+                                NOM='PLAQ1',),
+                             _F(GROUP_MA='PLAQ2',
+                                NOM='PLAQ2',),),);
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='DST',),);
+
+MO1=AFFE_MODELE(MAILLAGE=MA,
+                AFFE=_F(GROUP_MA='PLAQ1',
+                        PHENOMENE='MECANIQUE',
+                        MODELISATION='DST',),);
+
+EP=AFFE_CARA_ELEM(MODELE=MO,
+                  COQUE=(_F(GROUP_MA='TOUT',
+                            EPAIS=0.20000000000000001,
+                            INER_ROTA='OUI',),
+                         _F(GROUP_MA='PLAQ1',
+                            EPAIS=0.40000000000000002,
+                            ANGL_REP=(0.0,0.0),
+                            EXCENTREMENT=0.10000000000000001,
+                            INER_ROTA='OUI',),
+                         _F(GROUP_MA='PLAQ2',
+                            EPAIS=0.20000000000000001,
+                            ANGL_REP=(0.0,0.0),
+                            EXCENTREMENT=-0.20000000000000001,
+                            INER_ROTA='OUI',),),);
+
+EP1=AFFE_CARA_ELEM(MODELE=MO1,
+                   COQUE=_F(GROUP_MA='TOUT',
+                            EPAIS=0.59999999999999998,
+                            ANGL_REP=(0.0,0.0),
+                            COQUE_NCOU=2,
+                            INER_ROTA='OUI',),);
+
+MAT1A=DEFI_MATERIAU(ELAS_ORTH=_F(E_L=2.E10,
+                                 E_T=2.E10,
+                                 NU_LT=0.29999999999999999,
+                                 G_LT=2.E9,
+                                 RHO=1000.0,),);
+
+MAT1B=DEFI_MATERIAU(ELAS_ORTH=_F(E_L=1.5000000000E10,
+                                 E_T=1.5000000000E10,
+                                 NU_LT=0.29999999999999999,
+                                 G_LT=1.500000000E9,
+                                 RHO=1000.0,),);
+
+MU=DEFI_COMPOSITE(COUCHE=(_F(EPAIS=0.20000000000000001,
+                             MATER=MAT1B,
+                             ORIENTATION=0.0,),
+                          _F(EPAIS=0.40000000000000002,
+                             MATER=MAT1A,
+                             ORIENTATION=0.0,),),);
+
+MU1=DEFI_COMPOSITE(COUCHE=_F(EPAIS=0.40000000000000002,
+                             MATER=MAT1A,
+                             ORIENTATION=0.0,),);
+
+MU2=DEFI_COMPOSITE(COUCHE=_F(EPAIS=0.20000000000000001,
+                             MATER=MAT1B,
+                             ORIENTATION=0.0,),);
+
+CHMUL1=AFFE_MATERIAU(MAILLAGE=MA,
+                     AFFE=_F(TOUT='OUI',
+                             MATER=MU,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=(_F(GROUP_MA='PLAQ1',
+                             MATER=MU1,),
+                          _F(GROUP_MA='PLAQ2',
+                             MATER=MU2,),),);
+
+CHME=AFFE_CHAR_MECA(MODELE=MO,
+                    DDL_IMPO=(_F(GROUP_NO='A1',
+                                 DX=0.0,
+                                 DY=0.0,
+                                 DZ=0.0,
+                                 DRX=0.0,
+                                 DRY=0.0,
+                                 DRZ=0.0,),
+                              _F(GROUP_NO='A2',
+                                 DX=0.0,
+                                 DY=0.0,),),
+                    FORCE_NODALE=_F(GROUP_NO='A3',
+                                    FZ=-1000.0,),
+                    FORCE_COQUE=_F(MAILLE=('M1','M2','M3'),
+                                   FX=200.0,
+                                   FY=-500.0,
+                                   FZ=-500.0,
+                                   PLAN='SUP',),);
+
+CHME1=AFFE_CHAR_MECA(MODELE=MO1,
+                     DDL_IMPO=(_F(GROUP_NO='A1',
+                                  DX=0.0,
+                                  DY=0.0,
+                                  DZ=0.0,
+                                  DRX=0.0,
+                                  DRY=0.0,
+                                  DRZ=0.0,),
+                               _F(GROUP_NO='A2',
+                                  DX=0.0,
+                                  DY=0.0,),),
+                     FORCE_NODALE=_F(GROUP_NO='A3',
+                                     FZ=-1000.0,),
+                     FORCE_COQUE=_F(MAILLE=('M1','M2','M3'),
+                                    FX=200.0,
+                                    FY=-500.0,
+                                    FZ=-500.0,
+                                    MX=100.0,
+                                    MY=40.0,
+                                    PLAN='MAIL',),);
+# ______________________________________________________________________
+#
+#                         RESOLUTION
+# ______________________________________________________________________
+#
+#
+
+
+MEL=CALC_MATR_ELEM(OPTION='RIGI_MECA',
+                   MODELE=MO,
+                   CHAM_MATER=CHMAT,
+                   CARA_ELEM=EP,
+                   CHARGE=(CHME),);
+
+MASEL=CALC_MATR_ELEM(OPTION='MASS_MECA',
+                     MODELE=MO,
+                     CHAM_MATER=CHMAT,
+                     CARA_ELEM=EP,
+                     CHARGE=(CHME),);
+
+VEL=CALC_VECT_ELEM(OPTION='CHAR_MECA',
+                   CHARGE=(CHME),
+                   CHAM_MATER=CHMAT,
+                   CARA_ELEM=EP,);
+
+NU=NUME_DDL(MATR_RIGI=MEL,);
+
+MATASS=ASSE_MATRICE(MATR_ELEM=MEL,
+                    NUME_DDL=NU,);
+
+MATASM=ASSE_MATRICE(MATR_ELEM=MASEL,
+                    NUME_DDL=NU,);
+
+VECASS=ASSE_VECTEUR(VECT_ELEM=VEL,
+                    NUME_DDL=NU,);
+
+MODES=MODE_ITER_SIMULT(MATR_RIGI=MATASS,
+                       MATR_MASS=MATASM,
+                       CALC_FREQ=_F(OPTION='PLUS_PETITE',
+                                    NMAX_FREQ=4,),);
+
+
+MESTAT=MECA_STATIQUE(MODELE=MO,
+                     CHAM_MATER=CHMAT,
+                     CARA_ELEM=EP,
+                     EXCIT=_F(CHARGE=CHME,),);
+
+DEP=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+               OPERATION='EXTR',
+               RESULTAT=MESTAT,
+               NOM_CHAM='DEPL',);
+# POUR OBTENIR LES EFFORTS, IL FUAT SOMMER LES CONTRIBUTIONS
+# DES DEUX PLAQUES
+#
+
+
+EFINF=CALC_CHAMP(GROUP_MA='PLAQ1',CONTRAINTE=('EFGE_ELNO'),RESULTAT=MESTAT)
+
+
+EFSUP=CALC_CHAMP(GROUP_MA='PLAQ2',CONTRAINTE=('EFGE_ELNO'),RESULTAT=MESTAT)
+
+
+CALC_CHAMP(reuse =EFINF,
+              RESULTAT=EFINF,
+              CONTRAINTE='EFGE_NOEU',
+
+
+              GROUP_MA='PLAQ1',);
+
+CALC_CHAMP(reuse =EFSUP,
+              RESULTAT=EFSUP,
+              CONTRAINTE='EFGE_NOEU',
+
+
+              GROUP_MA='PLAQ2',);
+
+EFNINF=CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R',
+                  OPERATION='EXTR',
+                  RESULTAT=EFINF,
+                  NOM_CHAM='EFGE_NOEU',);
+
+EFNSUP=CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R',
+                  OPERATION='EXTR',
+                  RESULTAT=EFSUP,
+                  NOM_CHAM='EFGE_NOEU',);
+
+EFF=CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R',
+               OPERATION='ASSE',
+               MAILLAGE=MA,
+               ASSE=(_F(TOUT='OUI',
+                        CHAM_GD=EFNINF,
+                        CUMUL='OUI',
+                        COEF_R=1.0,),
+                     _F(TOUT='OUI',
+                        CHAM_GD=EFNSUP,
+                        CUMUL='OUI',
+                        COEF_R=1.0,),),);
+# ______________________________________________________________________
+#
+#
+#  BICOUCHE
+# ______________________________________________________________________
+#
+#
+
+
+MEL1=CALC_MATR_ELEM(OPTION='RIGI_MECA',
+                    MODELE=MO1,
+                    CHAM_MATER=CHMUL1,
+                    CARA_ELEM=EP1,
+                    CHARGE=CHME1,);
+
+MASEL1=CALC_MATR_ELEM(OPTION='MASS_MECA',
+                      MODELE=MO1,
+                      CHAM_MATER=CHMUL1,
+                      CARA_ELEM=EP1,
+                      CHARGE=(CHME1),);
+
+VEL1=CALC_VECT_ELEM(OPTION='CHAR_MECA',
+                    CHARGE=CHME1,
+                    CHAM_MATER=CHMUL1,
+                    CARA_ELEM=EP1,);
+
+NU1=NUME_DDL(MATR_RIGI=MEL1,);
+
+MATASS1=ASSE_MATRICE(MATR_ELEM=MEL1,
+                     NUME_DDL=NU1,);
+
+MATASM1=ASSE_MATRICE(MATR_ELEM=MASEL1,
+                     NUME_DDL=NU1,);
+
+VECASS1=ASSE_VECTEUR(VECT_ELEM=VEL1,
+                     NUME_DDL=NU1,);
+
+MODE1=MODE_ITER_SIMULT(MATR_RIGI=MATASS1,
+                       MATR_MASS=MATASM1,
+                       CALC_FREQ=_F(OPTION='PLUS_PETITE',
+                                    NMAX_FREQ=4,),);
+
+
+
+MESTAT1=MECA_STATIQUE(MODELE=MO1,
+                       CHAM_MATER=CHMUL1,
+                       CARA_ELEM=EP1,
+                       EXCIT=_F(CHARGE=CHME1,),);
+
+CALC_CHAMP(reuse=MESTAT1,RESULTAT=MESTAT1,CONTRAINTE=('EFGE_ELNO'))
+
+
+CALC_CHAMP(reuse =MESTAT1,
+                RESULTAT=MESTAT1,
+                CONTRAINTE='EFGE_NOEU',
+                );
+
+DEP1=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+                OPERATION='EXTR',
+                RESULTAT=MESTAT1,
+                NOM_CHAM='DEPL',);
+
+EFF1=CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R',
+                OPERATION='EXTR',
+                RESULTAT=MESTAT1,
+                NOM_CHAM='EFGE_NOEU',);
+# ______________________________________________________________________
+#
+# REFERENCE : BICOUCHE
+# ______________________________________________________________________
+#
+TEST_RESU(CHAM_NO=(_F(
+                      NOM_CMP='DX',
+                      GROUP_NO='A4',
+                      CHAM_GD=DEP1,
+                      VALE_CALC=-1.9395952885058E-06,),
+                   _F(
+                      NOM_CMP='DY',
+                      GROUP_NO='A4',
+                      CHAM_GD=DEP1,
+                      VALE_CALC=-1.1501151135298E-06,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='DZ',
+                      GROUP_NO='A4',
+                      PRECISION=6.0E-3,
+                      CHAM_GD=DEP1,
+                      VALE_CALC=-2.22144037E-04,
+                      VALE_REFE=-2.2091E-4,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='DRX',
+                      GROUP_NO='A4',
+                      PRECISION=6.0E-3,
+                      CHAM_GD=DEP1,
+                      VALE_CALC=-6.12403192E-05,
+                      VALE_REFE=-6.0930200000000002E-05,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='DRY',
+                      GROUP_NO='A4',
+                      PRECISION=4.0E-3,
+                      CHAM_GD=DEP1,
+                      VALE_CALC= 1.30156576E-04,
+                      VALE_REFE=1.2972790000000001E-4,),
+                   _F(
+                      NOM_CMP='DX',
+                      GROUP_NO='A3',
+                      CHAM_GD=DEP1,
+                      VALE_CALC=-2.4402197776075E-06,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='DY',
+                      GROUP_NO='A3',
+                      PRECISION=5.0E-3,
+                      CHAM_GD=DEP1,
+                      VALE_CALC=-2.34787443E-07,
+                      VALE_REFE=-2.3382000000000001E-07,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='DZ',
+                      GROUP_NO='A3',
+                      PRECISION=4.0E-3,
+                      CHAM_GD=DEP1,
+                      VALE_CALC=-1.59188597E-03,
+                      VALE_REFE=-1.5864E-3,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='DRX',
+                      GROUP_NO='A3',
+                      PRECISION=3.0E-3,
+                      CHAM_GD=DEP1,
+                      VALE_CALC=-1.26733226E-04,
+                      VALE_REFE=-1.2638999999999999E-4,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='DRY',
+                      GROUP_NO='A3',
+                      PRECISION=4.0E-3,
+                      CHAM_GD=DEP1,
+                      VALE_CALC= 1.41687124E-04,
+                      VALE_REFE=1.4127000000000001E-4,),
+                   ),
+          )
+
+TEST_RESU(CHAM_NO=(_F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='NXX',
+                      GROUP_NO='A1',
+                      PRECISION=3.0E-3,
+                      CHAM_GD=EFF1,
+                      VALE_CALC= 9.88616092E+03,
+                      VALE_REFE=9859.0274822079991,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='NYY',
+                      GROUP_NO='A1',
+                      PRECISION=5.0E-3,
+                      CHAM_GD=EFF1,
+                      VALE_CALC= 6.38925912E+03,
+                      VALE_REFE=6360.5527905597,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='NXY',
+                      GROUP_NO='A1',
+                      PRECISION=0.014999999999999999,
+                      CHAM_GD=EFF1,
+                      VALE_CALC= 2.09688339E+03,
+                      VALE_REFE=2076.0155823701002,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='MXX',
+                      GROUP_NO='A1',
+                      PRECISION=5.0E-3,
+                      CHAM_GD=EFF1,
+                      VALE_CALC= 2.12357492E+04,
+                      VALE_REFE=2.1163952251174E4,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='MYY',
+                      GROUP_NO='A1',
+                      PRECISION=5.0E-3,
+                      CHAM_GD=EFF1,
+                      VALE_CALC= 1.50083740E+04,
+                      VALE_REFE=1.4941006565207999E4,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='MXY',
+                      GROUP_NO='A1',
+                      PRECISION=6.4999999999999997E-3,
+                      CHAM_GD=EFF1,
+                      VALE_CALC= 5.85993414E+03,
+                      VALE_REFE=5826.2337731273001,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='QX',
+                      GROUP_NO='A1',
+                      PRECISION=6.0E-3,
+                      CHAM_GD=EFF1,
+                      VALE_CALC=-2.55152849E+03,
+                      VALE_REFE=-2565.3852320310998,),
+                   _F(
+                      REFERENCE='NON_DEFINI',
+                      NOM_CMP='QY',
+                      GROUP_NO='A1',
+                      PRECISION=0.014999999999999999,
+                      CHAM_GD=EFF1,
+                      VALE_CALC= 1.81148541E+03,
+                      VALE_REFE=1792.8625494416999,),
+                   ),
+          )
+
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   RESULTAT=MODE1,
+                   VALE_CALC=1.5123562115742,
+                   CRITERE='RELATIF',
+                   ),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   RESULTAT=MODE1,
+                   VALE_CALC=6.3733984899599,
+                   CRITERE='RELATIF',
+                   ),
+                _F(NUME_ORDRE=3,
+                   PARA='FREQ',
+                   RESULTAT=MODE1,
+                   VALE_CALC=12.501147423636,
+                   CRITERE='RELATIF',
+                   ),
+                _F(NUME_ORDRE=4,
+                   PARA='FREQ',
+                   RESULTAT=MODE1,
+                   VALE_CALC=25.467268292844,
+                   CRITERE='RELATIF',
+                   ),
+                ),
+          )
+# ______________________________________________________________________
+# VALIDATION : 2 PLAQUES EXCENTREES
+# ______________________________________________________________________
+#
+TEST_RESU(CHAM_NO=(_F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DX',
+                      GROUP_NO='A4',
+                      PRECISION=1.E-2,
+                      CHAM_GD=DEP,
+                      VALE_CALC=-1.93200378E-06,
+                      VALE_REFE=-1.939E-06,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DY',
+                      GROUP_NO='A4',
+                      PRECISION=0.012,
+                      CHAM_GD=DEP,
+                      VALE_CALC=-1.13670886E-06,
+                      VALE_REFE=-1.1489999999999999E-06,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DZ',
+                      GROUP_NO='A4',
+                      PRECISION=1.E-2,
+                      CHAM_GD=DEP,
+                      VALE_CALC=-2.21282680E-04,
+                      VALE_REFE=-2.2091E-4,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DRX',
+                      GROUP_NO='A4',
+                      PRECISION=1.E-2,
+                      CHAM_GD=DEP,
+                      VALE_CALC=-6.09502416E-05,
+                      VALE_REFE=-6.0930200000000002E-05,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DRY',
+                      GROUP_NO='A4',
+                      PRECISION=1.E-2,
+                      CHAM_GD=DEP,
+                      VALE_CALC= 1.30829991E-04,
+                      VALE_REFE=1.2972790000000001E-4,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DX',
+                      GROUP_NO='A3',
+                      PRECISION=1.E-2,
+                      CHAM_GD=DEP,
+                      VALE_CALC=-2.43246338E-06,
+                      VALE_REFE=-2.4385E-06,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DY',
+                      GROUP_NO='A3',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=DEP,
+                      VALE_CALC=-2.43712512E-07,
+                      VALE_REFE=-2.3382000000000001E-07,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DZ',
+                      GROUP_NO='A3',
+                      PRECISION=1.E-2,
+                      CHAM_GD=DEP,
+                      VALE_CALC=-1.60090759E-03,
+                      VALE_REFE=-1.5864E-3,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DRX',
+                      GROUP_NO='A3',
+                      PRECISION=1.E-2,
+                      CHAM_GD=DEP,
+                      VALE_CALC=-1.26567173E-04,
+                      VALE_REFE=-1.2638999999999999E-4,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='DRY',
+                      GROUP_NO='A3',
+                      PRECISION=1.E-2,
+                      CHAM_GD=DEP,
+                      VALE_CALC= 1.42584153E-04,
+                      VALE_REFE=1.4127000000000001E-4,),
+                   ),
+          )
+
+TEST_RESU(CHAM_NO=(_F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='NXX',
+                      GROUP_NO='A1',
+                      PRECISION=0.12,
+                      CHAM_GD=EFF,
+                      VALE_CALC= 1.09806788E+04,
+                      VALE_REFE=9859.0274822079991,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='NYY',
+                      GROUP_NO='A1',
+                      PRECISION=0.12,
+                      CHAM_GD=EFF,
+                      VALE_CALC= 7.07393431E+03,
+                      VALE_REFE=6360.5527905597,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='NXY',
+                      GROUP_NO='A1',
+                      PRECISION=0.02,
+                      CHAM_GD=EFF,
+                      VALE_CALC= 2.10071219E+03,
+                      VALE_REFE=2076.0155823701002,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='MXX',
+                      GROUP_NO='A1',
+                      PRECISION=0.070000000000000007,
+                      CHAM_GD=EFF,
+                      VALE_CALC= 2.11258578E+04,
+                      VALE_REFE=2.1163952251174E4,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='MYY',
+                      GROUP_NO='A1',
+                      PRECISION=0.02,
+                      CHAM_GD=EFF,
+                      VALE_CALC= 1.47585821E+04,
+                      VALE_REFE=1.4941006565207999E4,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='MXY',
+                      GROUP_NO='A1',
+                      PRECISION=0.02,
+                      CHAM_GD=EFF,
+                      VALE_CALC= 5.90502094E+03,
+                      VALE_REFE=5826.2337731273001,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='QX',
+                      GROUP_NO='A1',
+                      PRECISION=0.11,
+                      CHAM_GD=EFF,
+                      VALE_CALC=-2.34117363E+03,
+                      VALE_REFE=-2565.3852320310998,),
+                   _F(REFERENCE='AUTRE_ASTER',
+                      NOM_CMP='QY',
+                      GROUP_NO='A1',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=EFF,
+                      VALE_CALC= 1.84342626E+03,
+                      VALE_REFE=1792.8625494416999,),
+                   ),
+          )
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODES,
+                   VALE_CALC=1.505554113,
+                   VALE_REFE=1.512356,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODES,
+                   VALE_CALC=6.343485348,
+                   VALE_REFE=6.3733979999999999,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(NUME_ORDRE=3,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODES,
+                   VALE_CALC=12.424903115,
+                   VALE_REFE=12.501099999999999,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(NUME_ORDRE=4,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODES,
+                   VALE_CALC=25.188635028,
+                   VALE_REFE=25.46726,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                ),
+          )
+
+FIN()
+

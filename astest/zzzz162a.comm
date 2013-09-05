@@ -1,0 +1,1021 @@
+# TITRE VALIDATION LIRE_RESU AU FORMAT MED
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='ZZZZ162A', NIV_PUB_WEB='INTERNET'),
+      PAR_LOT='NON',
+      DEBUG=_F(SDVERI='OUI'),
+      IGNORE_ALARM='SUPERVIS_1',)
+#......................................................................
+# CECI EST UN TEST DE L ECRITURE ET LA RELECTURE DES CHAMPS
+# AU FORMAT MED - C EST LA RECOPIE DE HSNV100A
+#......................................................................
+
+
+MAIL=LIRE_MAILLAGE();
+#
+# DONNEES DE MODELISATION
+#
+#
+
+
+FCT1=DEFI_FONCTION(NOM_PARA='EPSI',
+                   VALE=(0.002,400.0,0.004,500.0,),
+                   PROL_DROITE='LINEAIRE',
+                   PROL_GAUCHE='LINEAIRE',);
+#
+#
+
+
+FCT2=DEFI_FONCTION(NOM_PARA='EPSI',
+                   VALE=(0.001,200.0,0.003,300.0,),
+                   PROL_DROITE='LINEAIRE',
+                   PROL_GAUCHE='LINEAIRE',);
+#
+#
+
+
+CTRACB=DEFI_NAPPE(NOM_PARA='TEMP',
+                  PARA=(0.0,50.0,),
+                  FONCTION=(FCT1,FCT2,),
+                  PROL_DROITE='LINEAIRE',
+                  PROL_GAUCHE='LINEAIRE',);
+#
+# MATERIAU ISOTROPE
+#
+#
+
+
+MAT=DEFI_MATERIAU(ELAS=_F(E=200000.0,
+                          NU=0.3,
+                          ALPHA=1e-05,),
+                  TRACTION=_F(SIGM=CTRACB,),
+                  THER=_F(LAMBDA=0.001,
+                          RHO_CP=0.0,),);
+#
+# MATERIAU ORTHOTROPE EN FAIT ISOTROPE
+#
+#
+
+
+MATO=DEFI_MATERIAU(ELAS_ORTH=_F(E_L=200000.0,
+                                E_T=200000.0,
+                                E_N=200000.0,
+                                NU_LT=0.3,
+                                NU_LN=0.3,
+                                NU_TN=0.3,
+                                G_LT=75000.0,
+                                G_LN=75000.0,
+                                G_TN=75000.0,
+                                ALPHA_L=1e-05,
+                                ALPHA_T=1e-05,
+                                ALPHA_N=1e-05,),
+                   TRACTION=_F(SIGM=CTRACB,),
+                   THER=_F(LAMBDA=0.001,
+                           RHO_CP=0.0,),);
+#
+#
+
+
+CM=AFFE_MATERIAU(MAILLAGE=MAIL, AFFE=_F(TOUT='OUI', MATER=MAT, ),)
+#
+#
+
+
+CMO=AFFE_MATERIAU(MAILLAGE=MAIL,
+                  AFFE=_F(TOUT='OUI',
+                          MATER=MATO),);
+#
+#
+
+
+T0=CREA_CHAMP(TYPE_CHAM='NOEU_TEMP_R',
+              OPERATION='AFFE',
+              MAILLAGE=MAIL,
+              AFFE=_F(TOUT='OUI',
+                      NOM_CMP='TEMP',
+                      VALE=0.0,),);
+
+L_INST=DEFI_LIST_REEL(DEBUT=0.0,
+                      INTERVALLE=(_F(JUSQU_A=66.666,
+                                     NOMBRE=1,),
+                                  _F(JUSQU_A=80.0,
+                                     NOMBRE=2,),
+                                  _F(JUSQU_A=90.0,
+                                     NOMBRE=2,),),);
+#
+#
+
+
+TIMPVAR=DEFI_FONCTION(NOM_PARA='INST',
+                      NOM_RESU='TEMP',
+                      VALE=(0.0,0.0,100.0,100.0,),);
+#
+#
+
+
+MOTHER=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='THERMIQUE',
+                           MODELISATION='AXIS',),);
+#
+#
+
+
+MOMECA=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='AXIS',),);
+#
+#
+
+
+CHTHER=AFFE_CHAR_THER_F(MODELE=MOTHER,
+                        TEMP_IMPO=(_F(GROUP_NO='GRNO1',
+                                      TEMP=TIMPVAR,),
+                                   _F(GROUP_NO='GRNO2',
+                                      TEMP=TIMPVAR,),
+                                   _F(GROUP_NO='GRNO3',
+                                      TEMP=TIMPVAR,),
+                                   _F(GROUP_NO='GRNO4',
+                                      TEMP=TIMPVAR,),),);
+#
+#
+
+
+TEMPE1=THER_LINEAIRE(MODELE=MOTHER,
+                     CHAM_MATER=CM,
+                     EXCIT=_F(CHARGE=CHTHER,),
+                     INCREMENT=_F(LIST_INST=L_INST,),
+                     ETAT_INIT=_F(CHAM_NO=T0,),);
+
+DEFI_FICHIER(FICHIER='MED_70', UNITE=70, TYPE='LIBRE')
+
+IMPR_RESU(FORMAT='MED', UNITE=70, RESU=_F( RESULTAT=TEMPE1,),);
+
+import med_aster
+dic_champ_med = med_aster.get_nom_champ_med("MED_70")
+tab1 = []
+tab2 = []
+tab3 = []
+compteur = 1
+for nom_cham,cmps in dic_champ_med.iteritems():
+    for nom_cmp in cmps:
+        tab1.append(nom_cham)
+        tab2.append(nom_cmp)
+        tab3.append(compteur)
+        compteur += 1
+
+TAB=CREA_TABLE(LISTE=(_F(PARA='NUMERO',
+                         LISTE_I=tab3,),
+                      _F(PARA='NOM_CHAM',
+                         LISTE_K=tab1,
+                         TYPE_K='K24',),
+                      _F(PARA='NOM_CMP',
+                         LISTE_K=tab2,
+                         TYPE_K='K24',),),);
+
+IMPR_TABLE(TABLE=TAB,UNITE=50,);
+TEST_FICHIER(FICHIER='./fort.50',
+             VALE_CALC_K='666f340cc43122a704807d6f9bd896c7',
+             #VALE_CALC=2.1560300000000e+03,
+             NB_VALE=10,)
+
+TEMPE=LIRE_RESU(TYPE_RESU='EVOL_THER',
+                FORMAT='MED',
+                MAILLAGE=MAIL,
+                UNITE=70,
+                FORMAT_MED=_F(   NOM_CHAM_MED='TEMPE1__TEMP',
+                                 NOM_CHAM    ='TEMP',),
+                TOUT_ORDRE='OUI',);
+
+CM1=AFFE_MATERIAU(MAILLAGE=MAIL, AFFE=_F(TOUT='OUI', MATER=MAT, ),
+                  AFFE_VARC=_F(NOM_VARC='TEMP',EVOL=TEMPE,VALE_REF=0.),
+             )
+
+# ----------------------------------------------------------------------------
+# VALIDATION DE GROUP_NO, GROUP_MA, NOEUD, MAILLE DE L'OPERATEUR
+# IMPR_RESU LORSQU'UN NOEUD EST PRESENT DANS PLUSIEURS FILTRES
+
+IMPR_RESU(UNITE=88,RESU=_F(RESULTAT=TEMPE1,
+                  MAILLE='M5',NUME_ORDRE=5,
+                  GROUP_MA='GRMA1',),);
+
+IMPR_RESU(UNITE=88,RESU=_F(RESULTAT=TEMPE1,
+                  NOEUD='N1',NUME_ORDRE=5,
+                  GROUP_MA='GRMA1',),);
+
+IMPR_RESU(UNITE=88,RESU=_F(RESULTAT=TEMPE1,NUME_ORDRE=5,
+                  GROUP_NO=('GRNO1','GRNM1',),),);
+
+DEFI_FICHIER(UNITE=88, ACTION='LIBERER')
+
+TEST_FICHIER(FICHIER='./fort.88',
+             # date a ignorer : ...15/09/2005 A 08:48:30
+             # version a ignorer: ASTER  8.01.14
+             EXPR_IGNORE=('[0-9]{2}/[0-9]{2}/[0-9]{4} A [0-9]{2}:'\
+             +'[0-9]{2}:[0-9]{2}','ASTER  [0:9].[0:9]{2}.[0:9]{2}',),
+             NB_VALE=24,
+             VALE_CALC=8.44e+02,)
+
+
+# ----------------------------------------------------------------------------
+# VALIDATION DE GROUP_NO, GROUP_MA, NOEUD, MAILLE DE L'OPERATEUR
+# IMPR_RESU AU FORMAT 'MED' (1/2)
+
+
+IMPR_RESU(FORMAT='MED', UNITE=81,
+          RESU=_F( RESULTAT=TEMPE1,
+                   NUME_ORDRE=(1,5),
+                   NOEUD='N1',
+                   GROUP_MA='GRMA1',
+                   ),);
+
+TEMPE2=LIRE_RESU(TYPE_RESU='EVOL_THER',
+                FORMAT='MED',
+                MAILLAGE=MAIL,
+                UNITE=81,
+                FORMAT_MED=_F(   NOM_CHAM_MED='TEMPE1__TEMP',
+                                 NOM_CHAM    ='TEMP',),
+                TOUT_ORDRE='OUI',);
+
+IMPR_RESU(UNITE=82, FORMAT='GMSH',
+          RESU=_F(RESULTAT=TEMPE2, NOM_CHAM='TEMP',NOM_CMP='TEMP'),)
+
+DEFI_FICHIER(UNITE=82, ACTION='LIBERER')
+
+TEST_FICHIER(FICHIER='./fort.82',
+             NB_VALE=95,
+             VALE_CALC=1.156862e+03,)
+
+# ----------------------------------------------------------------------------
+# VALIDATION DE LIRE_RESU FORMAT 'MED' POUR UNE LISTE D'INSTANTS
+# ET/OU NUMEROS D'ORDRE: (1/2)
+
+
+TEMP0=LIRE_RESU(TYPE_RESU='EVOL_THER',
+                FORMAT='MED',
+                MAILLAGE=MAIL,
+                UNITE=70,
+                FORMAT_MED=_F(   NOM_CHAM_MED='TEMPE1__TEMP',
+                                 NOM_CHAM    ='TEMP',),
+                NUME_ORDRE=(1,4,2),);
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=TEMP0,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N1',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=66.666000000,
+                   VALE_REFE=66.665999999999997,),
+                _F(NUME_ORDRE=4,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=TEMP0,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N1',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=85.000000000,
+                   VALE_REFE=85.0,),
+                _F(NUME_ORDRE=2,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=TEMP0,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N1',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=73.333000000,
+                   VALE_REFE=73.332999999999998,),
+                ),
+          )
+
+DETRUIRE(CONCEPT=_F(NOM=TEMP0))
+
+TEMP0=LIRE_RESU(TYPE_RESU='EVOL_THER',
+                FORMAT='MED',
+                MAILLAGE=MAIL,
+                UNITE=70,
+                PRECISION=1.E-3,
+                FORMAT_MED=_F(   NOM_CHAM_MED='TEMPE1__TEMP',
+                                 NOM_CHAM    ='TEMP',),
+                INST=(85.,73.33,),);
+
+
+TEST_RESU(RESU=(_F(INST=85.0,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=TEMP0,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N1',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=85.000000000,
+                   VALE_REFE=85.0,),
+                _F(INST=73.329999990000005,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=TEMP0,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N1',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=73.333000000,
+                   VALE_REFE=73.333332999999996,),
+                ),
+          )
+
+#-----------------------------------------------
+# VALIDATION DE CREA_TABLE/RESU (1/2) : CHAM_NO
+
+TB01=CREA_TABLE(
+   RESU=_F(RESULTAT=TEMP0, TOUT='OUI', TOUT_CMP='OUI', NOM_CHAM='TEMP',),
+)
+
+NORM = FORMULE(VALE='(COOR_X*COOR_X+COOR_Y*COOR_Y)**0.5',
+               NOM_PARA=('COOR_X','COOR_Y',),);
+
+TB01=CALC_TABLE(reuse=TB01,
+                TABLE=TB01,
+                ACTION=(_F(OPERATION='OPER',
+                           FORMULE=NORM,
+                           NOM_PARA='NORM',),),);
+
+PourTest = [
+   [ 1, 'N1', 1.0, 0.0, 85.0],
+   [ 1, 'N2', 2.0, 0.0, 85.0],
+   [ 1, 'N3', 2.0, 4.0, 85.0],
+   [ 1, 'N4', 1.0, 4.0, 85.0],
+   [ 2, 'N1', 1.0, 0.0, 73.333],
+   [ 2, 'N2', 2.0, 0.0, 73.333],
+   [ 2, 'N3', 2.0, 4.0, 73.333],
+   [ 2, 'N4', 1.0, 4.0, 73.333],
+]
+for numordre,noeud,X,Y,VTEMP in PourTest:
+   TEST_TABLE(
+      TABLE=TB01,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'NOEUD',      VALE_K = noeud),
+      ),
+      NOM_PARA='TEMP', VALE_CALC=VTEMP,
+   )
+   TEST_TABLE(
+      TABLE=TB01,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'NOEUD',      VALE_K = noeud),
+      ),
+      NOM_PARA='COOR_X', VALE_CALC=X,
+   )
+   TEST_TABLE(
+      TABLE=TB01,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'NOEUD',      VALE_K = noeud),
+      ),
+      NOM_PARA='COOR_Y', VALE_CALC=Y,
+   )
+
+
+CH01=CREA_CHAMP(TYPE_CHAM='NOEU_TEMP_R',
+               OPERATION='EXTR',
+               RESULTAT=TEMP0,
+               INST=73.33,
+               NOM_CHAM='TEMP')
+
+TB02=CREA_TABLE(
+   RESU=_F(CHAM_GD=CH01, NOEUD='N1', NOM_CMP='TEMP',),
+)
+
+TEST_TABLE(VALE_CALC=73.333,
+           NOM_PARA='TEMP',
+           TABLE=TB02,)
+
+DETRUIRE(CONCEPT=_F(NOM=TEMP0))
+
+#---------------------------------------------------------------------------------
+
+CHMECA=AFFE_CHAR_MECA(MODELE=MOMECA,
+                      DDL_IMPO=(_F(GROUP_NO='GRNO1',
+                                   DY=0.0,),
+                                _F(GROUP_NO='GRNO3',
+                                   DY=0.0,),),);
+
+U=STAT_NON_LINE(MODELE=MOMECA,
+                CHAM_MATER=CM1,
+                EXCIT=_F(CHARGE=CHMECA,),
+                COMP_INCR=_F(RELATION='VMIS_ISOT_TRAC',),
+                INCREMENT=_F(LIST_INST=L_INST,),
+                CONVERGENCE=_F(RESI_GLOB_RELA=1.E-8,
+                               ITER_GLOB_MAXI=10,),);
+
+U=CALC_CHAMP(reuse =U,
+             RESULTAT=U,
+             CONTRAINTE=('SIGM_ELNO','SIGM_NOEU',),
+             VARI_INTERNE=('VARI_ELNO','VARI_NOEU'),);
+
+
+IMPR_RESU(FORMAT='MED', UNITE=71, RESU=_F(RESULTAT=U,),);
+
+UUU=LIRE_RESU(TYPE_RESU='EVOL_NOLI',
+              FORMAT='MED',
+              MODELE=MOMECA,
+              FORMAT_MED=(_F( NOM_RESU='U',
+                              NOM_CHAM    ='DEPL' ),
+                          _F( NOM_RESU='U',
+                              NOM_CHAM    ='SIGM_ELNO'),
+                          _F( NOM_RESU='U',
+                              NOM_CHAM    ='VARI_ELNO'),
+                          _F( NOM_RESU='U',
+                              NOM_CHAM    ='SIEF_ELGA'),
+                          _F( NOM_RESU='U',
+                              NOM_CHAM    ='VARI_ELGA'),
+                          _F( NOM_RESU='U',
+                              NOM_CHAM    ='SIGM_NOEU'),
+                          _F( NOM_RESU='U',
+                              NOM_CHAM    ='VARI_NOEU'),
+                         ) ,
+              UNITE=71,
+              TOUT_ORDRE='OUI',);
+
+CH1=LIRE_CHAMP(FORMAT='MED',
+               MODELE=MOMECA,
+               MAILLAGE=MAIL,
+               NOM_CMP_IDEM='OUI',
+               NOM_MED='U_______SIEF_ELGA',
+               TYPE_CHAM='ELGA_SIEF_R',
+               INST=90.,
+               UNITE=71,);
+
+IMPR_RESU(UNITE=75,RESU=_F(CHAM_GD=CH1,),);
+
+IMPR_RESU(UNITE=76,RESU=_F(RESULTAT=U,NOM_CHAM='SIEF_ELGA',INST=90.),);
+
+MONU=LIRE_RESU(TYPE_RESU='EVOL_NOLI',
+               FORMAT='MED',
+               MODELE=MOMECA,
+               FORMAT_MED=(_F( NOM_RESU='U',
+                               NOM_CHAM    ='VARI_ELGA'),) ,
+               UNITE=71,
+               LIST_INST=L_INST,);
+
+IMPR_RESU(UNITE=74,RESU=_F(RESULTAT=UUU),);
+
+
+TEST_RESU(RESU=(_F(INST=90.0,
+                   POINT=1,
+                   RESULTAT=UUU,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-75.0,
+                   
+                   CRITERE='RELATIF',
+                   MAILLE='M1',),
+                _F(INST=90.0,
+                   POINT=1,
+                   RESULTAT=UUU,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=0.0,
+                   
+                   CRITERE='ABSOLU',
+                   MAILLE='M1',),
+                _F(INST=90.0,
+                   POINT=1,
+                   RESULTAT=UUU,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=5.25E-4,
+                   MAILLE='M1',),
+                _F(INST=90.0,
+                   RESULTAT=UUU,
+                   NOM_CHAM='VARI_NOEU',
+                   NOEUD='N3',
+                   NOM_CMP='V1',
+                   VALE_CALC=5.25E-4,
+                   MAILLE='M1',),
+                ),
+          )
+
+# ----------------------------------------------------------------------------
+# VALIDATION DE GROUP_NO, GROUP_MA, NOEUD, MAILLE DE L'OPERATEUR
+# IMPR_RESU AU FORMAT 'MED' (2/2)
+
+IMPR_RESU(FORMAT='MED', UNITE=83,
+          RESU=(_F(RESULTAT=U,NOM_CHAM=('SIGM_ELNO','VARI_ELNO'),NUME_ORDRE=1,MAILLE='M1',),
+                _F(RESULTAT=U,NOM_CHAM='DEPL',NUME_ORDRE=1,GROUP_NO='GRNO3'),
+                   ),);
+
+UUU2=LIRE_RESU(TYPE_RESU='EVOL_NOLI',
+               FORMAT='MED',
+              MODELE=MOMECA,
+              FORMAT_MED=(
+                          _F( NOM_CHAM_MED='U_______DEPL',
+                              NOM_CHAM    ='DEPL' ),
+                          _F( NOM_CHAM_MED='U_______SIGM_ELNO',
+                              NOM_CHAM    ='SIGM_ELNO'),
+                          _F( NOM_CHAM_MED='U_______VARI_ELNO',
+                             NOM_CMP=('V1','V2',),
+                              NOM_CMP_MED=('V1','V2',),
+                              NOM_CHAM    ='VARI_ELNO'),
+                         ) ,
+              UNITE=83,
+              TOUT_ORDRE='OUI',);
+
+IMPR_RESU(UNITE=84, FORMAT='GMSH',
+          RESU=(_F(RESULTAT=UUU2,
+                   NOM_CHAM='DEPL',NOM_CMP=('DX','DY'),),
+                _F(RESULTAT=UUU2,
+                   NOM_CHAM='SIGM_ELNO',NOM_CMP=('SIXX','SIYY','SIZZ','SIXY'),),
+                _F(RESULTAT=UUU2,
+                   NOM_CHAM='VARI_ELNO',NOM_CMP=('V1','V2'),),),)
+
+DEFI_FICHIER(UNITE=84, ACTION='LIBERER')
+
+TEST_FICHIER(FICHIER='./fort.84',
+             NB_VALE=445,
+             VALE_CALC=2.202078e+02,)
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# VALIDATION DE LIRE_RESU FORMAT 'MED' POUR UNE LISTE D'INSTANTS
+# ET/OU NUMEROS D'ORDRE: (2/2)
+
+
+
+
+UUU0=LIRE_RESU(TYPE_RESU='EVOL_NOLI',
+              FORMAT='MED',
+              MODELE=MOMECA,
+              FORMAT_MED=(
+                          _F( NOM_CHAM_MED='U_______VARI_ELNO',
+                              NOM_CMP=('V1','V2',),
+                              NOM_CMP_MED=('V1','V2',),
+                              NOM_CHAM    ='VARI_ELNO'),
+                         ) ,
+              UNITE=71,
+              NUME_ORDRE=4,);
+
+
+TEST_RESU(RESU=_F(INST=85.0,
+                  REFERENCE='AUTRE_ASTER',
+                  RESULTAT=UUU0,
+                  NOM_CHAM='VARI_ELNO',
+                  NOEUD='N1',
+                  NOM_CMP='V1',
+                  VALE_CALC= 4.12500000E-04,
+                  VALE_REFE=4.125E-4,
+                  MAILLE='M1',),
+          )
+
+#------------------------------------------------
+# VALIDATION DE CREA_TABLE/RESU (2/2) : CHAM_ELEM
+
+TB11=CREA_TABLE(
+   RESU=_F(RESULTAT=UUU, NOM_CHAM='SIGM_ELNO', NOM_CMP=('SIYY','SIZZ'),MAILLE='M1',),
+)
+
+PourTest = [
+   [ 1, 'N1', 1.0, 0.0 , -133.332],
+   [ 2, 'N4', 1.0, 4.0,  -116.66750118],
+   [ 5, 'N3', 2.0, 4.0,   -75.0000013627]
+]
+for numordre,noeud,X,Y, SIYY in PourTest:
+   TEST_TABLE(
+      TABLE=TB11,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'NOEUD',      VALE_K = noeud),
+      ),
+      NOM_PARA='COOR_X', VALE_CALC=X,
+   )
+   TEST_TABLE(
+      TABLE=TB11,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'NOEUD',      VALE_K = noeud),
+      ),
+      NOM_PARA='COOR_Y', VALE_CALC=Y,
+   )
+   TEST_TABLE(
+      TABLE=TB11,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'NOEUD',      VALE_K = noeud),
+      ),
+      NOM_PARA='SIYY', VALE_CALC=SIYY,
+   )
+
+
+CH11=CREA_CHAMP(TYPE_CHAM='ELGA_SIEF_R',
+                OPERATION='EXTR',
+                RESULTAT=UUU,
+                NUME_ORDRE=2,
+                NOM_CHAM='SIEF_ELGA')
+
+TB12=CREA_TABLE(
+   RESU=_F(CHAM_GD=CH11, NOM_CMP=('SIYY','SIZZ'), MAILLE='M1',),
+)
+
+PourTest = [
+   [ 1, 1.21132486541 , 0.845299461621 , -116.66750118 ],
+   [ 2, 1.78867513459 , 0.845299461621 , -116.66750118 ],
+   [ 3, 1.78867513459 , 3.15470053838  , -116.66750118 ],
+   [ 4, 1.21132486541 , 3.15470053838  , -116.66750118 ],
+]
+for point,X,Y,SIYY in PourTest:
+   TEST_TABLE(TABLE=TB12,
+      FILTRE=_F(NOM_PARA = 'POINT', VALE_I = point),
+      NOM_PARA='SIYY', VALE_CALC=SIYY,
+   )
+   TEST_TABLE(TABLE=TB12,
+      FILTRE=_F(NOM_PARA = 'POINT', VALE_I = point),
+      NOM_PARA='COOR_X', VALE_CALC=X,
+   )
+   TEST_TABLE(TABLE=TB12,
+      FILTRE=_F(NOM_PARA = 'POINT', VALE_I = point),
+      NOM_PARA='COOR_Y', VALE_CALC=Y,
+   )
+
+TB13=CREA_TABLE(
+   RESU=_F(RESULTAT=UUU, NOM_CHAM='VARI_ELGA', NOM_CMP='V1', NUME_ORDRE=5, TOUT='OUI',),
+)
+
+PourTest = [
+ [ 5, 'M1', 1, 1.21132486541, 0.845299461621, 0.000525000000018 ],
+ [ 5, 'M1', 2, 1.78867513459, 0.845299461621, 0.000524999999886 ],
+ [ 5, 'M1', 3, 1.78867513459, 3.15470053838 , 0.000524999999017 ],
+ [ 5, 'M1', 4, 1.21132486541, 3.15470053838 , 0.000525000000993 ],
+]
+for numordre,maille,point,X,Y,V1 in PourTest:
+   TEST_TABLE(
+      TABLE=TB13,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'MAILLE', VALE_K = maille),
+         _F(NOM_PARA = 'POINT',  VALE_I = point),
+      ),
+      NOM_PARA='V1', VALE_CALC=V1,
+   )
+   TEST_TABLE(
+      TABLE=TB13,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'MAILLE', VALE_K = maille),
+         _F(NOM_PARA = 'POINT',  VALE_I = point),
+      ),
+      NOM_PARA='COOR_X', VALE_CALC=X,
+   )
+   TEST_TABLE(
+      TABLE=TB13,
+      FILTRE=(
+         _F(NOM_PARA = 'NUME_ORDRE', VALE_I = numordre),
+         _F(NOM_PARA = 'MAILLE', VALE_K = maille),
+         _F(NOM_PARA = 'POINT',  VALE_I = point),
+      ),
+      NOM_PARA='COOR_Y', VALE_CALC=Y,
+   )
+
+
+DETRUIRE(CONCEPT=_F(NOM=UUU0))
+
+# ----------------------------------------------------------------------------
+
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=4,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=UUU,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-87.500000000,
+                   VALE_REFE=-87.5,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=5,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=UUU,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N1',
+                   NOM_CMP='DX',
+                   VALE_CALC= 1.27500000E-03,
+                   VALE_REFE=1.2750000000000001E-3,),
+                ),
+          )
+
+IMPR_RESU(FORMAT='RESULTAT',RESU=_F(RESULTAT=UUU,),);
+
+MAIL2=LIRE_MAILLAGE(FORMAT='MED',
+                    UNITE =71     );
+
+MOMECA2=AFFE_MODELE(MAILLAGE=MAIL2,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='AXIS',),);
+
+SIGMRELU=LIRE_CHAMP(MAILLAGE=MAIL2,
+                MODELE=MOMECA2,
+                FORMAT='MED',
+                UNITE=71,
+                NOM_MED='U_______SIGM_ELNO',
+                NUME_ORDRE=2,NUME_PT=2,
+                TYPE_CHAM='ELNO_SIEF_R',
+                NOM_CMP_IDEM='OUI',
+                INFO=2
+               ) ;
+IMPR_RESU ( RESU=_F( CHAM_GD=SIGMRELU, ) ) ;
+
+VARIRELU=LIRE_CHAMP(MAILLAGE=MAIL2,
+                MODELE=MOMECA2,
+                FORMAT='MED',
+                UNITE=71,
+                NOM_MED='U_______VARI_ELNO',
+                NOM_CMP=('V1','V2',),
+                NOM_CMP_MED=('V1','V2',),
+                NUME_ORDRE=2,NUME_PT=2,
+                TYPE_CHAM='ELNO_VARI_R',
+                INFO=2
+               ) ;
+IMPR_RESU ( RESU=_F( CHAM_GD=VARIRELU, ) ) ;
+
+DEPLRELU=LIRE_CHAMP(MAILLAGE=MAIL2,
+                FORMAT='MED',
+                UNITE=71,
+                NOM_MED='U_______DEPL',
+                NUME_ORDRE=2,NUME_PT=2,
+                TYPE_CHAM='NOEU_DEPL_R',
+                NOM_CMP_IDEM='OUI',
+                INFO=2
+               ) ;
+IMPR_RESU ( RESU=_F( CHAM_GD=DEPLRELU, ) )
+
+# ##################################################################################################
+# VALIDATION DE IMPR_RESU/FORMAT MED : NOM_RESU_MED
+
+
+IMPR_RESU(FORMAT='MED', UNITE=82,
+          RESU=(_F(RESULTAT=U,NOM_RESU_MED='U_M1',NUME_ORDRE=1,MAILLE='M1',),
+                _F(RESULTAT=U,NOM_RESU_MED='U_GRNO3',NUME_ORDRE=2,GROUP_NO='GRNO3'),
+                _F(RESULTAT=U,NOM_RESU_MED='U_ALL',NUME_ORDRE=2),   ),);
+
+UUU3=LIRE_RESU(TYPE_RESU='EVOL_NOLI',
+               FORMAT='MED',
+              MODELE=MOMECA,
+              FORMAT_MED=(
+                          _F( NOM_CHAM_MED='U_M1____DEPL',
+                              NOM_CHAM    ='DEPL' ),
+                          _F( NOM_CHAM_MED='U_M1____SIGM_ELNO',
+                              NOM_CHAM    ='SIGM_ELNO'),
+                          _F( NOM_CHAM_MED='U_GRNO3_VARI_ELNO',
+                              NOM_CMP     =('V1','V2',),
+                              NOM_CMP_MED =('V1','V2',),
+                              NOM_CHAM    ='VARI_ELNO'),
+                          _F( NOM_CHAM_MED='U_GRNO3_DEPL',
+                              NOM_CHAM    ='DEPL' ),
+                          _F( NOM_CHAM_MED='U_ALL___SIEF_ELGA',
+                              NOM_CHAM    ='SIEF_ELGA'),
+                         ) ,
+              UNITE=82,
+              TOUT_ORDRE='OUI',);
+
+DEFI_FICHIER(UNITE=82, ACTION='LIBERER')
+
+IMPR_RESU(RESU=_F(RESULTAT=UUU3),)
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   RESULTAT=UUU3,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-133.332,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=2,
+                   POINT=1,
+                   RESULTAT=UUU3,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-116.66750118034,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=UUU3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N3',
+                   NOM_CMP='DX',
+                   VALE_CALC=1.9666549923934E-3,),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=UUU3,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V1',
+                   VALE_CALC=1.4999249803277E-4,
+                   MAILLE='M1',),
+                ),
+          )
+
+# ##################################################################################################
+# VALIDATION DE IMPR_RESU ET LIRE_RESU AU FORMAT MED POUR UN EVOL_VARC
+
+# Definition des champs d'irradiation
+IRRA_0=CREA_CHAMP(
+   TYPE_CHAM='NOEU_IRRA_R', OPERATION='AFFE', MAILLAGE=MAIL,
+   AFFE=_F(TOUT='OUI', NOM_CMP='IRRA', VALE=5.0,),
+)
+IRRA_1=CREA_CHAMP(
+   TYPE_CHAM='NOEU_IRRA_R', OPERATION='AFFE', MAILLAGE=MAIL,
+   AFFE=(
+      _F(TOUT='OUI',   NOM_CMP='IRRA', VALE=15.0,),
+   ),
+)
+# Definition de EVOL_VARC
+IRRAD=CREA_RESU(
+   OPERATION='AFFE', TYPE_RESU='EVOL_VARC', NOM_CHAM='IRRA',
+   AFFE=(
+      _F(CHAM_GD=IRRA_0, INST=   0.0,),
+      _F(CHAM_GD=IRRA_1, INST=  10.0,),
+   ),
+)
+
+# Ecriture de l'EVOL_VRAC
+lefic_m = './REPE_OUT/IRRAD.med'
+unit_m = DEFI_FICHIER(ACTION='ASSOCIER',FICHIER=lefic_m,TYPE='LIBRE')
+IMPR_RESU(
+   UNITE=unit_m, FORMAT= 'MED',
+   RESU=(
+      _F(RESULTAT=IRRAD, NOM_CHAM=('IRRA'),),
+   ),
+)
+
+# Lecture du maillage
+maillu=LIRE_MAILLAGE(UNITE=unit_m, FORMAT='MED',)
+# Lecture de l'EVOL_VARC
+chirra=LIRE_RESU(
+   TYPE_RESU='EVOL_VARC', FORMAT='MED',
+   MAILLAGE=maillu,
+   UNITE=unit_m,
+   FORMAT_MED=_F(
+      NOM_CHAM    ='IRRA',
+      NOM_CHAM_MED='IRRAD___IRRA',
+   ),
+   TOUT_ORDRE = 'OUI',
+)
+DETRUIRE(CONCEPT=_F(NOM=unit_m), INFO=1)
+
+TEST_RESU(RESU=(_F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=chirra,
+                   NOM_CHAM='IRRA',
+                   NOEUD='N1',
+                   NOM_CMP='IRRA',
+                   VALE_CALC=5.000000000,
+                   VALE_REFE=5.0,
+                   MAILLE='M1',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=chirra,
+                   NOM_CHAM='IRRA',
+                   NOEUD='N2',
+                   NOM_CMP='IRRA',
+                   VALE_CALC=5.000000000,
+                   VALE_REFE=5.0,
+                   MAILLE='M1',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=chirra,
+                   NOM_CHAM='IRRA',
+                   NOEUD='N3',
+                   NOM_CMP='IRRA',
+                   VALE_CALC=5.000000000,
+                   VALE_REFE=5.0,
+                   MAILLE='M1',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=chirra,
+                   NOM_CHAM='IRRA',
+                   NOEUD='N4',
+                   NOM_CMP='IRRA',
+                   VALE_CALC=5.000000000,
+                   VALE_REFE=5.0,
+                   MAILLE='M1',),
+                _F(INST=10.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=chirra,
+                   NOM_CHAM='IRRA',
+                   NOEUD='N1',
+                   NOM_CMP='IRRA',
+                   VALE_CALC=15.000000000,
+                   VALE_REFE=15.0,
+                   MAILLE='M1',),
+                _F(INST=10.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=chirra,
+                   NOM_CHAM='IRRA',
+                   NOEUD='N2',
+                   NOM_CMP='IRRA',
+                   VALE_CALC=15.000000000,
+                   VALE_REFE=15.0,
+                   MAILLE='M1',),
+                _F(INST=10.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=chirra,
+                   NOM_CHAM='IRRA',
+                   NOEUD='N3',
+                   NOM_CMP='IRRA',
+                   VALE_CALC=15.000000000,
+                   VALE_REFE=15.0,
+                   MAILLE='M1',),
+                _F(INST=10.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=chirra,
+                   NOM_CHAM='IRRA',
+                   NOEUD='N4',
+                   NOM_CMP='IRRA',
+                   VALE_CALC=15.000000000,
+                   VALE_REFE=15.0,
+                   MAILLE='M1',),
+                ),
+          )
+
+HELNO0=CREA_CHAMP(TYPE_CHAM='ELNO_HYDR_R',
+                  OPERATION='AFFE',
+                  MODELE=MOTHER,
+                  AFFE=_F(MAILLE='M1',
+                          NOM_CMP='HYDR',
+                          VALE=0.0,),);
+
+HELNO1=CREA_CHAMP(TYPE_CHAM='ELNO_HYDR_R',
+                  OPERATION='AFFE',
+                  MODELE=MOTHER,
+                  AFFE=_F(MAILLE='M1',
+                          NOM_CMP='HYDR',
+                          VALE=1.0,),);
+
+RESHYD=CREA_RESU(OPERATION='AFFE',
+                 TYPE_RESU='EVOL_THER',
+                 NOM_CHAM='HYDR_ELNO',
+                 AFFE=(
+                 _F(CHAM_GD=HELNO0,
+                    MODELE=MOTHER,
+                    INST=0.0,),
+                 _F(CHAM_GD=HELNO1,
+                    MODELE=MOTHER,
+                    INST=90,),),);
+
+RESHYD=CALC_CHAMP(reuse =RESHYD,
+                  RESULTAT=RESHYD,
+                  THERMIQUE='HYDR_NOEU',);
+
+IMPR_RESU(FORMAT='MED',
+          UNITE=72,
+          RESU=_F(RESULTAT=RESHYD,),);
+
+LUHYD=LIRE_RESU(TYPE_RESU='EVOL_THER',
+                FORMAT='MED',
+                MODELE=MOTHER,
+                UNITE=72,
+                FORMAT_MED=(
+                _F(NOM_CHAM='HYDR_ELNO',
+                   NOM_RESU='RESHYD',),
+                _F(NOM_CHAM='HYDR_NOEU',
+                   NOM_RESU='RESHYD',),),
+                TOUT_ORDRE='OUI',);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   RESULTAT=LUHYD,
+                   NOM_CHAM='HYDR_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='HYDR',
+                   VALE_CALC=0,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   RESULTAT=LUHYD,
+                   NOM_CHAM='HYDR_NOEU',
+                   NOEUD='N1',
+                   NOM_CMP='HYDR',
+                   VALE_CALC=0,),
+                _F(INST=90,
+                   RESULTAT=LUHYD,
+                   NOM_CHAM='HYDR_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='HYDR',
+                   VALE_CALC=1.0,
+                   MAILLE='M1',),
+                _F(INST=90,
+                   RESULTAT=LUHYD,
+                   NOM_CHAM='HYDR_NOEU',
+                   NOEUD='N1',
+                   NOM_CMP='HYDR',
+                   VALE_CALC=1.0,),
+                ),
+          )
+
+FIN();

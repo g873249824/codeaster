@@ -1,0 +1,168 @@
+# person_in_charge: jean-michel.proix at edf.fr
+# TITRE : VARIATION TEMPERATURE DANS LE COMPORTEMENT 'VENDOCHAB'
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# CAS-TEST DE REFERENCE : SSNV183A
+#=====================================================================
+
+DEBUT(CODE=_F(NOM='COMP008E',NIV_PUB_WEB='INTERNET'),IMPR_MACRO='NON',DEBUG=_F(SDVERI='NON'))
+# SDVERI='NON' car la verification est trop couteuse en CPU
+
+#=====================================================================
+#               INITIALISATIONS
+#=====================================================================
+#
+
+
+TREF = 20.
+T0   = TREF
+Tmax = 100.
+
+ZERO = DEFI_CONSTANTE(VALE=0.0);
+
+UN   = DEFI_CONSTANTE(VALE=1.0);
+
+tfin = 200.
+
+NCAL = 10
+
+
+# Nombre de variables internes
+NB_VARI = 10
+
+#=====================================================================
+#               MATERIAU  FONCTION  DE  LA  TEMPERATURE
+#=====================================================================
+
+YOUN=DEFI_FONCTION(  NOM_PARA='TEMP',
+                     VALE=(T0,   150000.,
+                           Tmax, 100000.,)  )
+
+ALPH=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   1.0E-5,
+                                         Tmax, 2.0E-5,),);
+
+# Parametre de la loi de Lemaitre
+N_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   12.,
+                                        Tmax, 15.,),);
+
+UNSK_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   5.E-3,
+                                           Tmax, 1.E-3,),);
+
+UNSM_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   .0,
+                                         #  Tmax, 0.1111)
+                                           Tmax, 0.)
+                                           );
+
+# Parametres de la loi de Chaboche
+SY_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   0,
+                                         Tmax, 0,),);
+
+ALPHAD_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   0.,
+                                             Tmax, 1.,),);
+
+BETAD_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   0.,
+                                            Tmax, 1.,),);
+
+RD_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   6.,
+                                         Tmax, 7,),);
+
+AD_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   3.0E5,
+                                         Tmax, 3.5E5,),);
+
+KD_F=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(T0,   15.,
+                                         Tmax, 10.,),);
+
+MATERI=DEFI_MATERIAU(ELAS_FO=_F(E=YOUN,
+                                NU=ZERO,
+                                TEMP_DEF_ALPHA=TREF,
+                                ALPHA=ALPH,),
+                     LEMAITRE_FO=_F(N=N_F,
+                                    UN_SUR_K=UNSK_F,
+                                    UN_SUR_M=UNSM_F,
+                                    ),
+                     VENDOCHAB_FO=_F(SY=SY_F,
+                                     ALPHA_D=ALPHAD_F,
+                                     BETA_D=BETAD_F,
+                                     R_D=RD_F,
+                                     A_D=AD_F,
+                                     K_D=KD_F,
+                                     ),
+                     VISC_ENDO_FO=_F(SY=SY_F,
+                                     R_D=RD_F,
+                                     A_D=AD_F,
+                                     ),
+                      );
+
+LMAT2  = [None]*(NCAL)
+time=0.
+for i in range(NCAL):
+    timem = time
+    time = timem + tfin/NCAL
+    Ti = T0 + time/tfin * (Tmax - T0)
+    LMAT2[i]=DEFI_MATERIAU(ELAS =_F(E=YOUN(Ti),
+                                        NU=0.,
+                                        ALPHA=0.,),
+                               LEMAITRE=_F(N=N_F(Ti),
+                                           UN_SUR_K=UNSK_F(Ti),
+                                           UN_SUR_M=UNSM_F(Ti),
+                                           ),
+                               VENDOCHAB=_F(SY=SY_F(Ti),
+                                            ALPHA_D=ALPHAD_F(Ti),
+                                            BETA_D=BETAD_F(Ti),
+                                            R_D=RD_F(Ti),
+                                            A_D=AD_F(Ti),
+                                            K_D=KD_F(Ti),
+                                            ),
+                               VISC_ENDO=_F(SY=SY_F(Ti),
+                                            R_D=RD_F(Ti),
+                                            A_D=AD_F(Ti),
+                                            ),
+                                );
+
+compor='VISC_ENDO_LEMA'
+
+
+############################################################################
+# MACRO pour test thermoplastique
+
+tabresu=TEST_COMPOR(SUPPORT='ELEMENT',
+              MATER=MATERI,
+              COMP_INCR=_F(RELATION=compor,ITER_INTE_MAXI=100),
+              NEWTON=_F(REAC_ITER=1),
+              LIST_MATER=LMAT2,ALPHA=ALPH,YOUNG=YOUN,TEMP_INIT=T0,TEMP_FIN=Tmax,
+              NB_VARI=NB_VARI, INST_FIN=tfin,
+              VARI_TEST=('V1','V2','V3','V7','V8'),
+              )
+
+IMPR_TABLE(TABLE=tabresu)
+
+compor='VENDOCHAB'
+
+
+
+tabresu2=TEST_COMPOR(SUPPORT='ELEMENT',
+              MATER=MATERI,
+              COMP_INCR=_F(RELATION=compor,ITER_INTE_MAXI=100),
+              NEWTON=_F(REAC_ITER=1),
+              LIST_MATER=LMAT2,ALPHA=ALPH,YOUNG=YOUN,TEMP_INIT=T0,TEMP_FIN=Tmax,
+              NB_VARI=NB_VARI, INST_FIN=tfin,
+              VARI_TEST=('V1','V2','V3','V7','V8'),
+              )
+
+IMPR_TABLE(TABLE=tabresu2)
+
+FIN();

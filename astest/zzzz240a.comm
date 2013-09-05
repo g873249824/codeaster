@@ -1,0 +1,205 @@
+# TITRE VALIDATION IMPR_RESU / RESTREINT
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+DEBUT(CODE=_F(NOM='ZZZZ240A', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+#...........................................................................................
+# CECI EST UN TEST DE LA FONCTIONNALITE : IMPR_RESU / RESTREINT :
+#  - ON CREE UN EVOL_THER TEMP1 SUR UN MAILLAGE MA1
+#  - ON CREE UN EVOL_NOLI U1 (QUI UTILISE TEMP1) SUR UN MAILLAGE MA1
+#
+#  - ON IMPRIME MA1, TEMP1 ET U1 SUR UN SOUS-ENSEMBLE DES MAILLES DE MA1
+#
+#  - ON RELIT LE FICHIER ET ON RECUPERE :
+#      - UN MAILLAGE MA2 PLUS PETIT
+#      - UN EVOL_NOLI U2 SUR MA2
+#      - UN EVOL_THER TEMP2 SUR MA2
+#  - APRES AVOIR REFABRIQUE UN CHAM_MATER SUR MA2,
+#  - ON VERIFIE QUE L'ON PEUT FAIRE QUELQUES POST-TRAITEMENTS SUR U2 (POST_ELEM, CALC_CHAMP)
+#  - ON VERIFIE QUE LE CONTENU DE U2 EST LE MEME QUE CELUI DE U1 SUR LES MAILLES RETENUES
+#...........................................................................................
+
+
+
+#  1. ON FAIT UN (PETIT) CALCUL THERMO-MECANIQUE NON-LINEAIRE => MA1, U1, TEMP1
+#  ----------------------------------------------------------------------------------------
+
+MA1=LIRE_MAILLAGE()
+MA1=DEFI_GROUP( reuse=MA1,   MAILLAGE=MA1, CREA_GROUP_MA=_F(NOM= 'GXXXXXX_G1', MAILLE=('M1','M15',)))
+
+LINST=DEFI_LIST_REEL(VALE=(1., 3., 5., 7.))
+
+F_E=DEFI_FONCTION(NOM_PARA='TEMP', VALE=(0., 2.,  100., 5.,))
+F_NU=DEFI_CONSTANTE(VALE=0.3)
+ALPHA=DEFI_CONSTANTE(VALE=1.E-5)
+ACIE1=DEFI_MATERIAU( THER=    _F(LAMBDA=1.,  RHO_CP = 2.))
+ACIE2=DEFI_MATERIAU( ELAS_FO= _F(E=F_E,ALPHA=ALPHA,TEMP_DEF_ALPHA=0.,NU=F_NU))
+
+CMTH1=AFFE_MATERIAU(MAILLAGE=MA1, AFFE=_F(TOUT='OUI', MATER=ACIE1))
+
+MOTH1=AFFE_MODELE(MAILLAGE=MA1, AFFE=_F(TOUT='OUI', PHENOMENE='THERMIQUE', MODELISATION='PLAN') )
+CHTH1=AFFE_CHAR_CINE(MODELE=MOTH1, THER_IMPO= (
+                                   _F( GROUP_MA='GXXXXXX_AB', TEMP=50.),
+                                   _F( GROUP_MA='GXXXXXX_CD', TEMP=10.)))
+TEMP1=THER_LINEAIRE(MODELE=MOTH1, CHAM_MATER=CMTH1, EXCIT=_F(CHARGE=CHTH1),
+                    INCREMENT=_F(LIST_INST=LINST))
+
+TEMP1=CALC_CHAMP( reuse=TEMP1, RESULTAT=TEMP1, THERMIQUE=('FLUX_ELNO', 'FLUX_ELGA',),);
+
+MO1=AFFE_MODELE(MAILLAGE=MA1, AFFE=_F(TOUT='OUI', PHENOMENE='MECANIQUE', MODELISATION='D_PLAN') )
+CMME1=AFFE_MATERIAU(MAILLAGE=MA1, AFFE=_F(TOUT='OUI', MATER=ACIE2),
+                     AFFE_VARC=_F(TOUT='OUI',EVOL=TEMP1, VALE_REF=20.,NOM_VARC='TEMP'))
+
+CHTEMP0=CREA_CHAMP(TYPE_CHAM='NOEU_TEMP_R',
+                   OPERATION='AFFE',
+                   MODELE=MOTH1,
+                   AFFE=_F(TOUT='OUI',
+                           NOM_CMP='TEMP',
+                           VALE=20.0,),);
+
+TEMP1=CREA_RESU(reuse =TEMP1,
+                OPERATION='AFFE',
+                TYPE_RESU='EVOL_THER',
+                NOM_CHAM='TEMP',
+                AFFE=_F(CHAM_GD=CHTEMP0,
+                        INST=0.0,),);
+
+LINST2=DEFI_LIST_REEL(VALE=(0., 1., 3., 5., 7.))
+
+CHAR1=AFFE_CHAR_MECA(   MODELE=MO1,
+                        DDL_IMPO=( _F(GROUP_MA = 'GXXXXXX_AB', DX = 0., DY = 0., ),
+                                   _F(GROUP_NO = 'GXXXXXX_C',  DX = 1., DY = 2., ),))
+
+U1=STAT_NON_LINE( MODELE=MO1, CHAM_MATER=CMME1,
+                      EXCIT=_F( CHARGE = CHAR1),
+                      COMP_INCR=_F( RELATION = 'ELAS'),
+                      INCREMENT=_F( LIST_INST = LINST2),
+              )
+
+U1=CALC_CHAMP(reuse=U1, RESULTAT=U1, CONTRAINTE='SIGM_ELNO',)
+
+
+#  2. ON IMPRIME LES SD_RESULTAT ET LE MAILLAGE SUR UN SOUS-ENSEMBLE DES MAILLES
+#  ------------------------------------------------------------------------------------------
+MA1B=CREA_MAILLAGE(MAILLAGE=MA1,
+                   RESTREINT=_F(GROUP_MA=('GXXXXXX_CARRE1','GXXXXXX_G1'), MAILLE=('M1','M16')),)
+MOTH1B=AFFE_MODELE(MAILLAGE=MA1B, AFFE=_F(TOUT='OUI', PHENOMENE='THERMIQUE', MODELISATION='PLAN') )
+MO1B=AFFE_MODELE(MAILLAGE=MA1B, AFFE=_F(TOUT='OUI', PHENOMENE='MECANIQUE', MODELISATION='D_PLAN') )
+TEMP1B=EXTR_RESU(RESULTAT=TEMP1,
+                 RESTREINT=_F(MODELE=MOTH1B),)
+U1B=EXTR_RESU(RESULTAT=U1,
+              RESTREINT=_F(MODELE=MO1B),)
+
+IMPR_RESU(FORMAT='MED', UNITE=80,
+        RESU=(
+          _F(RESULTAT=TEMP1B, NOM_CHAM=('TEMP','FLUX_ELGA'),NUME_ORDRE=(0,3)),
+          _F(RESULTAT=U1B,NUME_ORDRE=(2,3),),
+        ))
+
+
+#  2.1 ON RELIT LE FICHIER => MA2, U2, TEMP2
+#  ------------------------------------------------------------------------------------------
+MA2=LIRE_MAILLAGE(FORMAT='MED',UNITE=80);
+MO2=AFFE_MODELE(MAILLAGE=MA2, AFFE=_F(TOUT='OUI', PHENOMENE='MECANIQUE', MODELISATION='D_PLAN'))
+MOTH2=AFFE_MODELE(MAILLAGE=MA2, AFFE=_F(TOUT='OUI', PHENOMENE='THERMIQUE', MODELISATION='PLAN'))
+
+TEMP2=LIRE_RESU(TYPE_RESU='EVOL_THER', FORMAT='MED', UNITE=80,
+              MODELE=MOTH2, TOUT_ORDRE='OUI',
+              FORMAT_MED=( _F( NOM_CHAM_MED='TEMP1B__TEMP', NOM_CHAM='TEMP' )))
+
+CMME2=AFFE_MATERIAU(MAILLAGE=MA2, AFFE=_F(TOUT='OUI', MATER=ACIE2),
+                     AFFE_VARC=_F(TOUT='OUI',EVOL=TEMP2, VALE_REF=20.,NOM_VARC='TEMP'))
+
+U2=LIRE_RESU( TYPE_RESU='EVOL_NOLI', FORMAT='MED', UNITE=80,
+              MODELE=MO2,  CHAM_MATER=CMME2, TOUT_ORDRE='OUI',
+              FORMAT_MED=(
+                 _F( NOM_CHAM_MED='U1B_____DEPL', NOM_CHAM  ='DEPL' ),
+                 _F( NOM_CHAM_MED='U1B_____SIEF_ELGA', NOM_CHAM  ='SIEF_ELGA' ),
+                 _F( NOM_CHAM_MED='U1B_____VARI_ELGA', NOM_CHAM  ='VARI_ELGA',
+                     NOM_CMP=('V1',), NOM_CMP_MED=('V1',), ),
+                 _F( NOM_CHAM_MED='U1B_____SIGM_ELNO', NOM_CHAM  ='SIGM_ELNO' ),
+              ),)
+
+
+
+#  3. ON VERIFIE U2 :
+#  --------------------
+
+# 3.1 : ON PEUT FAIRE MACR_LIGNE_COUPE :
+#----------------------------------------
+ML1=MACR_LIGN_COUPE( RESULTAT= U2,NOM_CHAM= 'SIGM_ELNO',
+                     LIGN_COUPE=   _F( NB_POINTS= 11,
+                                         COOR_ORIG= ( 0.01, 0.01,),
+                                         COOR_EXTR= ( 0.49, 0.49,), ),)
+
+IMPR_TABLE(TABLE=ML1,
+           NOM_PARA=('ABSC_CURV', 'SIXY'),
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE= 3.),)
+
+# 3.2 : VALIDATION (AUTRE_ASTER) AVEC POST_ELEM :
+#------------------------------------------------
+POST1=POST_ELEM(MODELE=MO1, INST=3., RESULTAT=U1,
+                INTEGRALE=_F(NOM_CHAM='SIEF_ELGA',
+                             NOM_CMP=('SIYY'), GROUP_MA='GXXXXXX_CARRE1'),)
+
+POST2=POST_ELEM(MODELE=MO2, INST=3., RESULTAT=U2,
+                INTEGRALE=_F(NOM_CHAM='SIEF_ELGA',
+                             NOM_CMP=('SIYY'), GROUP_MA='GXXXXXX_CARRE1'),)
+
+TEST_TABLE(
+           VALE_CALC=0.93118648682586,
+           NOM_PARA='INTE_SIYY',
+           TABLE=POST1,
+           )
+
+TEST_TABLE(REFERENCE='AUTRE_ASTER',
+           VALE_CALC=0.93118648682586,
+           VALE_REFE=0.93118648682586,
+           NOM_PARA='INTE_SIYY',
+           TABLE=POST2,)
+
+# 3.3 : VALIDATION (AUTRE_ASTER) AVEC CALC_CHAMP :
+#------------------------------------------------
+CALC_CHAMP(reuse=U1, RESULTAT=U1, ENERGIE='ENEL_ELGA',)
+CALC_CHAMP(reuse=U2, RESULTAT=U2, ENERGIE='ENEL_ELGA',)
+IMPR_RESU(RESU=_F(RESULTAT=U1,NOM_CHAM='ENEL_ELGA', INST=5.))
+IMPR_RESU(RESU=_F(RESULTAT=U2,NOM_CHAM='ENEL_ELGA', INST=5.))
+
+TEST_RESU(RESU=(_F(INST=5,
+                   POINT=4,
+                   RESULTAT=U1,
+                   NOM_CHAM='ENEL_ELGA',
+                   NOM_CMP='TOTALE',
+                   VALE_CALC=14.3256,
+                   CRITERE='RELATIF',
+                   MAILLE='M16',),
+                _F(INST=5,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=4,
+                   RESULTAT=U2,
+                   NOM_CHAM='ENEL_ELGA',
+                   NOM_CMP='TOTALE',
+                   VALE_CALC=14.325598,
+                   VALE_REFE=14.3256,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-4,
+                   MAILLE='M16',),
+                ),
+          )
+
+FIN()

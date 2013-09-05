@@ -1,0 +1,272 @@
+# TITRE ESSAI DE TRACTION CISAILLEMENT EN 3D (VISCOCHAB)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#----------------------------------------------------------------------
+#            TEST MODELE VISCOCHABOCHE MODIFIE 3D
+#                 ESSAI EN TRACTION CISAILLEMENT NON RADIAL
+#                           CONTRAINTE IMPOSEE
+#----------------------------------------------------------------------
+#         ELEMENT 3D CUBE A 8 NOEUDS EN TRACTION - COMPRESSION
+#              ETAT UNIAXIAL DE CONTRAINTE DEFORMATION
+#       UNITES : NEWTON , MILLIMETRE , SECONDE (N,MM,S,->MPA)
+#
+#
+#               Z       A                     A = 1 MM
+#               L<------------->                      2
+#                                             S = 1 MM
+#                / N5            N8
+#              >O--------------O
+#              /L             /L
+#         N6  / L         N7 / L
+#           >O--+-----------O  L
+#            L  L           L  L
+#            L  L     S     L  L
+#            L  L           L  L
+#            L  L/ N1       L  L N4
+#            L >O-----------L--O-> Y
+#            L /V           L /
+#         N2 L/          N3 L/
+#           >O--------------O
+#
+#          /
+#         X         SEUIL ELASTIQUE :
+#                                   (SIGXX**2 + 3 SIGXY**2 = K**2 )
+#
+#
+#----------------------------------------------------------------------
+#
+DEBUT(CODE=_F(NOM='SSNV118A', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+CUBE=LIRE_MAILLAGE(    )
+
+TROISD=AFFE_MODELE(            MAILLAGE=CUBE,
+                                    AFFE=_F(   PHENOMENE = 'MECANIQUE',
+                                            MODELISATION = '3D',
+                                            MAILLE = 'MA1'))
+
+ACIER=DEFI_MATERIAU(            ELAS=_F(   E = 145000.,
+                                            NU = 0.3,
+                                            ALPHA = 0.),
+
+                               VISCOCHAB=_F(   K_0 = 70.,
+                                            A_K = 1.,
+                                            A_R = 0.65,
+                                            K = 35.,
+                                            N = 24.,
+                                            ALP = 0.,
+                                            B = 12.,
+                                            M_R = 2.,
+                                            G_R = 2.E-7,
+                                            MU = 19.,
+                                            Q_M = 460.,
+                                            Q_0 = 40.,
+                                            QR_0 = 200.,
+                                            ETA = .04,
+                                            C1 = 1950.,
+                                            M_1 = 4.,
+                                            D1 = 0.397E-3,
+                                            G_X1 = 2.E-13,
+                                            G1_0 = 50.,
+                                            C2 = 65000.,
+                                            M_2 = 4.,
+                                            D2 = 0.552E-1,
+                                            G_X2 = 1.E-12,
+                                            G2_0 = 1300.,
+                                            A_I = 0.5))
+
+MAT=AFFE_MATERIAU(            MAILLAGE=CUBE,
+                                    AFFE=_F(  MAILLE = 'MA1',
+                                           MATER = ACIER))
+
+LINST=DEFI_LIST_REEL(              DEBUT=0.,INTERVALLE=(
+
+                            _F(  JUSQU_A = 4.,      NOMBRE = 1),
+                            _F(  JUSQU_A = 10.,      NOMBRE = 10))
+                                         )
+
+COND_LIM=AFFE_CHAR_MECA(
+                     MODELE=TROISD,DDL_IMPO=(
+                   _F(  NOEUD = 'N6',         DZ = 0.,  DY = 0.),
+                            _F(  NOEUD = 'N2',         DY = 0.),
+                            _F(  GROUP_NO = 'FACE1YZ',  DX = 0.)))
+
+TRAC=AFFE_CHAR_MECA(
+                     MODELE=TROISD,
+               FORCE_NODALE=_F(  GROUP_NO = 'FACEYZ',  FX = -.25))
+
+CIS=AFFE_CHAR_MECA(
+                     MODELE=TROISD,FORCE_NODALE=(
+               _F(  GROUP_NO = 'FACEYZ',  FY = -.25),
+               _F(  GROUP_NO = 'FACEXZ',  FX = -.25),
+               _F(  GROUP_NO = 'FACE1YZ', FY = .25),
+               _F(  GROUP_NO = 'FACE1XZ', FX = .25)))
+
+COEF_TR=DEFI_FONCTION(
+                              NOM_PARA='INST',
+                                  VALE=(
+                                           0.,   0.,
+                                          10.,   150.,
+     ))
+
+COEF_CS=DEFI_FONCTION(
+                              NOM_PARA='INST',
+                                  VALE=(
+                                           0.,     0.,
+                                          10.,    60.,
+     ))
+
+SOLNL=STAT_NON_LINE(
+                             TITRE='TEST TRAC MODELE VISCOCHAB',
+                            MODELE=TROISD,
+                        CHAM_MATER=MAT,EXCIT=(
+                             _F(
+                CHARGE = COND_LIM),
+                             _F(
+                CHARGE = TRAC,
+                FONC_MULT = COEF_TR),
+                             _F(
+                CHARGE = CIS,
+                FONC_MULT = COEF_CS)),
+                         COMP_INCR=_F(
+                RELATION = 'VISCOCHAB',
+                DEFORMATION = 'PETIT',
+                ITER_INTE_MAXI = 40,
+                ITER_INTE_PAS = 10,
+                RESI_INTE_RELA = 1.0E-07,
+                TOUT = 'OUI'),
+                         INCREMENT=_F(
+                LIST_INST = LINST),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                REAC_INCR = 1,
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                ITER_GLOB_MAXI = 40,
+                RESI_GLOB_RELA = 1.0E-06),
+                     RECH_LINEAIRE=_F(
+                ITER_LINE_MAXI = 5,
+                RESI_LINE_RELA = 1.0E-03)
+              )
+
+SOLNL=CALC_CHAMP(reuse=SOLNL,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),DEFORMATION=('EPSI_ELNO'),RESULTAT=SOLNL,INST=10.)
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=149.99999982905,
+                   VALE_REFE=150.0,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIXY',
+                   VALE_CALC=59.999999964942,
+                   VALE_REFE=60.0,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=0.015050208244959,
+                   VALE_REFE=0.0149455,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=0.011,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='EPXY',
+                   VALE_CALC=8.9473663241646E-03,
+                   VALE_REFE=8.8845299999999999E-3,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=0.011,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V1',
+                   VALE_CALC=12.491668460687,
+                   VALE_REFE=12.4955,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=5.0000000000000001E-3,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V7',
+                   VALE_CALC=30.055786180601,
+                   VALE_REFE=30.0352,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V13',
+                   VALE_CALC=0.017050865963993,
+                   VALE_REFE=0.016923500000000001,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=1.E-2,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V14',
+                   VALE_CALC=8.438427937693,
+                   VALE_REFE=8.3683599999999991,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=1.E-2,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V15',
+                   VALE_CALC=6.820346385597E-04,
+                   VALE_REFE=6.7663300000000005E-4,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=1.E-2,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V16',
+                   VALE_CALC=0.013450171995141,
+                   VALE_REFE=0.013348499999999999,
+                   REFERENCE = 'SOURCE_EXTERNE',
+                   PRECISION=1.E-2,
+                   MAILLE='MA1',),
+                ),
+          )
+
+FIN()
+#

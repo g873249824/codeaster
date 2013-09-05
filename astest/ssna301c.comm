@@ -1,0 +1,211 @@
+# TITRE FOND DE RESERVOIR EPAIS PRESSURISE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+# CALCUL AXISYMETRIQUE
+# ELEMENTS QUAD8 ET SEG3 POUR APPLICATION DE LA PRESSION
+#.....................................................................
+
+DEBUT(   CODE=_F(  NOM = 'SSNA301C',NIV_PUB_WEB='INTERNET'))
+
+MAYA=LIRE_MAILLAGE(FORMAT='MED', )
+
+MODEL=AFFE_MODELE(    MAILLAGE=MAYA,
+                                VERIF='MAILLE',
+                                 AFFE=_F(  TOUT = 'OUI',
+                                        PHENOMENE = 'MECANIQUE',
+                                        MODELISATION = 'AXIS')
+                         )
+
+ACIER_NL=DEFI_MATERIAU(         ELAS=_F(  E = 3.E7,
+                                      NU = 0.3),
+                          ECRO_LINE=_F(  D_SIGM_EPSI = 0.,
+                                      SY = 3.E4)
+                      )
+
+ACIER_LI=DEFI_MATERIAU(         ELAS=_F(  E = 3.E7,
+                                         NU = 0.3)
+                          )
+
+MATER=AFFE_MATERIAU(   MAILLAGE=MAYA,AFFE=(
+                                _F(  GROUP_MA = 'MAT_NL',
+                                       MATER = ACIER_NL),
+                                     _F(  GROUP_MA = 'MAT_LIN',
+                                       MATER = ACIER_LI))
+                         )
+
+PRES_FO=DEFI_FONCTION(       NOM_PARA='INST',
+                             PROL_DROITE='EXCLU',
+                            PROL_GAUCHE='EXCLU',
+                                   VALE=( 0.,    0.,
+                                          1.,    1143.392, )
+                        )
+
+PRES=AFFE_CHAR_MECA_F(      MODELE=MODEL,
+                            PRES_REP=_F(  GROUP_MA = 'FACE',
+                                       PRES = PRES_FO)
+                        )
+
+CONDLIM=AFFE_CHAR_MECA(     MODELE=MODEL,DDL_IMPO=(
+
+                                _F(  GROUP_NO = 'FIX_C1',   DX = 0.),
+                                _F(  GROUP_NO = 'FIX_C2',   DY = 0.))
+                          )
+
+CAT=DEFI_LIST_REEL(    DEBUT=0.0,
+                         INTERVALLE=_F(  JUSQU_A = 1.,    NOMBRE = 50)
+                     )
+
+CALCNL=STAT_NON_LINE(
+                            MODELE=MODEL,
+                        CHAM_MATER=MATER,
+                         COMP_INCR=_F(
+                RELATION = 'VMIS_ISOT_LINE',
+                GROUP_MA = 'MAT_NL'),
+                         COMP_ELAS=_F(
+                RELATION = 'ELAS',
+                GROUP_MA = 'MAT_LIN'),
+                         INCREMENT=_F(
+                LIST_INST = CAT),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6,
+                ITER_GLOB_MAXI = 50),EXCIT=(
+                             _F(
+                CHARGE = PRES), _F(
+                CHARGE = CONDLIM)),
+                     RECH_LINEAIRE=_F(
+                ITER_LINE_MAXI = 3)
+              )
+
+CALCNL=CALC_CHAMP(reuse=CALCNL,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=CALCNL)
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO002329',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC= 2.99782350E+04,
+                   VALE_REFE=2.9956881115799999E4,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,
+                   MAILLE='MA000544',),
+                _F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO001139',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-3.49081285E+04,
+                   VALE_REFE=-3.5102146956299999E4,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,
+                   MAILLE='MA000264',),
+                _F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO000017',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC= 2.74548004E+04,
+                   VALE_REFE=2.7441417799999999E4,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,
+                   MAILLE='MA000008',),
+                _F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO002313',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC= 2.88473439E+04,
+                   VALE_REFE=2.8848933799999999E4,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,
+                   MAILLE='MA000537',),
+                _F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO001701',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC= 3.42535131E+04,
+                   VALE_REFE=3.4186289599999996E4,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,
+                   MAILLE='MA000393',),
+                _F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO001429',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1.86311948E+04,
+                   VALE_REFE=-1.8439489300000001E4,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,
+                   MAILLE='MA000329',),
+                _F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO000851',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1.56636094E+04,
+                   VALE_REFE=-1.57285059E4,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,
+                   MAILLE='MA000193',),
+                _F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO000001',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC= 2.85991194E+04,
+                   VALE_REFE=2.8593957299999998E4,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,
+                   MAILLE='MA000001',),
+                _F(NUME_ORDRE=25,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO002313',
+                   NOM_CMP='DY',
+                   VALE_CALC=0.100946856,
+                   VALE_REFE=0.10094499999999999,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,),
+                _F(NUME_ORDRE=50,
+                   RESULTAT=CALCNL,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO002313',
+                   NOM_CMP='DY',
+                   VALE_CALC=0.370470093,
+                   VALE_REFE=0.37046800000000002,
+                   REFERENCE='NON_DEFINI',
+                   CRITERE='RELATIF',
+                   PRECISION=0.050000000000000003,),
+                ),
+          )
+
+FIN()
+#

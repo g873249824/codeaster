@@ -1,0 +1,499 @@
+# TITRE TEST HHM 2D (HHM_DPTR3),CALCUL DECOUPLE (S=0.5, DSDP=0)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+DEBUT(CODE=_F(NOM='WTNV112C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#
+####################################
+#   OPERATIONS SUR LE MAILLAGE
+#
+####################################
+MAILIN=LIRE_MAILLAGE();
+
+MAIL = CREA_MAILLAGE(
+                         MAILLAGE  = MAILIN,
+                         LINE_QUAD = _F(TOUT = 'OUI'),
+                       )
+
+
+MODELE=AFFE_MODELE(   MAILLAGE=MAIL,
+                        AFFE=_F(  TOUT = 'OUI',
+                      PHENOMENE = 'MECANIQUE',
+                      MODELISATION = 'D_PLAN_HHM')
+                     )
+
+####################################
+#  LISTE DES INSTANTS DE CALCUL
+####################################
+LI=DEFI_LIST_REEL(   DEBUT=0.,INTERVALLE=(
+                       _F(  JUSQU_A = 1.E0,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E0,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E1,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E1,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E2,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E2,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E3,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E3,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E4,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E4,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E5,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E5,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E6,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E6,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E7,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E10, NOMBRE = 1))
+                     )
+
+ARCHI=DEFI_LIST_REEL(    DEBUT=0.,INTERVALLE=(
+                       _F(  JUSQU_A = 1.E0,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E0,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E1,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E1,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E2,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E2,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E3,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E3,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E4,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E4,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E5,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E5,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E6,  NOMBRE = 1),
+                       _F(  JUSQU_A = 5.E6,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E7,  NOMBRE = 1),
+                       _F(  JUSQU_A = 1.E10, NOMBRE = 1))
+                 )
+
+############################################
+#
+# DEFINITION DES FONCTIONS DE COMPORTEMENT :
+# VISCOSITE LIQUIDE ET GAZ : UNITE : PA.S
+#
+####
+VISCOLIQ=DEFI_CONSTANTE(    VALE=1.E-3)
+
+VISCOGAZ=DEFI_CONSTANTE(    VALE=1.E-5)
+
+DVISCOL=DEFI_CONSTANTE(    VALE=0.)
+
+DVISCOG=DEFI_CONSTANTE(    VALE=0.)
+
+####
+
+#
+# AUTRES FONCTIONS DE COMPORTEMENT
+# PERMEABILITE INTRINSEQUE, RELATIVE DU LIQUIDE, RELATIVE DU GAZ
+# UNITE INTRINSEQUE : METRES CARRES , UNITE RELATIVE : SANS
+#
+KINT=DEFI_CONSTANTE(    VALE=1.E-18)
+
+DPERGSA=DEFI_CONSTANTE(    VALE=0.)
+
+DPERGPG=DEFI_CONSTANTE(    VALE=0.)
+
+
+#
+#
+UN=DEFI_CONSTANTE(    VALE=1.)
+
+ZERO=DEFI_CONSTANTE(    VALE=0.)
+
+SATU=DEFI_CONSTANTE(    VALE=0.5)
+
+MATERIAU=DEFI_MATERIAU(     THM_LIQU=_F(
+   RHO = 1000.,
+   UN_SUR_K = 1.E-7,
+   ALPHA = 1.E-4,
+   CP = 2.85E6,
+   VISC = VISCOLIQ,
+   D_VISC_TEMP = DVISCOL,),
+                              THM_GAZ=_F(
+   MASS_MOL = 18.E-3,
+   CP = 1000.,
+   VISC = VISCOGAZ,
+   D_VISC_TEMP = DVISCOG,),
+
+                              THM_VAPE_GAZ=_F(
+   MASS_MOL = 18.E-3,
+   CP = 1870.,
+   VISC = VISCOGAZ,
+   D_VISC_TEMP = DVISCOG),
+                              THM_DIFFU=_F(
+   R_GAZ = 8.315,
+   RHO = 1.6E3,
+   CP = 2.85E6,
+   BIOT_COEF = 1.,
+   SATU_PRES = SATU,
+   D_SATU_PRES = ZERO,
+   PESA_X = 0.,
+   PESA_Y = -10.,
+   PESA_Z = 0.,
+   PERM_IN = KINT,
+   PERM_LIQU = UN,
+   D_PERM_LIQU_SATU = ZERO,
+   PERM_GAZ = UN,
+   D_PERM_SATU_GAZ = DPERGSA,
+   D_PERM_PRES_GAZ = DPERGPG,),
+                              THM_INIT=_F(
+   TEMP = 273.,
+   PRE1 = 0.,
+   PRE2 = 1.E5,
+   PORO = 0.14,
+   PRES_VAPE = 2269.8,
+   DEGR_SATU = 0.5),
+          COMP_THM = 'LIQU_GAZ',
+                                     ELAS=_F(
+   E = 40.E9,
+   NU = 0.,
+   RHO = 2000.,
+   ALPHA = 8.E-6)
+   )
+
+CHMAT0=AFFE_MATERIAU(   MAILLAGE=MAIL,
+                          AFFE=_F( TOUT = 'OUI',
+                        MATER = MATERIAU))
+
+CHARHO=AFFE_CHAR_MECA(   MODELE=MODELE,
+                          DDL_IMPO=_F(  TOUT = 'OUI',
+                        DX = 0.,
+                        DY = 0.)
+                                  )
+
+RESU0=STAT_NON_LINE(   MODELE=MODELE,
+            SOLVEUR=_F( METHODE = 'LDLT'),
+                          CHAM_MATER=CHMAT0,
+                          EXCIT=_F( CHARGE = CHARHO),
+                          COMP_INCR=_F( RELATION = 'KIT_HHM',PARM_THETA=1.,
+                          RELATION_KIT = ('ELAS', 'LIQU_GAZ', 'HYDR_UTIL',),
+                          ITER_INTE_MAXI = 5),
+                          INCREMENT=_F( LIST_INST = LI),
+                          NEWTON=_F( MATRICE = 'TANGENTE',
+                                  REAC_ITER = 121),
+                         CONVERGENCE=_F(
+                                     ITER_GLOB_MAXI = 120,
+                                     RESI_GLOB_RELA = 1.E-6),
+                          ARCHIVAGE=_F(  LIST_INST = ARCHI)
+                        )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=-8.5646171418577E-03,
+                  VALE_REFE=-8.5646000000000003E-3,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=6.7967308205252E-06,
+                  VALE_REFE=6.7962999999999996E-06,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=8.564617151653E-03,
+                  VALE_REFE=8.5646000000000003E-3,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=-6.7967308211411E-06,
+                  VALE_REFE=-6.7962999999999996E-06,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=2,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=-0.042822850711449,
+                  VALE_REFE=-0.042819999999999997,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=2,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=3.398346767436E-05,
+                  VALE_REFE=3.3980999999999999E-05,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=2,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=0.042822850928900,
+                  VALE_REFE=0.042819999999999997,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=2,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=-3.3983467687295E-05,
+                  VALE_REFE=-3.3980999999999999E-05,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=3,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=-0.085645275472262,
+                  VALE_REFE=-0.085646,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=3,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=6.7966597449985E-05,
+                  VALE_REFE=6.7961999999999997E-05,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=3,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=0.085645276252920,
+                  VALE_REFE=0.085646,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=3,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=-6.7966597493715E-05,
+                  VALE_REFE=-6.7961999999999997E-05,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=4,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=-0.42820117588327,
+                  VALE_REFE=-0.42820000000000003,
+                  REFERENCE='NON_DEFINI',
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-2,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=4,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=3.3981299426659E-04,
+                  VALE_REFE=3.3980000000000002E-4,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=4,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=0.42820119742424,
+                  VALE_REFE=0.42820000000000003,
+                  REFERENCE='NON_DEFINI',
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-2,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=4,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=-3.3981299554183E-04,
+                  VALE_REFE=-3.3980000000000002E-4,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=8,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=-42.521109841174,
+                  VALE_REFE=-42.600000000000001,
+                  REFERENCE='NON_DEFINI',
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-2,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=8,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=0.033744088326237,
+                  VALE_REFE=0.033840000000000002,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=8,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=42.521319575205,
+                  VALE_REFE=42.600000000000001,
+                  REFERENCE='NON_DEFINI',
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-2,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=8,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=-0.033744100717941,
+                  VALE_REFE=-0.033840000000000002,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-4,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=16,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=-4995.4397058678,
+                  VALE_REFE=-4996.0,
+                  REFERENCE='NON_DEFINI',
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-2,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=16,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N1',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=3.9647481449246,
+                  VALE_REFE=3.9645000000000001,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-3,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=16,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE1',
+                  VALE_CALC=4996.62959427,
+                  VALE_REFE=4996.0,
+                  REFERENCE='NON_DEFINI',
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-2,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=16,
+                  RESULTAT=RESU0,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N3',
+                  NOM_CMP='PRE2',
+                  VALE_CALC=-3.9647830773187,
+                  VALE_REFE=-3.9645000000000001,
+                  REFERENCE = 'ANALYTIQUE',
+                  PRECISION=1.E-3,
+                  CRITERE='ABSOLU',
+                  ),
+          )
+
+FIN()
+#
+#

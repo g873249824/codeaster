@@ -1,0 +1,188 @@
+# TITRE ETUDES DE MAILLAGE SUR UNE PLAQUE CARREE MINCE (DISTORDU)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#CAS_TEST__: SDLS100C
+# SDLS100/C               COMMANDES                             5/03/91
+# ETUDES DE MAILLAGES SUR PLAQUE CARREE MINCE
+# DIMENSION 10*10*0.05 M  -- POSEE SUR UN COTE+ROTY BLOQUEE
+# TEST 2                                             REF: NAFEMS TEST16
+# MODELISATION DKT : 25 NOEUDS -- 32 MAILLES TRIA3
+#=======================================================================
+#
+
+DEBUT(CODE=_F(NOM='SDLS100C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE( )
+
+MA=DEFI_GROUP( reuse=MA,   MAILLAGE=MA,
+  CREA_GROUP_MA=_F(  NOM = 'TOUT', TOUT = 'OUI'))
+
+MO=AFFE_MODELE(  MAILLAGE=MA,
+                  AFFE=_F(  TOUT = 'OUI',      PHENOMENE = 'MECANIQUE',
+                         MODELISATION = 'DKT') )
+
+CARELEM=AFFE_CARA_ELEM(   MODELE=MO,
+                            COQUE=_F(
+       GROUP_MA = 'TOUT',
+  EPAIS = 0.05) )
+
+MAT=DEFI_MATERIAU( ELAS=_F(  E = 2.0E+11,  NU = 0.3,  RHO = 8000.) )
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MA,
+                       AFFE=_F(  TOUT = 'OUI',     MATER = MAT) )
+
+# --------------------------------------------------------------------
+#
+# ---- PLAQUE POSEE SUR UN COTE + ROT/Y BLOQUEE
+
+CHMEC=AFFE_CHAR_MECA(  MODELE=MO,
+              DDL_IMPO=_F(  GROUP_NO = 'COTE',
+                         DX = 0., DY = 0., DZ = 0., DRY = 0.) )
+
+#--------------------------------------------------------------------
+
+MELR=CALC_MATR_ELEM(  MODELE=MO,           CHARGE=CHMEC,
+                        CARA_ELEM=CARELEM,
+                        CHAM_MATER=CHMAT,   OPTION='RIGI_MECA'  )
+
+MELM=CALC_MATR_ELEM(  MODELE=MO,           CHARGE=CHMEC,
+                        CARA_ELEM=CARELEM,
+                        CHAM_MATER=CHMAT,   OPTION='MASS_MECA'  )
+
+#--------------------------------------------------------------------
+
+NUM=NUME_DDL(  MATR_RIGI=MELR )
+
+MATASSR=ASSE_MATRICE(MATR_ELEM=MELR,NUME_DDL=NUM)
+
+MATASSM=ASSE_MATRICE(MATR_ELEM=MELM,NUME_DDL=NUM)
+
+#
+#====================================================================
+#
+#               CALCUL MODAL
+
+MODE=MODE_ITER_SIMULT(  MATR_RIGI=MATASSR,       MATR_MASS=MATASSM,
+                 METHODE='TRI_DIAG',
+                CALC_FREQ=_F(  OPTION = 'PLUS_PETITE',
+                            NMAX_FREQ = 12)  )
+
+
+# --------------------------------------------------------------------
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE,
+                   VALE_CALC=0.416301972,
+                   VALE_REFE=0.42099999999999999,
+                   CRITERE='RELATIF',
+                   PRECISION=0.016,),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE,
+                   VALE_CALC=1.034035047,
+                   VALE_REFE=1.0289999999999999,
+                   CRITERE='RELATIF',
+                   PRECISION=0.016,),
+                _F(NUME_ORDRE=3,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE,
+                   VALE_CALC=2.564432492,
+                   VALE_REFE=2.5819999999999999,
+                   CRITERE='RELATIF',
+                   PRECISION=0.016,),
+                _F(NUME_ORDRE=4,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE,
+                   VALE_CALC=3.253852593,
+                   VALE_REFE=3.306,
+                   CRITERE='RELATIF',
+                   PRECISION=0.016,),
+                _F(NUME_ORDRE=5,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE,
+                   VALE_CALC=3.743329720,
+                   VALE_REFE=3.7530000000000001,
+                   CRITERE='RELATIF',
+                   PRECISION=0.016,),
+                _F(NUME_ORDRE=6,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE,
+                   VALE_CALC=6.489763451,
+                   VALE_REFE=6.5549999999999997,
+                   CRITERE='RELATIF',
+                   PRECISION=0.016,),
+                _F(NUME_ORDRE=7,
+                   PARA='FREQ',
+                   REFERENCE='NON_DEFINI',
+                   RESULTAT=MODE,
+                   VALE_CALC=7.211865551,
+                   VALE_REFE=7.3756000000000004,
+                   CRITERE='RELATIF',
+                   PRECISION=0.029999999999999999,),
+                _F(NUME_ORDRE=8,
+                   PARA='FREQ',
+                   REFERENCE='NON_DEFINI',
+                   RESULTAT=MODE,
+                   VALE_CALC=7.602643231,
+                   VALE_REFE=7.7332000000000001,
+                   CRITERE='RELATIF',
+                   PRECISION=0.02,),
+                _F(NUME_ORDRE=9,
+                   PARA='FREQ',
+                   REFERENCE='NON_DEFINI',
+                   RESULTAT=MODE,
+                   VALE_CALC=8.323195689,
+                   VALE_REFE=8.5566999999999993,
+                   CRITERE='RELATIF',
+                   PRECISION=0.029999999999999999,),
+                _F(NUME_ORDRE=10,
+                   PARA='FREQ',
+                   REFERENCE='NON_DEFINI',
+                   RESULTAT=MODE,
+                   VALE_CALC=10.773481127,
+                   VALE_REFE=11.119899999999999,
+                   CRITERE='RELATIF',
+                   PRECISION=0.040000000000000001,),
+                _F(NUME_ORDRE=11,
+                   PARA='FREQ',
+                   REFERENCE='NON_DEFINI',
+                   RESULTAT=MODE,
+                   VALE_CALC=11.260697002,
+                   VALE_REFE=11.647399999999999,
+                   CRITERE='RELATIF',
+                   PRECISION=0.040000000000000001,),
+                _F(NUME_ORDRE=12,
+                   PARA='FREQ',
+                   REFERENCE='NON_DEFINI',
+                   RESULTAT=MODE,
+                   VALE_CALC=13.300774834,
+                   VALE_REFE=14.3531,
+                   CRITERE='RELATIF',
+                   PRECISION=0.080000000000000002,),
+                ),
+          )
+
+FIN()
+#

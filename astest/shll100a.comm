@@ -1,0 +1,699 @@
+# TITRE  REPONSE HARMONIQUE D'UNE BARRE PAR SOUS-STRUCTURATION DYNAMIQUE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# CAS_TEST__: SHLL100A
+#             SOUS-STRUCTURATION HARMONIQUE.
+#             PARTITION EN DEUX SOUS-STRUCTURES
+#
+# FICHIER DE COMMANDES ASTER : BARRE ENCASTREE-LIBRE
+#
+#
+DEBUT(CODE=_F( NOM = 'SHLL100A',NIV_PUB_WEB='INTERNET'),
+      DEBUG=_F(SDVERI='OUI'))
+
+#MODELE DIRECT
+#
+MAYAD=LIRE_MAILLAGE( UNITE=22)
+
+MAYAD=DEFI_GROUP( reuse=MAYAD,   MAILLAGE=MAYAD,
+                  CREA_GROUP_MA=_F(  NOM = 'TOUTD', TOUT = 'OUI'))
+
+#
+MATERID=DEFI_MATERIAU(   ELAS=_F( RHO = 1.E04, NU = 0.3, E = 1.E10,
+                                  AMOR_ALPHA = 0.1, AMOR_BETA = 0.1)
+                                            )
+
+#
+CHMATD=AFFE_MATERIAU(  MAILLAGE=MAYAD,
+                           AFFE=_F( TOUT = 'OUI',
+                                 MATER = MATERID))
+
+#
+BARRED=AFFE_MODELE(   MAILLAGE=MAYAD,
+                          AFFE=_F( TOUT = 'OUI',
+                                MODELISATION = 'BARRE',
+                                PHENOMENE = 'MECANIQUE'))
+
+#
+CARAD=AFFE_CARA_ELEM(  MODELE=BARRED,
+                            BARRE=_F(
+       GROUP_MA = 'TOUTD',
+
+                                   SECTION = 'CERCLE',
+                                   CARA = 'R',  VALE = 0.1) )
+
+#
+GUIDAGED=AFFE_CHAR_MECA(   MODELE=BARRED,
+                           DDL_IMPO=(
+                             _F( GROUP_NO = 'NOEUDDL',
+                                       DY = 0., DZ = 0.),
+                             _F( NOEUD = 'N1', DX = 0.)),
+                            PESANTEUR =_F(GRAVITE=9.81,
+                                          DIRECTION=(0.,-1.,0.),),)
+#
+MATELD_K=CALC_MATR_ELEM(  MODELE=BARRED,
+                            CARA_ELEM=CARAD,
+                            CHAM_MATER=CHMATD,
+                           OPTION='RIGI_MECA',
+                            CHARGE=(GUIDAGED,))
+
+#
+MATELD_M=CALC_MATR_ELEM(  MODELE=BARRED,
+                            CARA_ELEM=CARAD,
+                            CHAM_MATER=CHMATD,
+                           OPTION='MASS_MECA',
+                            CHARGE=(GUIDAGED,))
+
+#
+MATELD_A=CALC_MATR_ELEM(  MODELE=BARRED,
+                            RIGI_MECA=MATELD_K,
+                            MASS_MECA=MATELD_M,
+                            CARA_ELEM=CARAD,
+                            CHAM_MATER=CHMATD,
+                           OPTION='AMOR_MECA',
+                            CHARGE=(GUIDAGED,))
+
+#
+NUMD=NUME_DDL(  MATR_RIGI=MATELD_K)
+
+#
+MATASKD=ASSE_MATRICE(  MATR_ELEM=MATELD_K,
+                          NUME_DDL=NUMD)
+
+#
+MATASMD=ASSE_MATRICE(  MATR_ELEM=MATELD_M,
+                           NUME_DDL=NUMD)
+
+#
+MATASAD=ASSE_MATRICE(  MATR_ELEM=MATELD_A,
+                          NUME_DDL=NUMD)
+
+#
+MODESD=MODE_ITER_SIMULT(  MATR_RIGI=MATASKD,
+                              MATR_MASS=MATASMD,
+                              CALC_FREQ=_F( NMAX_FREQ = 10) )
+
+
+#CALCUL HARMO SUR BASE MODALE CALCULEE DIRECTEMENT
+
+NUMEMODD=NUME_DDL_GENE( BASE=MODESD,
+                           STOCKAGE='PLEIN')
+
+MASPROD=PROJ_MATR_BASE( BASE=MODESD,
+                          NUME_DDL_GENE=NUMEMODD,
+                          MATR_ASSE=MATASMD)
+
+#
+RIGPROD=PROJ_MATR_BASE( BASE=MODESD,
+                          NUME_DDL_GENE=NUMEMODD,
+                          MATR_ASSE=MATASKD)
+
+AMOPROD=PROJ_MATR_BASE( BASE=MODESD,
+                          NUME_DDL_GENE=NUMEMODD,
+                          MATR_ASSE=MATASAD)
+
+#
+CHARHARD=AFFE_CHAR_MECA(   MODELE=BARRED,
+                           FORCE_NODALE=_F( NOEUD = 'N11', FX = -100.))
+
+#
+VECTELD=CALC_VECT_ELEM( OPTION='CHAR_MECA',
+                           CHARGE=CHARHARD)
+
+#
+VECTASD=ASSE_VECTEUR(  VECT_ELEM=VECTELD,
+                          NUME_DDL=NUMD)
+
+VECPROD=PROJ_VECT_BASE( BASE=MODESD,
+                          NUME_DDL_GENE=NUMEMODD,
+                          VECT_ASSE=VECTASD)
+
+#CALCUL DIRECT SANS PROJECTION MODALE ET SANS SOUS STRUCTURATION
+
+HARMDIR=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                           MATR_MASS=MATASMD,
+                            MATR_RIGI=MATASKD,
+                            MATR_AMOR=MATASAD,
+                            FREQ=100.,
+                           TOUT_CHAM='OUI',
+#           FREQ:F,NOM_CHAM:'DEPL',
+                            EXCIT=_F( VECT_ASSE = VECTASD,
+                                   COEF_MULT = 1.))
+
+#
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  VALE_CALC_C=-7.00049003E-11+ 5.06508556E-09j,
+                  VALE_REFE_C=(-7.0e-11+5.07e-09j),
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=HARMDIR,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N11',
+                  NOM_CMP='DX',
+                  CRITERE='RELATIF',
+                  PRECISION=2.E-3,
+                  ),
+          )
+
+#CALCUL HARMONIQUE A UN NIVEAU DE PROJECTION
+# BASE MODALE DIRECTE CALCULEE SANS SOUS STRUCTURATION
+
+FD=100.
+
+
+##########################################################################
+# concept harm_gene
+#
+DYNPROD=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='GENE',
+                            MATR_MASS=MASPROD,
+                            MATR_RIGI=RIGPROD,
+                            MATR_AMOR=AMOPROD,
+                            SOLVEUR=_F( METHODE='LDLT', ),
+                            FREQ=FD,
+                            TOUT_CHAM='OUI',
+                            EXCIT=_F( VECT_ASSE_GENE = VECPROD,
+                                   COEF_MULT = 1.))
+
+HFOG1 = RECU_FONCTION ( RESU_GENE = DYNPROD,
+                        NOM_CHAM = 'DEPL',
+                        NUME_CMP_GENE = 1 ) ;
+
+IMPR_FONCTION ( COURBE = _F( FONCTION = HFOG1 ) ) ;
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC_C=(-5.50231e-11+4.11411e-09j),
+                        VALE_PARA=0.0,
+                        FONCTION=HFOG1,
+                        ),
+              )
+
+#
+DYNHARD=REST_GENE_PHYS(   RESU_GENE=DYNPROD,
+                          NOEUD = 'N11',
+                          FREQ=FD,
+                          MODE_MECA=MODESD,
+                          NOM_CHAM = 'DEPL',   )
+#
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  VALE_CALC_C=-7.00049003E-11+ 5.06508556E-09j,
+                  VALE_REFE_C=(-7.0e-11+5.07e-09j),
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=DYNHARD,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N11',
+                  NOM_CMP='DX',
+                  CRITERE='RELATIF',
+                  PRECISION=2.E-3,
+                  ),
+          )
+
+#
+HFX_NO11 = RECU_FONCTION ( RESU_GENE = DYNPROD,
+                           NOM_CHAM = 'DEPL',
+                           NOEUD = 'N11',
+                           NOM_CMP = 'DX',  ) ;
+
+IMPR_FONCTION ( COURBE = _F( FONCTION = HFX_NO11 ) ) ;
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC_C=(-7.000490E-11+5.065086E-09j),
+                        VALE_REFE_C=(-7.0e-11+5.07e-09j),
+                        REFERENCE='ANALYTIQUE',
+                        PRECISION=1.E-3,
+                        VALE_PARA=100.0,
+                        FONCTION=HFX_NO11,
+                        ),
+              )
+
+##########################################################################
+#----------------------------------------------
+#SOUS STRUCTURATION
+#----------------------------------------------
+MAYA=LIRE_MAILLAGE( UNITE=20)
+
+MAYA=DEFI_GROUP( reuse=MAYA,   MAILLAGE=MAYA,
+  CREA_GROUP_MA=_F(  NOM = 'TOUT', TOUT = 'OUI'))
+
+#
+MATERIO=DEFI_MATERIAU(   ELAS=_F( RHO = 1.E04, NU = 0.3, E = 1.E10,
+                                  AMOR_ALPHA = 0.1, AMOR_BETA = 0.1)
+                                            )
+
+#
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MAYA,
+                           AFFE=_F( TOUT = 'OUI',
+                                 MATER = MATERIO))
+
+#
+BARRE=AFFE_MODELE(   MAILLAGE=MAYA,
+                          AFFE=_F( TOUT = 'OUI',
+                                MODELISATION = 'BARRE',
+                                PHENOMENE = 'MECANIQUE'))
+
+#
+CARA=AFFE_CARA_ELEM(  MODELE=BARRE,
+                            BARRE=_F(
+       GROUP_MA = 'TOUT',
+
+                                   SECTION = 'CERCLE',
+                                   CARA = 'R',  VALE = 0.1) )
+
+###############
+#                                   CARA: ('R','EP'),
+#                                   VALE: (0.1 0.01)));
+#
+###
+###### PARTIE GAUCHE :
+###
+#
+GUIDAGE1=AFFE_CHAR_MECA(   MODELE=BARRE,DDL_IMPO=(
+                             _F( GROUP_NO = 'NOEUDDL',
+                                       DY = 0., DZ = 0.),
+                             _F( NOEUD = 'A', DX = 0.)))
+
+#
+CHARGE1=AFFE_CHAR_MECA(   MODELE=BARRE,
+                             DDL_IMPO=_F( NOEUD = 'N5', DX = 0.))
+
+#
+MATEL1_K=CALC_MATR_ELEM(  MODELE=BARRE,
+                            CARA_ELEM=CARA,
+                            CHAM_MATER=CHMAT,
+                           OPTION='RIGI_MECA',
+                            CHARGE=(GUIDAGE1, CHARGE1,))
+
+#
+MATEL1_M=CALC_MATR_ELEM(  MODELE=BARRE,
+                            CARA_ELEM=CARA,
+                            CHAM_MATER=CHMAT,
+                           OPTION='MASS_MECA',
+                            CHARGE=(GUIDAGE1, CHARGE1,))
+
+#
+MATEL1_A=CALC_MATR_ELEM(  MODELE=BARRE,
+                            RIGI_MECA=MATEL1_K,
+                            MASS_MECA=MATEL1_M,
+                            CARA_ELEM=CARA,
+                            CHAM_MATER=CHMAT,
+                           OPTION='AMOR_MECA',
+                            CHARGE=(GUIDAGE1, CHARGE1,))
+
+#
+NUM1=NUME_DDL(  MATR_RIGI=MATEL1_K)
+
+#
+MATASK1=ASSE_MATRICE(  MATR_ELEM=MATEL1_K,
+                          NUME_DDL=NUM1)
+
+#
+MATASM1=ASSE_MATRICE(  MATR_ELEM=MATEL1_M,
+                           NUME_DDL=NUM1)
+
+#
+MATASA1=ASSE_MATRICE(  MATR_ELEM=MATEL1_A,
+                          NUME_DDL=NUM1)
+
+#
+MODES1=MODE_ITER_SIMULT(  MATR_RIGI=MATASK1,
+                              MATR_MASS=MATASM1,
+                              CALC_FREQ=_F( NMAX_FREQ = 05) )
+
+
+#
+INTERF1=DEFI_INTERF_DYNA(  NUME_DDL=NUM1,
+                              INTERFACE=_F( NOM = 'DROITE',
+                             #TYPE:'CRAIGB'
+
+                             TYPE = 'CB_HARMO',
+                             MASQUE = ('DY','DZ',),
+                             NOEUD = 'N5'),
+                             FREQ=300.
+                            )
+
+#
+BAMO1=DEFI_BASE_MODALE(  CLASSIQUE=_F( INTERF_DYNA = INTERF1,
+                                         MODE_MECA = MODES1,
+                                         NMAX_MODE = 05)
+                            )
+
+#
+MACRO1=MACR_ELEM_DYNA(  BASE_MODALE=BAMO1,
+                            MATR_AMOR=MATASA1)
+
+#
+###
+###### PARTIE DROITE :
+###
+#
+GUIDAGE2=AFFE_CHAR_MECA(   MODELE=BARRE,
+                             DDL_IMPO=_F( GROUP_NO = 'NOEUDDL',
+                                       DY = 0., DZ = 0.))
+
+#
+CHARGE2=AFFE_CHAR_MECA(   MODELE=BARRE,
+                             DDL_IMPO=_F( NOEUD = 'A', DX = 0.))
+
+#
+CHARHARM=AFFE_CHAR_MECA(   MODELE=BARRE,
+                             FORCE_NODALE=_F( NOEUD = 'N5', FX = -100.))
+
+#
+MATEL2_K=CALC_MATR_ELEM(  MODELE=BARRE,
+                            CARA_ELEM=CARA,
+                            CHAM_MATER=CHMAT,
+                           OPTION='RIGI_MECA',
+                            CHARGE=(GUIDAGE2, CHARGE2,))
+
+#
+MATEL2_M=CALC_MATR_ELEM(  MODELE=BARRE,
+                            CARA_ELEM=CARA,
+                            CHAM_MATER=CHMAT,
+                           OPTION='MASS_MECA',
+                            CHARGE=(GUIDAGE2, CHARGE2,))
+
+#
+MATEL2_A=CALC_MATR_ELEM(  MODELE=BARRE,
+                            RIGI_MECA=MATEL2_K,
+                            MASS_MECA=MATEL2_M,
+                            CARA_ELEM=CARA,
+                            CHAM_MATER=CHMAT,
+                           OPTION='AMOR_MECA',
+                            CHARGE=(GUIDAGE2, CHARGE2,))
+
+#
+VECTEL=CALC_VECT_ELEM( OPTION='CHAR_MECA',
+                           CHARGE=CHARHARM)
+
+#
+NUM2=NUME_DDL(  MATR_RIGI=MATEL2_K)
+
+#
+MATASK2=ASSE_MATRICE(  MATR_ELEM=MATEL2_K,
+                          NUME_DDL=NUM2)
+
+#
+MATASM2=ASSE_MATRICE(  MATR_ELEM=MATEL2_M,
+                          NUME_DDL=NUM2)
+
+#
+MATASA2=ASSE_MATRICE(  MATR_ELEM=MATEL2_A,
+                          NUME_DDL=NUM2)
+
+#
+VECTAS=ASSE_VECTEUR(  VECT_ELEM=VECTEL,
+                          NUME_DDL=NUM2)
+
+#
+MODES2=MODE_ITER_SIMULT(  MATR_RIGI=MATASK2,
+                              MATR_MASS=MATASM2,
+                              CALC_FREQ=_F( NMAX_FREQ = 05) )
+
+
+#
+INTERF2=DEFI_INTERF_DYNA(  NUME_DDL=NUM2,
+                              INTERFACE=_F( NOM = 'GAUCHE',
+                             #TYPE:'CRAIGB'
+                             TYPE = 'CB_HARMO',
+                             MASQUE = ('DY','DZ',),
+                             NOEUD = 'A'),
+                             FREQ=300.,
+                             INFO=2
+                            )
+
+#
+BAMO2=DEFI_BASE_MODALE(  CLASSIQUE=_F( INTERF_DYNA = INTERF2,
+                                         MODE_MECA = MODES2,
+                                         NMAX_MODE = 05)
+                            )
+
+#
+MACRO2=MACR_ELEM_DYNA(  BASE_MODALE=BAMO2,
+                            MATR_AMOR=MATASA2)
+
+#
+###
+###### MODELE GENERALISE :
+###
+#
+MODEGE=DEFI_MODELE_GENE( SOUS_STRUC=(_F( NOM = 'COTE1',
+                                         MACR_ELEM_DYNA = MACRO1,
+                                         ANGL_NAUT = (0., 0., 0.,),
+                                         TRANS=(0.,0.,0.),),
+                                     _F( NOM = 'COTE2',
+                                         MACR_ELEM_DYNA = MACRO2,
+                                         ANGL_NAUT = (0., 0., 0.,),
+                                         TRANS=(0.5,0.,0.),),),
+                              LIAISON=_F( SOUS_STRUC_1 = 'COTE1',
+                                       SOUS_STRUC_2 = 'COTE2',
+                                       INTERFACE_1 = 'DROITE',
+                                       INTERFACE_2 = 'GAUCHE'))
+
+#
+NUMEGE=NUME_DDL_GENE(  MODELE_GENE=MODEGE)
+
+#
+RIGGEN=ASSE_MATR_GENE(  NUME_DDL_GENE=NUMEGE,
+                           OPTION='RIGI_GENE')
+
+#
+MASGEN=ASSE_MATR_GENE(  NUME_DDL_GENE=NUMEGE,
+                           OPTION='MASS_GENE')
+
+#
+AMOGEN=ASSE_MATR_GENE(  NUME_DDL_GENE=NUMEGE,
+                           OPTION='AMOR_GENE')
+
+############################################################
+# concept mode_gene
+#
+RESGAIR=MODE_ITER_SIMULT(     MATR_RIGI=RIGGEN,
+                                 MATR_MASS=MASGEN,
+                             CALC_FREQ=_F( OPTION = 'PLUS_PETITE',
+                                        NMAX_FREQ = 10)
+                            )
+
+
+FOGEN1 = RECU_FONCTION ( RESU_GENE = RESGAIR,
+                         NOM_CHAM = 'DEPL',
+                         NUME_CMP_GENE = 7 ) ;
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=5462.77,
+                        VALE_PARA=0.0,
+                        FONCTION=FOGEN1,
+                        ),
+              )
+
+FOGEN2 = RECU_FONCTION ( RESU_GENE = RESGAIR,
+                         INTERPOL = 'LIN',
+                         NOM_PARA_RESU = 'MASS_GENE'  ) ;
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=33.53025,
+                        VALE_PARA=250.258,
+                        FONCTION=FOGEN2,
+                        ),
+              )
+
+#
+SQUEL=DEFI_SQUELETTE(  MODELE_GENE=MODEGE,
+                       SOUS_STRUC=( _F( NOM = 'COTE1',
+                                        GROUP_MA='TOUT'
+                                       ),
+                                    _F( NOM = 'COTE2',
+                                       GROUP_MA='TOUT'
+                                   )))
+
+#
+DEBUG(SDVERI='OUI')
+MODAIR=REST_SOUS_STRUC(RESU_GENE=RESGAIR, SQUELETTE=SQUEL, TOUT_ORDRE='OUI')
+DEBUG(SDVERI='OUI')
+
+MODCOT=REST_SOUS_STRUC(   RESU_GENE=RESGAIR,
+                             SOUS_STRUC='COTE2',
+                           TOUT_ORDRE='OUI')
+
+############################################################
+
+NUMEMODE=NUME_DDL_GENE( BASE=RESGAIR,
+                           STOCKAGE='PLEIN')
+
+MASPRO=PROJ_MATR_BASE( BASE=RESGAIR,
+                          NUME_DDL_GENE=NUMEMODE,
+                          MATR_ASSE_GENE=MASGEN)
+
+#
+RIGPRO=PROJ_MATR_BASE( BASE=RESGAIR,
+                          NUME_DDL_GENE=NUMEMODE,
+                          MATR_ASSE_GENE=RIGGEN)
+
+AMOPRO=PROJ_MATR_BASE( BASE=RESGAIR,
+                          NUME_DDL_GENE=NUMEMODE,
+                          MATR_ASSE_GENE=AMOGEN)
+
+#
+VECTGEN=ASSE_VECT_GENE(  NUME_DDL_GENE=NUMEGE,
+                            CHAR_SOUS_STRUC=_F( SOUS_STRUC = 'COTE2',
+                                             VECT_ASSE = VECTAS))
+
+#
+VECPRO=PROJ_VECT_BASE( BASE=RESGAIR,
+                          NUME_DDL_GENE=NUMEMODE,
+                          VECT_ASSE_GENE=VECTGEN)
+
+#
+#
+###
+###### CALCULS HARMONIQUES :
+###
+#
+F=100.
+
+#
+DYNGEN=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='GENE',
+                            MATR_MASS=MASGEN,
+                            MATR_RIGI=RIGGEN,
+                            MATR_AMOR=AMOGEN,
+                            SOLVEUR=_F( METHODE='LDLT', ),
+                            FREQ=F,
+                           TOUT_CHAM='OUI',
+                            EXCIT=_F( VECT_ASSE_GENE = VECTGEN,
+                                   COEF_MULT = 1.))
+
+#CALCUL HARMONIQUE A DEUX NIVEAUX DE PROJECTION
+
+DYNPRO=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='GENE',
+                            MATR_MASS=MASPRO,
+                            MATR_RIGI=RIGPRO,
+                            MATR_AMOR=AMOPRO,
+                            SOLVEUR=_F( METHODE='LDLT', ),
+                            FREQ=F,
+                           TOUT_CHAM='OUI',
+                            EXCIT=_F( VECT_ASSE_GENE = VECPRO,
+                                   COEF_MULT = 1.))
+
+#RESULTATS DU CALCUL HARMONIQUE A 2 NIVEAUX DE PROJECTION
+#BASE MODALE CALCULEE PAR SS STRUCTURATION
+
+DYNHARM2=REST_SOUS_STRUC(  RESU_GENE=DYNPRO,
+                           SQUELETTE=SQUEL,
+                           FREQ=F,
+                           MODE_MECA=MODAIR,
+                           TOUT_CHAM='OUI')
+
+#SUR LA SOUS STRUCTURE NUMERO 2
+
+DYNHARC=REST_SOUS_STRUC(  RESU_GENE=DYNPRO,
+                          SOUS_STRUC='COTE2',
+                          FREQ=F,
+                          MODE_MECA=MODCOT,
+                          NOM_CHAM = 'DEPL',
+                          NOEUD = 'N5',        )
+
+#
+DYNHARM=REST_SOUS_STRUC(  RESU_GENE=DYNGEN,
+                           SQUELETTE=SQUEL)
+
+#
+DYNHAR1=REST_SOUS_STRUC(  RESU_GENE=DYNGEN,
+                          SOUS_STRUC='COTE1')
+
+#
+DYNHAR2=REST_SOUS_STRUC( RESU_GENE=DYNGEN,
+                          TOUT_CHAM='OUI',
+                          SOUS_STRUC='COTE2')
+
+#RESTITUTION SUR BASE PHYSIQUE
+
+#
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  VALE_CALC_C=-7.00049003E-11+ 5.06508556E-09j,
+                  VALE_REFE_C=(-7.0000000000000004e-11+5.0700000000000001e-09j),
+                  REFERENCE='NON_DEFINI',
+                  RESULTAT=DYNHAR2,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N5',
+                  NOM_CMP='DX',
+                  CRITERE='RELATIF',
+                  PRECISION=2.E-3,
+                  ),
+          )
+
+#
+#
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  VALE_CALC_C=-7.00049003E-11+ 5.06508556E-09j,
+                  VALE_REFE_C=(-7.0000000000000004e-11+5.0700000000000001e-09j),
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=DYNHARC,
+                  NOM_CHAM='DEPL',
+                  NOEUD='N5',
+                  NOM_CMP='DX',
+                  CRITERE='RELATIF',
+                  PRECISION=2.E-3,
+                  ),
+          )
+
+#
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  VALE_CALC_C=-3.18248712E-06+-4.39853761E-08j,
+                  VALE_REFE_C=(-3.18e-06-4.3999999999999997e-08j),
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=DYNHAR2,
+                  NOM_CHAM='VITE',
+                  NOEUD='N5',
+                  NOM_CMP='DX',
+                  CRITERE='RELATIF',
+                  PRECISION=2.E-3,
+                  ),
+          )
+
+#
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  VALE_CALC_C= 2.76368269E-05+-1.99961563E-03j,
+                  VALE_REFE_C=(2.76e-05-0.002j),
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=DYNHAR2,
+                  NOM_CHAM='ACCE',
+                  NOEUD='N5',
+                  NOM_CMP='DX',
+                  CRITERE='RELATIF',
+                  PRECISION=2.E-3,
+                  ),
+          )
+
+#
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  VALE_CALC_C=-7.00049003E-11+ 5.06508556E-09j,
+                  VALE_REFE_C=(-7.0e-11+5.07e-09j),
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=DYNHARM2,
+                  NOM_CHAM='DEPL',
+                  NOEUD='NO12',
+                  NOM_CMP='DX',
+                  CRITERE='RELATIF',
+                  PRECISION=2.E-3,
+                  ),
+          )
+
+#
+#----------------------------------------------------------
+# TEST DE IMPR_RESU
+#----------------------------------------------------------
+#
+
+IMPR_RESU( FORMAT = 'IDEAS', UNITE = 38,
+           RESU=_F( RESULTAT = HARMDIR,
+                    TOUT_ORDRE = 'OUI', ))
+
+FIN()
+#

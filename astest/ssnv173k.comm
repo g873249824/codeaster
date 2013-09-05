@@ -1,0 +1,270 @@
+# TITRE BARREAU FISSURE AVEC X-FEM
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
+# (AT YOUR OPTION) ANY LATER VERSION.                                                    
+#                                                                       
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
+#                                                                       
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# ======================================================================
+
+# MODELISATION K : MAILLE PYRAMIDES GENEREES PAR HOMARD
+DEBUT(CODE=_F(NOM='SSNV173K', NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#-------------------------------------------------------------------
+#      PREPARATION DU MAILLAGE AVEC DES PYRA
+#-------------------------------------------------------------------
+
+MA0=LIRE_MAILLAGE(FORMAT='MED',)
+
+MODELEIN=AFFE_MODELE(MAILLAGE=MA0,
+                     AFFE=_F(GROUP_MA=('VOL',),
+                              PHENOMENE='MECANIQUE',
+                              MODELISATION='3D',),
+                       );
+
+LN=FORMULE(NOM_PARA=('X','Y','Z'),VALE='Z-12.5 ');
+
+FISS=DEFI_FISS_XFEM(MODELE=MODELEIN,
+                    TYPE_DISCONTINUITE='INTERFACE',
+                    DEFI_FISS=_F(FONC_LN=LN,),);
+
+CHERR= RAFF_XFEM(FISSURE=FISS)
+
+MA1=CO('MA1')
+
+MACR_ADAP_MAIL(ADAPTATION='RAFFINEMENT',
+               CHAM_GD = CHERR,
+               CRIT_RAFF_PE = 0.05,
+               USAGE_CMP = 'RELATIF',
+               MAILLAGE_N = MA0,
+               MAILLAGE_NP1 = MA1)
+
+#IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MA1));
+#IMPR_RESU(RESU=_F(MAILLAGE=MA1));
+#-------------------------------------------------------------------
+
+
+MOD=AFFE_MODELE(MAILLAGE=MA1,
+                AFFE=_F(GROUP_MA='VOL',
+                         PHENOMENE='MECANIQUE',
+                         MODELISATION='3D',))
+
+FISS1=DEFI_FISS_XFEM(MODELE=MOD,
+                     TYPE_DISCONTINUITE='INTERFACE',
+                     DEFI_FISS=_F(FONC_LN=LN,),);    
+
+MODX=MODI_MODELE_XFEM(MODELE_IN=MOD,FISSURE=FISS1)
+
+E=205000.0E6
+nu=0.3
+ACIER=DEFI_MATERIAU(ELAS=_F(E=E,NU=nu))
+
+CHAMPMAT=AFFE_MATERIAU(MAILLAGE=MA1,
+                       AFFE=_F(GROUP_MA='VOL',MATER=ACIER))
+
+ZERO=0.0
+DEPX=1.E-6
+DEPY=2.E-6
+DEPZ=3.E-6
+
+CH2=AFFE_CHAR_MECA(MODELE=MODX,
+                   DDL_IMPO=(
+                             _F(NOEUD=('N1','N6','N11','N16',),
+                                DX=ZERO,
+                                DY=ZERO,
+                                DZ=ZERO,
+                                ),
+                             _F(NOEUD=('N21','N22','N23','N24',),
+                                DX=DEPX,
+                                DY=DEPY,
+                                DZ=DEPZ,),
+                             ),
+                   );
+
+
+UTOT2=MECA_STATIQUE(MODELE=MODX,
+                   CHAM_MATER=CHAMPMAT,
+                   EXCIT=(_F(CHARGE=CH2),
+                          
+                          ),
+                   ); 
+# -------------------------------------------------------------   
+#            POST-TRAITEMENT POUR LA VISUALISATION X-FEM   
+# -------------------------------------------------------------   
+
+MA_XFEM=POST_MAIL_XFEM(
+                       MODELE        = MODX,
+                       INFO          = 2)
+
+MOD_VISU=AFFE_MODELE(MAILLAGE=MA_XFEM,
+                     AFFE=_F(TOUT='OUI',
+                              PHENOMENE='MECANIQUE',
+                              MODELISATION='3D',),) 
+
+RES_XFEM=POST_CHAM_XFEM(MODELE_VISU   = MOD_VISU,
+                        RESULTAT      = UTOT2,
+                        
+                        INFO          = 2)
+ 
+#IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(RESULTAT=RES_XFEM));
+
+# -------------------------------------------------------------   
+#            POST-TRAITEMENT DES DEPLACEMENTS AUX NOEUDS
+# -------------------------------------------------------------   
+
+MA_XFEM=DEFI_GROUP(reuse =MA_XFEM,
+                 MAILLAGE=MA_XFEM,
+                 CREA_GROUP_NO=_F(GROUP_MA='VOL'),
+                 )
+
+
+TABDEP=POST_RELEVE_T(ACTION=_F(INTITULE='DEPLACEMENT SUR LES LEVRES',
+                               GROUP_NO='VOL',
+                               RESULTAT=RES_XFEM,
+                               NOM_CHAM='DEPL',
+                               NUME_ORDRE = 1,
+                               TOUT_CMP='OUI',
+                               OPERATION='EXTRACTION',),);
+
+#IMPR_TABLE(TABLE=TABDEP)
+
+# FILTRE SUR LES NOMS DES NOEUDS POUR NE GARDER QUE LES NP
+# (NOEUDS DE LA LEVRE PLUS)
+TABDEPP = CALC_TABLE(TABLE = TABDEP,
+                     ACTION = _F(OPERATION = 'FILTRE',
+                                 NOM_PARA  = 'NOEUD',
+                                 CRIT_COMP = 'REGEXP',
+                                 VALE_K    = 'NP',),
+                                 )
+
+# FILTRE SUR LES NOMS DES NOEUDS POUR NE GARDER QUE LES NM
+# (NOEUDS DE LA LEVRE MOINS)
+TABDEPM = CALC_TABLE(TABLE = TABDEP,
+                     ACTION = _F(OPERATION = 'FILTRE',
+                                 NOM_PARA  = 'NOEUD',
+                                 CRIT_COMP = 'REGEXP',
+                                 VALE_K    = 'NM',),
+                                 )        
+IMPR_TABLE(TABLE=TABDEPP);
+IMPR_TABLE(TABLE=TABDEPM);
+
+# TESTS SUR LES NOEUDS DE LA LEVRE MOINS : DX = DY = DZ = 0
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 1.905824131E-21,
+           VALE_REFE=0.0,
+           NOM_PARA='DX',
+           TYPE_TEST='MAX',
+           TABLE=TABDEPM,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 1.164670302E-21,
+           VALE_REFE=0.0,
+           NOM_PARA='DX',
+           TYPE_TEST='MIN',
+           TABLE=TABDEPM,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC=-1.482307658E-21,
+           VALE_REFE=0.0,
+           NOM_PARA='DY',
+           TYPE_TEST='MAX',
+           TABLE=TABDEPM,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC=-2.964615315E-21,
+           VALE_REFE=0.0,
+           NOM_PARA='DY',
+           TYPE_TEST='MIN',
+           TABLE=TABDEPM,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 1.270549421E-21,
+           VALE_REFE=0.0,
+           NOM_PARA='DZ',
+           TYPE_TEST='MAX',
+           TABLE=TABDEPM,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC=-6.352747104E-22,
+           VALE_REFE=0.0,
+           NOM_PARA='DZ',
+           TYPE_TEST='MIN',
+           TABLE=TABDEPM,)
+
+# TESTS SUR LES NOEUDS DE LA LEVRE PLUS : DX = DEPX, DY = DEPY, DZ = DEPZ
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 1.000000000E-06,
+           VALE_REFE=9.9999999999999995E-07,
+           NOM_PARA='DX',
+           TYPE_TEST='MAX',
+           TABLE=TABDEPP,)
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 1.000000000E-06,
+           VALE_REFE=9.9999999999999995E-07,
+           NOM_PARA='DX',
+           TYPE_TEST='MIN',
+           TABLE=TABDEPP,)
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 2.000000000E-06,
+           VALE_REFE=1.9999999999999999E-06,
+           NOM_PARA='DY',
+           TYPE_TEST='MAX',
+           TABLE=TABDEPP,)
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 2.000000000E-06,
+           VALE_REFE=1.9999999999999999E-06,
+           NOM_PARA='DY',
+           TYPE_TEST='MIN',
+           TABLE=TABDEPP,)
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 3.000000000E-06,
+           VALE_REFE=3.0000000000000001E-06,
+           NOM_PARA='DZ',
+           TYPE_TEST='MAX',
+           TABLE=TABDEPP,)
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.0000000000000001E-09,
+           VALE_CALC= 3.000000000E-06,
+           VALE_REFE=3.0000000000000001E-06,
+           NOM_PARA='DZ',
+           TYPE_TEST='MIN',
+           TABLE=TABDEPP,)
+
+FIN()

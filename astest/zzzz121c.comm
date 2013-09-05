@@ -1,0 +1,630 @@
+# TITRE COUPLAGE ASTER_HOMARD - CAS BIDIMENSIONNEL EN TRANSITOIRE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# person_in_charge: gerald.nicolas at edf.fr
+# Attention :ceci est un test de non regression et non pas d'evaluation
+# de l'adaptation de maillage.
+# . Information
+# . Adaptation
+# . Mise a jour du champ de temperature
+# . Cas 2D
+# . Elements SEG3, TRIA6
+# . GROUP_NO, GROUP_MA
+#
+DEBUT(CODE=_F(NOM='ZZZZ121C', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'),IMPR_MACRO='NON')
+#
+# 1. LES INVARIANTS
+# 1.1. DEFINITION DES MATERIAUX
+#
+MATER1=DEFI_MATERIAU(
+           THER=_F(  LAMBDA = 400.,    RHO_CP = 1.,  ),
+           ELAS=_F(  E = 180000., NU = 0.30, ALPHA = 15.E-6, RHO = 7700.,   ) )
+MATER2=DEFI_MATERIAU(
+           THER=_F(  LAMBDA = 600.,    RHO_CP = 1.,  ),
+           ELAS=_F(  E = 220000., NU = 0.33, ALPHA = 16.E-6, RHO = 8300.,   ) )
+#
+# 1.2. LES LISTES DES INSTANTS
+#
+INST00=DEFI_LIST_REEL(DEBUT= 0.,INTERVALLE=_F( JUSQU_A =  4., PAS = 2., ) )
+#
+INST01=DEFI_LIST_REEL(DEBUT= 4.,INTERVALLE=_F( JUSQU_A =  8., PAS = 2., ) )
+#
+INST02=DEFI_LIST_REEL(DEBUT= 8.,INTERVALLE=_F( JUSQU_A = 12., PAS = 2., ) )
+#
+INST03=DEFI_LIST_REEL(DEBUT=12.,INTERVALLE=_F( JUSQU_A = 16., PAS = 2., ) )
+#
+# 2. LES MAILLAGES DE DEPART
+#
+# 2.1. LECTURE DU MAILLAGE EN DEGRE 1
+#
+M00_1=LIRE_MAILLAGE( )
+#
+# 2.2. LE MEME MAILLAGE EN DEGRE 2
+#
+M00_2=CREA_MAILLAGE(MAILLAGE=M00_1,
+                      LINE_QUAD=_F(TOUT='OUI',),);
+#
+# 3. CALCUL SUR LE MAILLAGE 00
+# 3.1. LA THERMIQUE
+# 3.1.1. MISE EN PLACE DES MATERIAUX
+#
+MA00_T=AFFE_MATERIAU(    MAILLAGE=M00_1,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,      ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,     ))
+                         )
+#
+# 3.1.2. MODELE
+#
+MOTH00=AFFE_MODELE(    MAILLAGE=M00_1,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'THERMIQUE',   MODELISATION = 'PLAN_DIAG',  ))
+#
+# 3.1.3. CHARGEMENT
+#
+CHTH00=AFFE_CHAR_THER(    MODELE=MOTH00,
+    TEMP_IMPO=_F(  GROUP_NO = 'ORIGINE',     TEMP = 200.0,    ),
+    SOURCE=(_F(  GROUP_MA = 'MOITIE1',    SOUR = 18000.,    ),
+            _F(  GROUP_MA = 'MOITIE2',    SOUR = 22000.,    )),
+    ECHANGE=_F( GROUP_MA = 'BORD_DRO',  COEF_H = 500.,  TEMP_EXT = 310., ),
+    FLUX_REP=_F(GROUP_MA=('BORD_INF','BORD_GAU','BORD_SUP',), FLUN=0.0,)
+                         )
+#
+# 3.1.4. RESOLUTION
+#
+RETH00=THER_LINEAIRE( MODELE=MOTH00,
+                      CHAM_MATER=MA00_T,
+                      EXCIT=_F(  CHARGE = CHTH00,   ),
+                      ETAT_INIT=_F(  STATIONNAIRE = 'OUI',   ),
+                      INCREMENT=_F(  LIST_INST = INST00,   )
+                     )
+#
+# 3.2. LA MECANIQUE
+
+# 3.2.1. MODELE
+#
+MOME00=AFFE_MODELE(    MAILLAGE=M00_2,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'MECANIQUE',   MODELISATION = 'D_PLAN',  ))
+#
+M00_2=MODI_MAILLAGE( reuse=M00_2,   MAILLAGE=M00_2,
+                         ORIE_PEAU_2D=_F(  GROUP_MA = ('BORD_GAU', 'BORD_SUP',),  )
+                       )
+#
+# 3.2.2. PROJECTION DE LA TEMPERATURE DU MAILLAGE EN DEGRE 1 VERS DEGRE 2
+#
+##IMPR_RESU ( FORMAT='RESULTAT', RESU=_F( RESULTAT=RETH00,NOM_CHAM='TEMP') ) ;
+T00_2=PROJ_CHAMP(METHODE='COLLOCATION',
+                    RESULTAT=RETH00,
+                    MODELE_1=MOTH00,
+                    MODELE_2=MOME00,
+                    TOUT_ORDRE='OUI')
+###IMPR_RESU ( FORMAT='RESULTAT', RESU=_F( RESULTAT=T00_2,) ) ;
+#
+# 3.2.3. MISE EN PLACE DES MATERIAUX
+#
+MA00_M=AFFE_MATERIAU(    MAILLAGE=M00_2,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,    ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,    )),
+           AFFE_VARC=_F(TOUT='OUI',
+                        EVOL=T00_2,
+                        NOM_VARC='TEMP',
+                        NOM_CHAM='TEMP',
+                        VALE_REF=20.),)
+
+# 3.2.4. CHARGEMENT
+#
+CHME00=AFFE_CHAR_MECA(    MODELE=MOME00,
+                        DDL_IMPO=_F(  GROUP_NO = 'ORIGINE',       DY = 0.,      ),
+                        PRES_REP=(_F(GROUP_MA=('BORD_INF','BORD_DRO',), PRES=0.0,),
+                                  _F(GROUP_MA='BORD_SUP',               PRES=1.E3,),),
+                        FACE_IMPO=_F(  GROUP_MA = 'BORD_GAU',    DNOR = 0.,      ),
+                          )
+#
+# 3.2.5. RESOLUTION
+#
+REME00=MECA_STATIQUE( MODELE=MOME00,
+                        CHAM_MATER=MA00_M,
+                        EXCIT=_F(  CHARGE = CHME00,     ),
+                        LIST_INST=INST00
+                       )
+#
+# 3.2.6. CALCUL DE L'INDICATEUR D'ERREUR SUR LA MECANIQUE
+#
+REME00=CALC_ERREUR( reuse=REME00,   RESULTAT=REME00,
+                      OPTION=( 'ERME_ELEM', ),
+                      NUME_ORDRE=3
+                     )
+#
+# 4. ADAPTATION DU MAILLAGE DE 00 VERS 01
+#    IMPRESSIONS POUR CREER LA BASE DU CAS-TEST HOMARD tri_2d_8xtri_d2
+#IMPR_RESU(FORMAT='MED',UNITE=80,
+          #RESU=_F(RESULTAT=REME00,NOM_CHAM='ERME_ELEM',NOM_CMP='ERREST',NUME_ORDRE=3,));
+#IMPR_RESU(FORMAT='MED',UNITE=80,
+          #RESU=_F(RESULTAT=T00_2,NOM_CHAM='TEMP',NUME_ORDRE=2));
+#
+MACR_ADAP_MAIL(INFO=1,
+               ADAPTATION='RAFFINEMENT',
+               MAILLAGE_N = M00_2,
+               MAILLAGE_NP1 = CO("M01_2"),
+               MAILLAGE_NP1_ANNEXE = CO("M01_1"),
+               RESULTAT_N = REME00,
+               NOM_CHAM = 'ERME_ELEM',
+               NOM_CMP = 'ERREST' ,
+               NUME_ORDRE = 3,
+               CRIT_RAFF_PE = 0.10,
+               MAJ_CHAM=_F(RESULTAT   = T00_2,
+                           NOM_CHAM   = 'TEMP',
+                           TYPE_CHAM  = 'NOEU_TEMP_R',
+                           NUME_ORDRE = 2,
+                           CHAM_MAJ   = CO("TEMP01")),
+               QUALITE='OUI'
+               )
+#
+# 5. CALCUL SUR LE MAILLAGE 01
+# 5.1. LA THERMIQUE
+# 5.1.1. MISE EN PLACE DES MATERIAUX
+#
+MA01_T=AFFE_MATERIAU(    MAILLAGE=M01_1,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,      ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,      ))
+                    )
+#
+# 5.1.2. MODELE
+#
+MOTH01=AFFE_MODELE(    MAILLAGE=M01_1,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'THERMIQUE',   MODELISATION = 'PLAN_DIAG',  ))
+#
+# 5.1.3. CHARGEMENT
+#
+CHTH01=AFFE_CHAR_THER(    MODELE=MOTH01,
+    TEMP_IMPO=_F(  GROUP_NO = 'ORIGINE',     TEMP = 200.0,    ),
+    SOURCE=(_F(  GROUP_MA = 'MOITIE1',    SOUR = 18000.,    ),
+            _F(  GROUP_MA = 'MOITIE2',    SOUR = 22000.,    )),
+    ECHANGE=_F( GROUP_MA = 'BORD_DRO',  COEF_H = 500.,  TEMP_EXT = 310., ),
+    FLUX_REP=_F(GROUP_MA=('BORD_INF','BORD_GAU','BORD_SUP',), FLUN=0.0,)
+                         )
+#
+# 5.1.4. RESOLUTION
+#
+RETH01=THER_LINEAIRE( MODELE=MOTH01,
+                      CHAM_MATER=MA01_T,
+                      EXCIT=_F(  CHARGE = CHTH01,   ),
+                      ETAT_INIT=_F(  STATIONNAIRE = 'OUI',   ),
+                      INCREMENT=_F(  LIST_INST = INST01,   )
+                      )
+#
+# 5.2. LA MECANIQUE
+
+# 5.2.1. MODELE
+#
+MOME01=AFFE_MODELE(    MAILLAGE=M01_2,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'MECANIQUE',   MODELISATION = 'D_PLAN',  ))
+#
+# 5.2.2. PROJECTION DE LA TEMPERATURE DU MAILLAGE EN DEGRE 1 VERS DEGRE 2
+#
+###IMPR_RESU ( FORMAT='RESULTAT', RESU=_F( RESULTAT=RETH01,) ) ;
+T01_2=PROJ_CHAMP(METHODE='COLLOCATION',
+                    RESULTAT=RETH01,
+                    MODELE_1=MOTH01,
+                    MODELE_2=MOME01,
+                    TOUT_ORDRE='OUI')
+
+###IMPR_RESU ( FORMAT='RESULTAT', RESU=_F( RESULTAT=T01_2,) ) ;
+#
+# 5.2.3. CHARGEMENT
+#
+CHME01=AFFE_CHAR_MECA(    MODELE=MOME01,
+                        DDL_IMPO=_F(  GROUP_NO = 'ORIGINE',       DY = 0.,      ),
+                        PRES_REP=(_F(GROUP_MA=('BORD_INF','BORD_DRO',), PRES=0.0,),
+                                  _F(GROUP_MA='BORD_SUP',               PRES=1.E3,),),
+                        FACE_IMPO=_F(  GROUP_MA = 'BORD_GAU',    DNOR = 0.,      ),
+                          )
+# 5.2.4. MISE EN PLACE DES MATERIAUX
+#
+MA01_M=AFFE_MATERIAU(    MAILLAGE=M01_2,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,     ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,    )),
+          AFFE_VARC=_F( TOUT='OUI',
+                        EVOL=T01_2,
+                        NOM_VARC='TEMP',
+                        NOM_CHAM='TEMP',
+                        VALE_REF=20.),)
+
+
+# 5.2.5. RESOLUTION
+#
+REME01=MECA_STATIQUE( MODELE=MOME01,
+                        CHAM_MATER=MA01_M,
+                        EXCIT=_F(  CHARGE = CHME01,     ),
+                        LIST_INST=INST01
+                       )
+#
+# 6. TEST DE NON REGRESSION
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=2,
+                   GROUP_NO='OPPOSE',
+                   RESULTAT=RETH01,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=302.57134500000001,
+
+                   CRITERE='RELATIF',
+                   ),
+                _F(NUME_ORDRE=3,
+                   GROUP_NO='OPPOSE',
+                   RESULTAT=REME01,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   VALE_CALC=0.012415012899999999,
+
+                   CRITERE='RELATIF',
+                   ),
+                _F(NUME_ORDRE=3,
+                   GROUP_NO='OPPOSE',
+                   RESULTAT=REME01,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DY',
+                   VALE_CALC=-0.0254077755,
+
+                   CRITERE='RELATIF',
+                   ),
+                ),
+          )
+
+#
+# 7. ADAPTATION DU MAILLAGE DE 01 VERS 02
+#    REMARQUE : PAR RAPPORT A L'ADAPTATION PRECEDENTE, ON TESTE DES VARIANTES
+#               DE LA COMMANDE :
+#               . RAFFINEMENT VIA UNE ZONE
+#               . SELECTION DU CHAMP A METTRE A JOUR PAR UN INSTANT AU LIEU
+#                 D'UN NUMERO D'ORDRE
+#               . DEUX CHAMPS A METTRE A JOUR
+#               . AUTRES OPTIONS D'ANALYSE DU MAILLAGE
+#
+#    IMPRESSIONS POUR CREER LA BASE DU CAS-TEST HOMARD tri_2d_8xtri_d2
+#IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(RESULTAT=T01_2,),);
+MACR_ADAP_MAIL(INFO=1,
+               ADAPTATION='RAFF_DERA_ZONE',
+               MAILLAGE_N = M01_2,
+               MAILLAGE_NP1 = CO("M02_2"),
+               MAILLAGE_NP1_ANNEXE = CO("M02_1"),
+               ZONE=(_F(TYPE = 'RECTANGLE',
+                        X_MINI = -0.01,
+                        X_MAXI =  0.26,
+                        Y_MINI =  0.24,
+                        Y_MAXI =  0.51,),
+                     _F(TYPE = 'DISQUE',
+                        X_CENTRE = 0.55,
+                        Y_CENTRE = 0.75,
+                        RAYON   =  0.30,),),
+               MAJ_CHAM=(_F(
+                       RESULTAT   = T01_2,
+                       NOM_CHAM   = 'TEMP',
+                       TYPE_CHAM  = 'NOEU_TEMP_R',
+                       INST = 8.0,
+                       CHAM_MAJ   = CO("TEMP_8")),
+                        _F(
+                       RESULTAT   = T01_2,
+                       NOM_CHAM   = 'TEMP',
+                       TYPE_CHAM  = 'NOEU_TEMP_R',
+                       INST = 6.0,
+                       CHAM_MAJ   = CO("TEMP_6")),),
+               QUALITE='OUI',
+               CONNEXITE='OUI',
+               TAILLE='OUI')
+#
+# 8. CALCUL SUR LE MAILLAGE 02
+# 8.1. LA THERMIQUE
+# 8.1.1. MISE EN PLACE DES MATERIAUX
+#
+MA02_T=AFFE_MATERIAU(    MAILLAGE=M02_1,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,     ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,    ))
+                    )
+#
+# 8.1.2. MODELE
+#
+MOTH02=AFFE_MODELE(    MAILLAGE=M02_1,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'THERMIQUE',   MODELISATION = 'PLAN_DIAG',  ))
+#
+# 8.1.3. CHARGEMENT
+#
+CHTH02=AFFE_CHAR_THER(    MODELE=MOTH02,
+    TEMP_IMPO=_F(  GROUP_NO = 'ORIGINE',     TEMP = 200.0,    ),
+    SOURCE=(_F(  GROUP_MA = 'MOITIE1',    SOUR = 18000.,    ),
+            _F(  GROUP_MA = 'MOITIE2',    SOUR = 22000.,    )),
+    ECHANGE=_F( GROUP_MA = 'BORD_DRO',  COEF_H = 500.,  TEMP_EXT = 310., ),
+    FLUX_REP=_F(GROUP_MA=('BORD_INF','BORD_GAU','BORD_SUP',), FLUN=0.0,)
+                         )
+#
+# 8.1.4. RESOLUTION
+#
+RETH02=THER_LINEAIRE( MODELE=MOTH02,
+                      CHAM_MATER=MA02_T,
+                      EXCIT=_F(  CHARGE = CHTH02,   ),
+                      ETAT_INIT=_F(  STATIONNAIRE = 'OUI',   ),
+                      INCREMENT=_F(  LIST_INST = INST02,   )
+                      )
+#
+# 8.2. LA MECANIQUE
+
+# 8.2.1. MODELE
+#
+MOME02=AFFE_MODELE(    MAILLAGE=M02_2,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'MECANIQUE',   MODELISATION = 'D_PLAN',  ))
+#
+# 8.2.2. PROJECTION DE LA TEMPERATURE DU MAILLAGE EN DEGRE 1 VERS DEGRE 2
+#
+###IMPR_RESU ( FORMAT='RESULTAT', RESU=_F( RESULTAT=RETH02,) ) ;
+T02_2=PROJ_CHAMP(METHODE='COLLOCATION',
+                    RESULTAT=RETH02,
+                    MODELE_1=MOTH02,
+                    MODELE_2=MOME02,
+                    TOUT_ORDRE='OUI')
+###IMPR_RESU ( FORMAT='RESULTAT', RESU=_F( RESULTAT=T02_2,) ) ;
+#
+# 8.2.3. MISE EN PLACE DES MATERIAUX
+#
+MA02_M=AFFE_MATERIAU(    MAILLAGE=M02_2,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,    ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,   )),
+          AFFE_VARC=_F( TOUT='OUI',
+                        EVOL=T02_2,
+                        NOM_VARC='TEMP',
+                        NOM_CHAM='TEMP',
+                        VALE_REF=20.),)
+
+# 8.2.4. CHARGEMENT
+#
+CHME02=AFFE_CHAR_MECA(    MODELE=MOME02,
+                        DDL_IMPO=_F(  GROUP_NO = 'ORIGINE',       DY = 0.,      ),
+                        PRES_REP=(_F(GROUP_MA=('BORD_INF','BORD_DRO',), PRES=0.0,),
+                                  _F(GROUP_MA='BORD_SUP',               PRES=1.E3,),),
+                        FACE_IMPO=_F(  GROUP_MA = 'BORD_GAU',    DNOR = 0.,      ),
+                          )
+#
+# 8.2.5. RESOLUTION
+#
+REME02=MECA_STATIQUE( MODELE=MOME02,
+                        CHAM_MATER=MA02_M,
+                        EXCIT=_F(  CHARGE = CHME02,     ),
+                        LIST_INST=INST02
+                       )
+
+#
+# 9. TEST DE NON REGRESSION
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=2,
+                   GROUP_NO='OPPOSE',
+                   RESULTAT=RETH02,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=303.30571800000001,
+
+                   CRITERE='RELATIF',
+                   ),
+                _F(NUME_ORDRE=3,
+                   GROUP_NO='OPPOSE',
+                   RESULTAT=REME02,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   VALE_CALC=0.0123762443,
+
+                   CRITERE='RELATIF',
+                   ),
+                _F(NUME_ORDRE=3,
+                   GROUP_NO='OPPOSE',
+                   RESULTAT=REME02,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DY',
+                   VALE_CALC=-0.025647018000000001,
+
+                   CRITERE='RELATIF',
+                   ),
+                ),
+          )
+
+#
+# 10. ADAPTATION DU MAILLAGE DE 02 VERS 03
+#    REMARQUE : PAR RAPPORT A L'ADAPTATION PRECEDENTE, ON TESTE DES VARIANTES
+#               DE LA COMMANDE :
+#               . RAFFINEMENT ET DERAFFINEMENT
+#               . SELECTION DES ZONES EN TRIANT LES PLUS FORTS SAUTS DE
+#                 CONTRAINTES ENTRE MAILLES
+#
+#    IMPRESSIONS POUR CREER LA BASE DU CAS-TEST HOMARD tri_2d_8xtri_d2
+#IMPR_RESU(FORMAT='MED',UNITE=82,
+          #RESU=_F(RESULTAT=REME02,NOM_CHAM='SIEF_ELGA',NOM_CMP='SIZZ',NUME_ORDRE=3));
+MACR_ADAP_MAIL(INFO=1,
+               ADAPTATION='RAFF_DERA',
+               MAILLAGE_N = M02_2,
+               MAILLAGE_NP1 = CO("M03_2"),
+               MAILLAGE_NP1_ANNEXE = CO("M03_1"),
+               RESULTAT_N = REME02,
+               NOM_CHAM = 'SIEF_ELGA',
+               NOM_CMP = 'SIZZ' ,
+               NUME_ORDRE = 3,
+               USAGE_CHAMP = 'SAUT',
+               CRIT_RAFF_PE = 0.02,
+               CRIT_DERA_PE = 0.60,
+               ADAP_INIT = 'DERAFFINER',
+               QUALITE='OUI'
+               )
+#
+# 11. CALCUL SUR LE MAILLAGE 03
+# 11.1. LA THERMIQUE
+# 11.1.1. MISE EN PLACE DES MATERIAUX
+#
+MA03_T=AFFE_MATERIAU(    MAILLAGE=M03_1,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,     ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,    ))
+                    )
+#
+# 11.1.2. MODELE
+#
+MOTH03=AFFE_MODELE(    MAILLAGE=M03_1,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'THERMIQUE',   MODELISATION = 'PLAN_DIAG',  ))
+#
+# 11.1.3. CHARGEMENT
+#
+CHTH03=AFFE_CHAR_THER(    MODELE=MOTH03,
+    TEMP_IMPO=_F(  GROUP_NO = 'ORIGINE',     TEMP = 200.0,    ),
+    SOURCE=(_F(  GROUP_MA = 'MOITIE1',    SOUR = 18000.,    ),
+            _F(  GROUP_MA = 'MOITIE2',    SOUR = 22000.,    )),
+    ECHANGE=_F( GROUP_MA = 'BORD_DRO',  COEF_H = 500.,  TEMP_EXT = 310., ),
+    FLUX_REP=_F(GROUP_MA=('BORD_INF','BORD_GAU','BORD_SUP',), FLUN=0.0,)
+                         )
+#
+# 11.1.4. RESOLUTION
+#
+RETH03=THER_LINEAIRE( MODELE=MOTH03,
+                      CHAM_MATER=MA03_T,
+                      EXCIT=_F(  CHARGE = CHTH03,   ),
+                      ETAT_INIT=_F(  STATIONNAIRE = 'OUI',   ),
+                      INCREMENT=_F(  LIST_INST = INST03,   )
+                      )
+#
+# 11.2. LA MECANIQUE
+
+# 11.2.1. MODELE
+#
+MOME03=AFFE_MODELE(    MAILLAGE=M03_2,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'MECANIQUE',   MODELISATION = 'D_PLAN',  ))
+#
+# 11.2.2. PROJECTION DE LA TEMPERATURE DU MAILLAGE EN DEGRE 1 VERS DEGRE 2
+#
+###IMPR_RESU ( FORMAT='RESULTAT', RESU=_F( RESULTAT=RETH03,) ) ;
+T03_2=PROJ_CHAMP(METHODE='COLLOCATION',
+                    RESULTAT=RETH03,
+                    MODELE_1=MOTH03,
+                    MODELE_2=MOME03,
+                    TOUT_ORDRE='OUI')
+
+###IMPR_RESU ( FORMAT='RESULTAT', RESU=_F( RESULTAT=T03_2,) ) ;
+#
+# 11.2.3. CHARGEMENT
+#
+CHME03=AFFE_CHAR_MECA(    MODELE=MOME03,
+                        DDL_IMPO=_F(  GROUP_NO = 'ORIGINE',       DY = 0.,      ),
+                        PRES_REP=(_F(GROUP_MA=('BORD_INF','BORD_DRO',), PRES=0.0,),
+                                  _F(GROUP_MA='BORD_SUP',               PRES=1.E3,),),
+                        FACE_IMPO=_F(  GROUP_MA = 'BORD_GAU',    DNOR = 0.,      ),
+                          )
+# 11.2.4. MISE EN PLACE DES MATERIAUX
+#
+MA03_M=AFFE_MATERIAU(    MAILLAGE=M03_2,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,     ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,    )),
+          AFFE_VARC=_F( TOUT='OUI',
+                        EVOL=T03_2,
+                        NOM_VARC='TEMP',
+                        NOM_CHAM='TEMP',
+                        VALE_REF=20.),)
+
+
+# 11.2.5. RESOLUTION
+#
+REME03=MECA_STATIQUE( MODELE=MOME03,
+                        CHAM_MATER=MA03_M,
+                        EXCIT=_F(  CHARGE = CHME03,     ),
+                        LIST_INST=INST03
+                       )
+#
+# 12. TEST DE NON REGRESSION
+#
+TEST_RESU(RESU=_F(NUME_ORDRE=2,
+                  GROUP_NO='OPPOSE',
+                  RESULTAT=RETH03,
+                  NOM_CHAM='TEMP',
+                  NOM_CMP='TEMP',
+                  VALE_CALC=303.08014079999998,
+                  CRITERE='RELATIF',
+                  ),
+          )
+#
+# 13. ADAPTATION DU MAILLAGE DE 03 VERS 04
+#    REMARQUE : PAR RAPPORT A L'ADAPTATION PRECEDENTE, ON TESTE DES VARIANTES
+#               DE LA COMMANDE :
+#               . RAFFINEMENT ET DERAFFINEMENT
+#               . SELECTION DES ZONES EN TRIANT LES PLUS FORTS SAUTS DE
+#                 DEPLACEMENT ENTRE MAILLES :
+#                   RAFINEMENT AU DELA DE MOYENNE + 0.7*ECART-TYPE
+#                   DERAFINEMENT EN DECA DE MOYENNE - 0.5*ECART-TYPE
+#
+#    IMPRESSIONS POUR CREER LA BASE DU CAS-TEST HOMARD tri_2d_8xtri_d2
+#IMPR_RESU(FORMAT='MED',UNITE=83,
+          #RESU=_F(RESULTAT=REME03,NOM_CHAM='SIEF_ELGA',NOM_CMP='SIZZ',NUME_ORDRE=3));
+MACR_ADAP_MAIL(INFO=1,
+               ADAPTATION='RAFF_DERA',
+               MAILLAGE_N = M03_2,
+               MAILLAGE_NP1 = CO("M04_2"),
+               MAILLAGE_NP1_ANNEXE = CO("M04_1"),
+               RESULTAT_N = REME03,
+               NOM_CHAM = 'DEPL',
+               INST = 16.,
+               USAGE_CHAMP = 'SAUT',
+               CRIT_RAFF_MS = 0.7,
+               CRIT_DERA_MS = 0.5,
+               ADAP_INIT = 'DERAFFINER',
+               QUALITE='OUI'
+               )
+
+#
+# 14. CALCUL SUR LE MAILLAGE 04 POUR LES MEMES INSTANTS
+# 14.1. LA THERMIQUE
+# 14.1.1. MISE EN PLACE DES MATERIAUX
+#
+MA04_T=AFFE_MATERIAU(    MAILLAGE=M04_1,AFFE=(
+       _F(  GROUP_MA = 'MOITIE1',    MATER = MATER1,     ),
+       _F(  GROUP_MA = 'MOITIE2',    MATER = MATER2,    ))
+                    )
+#
+# 14.1.2. MODELE
+#
+MOTH04=AFFE_MODELE(    MAILLAGE=M04_1,
+  AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'THERMIQUE',   MODELISATION = 'PLAN_DIAG',  ))
+#
+# 14.1.3. CHARGEMENT
+#
+CHTH04=AFFE_CHAR_THER(    MODELE=MOTH04,
+    TEMP_IMPO=_F(  GROUP_NO = 'ORIGINE',     TEMP = 200.0,    ),
+    SOURCE=(_F(  GROUP_MA = 'MOITIE1',    SOUR = 18000.,    ),
+            _F(  GROUP_MA = 'MOITIE2',    SOUR = 22000.,    )),
+    ECHANGE=_F( GROUP_MA = 'BORD_DRO',  COEF_H = 500.,  TEMP_EXT = 310., ),
+    FLUX_REP=_F(GROUP_MA=('BORD_INF','BORD_GAU','BORD_SUP',), FLUN=0.0,)
+                         )
+#
+# 14.1.4. RESOLUTION
+#
+RETH04=THER_LINEAIRE( MODELE=MOTH04,
+                      CHAM_MATER=MA04_T,
+                      EXCIT=_F(  CHARGE = CHTH04,   ),
+                      ETAT_INIT=_F(  STATIONNAIRE = 'OUI',   ),
+                      INCREMENT=_F(  LIST_INST = INST03,   )
+                      )
+#
+# 15. TEST DE NON REGRESSION
+#
+TEST_RESU(RESU=_F(INST=16.,
+                  GROUP_NO='OPPOSE',
+                  RESULTAT=RETH04,
+                  NOM_CHAM='TEMP',
+                  NOM_CMP='TEMP',
+                  VALE_CALC=308.87294988051,
+                  CRITERE='RELATIF',
+                  ),
+          )
+#
+FIN( )

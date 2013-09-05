@@ -1,0 +1,262 @@
+# person_in_charge: jean-michel.proix at edf.fr
+# TITRE : COQUE MINCE CYLINDRIQUE SOUS PRESSION HYDROSTATIQUE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# ELEMENTS MEC3TR7H
+# ELAS ET ELAS_ORTH
+
+
+DEBUT(CODE=_F(NOM='SSLS120C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MAYA=LIRE_MAILLAGE(VERI_MAIL=_F(VERIF='OUI'),FORMAT='MED',);
+
+MAIL=CREA_MAILLAGE(   MAILLAGE=MAYA,
+                     MODI_MAILLE=(_F( OPTION = 'TRIA6_7',TOUT='OUI'),
+                                 ),)
+
+
+MODMECA=AFFE_MODELE(MAILLAGE=MAIL,
+                    AFFE=_F(GROUP_MA='VIROLE',
+                            PHENOMENE='MECANIQUE',
+                            MODELISATION='COQUE_3D',),);
+
+MODI_MAILLAGE(reuse =MAIL,
+                   MAILLAGE=MAIL,
+                   ORIE_NORM_COQUE=_F(GROUP_MA='VIROLE',
+                                      VECT_NORM=(-1.0,0.0,0.0),
+                                      GROUP_NO='A1',),
+                   );
+
+E  = 210000000000.0
+Nu = 0.3
+
+ACIER1=DEFI_MATERIAU( ELAS=_F( E  = E,
+                               NU = Nu, ),);
+
+NuLT = 0.0142857143
+ET   = 2.1E11
+EL   = 4.E10
+NuTL = NuLT*ET/EL
+
+ACIER2=DEFI_MATERIAU(   ELAS_ORTH=_F(  E_L   = EL,
+                                       E_T   = ET,
+                                       G_LT  = 0.45E10,
+                                       G_TN  = 0.35E10,
+                                       NU_LT = NuLT     )
+                      )
+
+CHMAT1=AFFE_MATERIAU(MAILLAGE=MAIL,
+                    AFFE=_F(GROUP_MA='VIROLE',
+                            MATER=ACIER1,),);
+CHMAT2=AFFE_MATERIAU(MAILLAGE=MAIL,
+                    AFFE=_F(GROUP_MA='VIROLE',
+                            MATER=ACIER2,),);
+
+
+CARAEL=AFFE_CARA_ELEM(MODELE=MODMECA,
+                       COQUE=_F(GROUP_MA='VIROLE',
+                                EPAIS=4.E-2,
+                                ANGL_REP=(0.0,-90.0),),);
+
+BLOCAGE=AFFE_CHAR_MECA(MODELE=MODMECA,
+                       DDL_IMPO=(_F(GROUP_MA='LIGNEBAS',
+                                    DZ=0.0,),
+                                 _F(GROUP_MA='SYMET',
+                                    DY=0.0,
+                                    DRX=0.0,
+                                    DRZ=0.0,),
+                                 _F(GROUP_NO='PM',
+                                    DX=0.0,),),);
+
+PHYDR=DEFI_FONCTION(NOM_PARA='Z',
+                    NOM_RESU='TOUTRESU',
+                    VALE=(0.0,15000.0,16.0,0.0),);
+
+PH=AFFE_CHAR_MECA_F(MODELE=MODMECA,
+                    FORCE_COQUE=_F(GROUP_MA='VIROLE',
+                                   PRES=PHYDR,
+                                   PLAN='INF',),);
+
+# CAS ISOTROPE : SOLUTION ANALYTIQUE
+
+
+ELAS1=MECA_STATIQUE(MODELE=MODMECA,
+                    CHAM_MATER=CHMAT1,
+                    CARA_ELEM=CARAEL,
+                    EXCIT=(_F(CHARGE=BLOCAGE,),
+                           _F(CHARGE=PH,),),
+                    );
+
+CALC_CHAMP(reuse=ELAS1,RESULTAT=ELAS1,CONTRAINTE=('SIGM_ELNO'))
+
+
+ELAS1C1M=POST_CHAMP(RESULTAT=ELAS1,
+                     EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                                   NUME_COUCHE=1,
+                                   NIVE_COUCHE='MOY',),);
+R = 5.7;
+L = 16.0;
+h = 0.04;
+P = 15000.0;
+DZMAX = (-Nu*P*R*L)/E/h/2.
+DXMAX = P*R*R/E/h
+DXMIN = -P*R*R/E/h
+SIG   = P*R/h
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A3',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS1,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-2.44275642E-05,
+                  VALE_REFE=-2.4428571428571427E-05,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A4',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS1,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-2.442793412886E-05,
+                  VALE_REFE=-2.4428571428571427E-05,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='PM',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS1,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DY',
+                  VALE_CALC= 5.7994203247667E-05,
+                  VALE_REFE=5.8017857142857143E-05,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A1',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS1,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DX',
+                  VALE_CALC= 5.795367317711E-05,
+                  VALE_REFE=5.8017857142857143E-05,
+                  PRECISION=2.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A2',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS1,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DX',
+                  VALE_CALC=-5.8034735273552E-05,
+                  VALE_REFE=-5.8017857142857143E-05,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A1',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS1C1M,
+                  NOM_CHAM='SIGM_ELNO',
+                  NOM_CMP='SIYY',
+                  VALE_CALC= 2.1377652609051E+06,
+                  VALE_REFE=2.137500E6,
+                  MAILLE='M1',),
+          )
+
+# CAS ORTHOTROPE : SOLUTION ANALYTIQUE AUSSI
+
+DZMAX2 = (-(NuLT*ET/EL)*P*R*L)/ET/h/2.
+
+
+ELAS2=MECA_STATIQUE(MODELE=MODMECA,
+                    CHAM_MATER=CHMAT2,
+                    CARA_ELEM=CARAEL,
+                    EXCIT=(_F(CHARGE=BLOCAGE,),
+                           _F(CHARGE=PH,),),);
+
+CALC_CHAMP(reuse=ELAS2,RESULTAT=ELAS2,CONTRAINTE=('SIGM_ELNO'))
+
+
+ELAS2C1M=POST_CHAMP(RESULTAT=ELAS2,
+                     EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                                   NUME_COUCHE=1,
+                                   NIVE_COUCHE='MOY',),);
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A3',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS2,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-6.1046903001721E-06,
+                  VALE_REFE=-6.1071428632500006E-06,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A4',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS2,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-6.1058884399344E-06,
+                  VALE_REFE=-6.1071428632500006E-06,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='PM',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS2,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DY',
+                  VALE_CALC= 5.801162901267E-05,
+                  VALE_REFE=5.8017857142857143E-05,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A1',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS2,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DX',
+                  VALE_CALC= 5.7955563831933E-05,
+                  VALE_REFE=5.8017857142857143E-05,
+                  PRECISION=2.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A2',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS2,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DX',
+                  VALE_CALC=-5.8067682138118E-05,
+                  VALE_REFE=-5.8017857142857143E-05,
+                  PRECISION=2.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A1',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=ELAS2C1M,
+                  NOM_CHAM='SIGM_ELNO',
+                  NOM_CMP='SIYY',
+                  VALE_CALC= 2.1382759283048E+06,
+                  VALE_REFE=2.137500E6,
+                  MAILLE='M1',),
+          )
+
+FIN();

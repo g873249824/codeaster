@@ -1,0 +1,132 @@
+# TITRE  TEST LOI DE COMPORTEMENT HAYHURST
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
+# (AT YOUR OPTION) ANY LATER VERSION.                                                    
+#                                                                       
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
+#                                                                       
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='COMP002L',NIV_PUB_WEB='INTERNET',VISU_EFICAS='NON'),IMPR_MACRO='NON');
+
+
+#########################################################
+######### DEFINITION DES PARAMETRES MATERIAUX ###########
+#########################################################
+
+#temperature de travail en degres Celsius
+Tdegc=600;
+
+#ATTENTION : f en h-1 et non en %/h
+feps=5.2e7;
+Qeps=3e5;
+aK = -3.3e-2;
+bK = 38.5;
+fA = 9e4;
+QA = 2e5;
+f0 = 3.5e-2;
+Q0 = -4.85e4;
+
+#parametres vitesse de sollicitation
+vitesse = 1.e-5
+
+t_0 = 5.e-2/(8.0*vitesse)
+# liste d'archivage
+temps_ar=DEFI_LIST_REEL( VALE =[t_0*i for i in range(9)],)
+
+#quelques calculs intermediaires
+ep0val=feps*exp(-Qeps/(8.314*(Tdegc+273.)));
+Kcoef=aK*(Tdegc+273.)+bK;
+A0 = fA*exp(-QA/(8.314*(Tdegc+273.)));
+sig0val = f0*exp(-Q0/(8.314*(Tdegc+273.)));
+
+# def des materiaux
+ACIER = [None]*2
+#unite en Pa
+C_Pa = 1.e+6
+
+POISSON=0.3
+YOUNG=145000.0
+YOUNG_Pa = YOUNG * C_Pa
+Kcoef_Pa = Kcoef * C_Pa
+H1= 30000.0
+H2=-280.
+H1_Pa= H1* C_Pa
+H2_Pa= H2* C_Pa
+sig0Pa=sig0val* C_Pa
+kc=1.e-10
+
+
+#unite en MPa
+ACIER[1]=DEFI_MATERIAU(ELAS=_F(E=YOUNG,
+                               NU=0.3,),
+                   HAYHURST=_F(EPS0=ep0val,
+                               K=Kcoef,
+                               H1=H1,
+                               H2=H2,
+                               DELTA1=1.0,
+                               DELTA2=0.0,
+                               H1ST=0.33,
+                               H2ST=1.0,
+                               KC=kc,
+                               BIGA = A0,
+                               SIG0 = sig0val,
+                               ALPHAD=0.5,
+                               S_EQUI_D=1.,
+                               ),);
+
+#unite en MPa
+ACIER[0]=DEFI_MATERIAU(ELAS=_F(E=YOUNG_Pa,
+                               NU=0.3,),
+                   HAYHURST=_F(EPS0=ep0val,
+                               K=Kcoef_Pa,
+                               H1=H1_Pa,
+                               H2=H2_Pa,
+                               DELTA1=1.0,
+                               DELTA2=0.0,
+                               H1ST=0.33,
+                               H2ST=1.0,
+                               KC=kc,
+                               BIGA = A0,
+                               SIG0 = sig0Pa,
+                               ALPHAD=0.5,
+                               S_EQUI_D=1.,
+                               ),);
+
+
+compor='HAYHURST'
+
+
+
+tabresu=TEST_COMPOR(OPTION='MECA',INFO=1,
+                   COMP_INCR=_F(RELATION=compor,ITER_INTE_MAXI=100,ALGO_INTE='NEWTON'),
+                     NEWTON=_F(REAC_ITER=1,),
+              LIST_MATER=ACIER,
+              LIST_NPAS=4*[10] + [10, 15, 25],              
+              VARI_TEST=('V7','VMIS','TRACE'),
+              LIST_TOLE=4*[1.E-10] + [5.] + [2.] + [1.E-2]+ [0.2],
+              YOUNG=YOUNG,POISSON=0.3,
+              )
+
+
+tabres2=TEST_COMPOR(OPTION='MECA',INFO=1,
+                   COMP_INCR=_F(RELATION=compor,ITER_INTE_MAXI=100,ALGO_INTE='NEWTON'),
+                     NEWTON=_F(REAC_ITER=1,),
+              LIST_MATER=ACIER,
+              MODELISATION='C_PLAN',
+              LIST_NPAS=4*[10] + [10, 15, 25],              
+              VARI_TEST=('V7','VMIS','TRACE'),
+              LIST_TOLE=4*[1.E-10] + [5.] + [2.] + [1.E-2]+ [0.4],
+              YOUNG=YOUNG,POISSON=0.3,
+              )
+
+FIN()

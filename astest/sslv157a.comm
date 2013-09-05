@@ -1,0 +1,204 @@
+# TITRE LIAISON DE TYPE RBE3 ENTRE UN CUBE ET UN DISCRET
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSLV157A',
+              NIV_PUB_WEB='INTERNET',VISU_EFICAS='OUI',),DEBUG=_F(SDVERI='OUI'))
+
+MAIL=LIRE_MAILLAGE(FORMAT='ASTER',VERI_MAIL=_F(VERIF='OUI',),)
+
+MODMECA=AFFE_MODELE(MAILLAGE=MAIL,
+                    AFFE=(
+             _F(GROUP_MA='GROUP_MA_GMA00001',PHENOMENE='MECANIQUE',MODELISATION='3D',), # MASSIF
+             _F(GROUP_MA='GROUP_MA_GMA00003',PHENOMENE='MECANIQUE',MODELISATION='DIS_TR',), # DISCRET
+                  ),)
+
+MAT00001=DEFI_MATERIAU(ELAS=_F(E=210000.0, NU=0.3,),)
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                    AFFE=(
+                          _F(GROUP_MA='GROUP_MA_GMA00002', MATER=MAT00001,),
+                         )
+                    )
+
+CINE1=AFFE_CHAR_CINE(MODELE=MODMECA,
+                        MECA_IMPO=(
+                                 _F(GROUP_NO='GROUP_NO_GNO00001',DZ=0.0,),
+                                 _F(GROUP_NO='GROUP_NO_GNO00002',DX=0.0,DY=0.0,DZ=0.0,),
+                                 _F(GROUP_NO='GROUP_NO_GNO00003',DX=0.0,DZ=0.0,),
+        ),)
+
+
+BRBE3=AFFE_CHAR_MECA(MODELE=MODMECA,
+        LIAISON_RBE3=(
+                _F(
+                      GROUP_NO_MAIT='GROUP_NO_GNO00006',
+                      DDL_MAIT=('DX','DY','DZ','DRX','DRY','DRZ'),
+                      GROUP_NO_ESCL=('GROUP_NO_GNO00005',),
+                      DDL_ESCL=('DX-DY-DZ',),
+                      COEF_ESCL=(1.,), # NUME_LAGR='APRES'
+                ),
+        ),
+)
+
+
+CHARGE1=AFFE_CHAR_MECA(MODELE=MODMECA,
+        FORCE_NODALE=(
+                  _F(GROUP_NO='GROUP_NO_GNO00004',FX=-0.123456701636,FY=-0.246913403273,FZ=-0.370370090008,),),
+                       )
+
+CAEL=AFFE_CARA_ELEM(MODELE=MODMECA,
+        DISCRET=(
+                _F(CARA='K_TR_D_N', GROUP_MA='GROUP_MA_GMA00003',VALE=(0,0,0,0,0,0),),
+              )
+                  )
+
+
+RES_RBE3=MECA_STATIQUE(MODELE=MODMECA,
+                    OPTION='SANS',
+                    CHAM_MATER=CHMAT,
+                    CARA_ELEM=CAEL,
+                    EXCIT=(
+                           _F(CHARGE=CHARGE1,),
+                           _F(CHARGE=CINE1,),
+                           _F(CHARGE=BRBE3,),
+                           ),)
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000007',
+                   NOM_CMP='DX',
+                   VALE_CALC= 2.09288488E-05,
+                   VALE_REFE=2.0928799999999999E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=3.0000000000000001E-06,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000006',
+                   NOM_CMP='DY',
+                   VALE_CALC=-7.29516963E-06,
+                   VALE_REFE=-7.2951699999999996E-06,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000002',
+                   NOM_CMP='DZ',
+                   VALE_CALC= 0.0E+00,
+                   VALE_REFE=0.0,
+                   CRITERE='ABSOLU',
+                   PRECISION=1.E-10,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000002',
+                   NOM_CMP='DX',
+                   VALE_CALC=-6.23696841E-06,
+                   VALE_REFE=-6.2369700000000002E-06,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000002',
+                   NOM_CMP='DY',
+                   VALE_CALC=-2.45256619E-05,
+                   VALE_REFE=-2.4525700000000001E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=1.9999999999999999E-06,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000007',
+                   NOM_CMP='DZ',
+                   VALE_CALC=-2.79835167E-05,
+                   VALE_REFE=-2.7983500000000001E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000009',
+                   NOM_CMP='DX',
+                   VALE_CALC= 8.65506240E-05,
+                   VALE_REFE=8.6550620000000006E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000009',
+                   NOM_CMP='DY',
+                   VALE_CALC= 3.34963089E-05,
+                   VALE_REFE=3.34963E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000009',
+                   NOM_CMP='DZ',
+                   VALE_CALC=-7.13109354E-05,
+                   VALE_REFE=-7.1310930000000004E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000009',
+                   NOM_CMP='DRX',
+                   VALE_CALC=-1.83421367E-05,
+                   VALE_REFE=-1.8342130000000001E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000009',
+                   NOM_CMP='DRY',
+                   VALE_CALC= 1.22280911E-05,
+                   VALE_REFE=1.222809E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RES_RBE3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N000009',
+                   NOM_CMP='DRZ',
+                   VALE_CALC=-1.49377261E-05,
+                   VALE_REFE=-1.4937720000000001E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                ),
+          )
+
+FIN(FORMAT_HDF='OUI')

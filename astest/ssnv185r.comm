@@ -1,0 +1,258 @@
+# TITRE FISSURE DEBOUCHANTE DANS UNE PLAQUE 3D DE LARGEUR FINIE AVEC X-FEM
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
+# (AT YOUR OPTION) ANY LATER VERSION.                                                    
+#                                                                       
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
+#                                                                       
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# ======================================================================
+
+# MODELISATION R : COMME LA C, MAIS AVEC DES MAILLE PYRAMIDES GENEREES PAR HOMARD
+
+DEBUT(CODE=_F(NOM='SSNV185R',NIV_PUB_WEB='INTERNET',VISU_EFICAS='NON'),DEBUG=_F(SDVERI='OUI'))
+
+#----------------------------------------------
+#                MAILLAGE : hexa_5_31_51.mgib
+#----------------------------------------------
+
+MA0=LIRE_MAILLAGE(FORMAT='MED',)
+
+MOD0=AFFE_MODELE(MAILLAGE=MA0,
+                 AFFE=_F(TOUT='OUI',
+                         PHENOMENE='MECANIQUE',
+                         MODELISATION='3D',))
+
+LN=FORMULE(NOM_PARA=('X','Y','Z'),VALE='Z-15.');
+LT=FORMULE(NOM_PARA=('X','Y','Z'),VALE='-Y+5.');
+
+FISS0=DEFI_FISS_XFEM(MODELE=MOD0,
+                     DEFI_FISS=_F(FONC_LN=LN,FONC_LT=LT),
+                     )
+
+CHERR= RAFF_XFEM(FISSURE=FISS0)
+
+MAILLAG1=CO('MAILLAG1')
+
+MACR_ADAP_MAIL(ADAPTATION='RAFFINEMENT',
+               CHAM_GD = CHERR,
+               CRIT_RAFF_PE = 0.02,
+               USAGE_CMP = 'RELATIF',
+               MAILLAGE_N = MA0,
+               MAILLAGE_NP1 = MAILLAG1)
+
+#IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MAILLAG1));
+
+MAILLAG1=DEFI_GROUP(reuse =MAILLAG1,
+                    MAILLAGE=MAILLAG1,
+                    CREA_GROUP_NO=(_F(GROUP_MA='VOL'),
+                                   _F(GROUP_MA='SURFSUP')),)
+
+#----------------------------------------------
+#                   MODELE ET FISSURE
+#----------------------------------------------
+
+MODELEIN=AFFE_MODELE(MAILLAGE=MAILLAG1,
+                     AFFE=_F(GROUP_MA=('VOL','SURFINF','SURFSUP',),
+                             PHENOMENE='MECANIQUE',
+                             MODELISATION='3D',),)
+
+MAILLAG1=MODI_MAILLAGE(reuse =MAILLAG1,
+                       MAILLAGE=MAILLAG1,
+                       ORIE_PEAU_3D=_F(GROUP_MA=('SURFSUP','SURFINF',),),)
+
+FISS=DEFI_FISS_XFEM(MODELE=MODELEIN,
+                    DEFI_FISS=_F(FONC_LT=LT,FONC_LN=LN,),)
+
+MODELEK=MODI_MODELE_XFEM(MODELE_IN=MODELEIN,FISSURE=FISS)
+
+
+#----------------------------------------------
+#                   MATERIAU
+#----------------------------------------------
+
+E=205000.0E6
+nu=0.
+rho=7800.
+ACIER=DEFI_MATERIAU(ELAS=_F(E=E,NU=nu))
+
+CHAMPMA1=AFFE_MATERIAU(MAILLAGE=MAILLAG1,
+                       MODELE=MODELEK,
+                       AFFE=_F(TOUT = 'OUI',
+                               MATER=ACIER))
+
+#----------------------------------------------
+#                   CHARGEMENTS
+#----------------------------------------------
+
+PRES=-1.E6
+CHB=AFFE_CHAR_MECA(MODELE=MODELEK,
+                   LIAISON_DDL=(_F(NOEUD=('N4031','N3876',),
+                                   DDL=('DX','DX',),
+                                   COEF_MULT=(1.0,1.0),
+                                   COEF_IMPO=0.0,),
+                                _F(NOEUD=('N4031','N3876',),
+                                   DDL=('DY','DY',),
+                                   COEF_MULT=(1.0,1.0),
+                                   COEF_IMPO=0.0,),
+                                _F(NOEUD=('N4031','N3876',),
+                                   DDL=('DZ','DZ',),
+                                   COEF_MULT=(1.0,1.0),
+                                   COEF_IMPO=0.0,),
+                                _F(NOEUD=('N3886','N4041',),
+                                   DDL=('DX','DX',),
+                                   COEF_MULT=(1.0,1.0),
+                                   COEF_IMPO=0.0,),
+                                _F(NOEUD=('N3886','N4041',),
+                                   DDL=('DZ','DZ',),
+                                   COEF_MULT=(1.0,1.0),
+                                   COEF_IMPO=0.0,),
+                                _F(NOEUD=('N9768','N9767',),
+                                   DDL=('DZ','DZ',),
+                                   COEF_MULT=(1.0,1.0),
+                                   COEF_IMPO=0.0,),
+                             ),);
+
+
+CH1=AFFE_CHAR_MECA(MODELE=MODELEK,
+                   PRES_REP=_F(GROUP_MA=('SURFSUP','SURFINF',),PRES=PRES,),);
+
+#----------------------------------------------
+#                   RESOLUTION
+#----------------------------------------------
+
+UTOT1=MECA_STATIQUE(MODELE=MODELEK,
+                   CHAM_MATER=CHAMPMA1,
+                   EXCIT=(
+                          _F(CHARGE=CHB),
+                          _F(CHARGE=CH1),
+                          ),
+                   ); 
+#------------------------------------------------------------------------
+# POST-TRAITEMENT : CALCUL DES SIFS PAR LA METHODE ENERGETIQUE AVEC X-FEM
+#------------------------------------------------------------------------
+
+# TEST AVEC PLUSIEURS COURONNES
+RI=[2. , 0.666 , 1. , 1. , 1. , 2.1]
+RS=[4. , 1.666 , 2. , 3. , 4. , 3.9]
+
+nbc=len(RI)
+SIF = [None]*(nbc+1)
+
+for i in range(0,nbc) :
+
+   SIF[i]=CALC_G(RESULTAT=UTOT1,
+                 OPTION='CALC_K_G',
+                 THETA=_F(FISSURE=FISS,
+                          R_INF=RI[i],
+                          R_SUP=RS[i],),
+                 LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                            LISSAGE_G='LAGRANGE',),
+                 INFO=2,);
+
+   IMPR_TABLE(TABLE=SIF[i],);
+
+SIF[nbc]=CALC_G(RESULTAT=UTOT1,
+                 OPTION='CALC_K_G',
+                 THETA=_F(FISSURE=FISS,
+                          R_INF=RI[i],
+                          R_SUP=RS[i],),
+                 LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                            LISSAGE_G='LAGRANGE',),
+                 INFO=2,);
+
+IMPR_TABLE(TABLE=SIF[nbc],);
+
+# SOLUTION ANALYTIQUE (chaboche p.53) (chargement 1 et 3)
+a=5
+b=10
+coef=(pi*a)/(2.*b)
+fab=sqrt(tan(coef)/coef)*(0.752+0.37*(1.-sin(coef))**3+2.02*a/b)/cos(coef)
+K1REF=-PRES*sqrt(pi*a)*fab
+
+VAL_CALC =[1.1108859141933E+07  ,
+           1.1086429011601E+07  ,
+           1.1110238405357E+07  ,
+           1.1088479022117E+07  ,
+           1.1114910882229E+07  ,
+           1.1077066680568E+07  ,
+           1.1112438553705E+07  ,
+           1.1079810446001E+07  ,
+           1.1110876388698E+07  ,
+           1.108330823459E+07   ,
+           1.1108784944078E+07  ,
+           1.1086688704045E+07  ,
+           1.1108784944078E+07  ,
+           1.1086688704045E+07  ]
+
+for i in range(0,nbc+1) :
+   TEST_TABLE(TABLE=SIF[i],
+              NOM_PARA='K1',
+              TYPE_TEST='MAX',
+              VALE_CALC=VAL_CALC[2*i +0 ], VALE_REFE=K1REF,     
+              CRITERE='RELATIF',
+              PRECISION=0.02,
+              REFERENCE='ANALYTIQUE',);
+
+   TEST_TABLE(TABLE=SIF[i],
+              NOM_PARA='K1',
+              TYPE_TEST='MIN',
+              VALE_CALC=VAL_CALC[2*i +1 ], VALE_REFE=K1REF,     
+              CRITERE='RELATIF',
+              PRECISION=0.02,
+              REFERENCE='ANALYTIQUE',);
+
+#----------------------------------------------------------------------
+# POST-TRAITEMENT : CALCUL DES SIFS AVEC POST_K1_K2_K3
+#------------------------------------------------------------------------
+
+PK=POST_K1_K2_K3(MODELISATION='3D',
+                     MATER=ACIER,
+                     FISSURE = FISS,
+                     RESULTAT  = UTOT1,
+                     ABSC_CURV_MAXI = 1.5,
+                     NB_NOEUD_COUPE = 6,
+                    )
+
+IMPR_TABLE(TABLE = PK)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.040000000000000001,
+           VALE_CALC= 1.1238813022496E+07,
+           VALE_REFE=1.1202664084020415E7,
+           NOM_PARA='K1',
+           TABLE=PK,
+           FILTRE=(_F(NOM_PARA='NUM_PT',
+                      VALE_I=1,),
+                   _F(NOM_PARA='INST',
+                      VALE=0.0,),
+                   ),
+           )
+
+#------------------------------------------------------------------------
+# POST-TRAITEMENT : VISU
+#------------------------------------------------------------------------
+
+MA_XFEM=POST_MAIL_XFEM(
+                       MODELE        = MODELEK,
+                       INFO          = 2)
+
+MOD_VISU=AFFE_MODELE(MAILLAGE=MA_XFEM,
+                     AFFE=_F(TOUT='OUI',
+                              PHENOMENE='MECANIQUE',
+                              MODELISATION='3D',),) 
+
+RES_XFEM=POST_CHAM_XFEM(MODELE_VISU   = MOD_VISU,
+                        RESULTAT      = UTOT1,
+                        
+                        INFO          = 2)
+
+FIN();

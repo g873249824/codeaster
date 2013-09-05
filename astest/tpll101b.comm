@@ -1,0 +1,132 @@
+# TITRE CALCUL ELECTRIQUE ET THERMIQUE D'UN CYLINDRE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='TPLL101B',
+              NIV_PUB_WEB='INTERNET',),
+      DEBUG=_F(SDVERI='OUI',),);
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_NO=_F(TOUT_GROUP_MA='OUI',),);
+
+MO=AFFE_MODELE(MAILLAGE=MAIL,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='THERMIQUE',
+                       MODELISATION='3D',),);
+
+# CALCUL ELECTRIQUE
+
+ACIER_EL=DEFI_MATERIAU(THER=_F(LAMBDA=1.,
+                               RHO_CP=0.,),);
+
+CHMAT_EL=AFFE_MATERIAU(MAILLAGE=MAIL,
+                       AFFE=_F(TOUT='OUI',
+                               MATER=ACIER_EL,),);
+
+CHAR_EL=AFFE_CHAR_THER(MODELE=MO,
+                       TEMP_IMPO=_F(GROUP_NO='LBC',
+                                    TEMP=10.,),
+                       FLUX_REP=(_F(GROUP_MA='LAB',
+                                    FLUN=0.,),
+                                 _F(GROUP_MA='LDC',
+                                    FLUN=0.,),
+                                 _F(GROUP_MA='LAD',
+                                    FLUN=-10.,),),);
+
+POT_ELRE=THER_LINEAIRE(MODELE=MO,
+                       CHAM_MATER=CHMAT_EL,
+                       EXCIT=_F(CHARGE=CHAR_EL,),);
+
+POT_ELRE=CALC_CHAMP(reuse =POT_ELRE,
+                   RESULTAT=POT_ELRE,
+                   INST=0.0,
+                    THERMIQUE=('SOUR_ELGA'),);
+
+TEST_RESU(RESU=_F(NUME_ORDRE=0,
+                  POINT=1,
+                  RESULTAT=POT_ELRE,
+                  NOM_CHAM='SOUR_ELGA',
+                  NOM_CMP='SOUR',
+                  VALE_CALC=41.709292287557,
+                  MAILLE='M834',),
+          )
+
+SOURCE=CREA_CHAMP(TYPE_CHAM='ELGA_SOUR_R',
+                  OPERATION='EXTR',
+                  RESULTAT=POT_ELRE,
+                  NOM_CHAM='SOUR_ELGA',
+                  NUME_ORDRE=0,);
+
+# CALCUL THERMIQUE
+
+CHAR_TH=AFFE_CHAR_THER(MODELE=MO,
+                       TEMP_IMPO=(_F(GROUP_NO='LAD',
+                                     TEMP=0.,),
+                                  _F(GROUP_NO='LBC',
+                                     TEMP=0.,),),
+                       FLUX_REP=(_F(GROUP_MA='LAB',
+                                    FLUN=0.,),
+                                 _F(GROUP_MA='LDC',
+                                    FLUN=0.,),),);
+
+CHAR_SO=AFFE_CHAR_THER(MODELE=MO,
+                       SOURCE=_F(SOUR_CALCULEE=SOURCE,),);
+
+ACIER_TH=DEFI_MATERIAU(THER=_F(LAMBDA=2.E-2,
+                               RHO_CP=0.,),);
+
+CHMAT_TH=AFFE_MATERIAU(MAILLAGE=MAIL,
+                       AFFE=_F(TOUT='OUI',
+                               MATER=ACIER_TH,),);
+
+TEMPRESU=THER_LINEAIRE(MODELE=MO,
+                       CHAM_MATER=CHMAT_TH,
+                       EXCIT=(_F(CHARGE=CHAR_TH,),
+                              _F(CHARGE=CHAR_SO,),),);
+
+TEMP=CREA_CHAMP(TYPE_CHAM='NOEU_TEMP_R',
+                OPERATION='EXTR',
+                RESULTAT=TEMPRESU,
+                NOM_CHAM='TEMP',
+                NUME_ORDRE=0,);
+x = (1.8591 * cos((pi / 12)));
+
+y = (1.8591 * sin((pi / 12)));
+
+
+LIGN=MACR_LIGN_COUPE(RESULTAT=TEMPRESU,
+                     LIGN_COUPE=_F(TYPE='SEGMENT',
+                                   NB_POINTS=5,
+                                   COOR_ORIG=(x,0.,y,),
+                                   COOR_EXTR=(x,0.1,y,),),);
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=585.90271454742,
+           VALE_REFE=588.9313,
+           REFERENCE='ANALYTIQUE',
+           NOM_PARA='TEMP',
+           TABLE=LIGN,
+           FILTRE=_F(NOM_PARA='ABSC_CURV',
+                     VALE=0.025,),
+           )
+
+FIN();
+
+#

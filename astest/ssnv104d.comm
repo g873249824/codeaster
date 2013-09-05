@@ -1,0 +1,497 @@
+# TITRE CONTACT DE DEUX SPHERES
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+# MODELISATION 2D AXI ELEMENTS LINEAIRES
+#   TRIA3 EN BAS, QUAD4 EN HAUT
+#
+
+DEBUT(CODE=_F(NOM='SSNV104D',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#
+
+MA=LIRE_MAILLAGE(FORMAT='MED',)
+
+#
+
+MO=AFFE_MODELE(
+                           MAILLAGE=MA,
+                          AFFE=_F(
+                                TOUT = 'OUI',
+                                PHENOMENE = 'MECANIQUE',
+                                MODELISATION = 'AXIS')
+                        )
+
+#
+
+MAT=DEFI_MATERIAU(
+                            ELAS=_F(
+                                  E = 20000.0,
+                                  NU = 0.3,
+                                  ALPHA = 0.01)
+                          )
+
+#
+
+CHMAT=AFFE_MATERIAU(
+                            MAILLAGE=MA,
+                           AFFE=_F(
+                                 TOUT = 'OUI',
+                                 MATER = MAT)
+                           )
+
+#
+
+CHA1=AFFE_CHAR_MECA(
+                             MODELE=MO,DDL_IMPO=(
+                             _F(  GROUP_NO = 'SPHSUP',  DY = -5.0),
+                                      _F(  GROUP_NO = 'SPHINF',  DY = 5.0),
+                                      _F(  GROUP_NO = 'AXE',     DX = 0.0),
+                                      _F(  NOEUD = ('N55', 'N291',), DX = 0.0,
+                                                          DY = 0.0))
+                           )
+
+CHA2=DEFI_CONTACT(MODELE      = MO,
+                  FORMULATION = 'DISCRETE',
+                  LISSAGE     = 'OUI',
+                  ZONE=_F(
+                               ALGO_CONT     = 'LAGRANGIEN',
+                               GROUP_MA_MAIT = 'CONTBAS',
+                               GROUP_MA_ESCL = 'CONTHAUT',
+                        ),
+                  )
+
+#
+
+CHA3=DEFI_CONTACT(MODELE      = MO,
+                  FORMULATION = 'DISCRETE',
+                  ZONE=_F(     APPARIEMENT = 'NODAL',
+                               NORMALE='ESCL',
+                               ALGO_CONT     = 'LAGRANGIEN',
+                               GROUP_MA_ESCL = 'CONTBAS',
+                               GROUP_MA_MAIT = 'CONTHAUT',
+                        ),
+                           )
+
+#
+
+L_INST=DEFI_LIST_REEL(
+                             DEBUT=0.0,
+                              INTERVALLE=_F( JUSQU_A = 1.,  NOMBRE = 5)
+                           )
+
+#
+
+FONC=DEFI_FONCTION(
+                           NOM_PARA='INST',
+                           VALE=( 0.,   0.0,
+                                  1.,   1.0, )
+                        )
+
+#
+
+RESU=STAT_NON_LINE(
+                MODELE=MO,
+                CHAM_MATER=CHMAT,
+                EXCIT=(   _F(  CHARGE = CHA1,
+                               FONC_MULT = FONC),),
+                CONTACT = CHA2,
+                COMP_ELAS=_F(  RELATION = 'ELAS'),
+                NEWTON=_F(  MATRICE = 'ELASTIQUE'),
+                INCREMENT=_F( LIST_INST = L_INST,
+                              NUME_INST_FIN = 5),
+                CONVERGENCE=_F( ARRET = 'OUI',
+                                ITER_GLOB_MAXI = 30,
+                                RESI_GLOB_RELA = 1.E-5,
+                                RESI_GLOB_MAXI = 1.E-2),
+                SOLVEUR=_F(SYME='OUI',
+                           METHODE = 'LDLT'),
+              )
+
+RESU=CALC_CHAMP(reuse=RESU,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=RESU)
+
+
+#
+SIELNO1=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESU,
+                        NUME_ORDRE=1
+                       )
+
+SIELNO2=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESU,
+                        NUME_ORDRE=2
+                       )
+
+SIELNO3=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESU,
+                        NUME_ORDRE=3
+                       )
+
+SIELNO4=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESU,
+                        NUME_ORDRE=4
+                       )
+
+SIELNO5=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESU,
+                        NUME_ORDRE=5
+                       )
+
+#
+# TEST DE LA CONFORMITE AVEC LA SOLUTION DE REFERENCE ANALYTIQUE
+#
+
+TEST_RESU(CHAM_ELEM=(_F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.07,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO1,
+                        VALE_CALC=-1.85292652E+03,
+                        VALE_REFE=-1978.7,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=1.E-2,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO1,
+                        VALE_CALC=-1.97507309E+03,
+                        VALE_REFE=-1978.7,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.15,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO1,
+                        VALE_CALC=-2.25994185E+03,
+                        VALE_REFE=-1978.7,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.05,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO2,
+                        VALE_CALC=-2.67239094E+03,
+                        VALE_REFE=-2798.3,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.03,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO2,
+                        VALE_CALC=-2.87663719E+03,
+                        VALE_REFE=-2798.3,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.15,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO2,
+                        VALE_CALC=-3.18900677E+03,
+                        VALE_REFE=-2798.3,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.02,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO3,
+                        VALE_CALC=-3.38464480E+03,
+                        VALE_REFE=-3427.2,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.03,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO3,
+                        VALE_CALC=-3.50903487E+03,
+                        VALE_REFE=-3427.2,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.14,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO3,
+                        VALE_CALC=-3.87586408E+03,
+                        VALE_REFE=-3427.2,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.03,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO4,
+                        VALE_CALC=-4.03478999E+03,
+                        VALE_REFE=-3957.4,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.04,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO4,
+                        VALE_CALC=-4.07513445E+03,
+                        VALE_REFE=-3957.4,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.15,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO4,
+                        VALE_CALC=-4.49358488E+03,
+                        VALE_REFE=-3957.4,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.06,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO5,
+                        VALE_CALC=-4.64802017E+03,
+                        VALE_REFE=-4424.5,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.04,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO5,
+                        VALE_CALC=-4.59369696E+03,
+                        VALE_REFE=-4424.5,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.15,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO5,
+                        VALE_CALC=-5.06384809E+03,
+                        VALE_REFE=-4424.5,
+                        REFERENCE='ANALYTIQUE',),
+                     ),
+          )
+
+#
+
+RESUF=STAT_NON_LINE(
+                MODELE=MO,
+                CHAM_MATER=CHMAT,
+                EXCIT=(_F( CHARGE = CHA1,
+                           FONC_MULT = FONC), ),
+                CONTACT = CHA3,
+                COMP_ELAS=_F(  RELATION = 'ELAS'),
+                NEWTON=_F( MATRICE = 'ELASTIQUE'),
+                INCREMENT=_F( LIST_INST = L_INST,
+                              NUME_INST_FIN = 5),
+                CONVERGENCE=_F( ARRET = 'OUI',
+                                ITER_GLOB_MAXI = 30,
+                                RESI_GLOB_RELA = 1.E-5,
+                                RESI_GLOB_MAXI = 1.E-2),
+                SOLVEUR=_F(SYME='OUI',
+                           METHODE = 'LDLT'),
+              )
+
+RESUF=CALC_CHAMP(reuse=RESUF,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=RESUF)
+
+
+#
+SIELNO11=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESUF,
+                        NUME_ORDRE=1
+                       )
+
+SIELNO21=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESUF,
+                        NUME_ORDRE=2
+                       )
+
+SIELNO31=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESUF,
+                        NUME_ORDRE=3
+                       )
+
+SIELNO41=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESUF,
+                        NUME_ORDRE=4
+                       )
+
+SIELNO51=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO',
+                        RESULTAT=RESUF,
+                        NUME_ORDRE=5
+                       )
+
+#
+# TEST DE LA CONFORMITE AVEC LA SOLUTION DE REFERENCE ANALYTIQUE
+#
+
+TEST_RESU(CHAM_ELEM=(_F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.02,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO11,
+                        VALE_CALC=-2.00349469E+03,
+                        VALE_REFE=-1978.7,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=1.E-2,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO11,
+                        VALE_CALC=-1.99554255E+03,
+                        VALE_REFE=-1978.7,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.04,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO11,
+                        VALE_CALC=-1.91429865E+03,
+                        VALE_REFE=-1978.7,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.07,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO21,
+                        VALE_CALC=-2.62314172E+03,
+                        VALE_REFE=-2798.3,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.07,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO21,
+                        VALE_CALC=-2.97701332E+03,
+                        VALE_REFE=-2798.3,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.04,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO21,
+                        VALE_CALC=-2.70401826E+03,
+                        VALE_REFE=-2798.3,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.18,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO31,
+                        VALE_CALC=-2.86156230E+03,
+                        VALE_REFE=-3427.2,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.13,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO31,
+                        VALE_CALC=-3.84864794E+03,
+                        VALE_REFE=-3427.18,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.03,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO31,
+                        VALE_CALC=-3.33213271E+03,
+                        VALE_REFE=-3427.2,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.28,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO41,
+                        VALE_CALC=-2.90002969E+03,
+                        VALE_REFE=-3957.4,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.2,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO41,
+                        VALE_CALC=-4.69292862E+03,
+                        VALE_REFE=-3957.4,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.02,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO41,
+                        VALE_CALC=-3.89074902E+03,
+                        VALE_REFE=-3957.4,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N291',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.38,
+                        MAILLE='M31',
+                        CHAM_GD=SIELNO51,
+                        VALE_CALC=-2.79232251E+03,
+                        VALE_REFE=-4424.5,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=0.27,
+                        MAILLE='M286',
+                        CHAM_GD=SIELNO51,
+                        VALE_CALC=-5.55656888E+03,
+                        VALE_REFE=-4424.5,
+                        REFERENCE='ANALYTIQUE',),
+                     _F(NOEUD='N55',
+                        CRITERE='RELATIF',
+                        NOM_CMP='SIYY',
+                        PRECISION=1.E-2,
+                        MAILLE='M293',
+                        CHAM_GD=SIELNO51,
+                        VALE_CALC=-4.42473416E+03,
+                        VALE_REFE=-4424.5,
+                        REFERENCE='ANALYTIQUE',),
+                     ),
+          )
+
+FIN()

@@ -1,0 +1,259 @@
+# TITRE INTERFACE EN CONTACT FROTTANT AVEC X-FEM
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+#       CAS_TEST SSNV209F: 3D, ELEMENTS QUAD8, METHODE CONTINUE
+
+DEBUT(CODE=_F(NOM='SSNV209F',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#......................................................
+#  CALCUL TEST ELEMENTS FINIS XFEM ET CONTACT 3D QUAD8
+#  PLAQUE EN CONTACT FROTTANT SUR BATI RIGIDE
+#  AVEC XFEM
+#......................................................
+#
+# Cas reference 3D: methode continue
+#
+#----------------------------------------------
+#                MAILLAGE
+#----------------------------------------------
+
+MA=LIRE_MAILLAGE(FORMAT='MED',VERI_MAIL=_F(VERIF='OUI'),)
+
+MA=DEFI_GROUP(reuse =MA,
+              MAILLAGE=MA,
+              CREA_GROUP_NO=(_F(GROUP_MA='MTOT',),
+                             _F(GROUP_MA='LCONTA',
+                                OPTION='NOEUD_ORDO',
+                                NOM='RELEVE',
+                                GROUP_NO_ORIG='PPA',
+                                GROUP_NO_EXTR='PPS',),
+                             _F(NOM='NFISSU',
+                                OPTION='PLAN',
+                                POINT=(0.,0.,0.),
+                                VECT_NORMALE=(0.,1.,0.),
+                                PRECISION=1.E-6,),),);
+
+#----------------------------------------------
+#                   MODELE
+#----------------------------------------------
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT = 'OUI',
+                       PHENOMENE = 'MECANIQUE',
+                       MODELISATION = '3D',),);
+
+MA=MODI_MAILLAGE(reuse=MA,
+                 MAILLAGE=MA,
+                 ORIE_PEAU_3D=(_F(GROUP_MA = 'SPRESV',),
+                               _F(GROUP_MA = 'SPRESH',),
+                               _F(GROUP_MA = 'SBATI',),
+                               _F(GROUP_MA = 'SBLOCX',),),);
+
+#----------------------------------------------
+#                   MATERIAU
+#----------------------------------------------
+
+MATPLA=DEFI_MATERIAU(ELAS=_F(E = 1.3E11,NU = 0.2,),);
+
+MATBAT=DEFI_MATERIAU(ELAS=_F(E = 1.E16,NU = 0.0,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=(_F(GROUP_MA ='VPLAQ',
+                             MATER = MATPLA,),
+                          _F(GROUP_MA ='VBATI',
+                             MATER = MATBAT,),),)
+
+#----------------------------------------------
+#                   CHARGEMENTS
+#----------------------------------------------
+
+CHCINE=AFFE_CHAR_CINE(MODELE=MO,
+#                     ENCASTREMENT DU BAS
+                      MECA_IMPO=(_F(GROUP_MA='SENCAV',
+                                    DX=0.,DY=0.),
+                                 _F(GROUP_NO=('PHA','PHS','PHAP','PHSP',),
+                                    DZ=0.),),);
+
+CHA1=AFFE_CHAR_MECA(MODELE=MO,
+                    PRES_REP=(_F(GROUP_MA = 'SPRESV',
+                                 PRES = 5.E07,),),)
+
+def pr(y) :
+   if y  < 0.0:  return 0.E07
+   if y  > 0.0:  return 15.E7
+   if y == 0.0:  return 0.
+
+FCTPRES = FORMULE(VALE='pr(Y)',
+                  NOM_PARA=('X','Y'),);
+
+CHAF=AFFE_CHAR_MECA_F(MODELE=MO,
+                      PRES_REP=_F(GROUP_MA = ('SPRESH','SBLOCX',),
+                                  PRES=FCTPRES,),);
+
+
+CHA2 = DEFI_CONTACT(MODELE         = MO,
+                    FORMULATION    = 'CONTINUE',
+                    FROTTEMENT     = 'COULOMB',
+                    ALGO_RESO_CONT = 'POINT_FIXE',
+                    ALGO_RESO_GEOM = 'POINT_FIXE',
+                    ALGO_RESO_FROT = 'NEWTON',
+                    ITER_GEOM_MAXI = 3,
+                    ITER_CONT_MAXI = 4,
+
+                    ZONE =(
+                           _F(
+                             GROUP_MA_MAIT = 'SBAT',
+                             GROUP_MA_ESCL = 'SCONTA',
+                             APPARIEMENT   = 'MAIT_ESCL',
+                             NORMALE       = 'MAIT',
+                             ALGO_CONT     = 'STANDARD',
+                             COEF_CONT     = 100.,
+                             ALGO_FROT     = 'STANDARD',
+                             COEF_FROT     = 100.,
+                             CONTACT_INIT  = 'INTERPENETRE',
+                             SEUIL_INIT    = 100.,
+                             COULOMB       = 1.0,
+                             ),
+                          ),
+                   );
+
+
+#----------------------------------------------
+#                   RESOLUTION
+#----------------------------------------------
+
+RAMPE=DEFI_FONCTION(NOM_PARA='INST',
+                    PROL_GAUCHE='LINEAIRE',
+                    PROL_DROITE='LINEAIRE',
+                    VALE=(0.0,0.0,1.0,1.0,),)
+
+L_INST=DEFI_LIST_REEL(DEBUT=0.,
+                      INTERVALLE=_F(JUSQU_A = 1.0, NOMBRE = 1,),)
+
+# LES SYSTEMES LINEAIRES SONT DIFFICILES A RESOUDRE.
+# ON DEVERROUILLE LA DETECTION DE SINGULARITE. LE PROCESSUS DE NEWTON
+# CORRIGE LES EVENTUELLES DERIVES.
+U2M=STAT_NON_LINE(MODELE    = MO,
+                  CHAM_MATER = CHMAT,
+                  EXCIT      =(_F(CHARGE = CHCINE,),
+                               _F(CHARGE = CHA1,
+                                  FONC_MULT = RAMPE,),
+                               _F(CHARGE = CHAF,
+                                  FONC_MULT = RAMPE,),
+                               ),
+                  CONTACT    = CHA2,
+                  COMP_ELAS  = _F(RELATION = 'ELAS',),
+                  NEWTON=_F(REAC_ITER=1),
+                  INCREMENT  = _F(LIST_INST = L_INST,),
+                  CONVERGENCE= _F(ARRET = 'OUI',
+                                 ITER_GLOB_MAXI = 30,
+                                 RESI_GLOB_RELA = 1.0E-6,),
+                  SOLVEUR=_F(METHODE='MUMPS',
+                             NPREC=-1),
+                  INFO=1,)
+
+#----------------------------------------------
+#                   POST RELEVE
+#----------------------------------------------
+
+U2M=CALC_CHAMP(reuse=U2M,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=U2M)
+
+
+DEPL2M=CREA_CHAMP(OPERATION='EXTR',
+                  TYPE_CHAM='NOEU_DEPL_R',
+                  NOM_CHAM='DEPL',
+                  RESULTAT=U2M,
+                  INST=1.0,)
+
+DEPLAC=POST_RELEVE_T(ACTION=_F(INTITULE='DEPLAC',
+                               GROUP_NO='RELEVE',
+                               RESULTAT=U2M,
+                               NOM_CHAM='DEPL',
+                               INST=1.0,
+                               TOUT_CMP='OUI',
+                               OPERATION='EXTRACTION',),);
+
+TCONT=POST_RELEVE_T(ACTION=_F(INTITULE='CONT',
+                              GROUP_NO='RELEVE',
+                              RESULTAT=U2M,
+                              NOM_CHAM='VALE_CONT',
+                              INST=1.0,
+                              TOUT_CMP='OUI',
+                              OPERATION='EXTRACTION',),);
+
+IMPR_TABLE(TABLE=DEPLAC,);
+IMPR_TABLE(TABLE=TCONT,);
+
+DEP=POST_RELEVE_T(ACTION=_F(INTITULE  = 'DEPLACEMENT',
+                            GROUP_NO  = 'NFISSU',
+                            RESULTAT  = U2M,
+                            NOM_CHAM  = 'DEPL',
+                            INST      = 1.,
+                            TOUT_CMP  ='OUI',
+                            OPERATION = 'EXTRACTION',),);
+
+IMPR_TABLE(TABLE=DEP,);
+
+#----------------------------------------------
+#                   TEST TABLE
+#----------------------------------------------
+
+TEST_RESU(RESU=(_F(GROUP_NO='PPA',
+                   INST=1.0,
+                   RESULTAT=U2M,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   VALE_CALC=3.0697055365648997E-05,
+                   
+                   ),
+                _F(GROUP_NO='PPB',
+                   INST=1.0,
+                   RESULTAT=U2M,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   VALE_CALC=2.9258807505021E-05,
+                   
+                   ),
+                _F(GROUP_NO='PPC',
+                   INST=1.0,
+                   RESULTAT=U2M,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   VALE_CALC=2.4735987440627999E-05,
+                   
+                   ),
+                _F(GROUP_NO='PPD',
+                   INST=1.0,
+                   RESULTAT=U2M,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   VALE_CALC=2.1587122445095999E-05,
+                   
+                   ),
+                _F(GROUP_NO='PPE',
+                   INST=1.0,
+                   RESULTAT=U2M,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   VALE_CALC=1.7004520074141002E-05,
+                   
+                   ),
+                ),
+          )
+
+FIN()

@@ -1,0 +1,354 @@
+# TITRE FATIGUE - COMPTAGE DE CYCLES RAINFLOW - DOMMAGE-EQUIVALENTS- 3D
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#----------------------------------------------------------------------
+# SZLZ105A     ESSAI AVEC CHARGE EN DENT DE SCIE
+#          CAS TEST DE METHODE DE COMPTAGE PAR RAINFLOW
+#                   ARTICLE DOWNING - SOCIE (1982)
+#          CALCUL DU DOMMAGE AVEC WOHLER         + CUMUL LINEAIRE MINER
+#                              ET MANSON_COFFIN  + CUMUL LINEAIRE MINER
+#----------------------------------------------------------------------
+#        UNITES : NEWTON , MILLIMETRE , SECONDE (N,MM,S,->MPA)
+#----------------------------------------------------------------------
+#               Y       A
+#               I<------------->                     A = 1 MM
+#                     FACE1XZ                                2
+#                                                    S = 1 MM
+#                 NO1           NO2
+#              BO--------------O> F/4            F(T)
+#              /I             /I
+#             / NO5     NO6  / I                5
+#           BO--+-----------O> F/4              4       .   .
+#            I  I           I  I                3  .   . . . .
+#  FACEYZ    I  I           I  I      FACE1YZ   2   . .   .   . .
+#            I  I           I  I                1    .         . .
+#            I  I NO3       I  I NO4            O-----------------.-- T
+#            I BO-----------I--O> F/4 - X      -1                  .
+#            I /B           I /                -2                   .
+#            I/ NO7     NO8 I/                 -3                    .
+#           BO--------------O> F/4
+#           BB
+#          /       FACEXZ     GEOMETRIE         CHARGEMENT
+#         Z
+#
+#
+#               DEPS(N)                DSIG(N)
+#               I                      I
+#               I                      I
+#             10I.                   10I.
+#               I  .                   I  .
+#               I    .                 I    .
+#               I      .               I      .
+#               I        .             I        .
+#               O------------- N       O------------ N
+#                        1000                   1000
+#
+#               MANSON_COFFIN          WOHLER
+#
+#----------------------------------------------------------------------
+#
+DEBUT(CODE=_F(NOM='SZLZ105B', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+CUBE=LIRE_MAILLAGE(    )
+
+TRIDIM=AFFE_MODELE(            MAILLAGE=CUBE,
+                                    AFFE=_F(   PHENOMENE = 'MECANIQUE',
+                                            MODELISATION = '3D',
+                                            TOUT = 'OUI'))
+
+ACIER=DEFI_MATERIAU(            ELAS=_F(   E = 1.,
+                                            NU = .3,
+                                            ALPHA = 0.))
+
+MAT=AFFE_MATERIAU(            MAILLAGE=CUBE,
+                                    AFFE=_F(  MAILLE = 'MA1',
+                                           MATER = ACIER,
+                                           ))
+
+LINST=DEFI_LIST_REEL(              DEBUT=1.,
+                              INTERVALLE=_F(  JUSQU_A = 8.,  NOMBRE = 7))
+
+TRAC=AFFE_CHAR_MECA(             MODELE=TRIDIM,DDL_IMPO=(
+                                _F(  GROUP_NO = 'FACEYZ',  DX = 0.),
+                                _F(  NOEUD = ('NO3', 'NO7',),  DY = 0.),
+                                _F(  NOEUD = 'NO7',        DZ = 0.)),
+                            FORCE_NODALE=_F(  GROUP_NO = 'FACE1YZ', FX = .25))
+
+COEF=DEFI_FONCTION(         NOM_PARA='INST',
+                             PROL_DROITE='LINEAIRE',
+                            PROL_GAUCHE='LINEAIRE',
+                                   VALE=(   0.,  0.,
+                                            1.,  3.,
+                                            2.,  1.,
+                                            3.,  4.,
+                                            4.,  2.,
+                                            5.,  4.,
+                                            6.,  1.,
+                                            7.,  2.,
+                                            8., -3.,                  ))
+
+DEPL=MECA_STATIQUE(
+                    TITRE='TEST TRACTION SIMPLE/COMPTAGE RAINFLOW EN 3D',
+                                    MODELE=TRIDIM,
+                                CHAM_MATER=MAT,
+                                   EXCIT=_F(  CHARGE = TRAC,
+                                           FONC_MULT = COEF),
+                               LIST_INST=LINST                       )
+
+DEPL=CALC_CHAMP(reuse=DEPL,CONTRAINTE=('SIGM_ELNO'),DEFORMATION=('EPSI_ELGA','EPSI_ELNO','EPME_ELGA','EPME_ELNO'),RESULTAT=DEPL)
+
+
+DEPL=CALC_CHAMP(reuse=DEPL,CRITERES=('SIEQ_ELGA','EPEQ_ELGA','SIEQ_ELNO','EPMQ_ELGA','EPMQ_ELNO','EPEQ_ELNO'),RESULTAT=DEPL)
+
+
+F_MANSON=DEFI_FONCTION(      NOM_PARA='EPSI',
+                              PROL_DROITE='LINEAIRE',
+                             PROL_GAUCHE='LINEAIRE',
+                                    VALE=(
+                                             0.,    1000.,
+                                            10.,       0.,
+                                         ),
+                                   TITRE='FONCTION DE MANSON_COFFIN' )
+
+F_WOHLER=DEFI_FONCTION(      NOM_PARA='SIGM',
+                              PROL_DROITE='LINEAIRE',
+                             PROL_GAUCHE='LINEAIRE',
+                                    VALE=(
+                                             0.,    1000.,
+                                            10.,       0.,         ),
+                                   TITRE='FONCTION DE WOHLER'        )
+
+MATE=DEFI_MATERIAU(
+          FATIGUE=_F(   WOHLER = F_WOHLER) )
+
+DMG_WOHL=CALC_FATIGUE( TYPE_CALCUL = 'CUMUL_DOMMAGE',
+                       OPTION      = 'DOMA_ELNO_SIGM',
+                       HISTOIRE    = _F( EQUI_GD  = 'VMIS_SG',
+                                         RESULTAT = DEPL),
+                       DOMMAGE     = 'WOHLER',
+                       MATER       = MATE,
+                       INFO        = 1
+                     )
+
+DMG_WOH2=CALC_FATIGUE( TYPE_CALCUL = 'CUMUL_DOMMAGE',
+                       OPTION      = 'DOMA_ELGA_SIGM',
+                       HISTOIRE    = _F( EQUI_GD  = 'VMIS_SG',
+                                         RESULTAT = DEPL),
+                       DOMMAGE     = 'WOHLER',
+                       MATER       = MATE,
+                       INFO        = 1
+                     )
+
+MAT1=DEFI_MATERIAU(
+          FATIGUE=_F(   MANSON_COFFIN = F_MANSON) )
+
+DMG_MCOF=CALC_FATIGUE( TYPE_CALCUL  = 'CUMUL_DOMMAGE',
+                       OPTION       = 'DOMA_ELNO_EPSI',
+                       HISTOIRE     = _F( EQUI_GD  = 'INVA_2_SG',
+                                          RESULTAT = DEPL),
+                       DOMMAGE      = 'MANSON_COFFIN',
+                       MATER        = MAT1,
+                       INFO         = 1
+                     )
+
+DMG_MCO2=CALC_FATIGUE( TYPE_CALCUL  = 'CUMUL_DOMMAGE',
+                       OPTION       = 'DOMA_ELGA_EPSI',
+                       HISTOIRE     = _F( EQUI_GD  = 'INVA_2_SG',
+                                          RESULTAT = DEPL),
+                       DOMMAGE      = 'MANSON_COFFIN',
+                       MATER        = MAT1,
+                       INFO         = 1
+                     )
+
+DMG_MCO3=CALC_FATIGUE( TYPE_CALCUL  = 'CUMUL_DOMMAGE',
+                       OPTION       = 'DOMA_ELNO_EPME',
+                       HISTOIRE     = _F( EQUI_GD  = 'INVA_2_SG',
+                                          RESULTAT = DEPL),
+                       DOMMAGE      = 'MANSON_COFFIN',
+                       MATER        = MAT1,
+                       INFO         = 1
+                     )
+
+# TEST NON ACTIVE TANT QUE LE PB AVEC EPMQ_ELGA N'EST PAS REGLE.
+# (PAS DE DEFORMATION EQUVALENTE (EPMQ_ELGA) POUR LES POINTS DE
+# GAUSS 4 A 8, ALORS QU'IL Y EN A A TOUS LES NOEUDS AVEC EPMQ_ELNO)
+#DMG_MCO4=CALC_FATIGUE( TYPE_CALCUL  = 'CUMUL_DOMMAGE',
+#                       OPTION       = 'DOMA_ELGA_EPME',
+#                       HISTOIRE     = _F( EQUI_GD  = 'INVA_2_SG',
+#                                          RESULTAT = DEPL),
+#                       DOMMAGE      = 'MANSON_COFFIN',
+#                       MATER        = MAT1,
+#                       INFO         = 1
+#                     )
+
+TEST_RESU(CHAM_ELEM=(_F(NOEUD='NO1',
+                        NOM_CMP='DOMA',
+                        MAILLE='MA1',
+                        CHAM_GD=DMG_WOHL,
+                        VALE_REFE=4.8133E-3,
+                        VALE_CALC=4.8133153396311E-3,
+                        REFERENCE='ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     _F(NOEUD='NO1',
+                        NOM_CMP='DOMA',
+                        MAILLE='MA1',
+                        CHAM_GD=DMG_MCOF,
+                        VALE_REFE=4.6705E-3,
+                        VALE_CALC=4.6704838877098E-3,
+                        REFERENCE='ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     _F(NOEUD='NO1',
+                        NOM_CMP='DOMA',
+                        MAILLE='MA1',
+                        CHAM_GD=DMG_MCO3,
+                        VALE_REFE=4.6705E-3,
+                        VALE_CALC=4.6704838877098E-3,
+                        REFERENCE='ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     ),)
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DEPL,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='VMIS',
+                   VALE_CALC=3.0,
+                   VALE_REFE=3.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DEPL,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='TRESCA',
+                   VALE_CALC=3.0,
+                   VALE_REFE=3.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DEPL,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='VMIS_SG',
+                   VALE_CALC=-3.0,
+                   VALE_REFE=-3.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=DEPL,
+                   NOM_CHAM='SIEQ_ELGA',
+                   NOM_CMP='VMIS',
+                   VALE_CALC=3.0,
+                   VALE_REFE=3.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=DEPL,
+                   NOM_CHAM='SIEQ_ELGA',
+                   NOM_CMP='TRESCA',
+                   VALE_CALC=3.0,
+                   VALE_REFE=3.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=DEPL,
+                   NOM_CHAM='SIEQ_ELGA',
+                   NOM_CMP='VMIS_SG',
+                   VALE_CALC=-3.0,
+                   VALE_REFE=-3.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DEPL,
+                   NOM_CHAM='EPEQ_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='INVA_2',
+                   VALE_CALC=2.6,
+                   VALE_REFE=2.6,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DEPL,
+                   NOM_CHAM='EPEQ_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='INVA_2SG',
+                   VALE_CALC=-2.6,
+                   VALE_REFE=-2.6,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=DEPL,
+                   NOM_CHAM='EPEQ_ELGA',
+                   NOM_CMP='INVA_2',
+                   VALE_CALC=2.6,
+                   VALE_REFE=2.6,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=DEPL,
+                   NOM_CHAM='EPEQ_ELGA',
+                   NOM_CMP='INVA_2SG',
+                   VALE_CALC=-2.6,
+                   VALE_REFE=-2.6,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DEPL,
+                   NOM_CHAM='EPMQ_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='INVA_2',
+                   VALE_CALC=2.6,
+                   VALE_REFE=2.6,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=DEPL,
+                   NOM_CHAM='EPMQ_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='INVA_2SG',
+                   VALE_CALC=-2.6,
+                   VALE_REFE=-2.6,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=DEPL,
+                   NOM_CHAM='EPMQ_ELGA',
+                   NOM_CMP='INVA_2',
+                   VALE_CALC=2.6,
+                   VALE_REFE=2.6,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=8,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=DEPL,
+                   NOM_CHAM='EPMQ_ELGA',
+                   NOM_CMP='INVA_2SG',
+                   VALE_CALC=-2.6,
+                   VALE_REFE=-2.6,
+                   MAILLE='MA1',),
+                ),
+          )
+
+FIN()
+#

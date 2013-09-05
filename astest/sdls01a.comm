@@ -1,0 +1,527 @@
+# TITRE PLAQUE CARREE MINCE , LIBRE OU ENCASTREE SUR UN BORD
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#CAS_TEST__: SDLS01Al
+# SDLS01/A                 COMMANDES                            22/04/91
+# PLAQUE CARREE MINCE  LIBRE OU ENCASTREE SUR UN BORD
+# DIMENSION: 1M*1M*0.01M
+# CAS 1: ENCASTREE    CAS 2: LIBRE                 REF: SFM.VPCS SDLS01
+# MODELISATION DKT:  COTE AB SUR OX
+#
+#======================================================================
+
+DEBUT(CODE=_F(NOM='SDLS01A', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE(FORMAT='MED',);
+
+MA=DEFI_GROUP(reuse =MA,
+              MAILLAGE=MA,
+              CREA_GROUP_MA=_F(NOM='TOUT',
+                               TOUT='OUI',),);
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='DKT',),);
+
+CARELEM=AFFE_CARA_ELEM(MODELE=MO,
+                       COQUE=_F(GROUP_MA='TOUT',
+                                EPAIS=0.01,),);
+
+MAT=DEFI_MATERIAU(ELAS=_F(E=210000000000.0,
+                          NU=0.3,
+                          RHO=7800.0,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=MAT,),);
+#--------------------------------------------------------------------
+# ---- CAS1: PLAQUE ENCASTREE SUR UN COTE
+
+CHCAS1=AFFE_CHAR_MECA(MODELE=MO,
+                      DDL_IMPO=_F(GROUP_NO='GRNM11',
+                                  DX=0.0,
+                                  DY=0.0,
+                                  DZ=0.0,
+                                  DRX=0.0,
+                                  DRY=0.0,
+                                  DRZ=0.0,),);
+# ---- CAS2: PLAQUE LIBRE-LIBRE   ==>   PAS DE CHCAS2
+#-------------------------------------------------------------------
+# -CALCUL MODAL POUR CAS1 AVEC LE MACRO CALC_MODAL
+
+MODE1=CALC_MODAL(MODELE=MO,
+                       CHAM_MATER=CHMAT,
+                       CARA_ELEM=CARELEM,
+                       CHARGE=CHCAS1,
+                       METHODE='TRI_DIAG',
+                       CALC_FREQ=_F(OPTION='CENTRE',
+                                    FREQ=100.0,
+                                    NMAX_FREQ = 20,
+                                    ),);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=8.671814960,
+                   VALE_REFE=8.7265999999999995,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=21.290377993,
+                   VALE_REFE=21.304200000000002,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=3,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=53.099205612,
+                   VALE_REFE=53.554200000000002,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=4,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=67.926869475,
+                   VALE_REFE=68.298400000000001,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=5,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=77.429359809,
+                   VALE_REFE=77.744799999999998,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=6,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=135.763480664,
+                   VALE_REFE=136.0471,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+# _CAS2: CALCUL MODAL EN 2 PAS, ASSEMBLAGE + MODE_ITER_SIMULT
+
+ASSEMBLAGE(MODELE=MO,
+                CHAM_MATER=CHMAT,
+                CARA_ELEM=CARELEM,
+                NUME_DDL=CO('NUM2'),
+                MATR_ASSE=(_F(MATRICE=CO('MATASSR2'),
+                              OPTION='RIGI_MECA',),
+                           _F(MATRICE=CO('MATASSM2'),
+                              OPTION='MASS_MECA',),),);
+
+
+MODE2=MODE_ITER_SIMULT(MATR_RIGI=MATASSR2,
+                       MATR_MASS=MATASSM2,
+                       CALC_FREQ=_F(OPTION='BANDE',
+                                    FREQ=(0.0,90.0,),),);
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   NUME_MODE=7,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=33.683890888,
+                   VALE_REFE=33.7119,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(PARA='FREQ',
+                   NUME_MODE=8,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=48.936172545,
+                   VALE_REFE=49.455800000000004,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(PARA='FREQ',
+                   NUME_MODE=9,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=60.584894580,
+                   VALE_REFE=61.051299999999998,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(PARA='FREQ',
+                   NUME_MODE=10,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=87.099258044,
+                   VALE_REFE=87.516000000000005,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(PARA='FREQ',
+                   NUME_MODE=11,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=87.099258044,
+                   VALE_REFE=87.516000000000005,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                ),
+          )
+
+#====================================================================
+#                ENERGIE CINETIQUE ET POTENTIELLE
+#--------- CAS1
+
+MODE1=CALC_CHAMP(reuse=MODE1,RESULTAT=MODE1,ENERGIE=('EPOT_ELEM','ECIN_ELEM'))
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='NON_DEFINI',
+                   POINT=1,
+                   RESULTAT=MODE1,
+                   NOM_CHAM='ECIN_ELEM',
+                   NOM_CMP='TOTALE',
+                   VALE_CALC=0.011444760,
+                   VALE_REFE=0.0114448,
+                   CRITERE='RELATIF',
+                   PRECISION=5.0000000000000001E-3,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='NON_DEFINI',
+                   POINT=1,
+                   RESULTAT=MODE1,
+                   NOM_CHAM='ECIN_ELEM',
+                   NOM_CMP='FLEXION',
+                   VALE_CALC= 2.96879180E+03,
+                   VALE_REFE=2968.79,
+                   CRITERE='RELATIF',
+                   PRECISION=5.0000000000000001E-3,
+                   MAILLE='M2',),
+                ),
+          )
+
+EPOT1=POST_ELEM(ENER_POT=_F(TOUT='OUI',),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,
+                CARA_ELEM=CARELEM,
+                RESULTAT=MODE1,);
+
+ECIN1=POST_ELEM(ENER_CIN=_F(TOUT='OUI',),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,
+                CARA_ELEM=CARELEM,
+                RESULTAT=MODE1,);
+# LES VALEURS DE REFERENCE SONT CELLES D'ASTER VERSION 3.02.21
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.47964346E+04,
+           VALE_REFE=1.47964E4,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=1,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.73312300E+04,
+           VALE_REFE=1.7331200000000001E4,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=2,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 4.38023220E+04,
+           VALE_REFE=4.3802300000000003E4,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=3,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 3.73669560E+04,
+           VALE_REFE=3.7367E4,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=4,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 5.49564133E+04,
+           VALE_REFE=5.4956400000000001E4,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=5,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.34826460E+05,
+           VALE_REFE=1.34826E5,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=6,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.47964346E+04,
+           VALE_REFE=1.47964E4,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=1,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.73312300E+04,
+           VALE_REFE=1.7331200000000001E4,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=2,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 4.38023220E+04,
+           VALE_REFE=4.3802300000000003E4,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=3,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 3.73669560E+04,
+           VALE_REFE=3.7367E4,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=4,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 5.49564133E+04,
+           VALE_REFE=5.4956400000000001E4,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=5,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.34826460E+05,
+           VALE_REFE=1.34826E5,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN1,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=6,),
+                   ),
+           )
+
+#--------- CAS2
+
+MODE2=NORM_MODE(reuse =MODE2,
+                MODE=MODE2,
+                NORME='MASS_GENE',);
+
+MODE2=CALC_CHAMP(reuse=MODE2,RESULTAT=MODE2,ENERGIE=('EPOT_ELEM','ECIN_ELEM'))
+
+
+EPOT2=POST_ELEM(ENER_POT=_F(TOUT='OUI',),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,
+                CARA_ELEM=CARELEM,
+                RESULTAT=MODE2,);
+
+ECIN2=POST_ELEM(ENER_CIN=_F(TOUT='OUI',),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,
+                CARA_ELEM=CARELEM,
+                RESULTAT=MODE2,);
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=2.E-3,
+           VALE_CALC= 2.23961952E+04,
+           VALE_REFE=2.2433456999999999E4,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=7,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.021399999999999999,
+           VALE_CALC= 4.72704502E+04,
+           VALE_REFE=4.8279660000000003E4,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=8,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.016,
+           VALE_CALC= 7.24533473E+04,
+           VALE_REFE=7.3573187999999995E4,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=9,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.49747180E+05,
+           VALE_REFE=1.4974629000000001E5,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=10,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.49747180E+05,
+           VALE_REFE=1.4974629000000001E5,
+           NOM_PARA='TOTALE',
+           TABLE=EPOT2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=11,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=2.E-3,
+           VALE_CALC= 2.23961952E+04,
+           VALE_REFE=2.2433456999999999E4,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=7,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.021399999999999999,
+           VALE_CALC= 4.72704502E+04,
+           VALE_REFE=4.8279660000000003E4,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=8,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.016,
+           VALE_CALC= 7.24533473E+04,
+           VALE_REFE=7.3573187999999995E4,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=9,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.49747180E+05,
+           VALE_REFE=1.4974629000000001E5,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=10,),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           VALE_CALC= 1.49747180E+05,
+           VALE_REFE=1.4974629000000001E5,
+           NOM_PARA='TOTALE',
+           TABLE=ECIN2,
+           FILTRE=(_F(NOM_PARA='LIEU',
+                      VALE_K='MA',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=11,),
+                   ),
+           )
+
+# --------------------------------------------------------------------
+
+FIN();
+#

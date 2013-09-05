@@ -1,0 +1,380 @@
+# person_in_charge: jean-michel.proix at edf.fr
+# TITRE CLAQUAGE  CALOTTE CYLINDRIQUE SHB8  APPUI SURFACE INFERIEURE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# ELEMENT SHB8PS - A.COMBESCURE - S.BAGUET -INSA LYON 2003
+
+#
+
+
+DEBUT(CODE=_F(NOM='SSNS101B',NIV_PUB_WEB='INTERNET',VISU_EFICAS='OUI',),DEBUG=_F(SDVERI='OUI'))
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+
+MAIL=MODI_MAILLAGE(reuse =MAIL,
+                   MAILLAGE=MAIL,
+                   ORIE_SHB=_F(GROUP_MA='GEOTOT',),);
+
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_NO=(_F(GROUP_MA='SU0',),
+                               _F(GROUP_MA='L4590',),
+                               _F(GROUP_MA='SUSUP',),),);
+
+MODMECA=AFFE_MODELE(MAILLAGE=MAIL,
+                    INFO=2,
+                    AFFE=_F(TOUT='OUI',
+                            PHENOMENE='MECANIQUE',
+                            MODELISATION='SHB',),);
+
+
+MAT=DEFI_MATERIAU(ELAS=_F(E=3102.75,
+                          NU=0.3,),);
+
+
+CHM=AFFE_MATERIAU(MAILLAGE=MAIL,
+                  AFFE=_F(TOUT='OUI',
+                          MATER=MAT,),);
+
+CHARGT=AFFE_CHAR_MECA(MODELE=MODMECA,
+                      DDL_IMPO=(_F(GROUP_MA='SU0',
+                                   DY=0.0,),
+                                _F(GROUP_MA='L4590',
+                                   DX=0.0,),
+                                _F(GROUP_MA='L4590',
+                                   DY=0.0,),
+                                _F(GROUP_MA='L4590',
+                                   DZ=0.0,),
+                                _F(GROUP_MA='SUSUP',
+                                   DZ=0.0,),),
+                      FORCE_NODALE=_F(GROUP_NO='P5',
+                                      FX=-0.25,),);
+
+
+D_FONC=DEFI_FONCTION(NOM_PARA='INST',
+                     VALE=(0.0,0.0,10000.0,10000.0,),);
+
+LISTPILO=DEFI_LIST_REEL(DEBUT=0.0,
+                        INTERVALLE=_F(JUSQU_A=35,
+                                      NOMBRE=35,),);
+
+
+NONLIN=STAT_NON_LINE(MODELE=MODMECA,
+                     CHAM_MATER=CHM,
+                     EXCIT=_F(CHARGE=CHARGT,
+                              TYPE_CHARGE='FIXE_PILO',),
+                     COMP_INCR=_F(RELATION='ELAS',
+                                  DEFORMATION='GROT_GDEP',
+                                  TOUT='OUI',),
+                     INCREMENT=_F(LIST_INST=LISTPILO,),
+                     NEWTON=_F(REAC_ITER=0,),
+                     PILOTAGE=_F(TYPE='DDL_IMPO',
+                                 COEF_MULT=-1.0,
+                                 GROUP_NO='P5',
+                                 NOM_CMP='DX',),
+                     CONVERGENCE=_F(RESI_GLOB_RELA=1e-08,
+                                    ITER_GLOB_MAXI=25,),);
+
+TABDX=POST_RELEVE_T(ACTION=_F(INTITULE='F',
+                              GROUP_NO='P5',
+                              RESULTAT=NONLIN,
+                              NOM_CHAM='DEPL',
+                              TOUT_ORDRE='OUI',
+                              NOM_CMP='DX',
+                              OPERATION='EXTRACTION',),);
+
+FDX=RECU_FONCTION(TABLE=TABDX,
+                  PARA_X='INST',
+                  PARA_Y='DX',);
+
+FETA=RECU_FONCTION(RESULTAT=NONLIN,
+                   NOM_PARA_RESU='ETA_PILOTAGE',);
+
+
+IMPR_FONCTION(UNITE=8,
+            FORMAT='TABLEAU',
+            COURBE=(_F(FONCTION=FDX,),
+                    _F(FONCTION=FETA,),),);
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=687.261590746,
+                         VALE_REFE=730.0,
+                         VALE_PARA=2.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.059999999999999998,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=1244.58693888,
+                         VALE_REFE=1315.0,
+                         VALE_PARA=4.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.059999999999999998,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=1676.17389138,
+                         VALE_REFE=1760.0,
+                         VALE_PARA=6.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=1980.37717485,
+                         VALE_REFE=2066.0,
+                         VALE_PARA=8.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=2145.10063684,
+                         VALE_REFE=2221.0,
+                         VALE_PARA=10.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=2137.32877046,
+                         VALE_REFE=2189.0,
+                         VALE_PARA=12.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=1875.547816,
+                         VALE_REFE=1876.0,
+                         VALE_PARA=14.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=1206.51056058,
+                         VALE_REFE=1178.0,
+                         VALE_PARA=16.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.050000000000000003,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=525.173075117,
+                         VALE_REFE=654.0,
+                         VALE_PARA=18.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.20000000000000001,
+                         FONCTION=FETA,),
+                      _F(VALE_CALC=364.902372832,
+                         VALE_REFE=582.0,
+                         VALE_PARA=20.0,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=0.38,
+                         FONCTION=FETA,),
+                      ),
+              )
+
+ # solution de reference de la litterature Klinkel
+
+
+INCA=DEFI_FONCTION(NOM_PARA='INST',INTERPOL='LIN',PROL_DROITE='CONSTANT',PROL_GAUCHE='CONSTANT',
+                   VALE=(
+                               2 , 0.730E3,
+                               4 , 1.315E3,
+                               6 , 1.760E3,
+                               8 , 2.066E3,
+                              10 , 2.221E3,
+                              12 , 2.189E3,
+                              14 , 1.876E3,
+                              16 , 1.178E3,
+                              18 , 0.654E3,
+                              20 , 0.582E3,
+                         ),);
+
+IMPR_FONCTION(UNITE=8,
+            FORMAT='TABLEAU',
+            COURBE=(_F(FONCTION=INCA,),
+                    _F(FONCTION=FETA,),),);
+
+
+DIFF=CALC_FONCTION(COMB=(
+                          _F(  FONCTION = FETA, COEF =  1.),
+                          _F(  FONCTION = INCA, COEF = -1.),
+                          ) )
+
+IMPR_FONCTION(UNITE=8,
+            FORMAT='TABLEAU',
+            COURBE=(_F(FONCTION=DIFF,),),);
+
+MAXINCA=INFO_FONCTION( MAX=_F(  FONCTION = INCA)    )
+
+IMPR_TABLE(TABLE=MAXINCA)
+
+# LA TOLERANCE DE 91. UTILISEE DANS TEST_FONCTION CI-DESSOUS EST EGALE
+# AU MAXIMUM DE LA FONCTION INCA x 0.04
+
+# COMPARAISON A LA SOLUTION INCA
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-42.7384092544,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=2.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-40.6979819203,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=3.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-70.4130611202,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=4.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-61.4750470171,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=5.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-83.8261086198,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=6.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-68.3692654238,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=7.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-85.6228251527,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=8.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-61.9477869223,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=9.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-75.8993631641,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=10.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-38.7957274542,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=11.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-51.6712295391,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=12.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=14.1205375842,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=13.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=-0.452184003959,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=14.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=71.5186034035,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=15.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      _F(VALE_CALC=28.5105605785,
+                         VALE_REFE=0.0,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=16.0,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=91.0,
+                         FONCTION=DIFF,),
+                      ),
+              )
+
+# RECHERCHE DE LA VALEUR MAXIMUM DE LA VALEUR ABSOLUE DE LA FONCTION INCA
+
+ABSINCA = CALC_FONCTION( ABS=_F(  FONCTION = INCA)    )
+MXINCA  = INFO_FONCTION( MAX=_F(  FONCTION = ABSINCA)    )
+IMPR_TABLE(TABLE=MXINCA)
+
+# RECHERCHE DE LA VALEUR MAXIMUM DE LA VALEUR ABSOLUE DE LA DIFFERENCE
+# ENTRE LA FONCTION INCA ET LA FONCTION FETA (RESULTATS ASTER)
+
+ABSDIFF  = CALC_FONCTION( ABS=_F(  FONCTION = DIFF)    )
+MXDIFF   = INFO_FONCTION( MAX=_F(  FONCTION = ABSDIFF)    )
+IMPR_TABLE(TABLE=MXDIFF)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 2.22100000E+03,
+           VALE_REFE=2221.0,
+           NOM_PARA='TOUTRESU',
+           TABLE=MXINCA,
+           FILTRE=(_F(NOM_PARA='FONCTION',
+                      VALE_K='ABSINCA',),
+                   _F(NOM_PARA='TYPE',
+                      VALE_K='MAXI',),
+                   ),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 5.51093446E+03,
+           VALE_REFE=5510.0,
+           NOM_PARA='ETA_PILO',
+           TABLE=MXDIFF,
+           FILTRE=(_F(NOM_PARA='FONCTION',
+                      VALE_K='ABSDIFF',),
+                   _F(NOM_PARA='TYPE',
+                      VALE_K='MAXI',),
+                   ),
+           )
+
+# ON TRACE LES COURBES RESULTATS ASTER ET INCA
+
+#IMPR_FONCTION(
+#    FORMAT    = 'XMGRACE',
+#    PILOTE    = 'INTERACTIF',
+#    LEGENDE_X = 'Instant',
+#    LEGENDE_Y = 'FORCE',
+#    BORNE_X   = (0.,35.),
+#    BORNE_Y   = (0., 7000.),
+#    GRILLE_X  = 5.,
+#    GRILLE_Y  = 1000.,
+#    COURBE=(_F(FONCTION=FETA,LEGENDE='ASTER'),
+#            _F(FONCTION=INCA,LEGENDE='INCA')))
+
+
+FIN()

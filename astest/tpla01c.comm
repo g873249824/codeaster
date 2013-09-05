@@ -1,0 +1,203 @@
+# TITRE CYLINDRE CREUX EN THERMIQUE STATIONNAIRE (TRIA6/QUAD9 AXIS)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#CAS_TEST__: TPLA01C
+# CAS TEST TPLA01C
+
+
+DEBUT(CODE=_F(NOM='TPLA01C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+ACIER=DEFI_MATERIAU( THER=_F(  LAMBDA = 1.0, RHO_CP = 2.0))
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED', )
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MAIL,
+                AFFE=_F(  TOUT = 'OUI', MATER = ACIER) )
+
+MOTH=AFFE_MODELE(  MAILLAGE=MAIL,
+                      AFFE=_F( TOUT = 'OUI', MODELISATION = 'AXIS',
+                                      PHENOMENE = 'THERMIQUE'))
+
+CHTH=AFFE_CHAR_THER(  MODELE=MOTH,FLUX_REP=(
+          _F( GROUP_MA = 'GRMA13', FLUN = 0.0),
+          _F( GROUP_MA = 'GRMA14', FLUN = 1729.9091)),
+           ECHANGE=_F( GROUP_MA = 'GRMA12', COEF_H = 500., TEMP_EXT = 17.034444),
+          TEMP_IMPO=_F( GROUP_NO = 'GRNM15', TEMP = 100.0)
+         )
+
+LR8=DEFI_LIST_REEL(        DEBUT=0.,
+       INTERVALLE=_F(    JUSQU_A = 10.0,   NOMBRE = 2)
+                       )
+
+TEMPE=THER_LINEAIRE(       MODELE=MOTH,
+                           CHAM_MATER=CHMAT,
+                            ETAT_INIT=_F(  STATIONNAIRE = 'OUI'),
+                            INCREMENT=_F(  LIST_INST = LR8),
+                                EXCIT=_F(  CHARGE = CHTH)
+                        )
+
+TEMPE=CALC_CHAMP( reuse=TEMPE, RESULTAT=TEMPE,
+                 NUME_ORDRE=2,
+                  THERMIQUE=('FLUX_ELNO'),);
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=2,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N199',
+                   NOM_CMP='TEMP',
+                   VALE_REFE=100.0,
+                   VALE_CALC=100.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=2,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N10',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=20.000003183448,
+                   VALE_REFE=20.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=2,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N124',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=66.506307592922,
+                   VALE_REFE=66.506,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=2,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N197',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=99.999977824946,
+                   VALE_REFE=100.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N199',
+                   NOM_CMP='FLUX',
+                   VALE_CALC= 1.72988835E+03,
+                   VALE_REFE=1729.9100000000001,
+                   REFERENCE='ANALYTIQUE',
+                   PRECISION=1.E-2,
+                   MAILLE='M59',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N199',
+                   NOM_CMP='FLUY',
+                   VALE_CALC=-1.17028464E-04,
+                   VALE_REFE=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   PRECISION=17.0,
+                   MAILLE='M59',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N10',
+                   NOM_CMP='FLUX',
+                   VALE_CALC= 1.48276716E+03,
+                   VALE_REFE=1482.78,
+                   REFERENCE='ANALYTIQUE',
+                   PRECISION=1.E-2,
+                   MAILLE='M4',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N10',
+                   NOM_CMP='FLUY',
+                   VALE_CALC= 1.25333267E-04,
+                   VALE_REFE=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   PRECISION=14.0,
+                   MAILLE='M4',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N197',
+                   NOM_CMP='FLUX',
+                   VALE_CALC= 1.72987391E+03,
+                   VALE_REFE=1729.9100000000001,
+                   REFERENCE='ANALYTIQUE',
+                   PRECISION=1.E-2,
+                   MAILLE='M58',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N197',
+                   NOM_CMP='FLUY',
+                   VALE_CALC= 3.37223801E-03,
+                   VALE_REFE=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   PRECISION=17.0,
+                   MAILLE='M58',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N124',
+                   NOM_CMP='FLUX',
+                   VALE_CALC= 1.62177255E+03,
+                   VALE_REFE=1621.79,
+                   REFERENCE='ANALYTIQUE',
+                   PRECISION=1.E-2,
+                   MAILLE='M35',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N124',
+                   NOM_CMP='FLUY',
+                   VALE_CALC= 1.11588227E-04,
+                   VALE_REFE=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   PRECISION=16.0,
+                   MAILLE='M35',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N124',
+                   NOM_CMP='FLUX',
+                   VALE_CALC= 1.62177411E+03,
+                   VALE_REFE=1621.79,
+                   REFERENCE='ANALYTIQUE',
+                   PRECISION=1.E-2,
+                   MAILLE='M38',),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='FLUX_ELNO',
+                   NOEUD='N124',
+                   NOM_CMP='FLUY',
+                   VALE_CALC= 7.22916284E-05,
+                   VALE_REFE=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='ABSOLU',
+                   PRECISION=16.0,
+                   MAILLE='M38',),
+                ),
+          )
+
+FIN()
+#

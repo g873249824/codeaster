@@ -1,0 +1,373 @@
+# person_in_charge: jean-michel.proix at edf.fr
+# TITRE POUTRE ENCASTREE A UNE EXTREMITE ET CHARGEE PAR UNE TRACTION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# AVEC ECRO-LINE OU UN MOMENT EN PLASTICITE PARFAITE
+# MODELISATION TUYAU A 4 NOEUDS
+
+
+DEBUT(CODE=_F(NOM='SSNL106E',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='NON'))
+# SDVERI='NON' car la verification est trop couteuse en CPU
+
+EP=0.001
+
+REXT=0.1
+
+M1=LIRE_MAILLAGE(  )
+
+# TRANSFORMATION DES MAILLES SEG3 EN SEG4
+MA=CREA_MAILLAGE(     MAILLAGE=M1,
+       MODI_MAILLE=_F(  OPTION = 'SEG3_4', GROUP_MA='TUYAU'))
+
+# 3 MODES DE FOURIER SUFFISENT ICI
+MO=AFFE_MODELE(        MAILLAGE=MA,
+     AFFE=_F( TOUT = 'OUI', PHENOMENE = 'MECANIQUE',
+                      MODELISATION = 'TUYAU_3M')
+                        )
+# TUYAUTERIE MINCE : 1 COUCHE EST SUFFISANTE
+# LA GENERATRICE EST TRACEE EN Z=REXT
+CAREL=AFFE_CARA_ELEM(   MODELE=MO,
+     POUTRE=_F( GROUP_MA = 'TUYAU', SECTION = 'CERCLE',TUYAU_NCOU=1,TUYAU_NSEC=8,
+          CARA = (   'R', 'EP',  ), VALE = (  REXT, EP, )),
+     ORIENTATION=_F( GROUP_NO = 'A', CARA = 'GENE_TUYAU', VALE = (0., 0.,  1.,))
+ )
+
+# ECROUISSAGE LINEAIRE POUR LA TRACTION
+MATC2=DEFI_MATERIAU(   ELAS=_F( E = 2.E11, NU = 0.3, ALPHA = 0.),
+           ECRO_LINE=_F( D_SIGM_EPSI = 2.E9, SY = 150.E6)
+       )
+
+CHMAT1=AFFE_MATERIAU(   MAILLAGE=MA,
+                       AFFE=_F( TOUT = 'OUI', MATER = MATC2))
+
+# EXTENSION IMPOSEE
+# ON NE BLOQUE PAS L'OVALISATION (OBSERVER W0 : EFFET DE POISSON)
+CHART=AFFE_CHAR_MECA(  MODELE=MO,DDL_IMPO=(
+     _F( GROUP_NO = 'A', DX = 0., DY = 0., DZ = 0., DRX = 0., DRY = 0., DRZ = 0.),
+     _F( GROUP_NO = 'B', DX = 0.75E-3))
+    )
+
+# L'INSTANT REPRESENTE LE COEF MULTIPLICATEUR DE DX=0.73E-3
+FONCT=DEFI_FONCTION(   NOM_PARA='INST',
+                      VALE=( 0., 0., 10., 10., ) )
+
+#
+
+# ON POURRAIT UTILISER MOINS D'INCREMENTS
+LINST=DEFI_LIST_REEL(DEBUT=0.,INTERVALLE=(
+               _F( JUSQU_A = 1., NOMBRE = 1),
+               _F( JUSQU_A = 2., NOMBRE = 10),
+               _F( JUSQU_A = 3., NOMBRE = 10))
+)
+
+# AVEC LA MODELISATION TUYAU ON PEUT REACTUALISER LA
+# MATRICE TANGENTE A TOUTES LES ITERATIONS
+REST=STAT_NON_LINE(
+                            MODELE=MO,
+                        CHAM_MATER=CHMAT1,
+                         CARA_ELEM=CAREL,
+                             EXCIT=_F(CHARGE = CHART,
+                                      FONC_MULT = FONCT),
+                         COMP_INCR=_F( RELATION = 'VMIS_ISOT_LINE', ),
+                         INCREMENT=_F( LIST_INST = LINST),
+                            NEWTON=_F( REAC_ITER = 1),
+              )
+# EFFORTS GENERALISES
+REST=CALC_CHAMP(reuse=REST,
+                RESULTAT=REST,
+                CONTRAINTE=('EFGE_ELNO','SIGM_ELGA','SIGM_ELNO'),
+                VARI_INTERNE=('VARI_ELNO'),
+                DEFORMATION=('EPSI_ELGA','EPSI_ELNO','DEGE_ELGA','DEGE_ELNO'),
+                CRITERES=('SIEQ_ELGA','EPEQ_ELGA'),);
+
+REST=CALC_CHAMP(reuse=REST,
+                RESULTAT=REST,
+                FORCE='REAC_NODA' )
+
+# LES CONTRAINTES LOCALES SONT UNIFORMES
+# A UN NIVEAU D'EPAISSEUR DONNE
+RESTPOS=POST_CHAMP(RESULTAT=REST,
+                   EXTR_TUYAU=_F(NOM_CHAM=('SIEF_ELGA','VARI_ELNO','SIGM_ELNO','EPSI_ELNO','SIEQ_ELGA','EPEQ_ELGA',),
+                                 NUME_COUCHE=1,
+                                 NIVE_COUCHE='SUP',
+                                 ANGLE=90,),);
+
+REST3=POST_CHAMP(RESULTAT=REST,
+                 TOUT_ORDRE='OUI',
+                 EXTR_TUYAU=_F(NOM_CHAM=('SIGM_ELGA','EPSI_ELGA','SIEQ_ELGA','EPEQ_ELGA'),
+                               NUME_COUCHE=1,
+                               NIVE_COUCHE='INF',
+                               ANGLE=0,),);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   RESULTAT=RESTPOS,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='EPYY',
+                   VALE_CALC=-2.25E-4,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   SOUS_POINT=1,
+                   RESULTAT=REST3,
+                   NOM_CHAM='EPEQ_ELGA',
+                   NOM_CMP='INVA_2',
+                   VALE_CALC=5.89491E-4,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   SOUS_POINT=1,
+                   RESULTAT=REST3,
+                   NOM_CHAM='SIEQ_ELGA',
+                   NOM_CMP='VMIS',
+                   VALE_CALC=1.50000000E8,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   RESULTAT=RESTPOS,
+                   NOM_CHAM='SIEQ_ELGA',
+                   NOM_CMP='VMIS',
+                   VALE_CALC=1.50000000E+08,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   RESULTAT=RESTPOS,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=1.50000000E+08,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=1,
+                   GROUP_NO='B',
+                   RESULTAT=REST,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOM_CMP='N',
+                   VALE_CALC=9.37765407E+04,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=1,
+                   GROUP_NO='B',
+                   RESULTAT=RESTPOS,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=1.50000000E8,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=11,
+                   GROUP_NO='B',
+                   RESULTAT=RESTPOS,
+                   NOM_CHAM='VARI_ELNO',
+                   NOM_CMP='V1',
+                   VALE_CALC=7.42499964E-04,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=11,
+                   GROUP_NO='B',
+                   RESULTAT=RESTPOS,
+                   NOM_CHAM='VARI_ELNO',
+                   NOM_CMP='V1',
+                   VALE_CALC=7.42499964E-04,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=11,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESTPOS,
+                   NOM_CHAM='VARI_ELNO',
+                   NOM_CMP='V2',
+                   VALE_CALC=1.0,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=11,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=REST,
+                   NOM_CHAM='REAC_NODA',
+                   NOM_CMP='DX',
+                   VALE_CALC=9.47143082E+04,
+                   VALE_REFE=9.47152E4,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=21,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=REST,
+                   NOM_CHAM='REAC_NODA',
+                   NOM_CMP='DX',
+                   VALE_CALC=9.56520736E+04,
+                   VALE_REFE=9.5653E4,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=21,
+                   GROUP_NO='B',
+                   RESULTAT=REST,
+                   NOM_CHAM='DEGE_ELNO',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=2.25000000E-03,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=21,
+                   POINT=1,
+                   RESULTAT=REST,
+                   NOM_CHAM='DEGE_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=2.25000000E-03,
+                   MAILLE='M2',),
+                ),
+          )
+
+# FLEXION
+
+# PLASTICITE PARFAITE
+MATC1=DEFI_MATERIAU(   ELAS=_F( E = 2.E11, NU = 0.3),
+           ECRO_LINE=_F( D_SIGM_EPSI = 0.0, SY = 150.E6)
+                        )
+
+CHMAT2=AFFE_MATERIAU(   MAILLAGE=MA,
+                       AFFE=_F( TOUT = 'OUI', MATER = MATC1))
+
+# ON BLOQUE L'OVALISATION EN MODE 3, SINON IL Y A LOCALISATION
+# DES DEFORMATIONS AUX EXTREMITES (COMME EN COQUES)
+CHARM=AFFE_CHAR_MECA(  MODELE=MO,DDL_IMPO=(
+     _F( GROUP_NO = 'A', DX = 0., DY = 0., DZ = 0., DRX = 0., DRY = 0., DRZ = 0.),
+     _F( GROUP_NO = ('A', 'B',), UO3 = 0., VO3 = 0., WO3 = 0.),
+      _F( GROUP_NO = 'B',  DRZ = 0.75E-2)))
+
+FONCM=DEFI_FONCTION(   NOM_PARA='INST',
+                      VALE=( 0., 0., 100., 100., ) )
+
+# DISCRETISATION RELATIVEMENT FINE POUR AVOIR UNE BELLE COURBE
+LINSR=DEFI_LIST_REEL(DEBUT=0.,INTERVALLE=(
+               _F( JUSQU_A = 1.,    NOMBRE = 1),
+               _F( JUSQU_A = 5.,    NOMBRE = 20))
+  )
+
+# POUR LA FLEXON ON PREND LES VALEURS PAR DEFAUT :
+# TUYAU_NCOU=3, TUYAU_NSEC=16
+CAREL2=AFFE_CARA_ELEM(   MODELE=MO,
+    POUTRE=_F( GROUP_MA = 'TUYAU', SECTION = 'CERCLE',
+          CARA = (   'R', 'EP',  ), VALE = (  REXT, EP, )),
+    ORIENTATION=_F( GROUP_NO = 'A', CARA = 'GENE_TUYAU', VALE = (0., 0.,  1.,))
+ )
+
+# DISCRE
+RESM=STAT_NON_LINE(  MODELE=MO, CHAM_MATER=CHMAT2, CARA_ELEM=CAREL2,
+                             EXCIT=_F(  CHARGE = CHARM, FONC_MULT = FONCM),
+                         COMP_INCR=_F( RELATION = 'VMIS_ISOT_LINE',),
+                         INCREMENT=_F( LIST_INST = LINSR),
+                            NEWTON=_F( REAC_ITER = 1)
+              )
+
+RESM=CALC_CHAMP( reuse=RESM,     RESULTAT=RESM,
+                    FORCE='REAC_NODA' )
+
+# MOMENT DE PREMIERE PLASTIFICATION TUYAU EN HYPOTHESE DE POUTRE
+# CHARGE LIMITE TUYAU EN HYPOTHESE DE POUTRE
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESM,
+                   NOM_CHAM='REAC_NODA',
+                   NOM_CMP='DRZ',
+                   VALE_CALC=4.64205985E+03,
+                   VALE_REFE=4642.17,),
+                _F(NUME_ORDRE=21,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESM,
+                   NOM_CHAM='REAC_NODA',
+                   NOM_CMP='DRZ',
+                   VALE_CALC=5.93652181E+03,
+                   VALE_REFE=5910.60,
+                   PRECISION=5.0E-3,),
+                ),
+          )
+
+# LES CONTRAINTES LOCALES SONT EXTREMES POUR ANGLE=90 ET 270
+# A CAUSE DU CHOIX DE LA GENERATRICE
+RESM=CALC_CHAMP(reuse=RESM,
+                RESULTAT=RESM,
+                CONTRAINTE=('SIGM_ELNO'),
+                DEFORMATION=('DEGE_ELNO','DEGE_ELGA'),
+                VARI_INTERNE=('VARI_ELNO'),);
+
+RESM1=POST_CHAMP(RESULTAT=RESM,
+                 TOUT_ORDRE='OUI',
+                 EXTR_TUYAU=_F(NOM_CHAM='SIGM_ELNO',
+                               NUME_COUCHE=1,
+                               NIVE_COUCHE='SUP',
+                               ANGLE=90,),);
+RESM2=POST_CHAMP(RESULTAT=RESM,
+                 TOUT_ORDRE='OUI',
+                 EXTR_TUYAU=_F(NOM_CHAM='VARI_ELNO',
+                               NUME_COUCHE=1,
+                               NIVE_COUCHE='SUP',
+                               ANGLE=90,),);
+DRZB=RECU_FONCTION(RESULTAT=RESM,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DRZ',
+                   GROUP_NO='B',);
+
+RDRZB=RECU_FONCTION(RESULTAT=RESM,
+                    NOM_CHAM='REAC_NODA',
+                    NOM_CMP='DRZ',
+                    GROUP_NO='B',);
+
+IMPR_FONCTION(COURBE=_F(FONC_Y=RDRZB,FONC_X=DRZB,),)
+
+IMPR_RESU(RESU=(
+                _F(RESULTAT=RESM,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOM_CMP='SIXX',
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',),
+                _F(RESULTAT=RESM,
+                   NOM_CHAM='VARI_ELNO',
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',),
+                _F(RESULTAT=RESM,
+                   NOM_CHAM='DEGE_ELNO',
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',),
+                _F(RESULTAT=RESM,
+                   NOM_CHAM='DEGE_ELGA',
+                   VALE_MAX='OUI',
+                   VALE_MIN='OUI',),
+                    ),)
+
+
+# SOLUTION ANALYTIQUE EVIDENTE : LA COURBURE EST CONSTANTE, CAR LA ROTATION
+# VARIE LINEAIREMENT (LE MOMENT EST CONSTANT)
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESM,
+                   NOM_CHAM='DEGE_ELNO',
+                   NOM_CMP='KZ',
+                   VALE_CALC=-7.5E-3,
+                   VALE_REFE=-7.5E-3,
+                   PRECISION=1.E-3,
+                   MAILLE='M2',),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=3,
+                   RESULTAT=RESM,
+                   NOM_CHAM='DEGE_ELGA',
+                   NOM_CMP='KZ',
+                   VALE_CALC=-7.5E-3,
+                   VALE_REFE=-7.5E-3,
+                   PRECISION=1.E-3,
+                   MAILLE='M2',),
+                ),
+          )
+
+FIN( )

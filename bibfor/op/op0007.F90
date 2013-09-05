@@ -1,0 +1,76 @@
+subroutine op0007()
+!
+    implicit none
+!
+#include "jeveux.h"
+#include "asterc/getres.h"
+#include "asterfort/charme.h"
+#include "asterfort/infmaj.h"
+#include "asterfort/jedema.h"
+#include "asterfort/jemarq.h"
+#include "asterfort/wkvect.h"
+!
+! ======================================================================
+! COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+! (AT YOUR OPTION) ANY LATER VERSION.
+!
+! THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+! WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+! MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+! GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+!
+! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+!    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+! ======================================================================
+! person_in_charge: mickael.abbas at edf.fr
+!
+
+!
+! ----------------------------------------------------------------------
+!
+! COMMAND:  AFFE_CHAR_MECA_*
+!
+! ----------------------------------------------------------------------
+!
+    character(len=4) :: vale_type
+    character(len=8) :: load
+    character(len=16) :: command, k16dummy
+    integer :: iatype
+!
+! --------------------------------------------------------------------------------------------------
+!
+    call jemarq()
+    call infmaj()
+!
+! - Which command ?
+!
+    call getres(load, k16dummy, command)
+    if (command .eq. 'AFFE_CHAR_MECA') then
+        vale_type = 'REEL'
+    else if (command .eq. 'AFFE_CHAR_MECA_F') then
+        vale_type = 'FONC'
+    else if (command .eq. 'AFFE_CHAR_MECA_C') then
+        vale_type = 'COMP'
+    endif
+!
+! - Load type
+!
+    call wkvect(load//'.TYPE', 'G V K8', 1, iatype)
+    if (vale_type.eq.'REEL') then
+        zk8(iatype) = 'MECA_RE'
+    else if (vale_type.eq.'FONC') then
+        zk8(iatype) = 'MECA_FO'
+    else if (vale_type.eq.'COMP') then
+        zk8(iatype) = 'MECA_RI'
+    endif
+!
+! - Loads treatment
+!
+    call charme(load, vale_type)
+!
+    call jedema()
+end subroutine

@@ -1,0 +1,171 @@
+# TITRE PLAQUE INDEFORMABLE SUR UN TAPIS DE RESSORTS EN 2D
+#
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# CAS_TEST__:SSNL130B
+#
+DEBUT(CODE=_F(NOM='SSNL130B', NIV_PUB_WEB='INTERNET', VISU_EFICAS='NON'), DEBUG=_F(SDVERI='OUI'))
+
+mail=LIRE_MAILLAGE(FORMAT='MED')
+
+model=AFFE_MODELE(
+   MAILLAGE=mail,
+   AFFE=(
+      _F(GROUP_MA=('DALLE','D0403'),       PHENOMENE='MECANIQUE', MODELISATION='D_PLAN',),
+      _F(GROUP_MA=('RESSORTS'), PHENOMENE='MECANIQUE', MODELISATION='2D_DIS_T',),
+   ),
+);
+
+acier=DEFI_MATERIAU(
+   ELAS=_F(E=2.0E+11, NU=0.3,),
+);
+resso=DEFI_MATERIAU(
+   ELAS=_F(E=2.0E+11, NU=0.3,),
+   DIS_CONTACT= _F(DIST_1= 0.100),
+);
+
+mater=AFFE_MATERIAU(
+   MAILLAGE=mail,
+   AFFE=(
+      _F(GROUP_MA='DALLE',   MATER=acier,),
+      _F(GROUP_MA=('RESSORTS'), MATER=resso,),
+   ),
+);
+
+Nlong = 16
+KGLOB = 10000.0
+
+KMILI = KGLOB/Nlong
+
+carelem=AFFE_CARA_ELEM(INFO=2,
+   MODELE=model,
+   ORIENTATION=(
+      _F(GROUP_MA='RESSORTS', CARA='ANGL_VRIL', VALE=(0.0,),),
+   ),
+    RIGI_PARASOL=(_F(GROUP_MA='DALLE_2D',
+                    GROUP_MA_SEG2=('RESSORTS'),
+                                        COEF_GROUP=1.0,
+                                        REPERE='GLOBAL',
+                                        CARA='K_T_D_L',
+                                        VALE=(KGLOB,KGLOB,0,),
+                                        GROUP_NO_CENTRE='PCDG',),
+                                                                )
+);
+
+ZERO=DEFI_CONSTANTE(VALE=0.0,);
+
+ll=DEFI_LIST_REEL(DEBUT=0.0,
+   INTERVALLE=(
+      _F(JUSQU_A=1.0, PAS=1.000,),
+      _F(JUSQU_A=2.0, PAS=0.500,),
+   ),
+);
+
+def ForceY(t,x):
+   Fy = -5.0*(x-2.0)**2
+   if ( t <= 1.0 ): return Fy*t
+   return Fy
+
+def Deplacer(t,x):
+   if ( t<= 1.0): return 0.0
+   return (t-1.0)*0.5E-02
+
+FORCE = FORMULE(NOM_PARA=('INST','X',), VALE='ForceY(INST,X)' );
+DEPLA = FORMULE(NOM_PARA=('INST','X',), VALE='Deplacer(INST,X)' );
+
+CHARGE=AFFE_CHAR_MECA_F(
+   MODELE=model,
+   FORCE_CONTOUR =_F(GROUP_MA='D0403',  FY=FORCE,),
+   DDL_IMPO      =_F(GROUP_NO='PTRESS', DX=ZERO,DY=DEPLA),
+)
+
+resu=STAT_NON_LINE(
+   MODELE=model,
+   CHAM_MATER=mater,
+   CARA_ELEM=carelem,
+   EXCIT=_F(CHARGE=CHARGE,),
+   COMP_INCR=(
+      _F(RELATION='ELAS',     DEFORMATION='PETIT', TOUT='OUI'),
+      _F(RELATION='DIS_CHOC', DEFORMATION='PETIT', GROUP_MA=('RESSORTS'),),
+   ),
+   NEWTON=(_F(REAC_INCR=1,MATRICE='TANGENTE',REAC_ITER=1,),),
+   SOLVEUR=_F(METHODE='MUMPS',),
+   CONVERGENCE= _F(ITER_GLOB_MAXI=60,),
+   INCREMENT=_F(LIST_INST=ll, INST_FIN=2.0,),
+);
+
+
+#IMPR_RESU(
+   #FORMAT='GMSH',
+   #UNITE=22,
+   #RESU=_F(MAILLAGE=mail,
+           #RESULTAT=resu,INST=1.0,
+           #NOM_CHAM='DEPL',),
+#);
+#IMPR_RESU(
+#   FORMAT='RESULTAT',
+#   RESU=_F(RESULTAT=resu, NOM_CHAM='DEPL', INST=(1.0,2.0),),
+#);
+
+TEST_RESU(RESU=(_F(GROUP_NO='PT01',
+                   INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=resu,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DY',
+                   VALE_CALC=-3.53290875E-03,
+                   VALE_REFE=-3.5329087050000002E-3,
+                   CRITERE='RELATIF',
+                   PRECISION=1.9999999999999999E-07,
+                   ),
+                _F(GROUP_NO='PT02',
+                   INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=resu,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DY',
+                   VALE_CALC= 1.14976308E-03,
+                   VALE_REFE=1.1497631879999999E-3,
+                   CRITERE='RELATIF',
+                   PRECISION=1.9999999999999999E-07,
+                   ),
+                _F(GROUP_NO='PT01',
+                   INST=2.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=resu,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DY',
+                   VALE_CALC= 1.46709126E-03,
+                   VALE_REFE=1.4670912949999999E-3,
+                   CRITERE='RELATIF',
+                   PRECISION=1.9999999999999999E-07,
+                   ),
+                _F(GROUP_NO='PT02',
+                   INST=2.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=resu,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DY',
+                   VALE_CALC= 6.14976297E-03,
+                   VALE_REFE=6.149763188E-3,
+                   CRITERE='RELATIF',
+                   PRECISION=1.9999999999999999E-07,
+                   ),
+                ),
+          )
+
+FIN()

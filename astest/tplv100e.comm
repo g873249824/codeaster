@@ -1,0 +1,305 @@
+# TITRE CYLINDRE SOUMIS A DES COND. AUX LIMI. NON AXISYMETRIQUES QUAD4
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# CAS TEST SSLV109E
+# CAS-TEST THERMIQUE FOURIER HARMONIQUE 2
+#
+# MODELISATION : ELEMENTS THERMIQUE AXIS_FOURIER (200 TRIA3 153 NOEUDS)
+# MAILLAGE     : ALIBABA ==> ASTER
+#
+# ----------------------------------------------------------------------
+# GROUPES DE MAILLES: FLUX_IMPO : GRMA6
+#                     ECHANGE   : GRMA7
+# ----------------------------------------------------------------------
+
+DEBUT(CODE=_F(NOM='TPLV100E',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+M=LIRE_MAILLAGE(FORMAT='MED',);
+
+MO=AFFE_MODELE(MAILLAGE=M,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='THERMIQUE',
+                       MODELISATION='AXIS_FOURIER',),);
+
+MA=DEFI_MATERIAU(THER=_F(LAMBDA=1.,
+                         RHO_CP=0.,),);
+
+CM=AFFE_MATERIAU(MAILLAGE=M,
+                 AFFE=_F(TOUT='OUI',
+                         MATER=MA,),);
+
+T0  =DEFI_CONSTANTE (VALE= 0.)
+FL2 =DEFI_CONSTANTE (VALE= 2.)
+CH2 =DEFI_CONSTANTE (VALE= 2.)
+TE2 =DEFI_CONSTANTE (VALE= 2.)
+CH=AFFE_CHAR_THER_F(MODELE=MO,
+                  TEMP_IMPO=_F(NOEUD='N1',
+                               TEMP=T0,),
+                  FLUX_REP=_F(GROUP_MA='GRMA6',
+                              FLUN=FL2,),
+                  ECHANGE=_F(GROUP_MA='GRMA7',
+                             COEF_H=CH2,
+                             TEMP_EXT=TE2,),);
+
+KE=CALC_MATR_ELEM(OPTION='RIGI_THER',
+                  MODELE=MO,
+                  CHAM_MATER=CM,
+                  MODE_FOURIER=2,
+                  CHARGE=CH,);
+
+VE=CALC_VECT_ELEM(OPTION='CHAR_THER',
+                  CHARGE=CH,);
+
+NU=NUME_DDL(MATR_RIGI=KE,);
+
+KAS=ASSE_MATRICE(MATR_ELEM=KE,
+                 NUME_DDL=NU,);
+
+VAS=ASSE_VECTEUR(VECT_ELEM=VE,
+                 NUME_DDL=NU,);
+
+KAS=FACTORISER(reuse =KAS,
+              MATR_ASSE=KAS,);
+
+TEMP=RESOUDRE(MATR=KAS,
+               CHAM_NO=VAS,);
+
+FLUXNO=CALC_CHAM_ELEM(MODELE=MO,
+                      CHAM_MATER=CM,
+                      OPTION='FLUX_ELNO',
+                      TEMP=TEMP,
+                      MODE_FOURIER=2,);
+
+FLUXGA=CALC_CHAM_ELEM(MODELE=MO,
+                      CHAM_MATER=CM,
+                      OPTION='FLUX_ELGA',
+                      TEMP=TEMP,
+                      MODE_FOURIER=2,);
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N76',
+                      CRITERE='RELATIF',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP,
+                      VALE_CALC=0.250022244,
+                      VALE_REFE=0.25,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N78',
+                      CRITERE='RELATIF',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP,
+                      VALE_CALC=0.249808212,
+                      VALE_REFE=0.25,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N151',
+                      CRITERE='RELATIF',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP,
+                      VALE_CALC=0.999513377,
+                      VALE_REFE=1.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N152',
+                      CRITERE='RELATIF',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP,
+                      VALE_CALC=0.999928845,
+                      VALE_REFE=1.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N153',
+                      CRITERE='RELATIF',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP,
+                      VALE_CALC=1.000329698,
+                      VALE_REFE=1.0,
+                      REFERENCE='NON_DEFINI',),
+                   ),
+          )
+
+#--------------------------------------------------------------------
+
+TR1=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                            INTITULE='EXT_FLUX',
+                            CHAM_GD=FLUXNO,
+                            NOEUD=('N151','N152','N153','N76','N78',),
+                            NOM_CMP=('FLUX','FLUY','FLUZ',),),);
+#
+
+TEST_TABLE(PRECISION=0.02,
+           VALE_CALC=-1.977216837,
+           VALE_REFE=-2.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUX',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N151',),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=-1.981901093,
+           VALE_REFE=-2.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUX',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N152',),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=-1.985552968,
+           VALE_REFE=-2.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUX',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N153',),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=-0.993211395,
+           VALE_REFE=-1.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUX',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N76',),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=-1.006817220,
+           VALE_REFE=-1.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUX',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N78',),
+           )
+
+#
+
+TEST_TABLE(PRECISION=0.02,
+           VALE_CALC=1.979651836,
+           VALE_REFE=2.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUZ',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N151',),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=1.982383544,
+           VALE_REFE=2.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUZ',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N152',),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=1.987165906,
+           VALE_REFE=2.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUZ',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N153',),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=0.991367624,
+           VALE_REFE=1.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUZ',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N76',),
+           )
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=1.008668874,
+           VALE_REFE=1.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUZ',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N78',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC=-3.58298245E-03,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUY',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N151',),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC=-3.69205865E-03,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUY',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N152',),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC=-4.00852479E-03,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUY',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N153',),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC= 1.08387984E-03,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUY',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N76',),
+           )
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC= 1.05821643E-03,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUY',
+           TABLE=TR1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N78',),
+           )
+
+FIN();
+#

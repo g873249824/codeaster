@@ -1,0 +1,265 @@
+# TITRE CYLINDRE CREUX ORTHOTROPE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+# MAILLES : TRIA3 (ET SEG2)
+
+DEBUT(CODE=_F(NOM='TPLA07A',
+NIV_PUB_WEB='INTERNET',),DEBUG=_F(SDVERI='OUI'))
+
+#
+# LECTURE DU MAILLAGE --------------------------------------------------
+
+PRE_GMSH();
+
+MAIL2=LIRE_MAILLAGE();
+
+MAIL2=DEFI_GROUP(reuse =MAIL2,
+                 MAILLAGE=MAIL2,
+                 CREA_GROUP_MA=(_F(NOM='MATIERE',
+                                   GROUP_MA='GM6',),
+                                _F(NOM='MAI_AB',
+                                   GROUP_MA='GM1',),
+                                _F(NOM='MAI_BC',
+                                   GROUP_MA='GM2',),
+                                _F(NOM='MAI_CD',
+                                   GROUP_MA='GM3',),
+                                _F(NOM='MAI_DA',
+                                   GROUP_MA='GM4',),),);
+
+MAIL2=DEFI_GROUP(reuse =MAIL2,
+                 MAILLAGE=MAIL2,
+                 CREA_GROUP_NO=(_F(OPTION='NOEUD_ORDO',
+                                   NOM='AB',
+                                   GROUP_MA='MAI_AB',),
+                                _F(OPTION='NOEUD_ORDO',
+                                   NOM='BC',
+                                   GROUP_MA='MAI_BC',),
+                                _F(OPTION='NOEUD_ORDO',
+                                   NOM='CD',
+                                   GROUP_MA='MAI_CD',),
+                                _F(OPTION='NOEUD_ORDO',
+                                   NOM='DA',
+                                   GROUP_MA='MAI_DA',),
+                                _F(OPTION='PLAN',
+                                   NOM='COUP02',
+                                   POINT=(0.0,0.2,),
+                                   VECT_NORMALE=(0.0,1.0,),
+                                   PRECISION=0.005,),),);
+
+MAIL=CREA_MAILLAGE(MAILLAGE=MAIL2,
+                   LINE_QUAD=_F(TOUT='OUI',),);
+
+#
+# DEFINITION DES CHARGEMENTS ET DU MATERIAU ----------------------------
+#
+# ----- MATERIAU
+
+MATER=DEFI_MATERIAU(THER_ORTH=_F(LAMBDA_L=2.89,
+                                 LAMBDA_T=40.00,
+                                 LAMBDA_N=2.89,
+                                 RHO_CP=1.,),);
+
+#
+# AFFECTATIONS: MATERIAU, MODELE, CHARGEMENT ---------------------------
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=MATER,),);
+
+MOTH=AFFE_MODELE(MAILLAGE=MAIL,
+                 AFFE=_F(TOUT='OUI',
+                         PHENOMENE='THERMIQUE',
+                         MODELISATION='AXIS',),);
+
+ORIEN=AFFE_CARA_ELEM(MODELE=MOTH,
+                     MASSIF=_F(GROUP_MA='MATIERE',
+                               ANGL_REP=(0.,0.,0.,),),);
+
+#  FLU_IMP = DEFI_FONCTION ( NOM_PARA:'Y'
+#                            VALE: ( 0.0D0 ,-500.D0
+#                                    0.4D0 , 500.D0 )
+#                            INTERPOL:'NON'
+#                          );
+
+FLU_AB=DEFI_CONSTANTE(VALE=-500.E0,);
+
+FLU_CD=DEFI_CONSTANTE(VALE=500.E0,);
+
+HCV_INT=DEFI_CONSTANTE(VALE=377.E0,);
+
+TEX_INT=DEFI_FONCTION(NOM_PARA='Y',VALE=(0.0E0,130.E0,
+                            0.4E0,135.E0,
+                            ),PROL_DROITE='LINEAIRE',PROL_GAUCHE='LINEAIRE',);
+
+HCV_EXT=DEFI_CONSTANTE(VALE=339.3E0,);
+
+TEX_EXT=DEFI_FONCTION(NOM_PARA='Y',VALE=(0.0E0,20.E0,
+                            0.4E0,25.E0,
+                            ),PROL_DROITE='LINEAIRE',PROL_GAUCHE='LINEAIRE',);
+
+CHTH=AFFE_CHAR_THER_F(MODELE=MOTH,
+                      FLUX_REP=(_F(GROUP_MA='MAI_AB',
+                                   FLUN=FLU_AB,),
+                                _F(GROUP_MA='MAI_CD',
+                                   FLUN=FLU_CD,),),);
+
+CHTH1=AFFE_CHAR_THER_F(MODELE=MOTH,
+                       ECHANGE=(_F(GROUP_MA='MAI_DA',
+                                   COEF_H=HCV_INT,
+                                   TEMP_EXT=TEX_INT,),
+                                _F(GROUP_MA='MAI_BC',
+                                   COEF_H=HCV_EXT,
+                                   TEMP_EXT=TEX_EXT,),),);
+
+#
+# DEFINITION DE LA STRATEGIE DE CALCUL ---------------------------------
+#
+#
+# RESOLUTION -----------------------------------------------------------
+
+TEMPE=THER_LINEAIRE(MODELE=MOTH,
+                    CHAM_MATER=CHMAT,
+                    CARA_ELEM=ORIEN,
+                    EXCIT=(_F(CHARGE=CHTH,),
+                           _F(CHARGE=CHTH1,),),);
+
+#
+# ANALYSE DES RESULTATS ------------------------------------------------
+
+TEMPE=CALC_CHAMP(reuse =TEMPE,
+
+
+
+                RESULTAT=TEMPE,
+                NUME_ORDRE=0,
+                 THERMIQUE=('FLUX_ELNO'),
+
+);
+
+TEMPE=CALC_CHAMP(reuse =TEMPE,
+              RESULTAT=TEMPE,
+              THERMIQUE='FLUX_NOEU',);
+
+FLUYAB=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                               INTITULE='FLUYAB',
+                               RESULTAT=TEMPE,
+                               NOM_CHAM='FLUX_NOEU',
+                               NUME_ORDRE=0,
+                               GROUP_NO=('AB','CD','COUP02',),
+                               NOM_CMP=('FLUY','FLUX',),),);
+
+TEMP_CD=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                                INTITULE='TEMP_CD',
+                                RESULTAT=TEMPE,
+                                NOM_CHAM='TEMP',
+                                NUME_ORDRE=0,
+                                GROUP_NO=('CD','AB','COUP02',),
+                                NOM_CMP='TEMP',),);
+
+flux_res = FORMULE(VALE='-2.89*(-117.46/COOR_X)',
+                   NOM_PARA='COOR_X',);
+
+DIFF1 = FORMULE(VALE='(FLUX-FLX_ref)/FLX_ref',
+                NOM_PARA=('FLUX','FLX_ref',),);
+
+TEMP_res = FORMULE(VALE='-117.46*log(COOR_X)+12.5*COOR_Y-311.87',
+                   NOM_PARA=('COOR_X','COOR_Y',),);
+
+DIFF2 = FORMULE(VALE='(TEMP-T_ref)/T_ref',
+                NOM_PARA=('TEMP','T_ref',),);
+
+FLUYAB=CALC_TABLE(reuse =FLUYAB,
+                  TABLE=FLUYAB,
+                  ACTION=(_F(OPERATION='OPER',
+                             FORMULE=flux_res,
+                             NOM_PARA='FLX_ref',),
+                          _F(OPERATION='OPER',
+                             FORMULE=DIFF1,
+                             NOM_PARA='Diff',),),);
+
+TEMP_CD=CALC_TABLE(reuse =TEMP_CD,
+                   TABLE=TEMP_CD,
+                   ACTION=(_F(OPERATION='OPER',
+                              FORMULE=TEMP_res,
+                              NOM_PARA='T_ref',),
+                           _F(OPERATION='OPER',
+                              FORMULE=DIFF2,
+                              NOM_PARA='Diff',),),);
+
+IMPR_TABLE(TABLE=FLUYAB,);
+
+IMPR_TABLE(TABLE=TEMP_CD,);
+
+TEST_TABLE(PRECISION=0.014999999999999999,
+           VALE_CALC=-494.756765481,
+           VALE_REFE=-500.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUY',
+           TYPE_TEST='MAX',
+           TABLE=FLUYAB,)
+
+TEST_TABLE(PRECISION=1.E-2,
+           VALE_CALC=-500.136952564,
+           VALE_REFE=-500.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='FLUY',
+           TYPE_TEST='MIN',
+           TABLE=FLUYAB,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC=-1.03409185E-03,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='Diff',
+           TYPE_TEST='MAX',
+           TABLE=FLUYAB,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC=-3.33221511E-03,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='Diff',
+           TYPE_TEST='MIN',
+           TABLE=FLUYAB,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC=-8.18010291E-05,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='Diff',
+           TYPE_TEST='MAX',
+           TABLE=TEMP_CD,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           PRECISION=1.E-2,
+           VALE_CALC=-1.86961952E-04,
+           VALE_REFE=0.0,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='Diff',
+           TYPE_TEST='MIN',
+           TABLE=TEMP_CD,)
+
+#
+# FIN ------------------------------------------------------------------
+
+FIN();
+
+#

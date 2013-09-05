@@ -1,0 +1,153 @@
+subroutine apvsmb(kptsc, lmd, rsolu)
+!
+! COPYRIGHT (C) 1991 - 2013  EDF R&D                WWW.CODE-ASTER.ORG
+!
+! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+! (AT YOUR OPTION) ANY LATER VERSION.
+!
+! THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+! WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+! MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+! GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+!
+! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+!
+    implicit none
+! person_in_charge: thomas.de-soza at edf.fr
+#include "aster_types.h"
+#include "asterf.h"
+#include "jeveux.h"
+#include "asterc/asmpi_comm.h"
+#include "asterfort/apbloc.h"
+#include "asterfort/asmpi_info.h"
+#include "asterfort/assert.h"
+#include "asterfort/jedema.h"
+#include "asterfort/jedetr.h"
+#include "asterfort/jelira.h"
+#include "asterfort/jemarq.h"
+#include "asterfort/jeveuo.h"
+#include "asterfort/wkvect.h"
+    integer :: kptsc
+    logical :: lmd
+    real(kind=8) :: rsolu(*)
+!----------------------------------------------------------------
+!
+!  CREATION ET REMPLISSAGE DU SECOND MEMBRE
+!
+!----------------------------------------------------------------
+#ifdef _HAVE_PETSC
+!
+#include "aster_petsc.h"
+!
+!     VARIABLES LOCALES
+    integer :: nsmdi, tbloc, rang, nbproc, jnequ, jnequl, jnugl, jnuglp
+    integer :: jprddl, nloc, nglo, ndprop, jcoll, jindic, jvaleu, numglo
+    mpi_int :: mpicou
+!
+    character(len=4) :: kbid
+    character(len=14) :: nonu
+    character(len=19) :: nomat, nosolv
+!
+!----------------------------------------------------------------
+!     Variables PETSc
+    PetscInt :: low, high, bs, i, neq, ierr
+    PetscScalar :: xx(1)
+    PetscOffset :: xidx
+    mpi_int :: mrank, msize
+!----------------------------------------------------------------
+    call jemarq()
+!---- COMMUNICATEUR MPI DE TRAVAIL
+    call asmpi_comm('GET', mpicou)
+!
+!     -- LECTURE DU COMMUN
+    nomat = nomats(kptsc)
+    nosolv = nosols(kptsc)
+    nonu = nonus(kptsc)
+!
+!     -- TAILLE DES BLOCS
+    call apbloc(nomat, nosolv, tbloc)
+    bs = abs(tbloc)
+!
+    if (lmd) then
+        call asmpi_info(rank=mrank, size=msize)
+        rang = to_aster_int(mrank)
+        nbproc = to_aster_int(msize)
+        call jeveuo(nonu//'.NUME.NEQU', 'L', jnequ)
+        call jeveuo(nonu//'.NUML.NEQU', 'L', jnequl)
+        call jeveuo(nonu//'.NUML.NULG', 'L', jnugl)
+        call jeveuo(nonu//'.NUML.NLGP', 'L', jnuglp)
+        call jeveuo(nonu//'.NUML.PDDL', 'L', jprddl)
+        nloc = zi(jnequl)
+        nglo = zi(jnequ)
+!
+        ndprop = 0
+        do jcoll = 0, nloc-1
+            if (zi(jprddl+jcoll) .eq. rang) ndprop = ndprop+1
+        end do
+!
+        call VecCreate(mpicou, b, ierr)
+        ASSERT(ierr.eq.0)
+        call VecSetBlockSize(b, bs, ierr)
+        ASSERT(ierr.eq.0)
+        call VecSetSizes(b, ndprop, nglo, ierr)
+        ASSERT(ierr.eq.0)
+        call VecSetType(b, VECMPI, ierr)
+        ASSERT(ierr.eq.0)
+!
+        call wkvect('&&APVSMB.INDICES', 'V V S', nloc, jindic)
+        call wkvect('&&APVSMB.VALEURS', 'V V R', nloc, jvaleu)
+        do jcoll = 0, nloc-1
+            zi4(jindic+jcoll) = zi(jnuglp+jcoll)-1
+            numglo = zi(jnugl+jcoll)
+            zr(jvaleu+jcoll) = rsolu(numglo)
+        end do
+        call VecSetValues(b, nloc, zi4(jindic), zr(jvaleu), ADD_VALUES,&
+                          ierr)
+        call jedetr('&&APVSMB.INDICES')
+        call jedetr('&&APVSMB.VALEURS')
+        call VecAssemblyBegin(b, ierr)
+        ASSERT(ierr.eq.0)
+        call VecAssemblyEnd(b, ierr)
+        ASSERT(ierr.eq.0)
+    else
+        call jelira(nonu//'.SMOS.SMDI', 'LONMAX', nsmdi)
+        neq=nsmdi
+!
+        call VecCreate(mpicou, b, ierr)
+        ASSERT(ierr.eq.0)
+        call VecSetBlockSize(b, bs, ierr)
+        ASSERT(ierr.eq.0)
+        call VecSetSizes(b, PETSC_DECIDE, neq, ierr)
+        ASSERT(ierr.eq.0)
+        call VecSetType(b, VECMPI, ierr)
+        ASSERT(ierr.eq.0)
+!
+        call VecGetOwnershipRange(b, low, high, ierr)
+        ASSERT(ierr.eq.0)
+        call VecGetArray(b, xx, xidx, ierr)
+        ASSERT(ierr.eq.0)
+!
+        do i = 1, high-low
+            xx(xidx+i)=rsolu(low+i)
+        end do
+!
+        call VecRestoreArray(b, xx, xidx, ierr)
+        ASSERT(ierr.eq.0)
+    endif
+!
+    call jedema()
+!
+#else
+    integer :: idummy
+    logical :: ldummy
+    real(kind=8) :: rdummy
+    idummy = kptsc
+    ldummy = lmd
+    rdummy = rsolu(1)
+#endif
+!
+end subroutine

@@ -1,0 +1,473 @@
+# TITRE RUINE ELASTO-PLASTIQUE DU PORTIQUE DE LEE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSNL134A',NIV_PUB_WEB='INTERNET',VISU_EFICAS='OUI'),DEBUG=_F(SDVERI='OUI'),
+      IGNORE_ALARM='FONCT0_62',)
+
+#Acquisition du maillage du  portique bi-encastre
+
+MAILLAGE=LIRE_MAILLAGE(UNITE=17,FORMAT='MED',);
+
+MAILLAGE=DEFI_GROUP(reuse =MAILLAGE,
+                    MAILLAGE=MAILLAGE,
+                    CREA_GROUP_NO=_F(TOUT_GROUP_MA='OUI',),);
+#Acquisition du maillage de la section en fibres
+
+M_SECT=LIRE_MAILLAGE(UNITE=18,FORMAT='MED',);
+#Corps du fichier de commandes : modele, materiau, caracteristiques de la poutre.
+
+MOD_TGM=AFFE_MODELE(MAILLAGE=MAILLAGE,
+                    AFFE=_F(GROUP_MA='OMEGA',
+                            PHENOMENE='MECANIQUE',
+                            MODELISATION='POU_D_TGM',),);
+
+ACIER=DEFI_MATERIAU(ELAS=_F(E=720.0,
+                            NU=0.3,),
+                    ECRO_LINE=_F(SY=10.44,
+                      D_SIGM_EPSI=72.0,),);
+
+GF=DEFI_GEOM_FIBRE(
+   SECTION =_F(GROUP_FIBRE='SECF',
+             GROUP_MA_SECT='SECT',
+             MAILLAGE_SECT=M_SECT,
+            COOR_AXE_POUTRE=(0.,0.,),),)
+
+COMPF=DEFI_COMPOR(GEOM_FIBRE=GF,MATER_SECT=ACIER,
+                  MULTIFIBRE=_F(GROUP_FIBRE='SECF',MATER=ACIER,
+                                 RELATION='VMIS_ISOT_LINE',),
+                     )
+
+MATER=AFFE_MATERIAU(MAILLAGE=MAILLAGE,
+                    AFFE=_F(GROUP_MA='OMEGA',MATER=ACIER,),
+                  AFFE_COMPOR=_F(GROUP_MA='OMEGA',COMPOR=COMPF),
+                    );
+
+CARACT=AFFE_CARA_ELEM(MODELE=MOD_TGM,
+                      POUTRE=_F(GROUP_MA='OMEGA',
+                                SECTION='GENERALE',
+                                CARA=('A','IY','IZ','AY','AZ','JX','JG','IYR2','IZR2',),
+                                VALE=(6.0,4.455,1.98,1.2,1.2,8.0,0.0,0.0,0.0,),),
+                      GEOM_FIBRE=GF,
+                      MULTIFIBRE=_F(GROUP_MA='OMEGA',
+                                   GROUP_FIBRE='SECF'),);
+
+#Conditions aux limites (bi-encastrement) et chargement
+
+LIAISON=AFFE_CHAR_MECA(MODELE=MOD_TGM,
+                       DDL_IMPO=(_F(GROUP_NO=('PA','PC',),
+                                    DX=0.0,
+                                    DY=0.0,
+                                    DRX=0.0,
+                                    DRY=0.0,),
+                                 _F(GROUP_NO='OMEGA',
+                                    DZ=0.0,
+                                    GRX=0.0,),),);
+
+FORCE=AFFE_CHAR_MECA(MODELE=MOD_TGM,
+                     FORCE_NODALE=_F(GROUP_NO='PX',
+                                     FY=-1.0,),);
+
+FO_MULT=DEFI_FONCTION(NOM_PARA='INST',
+                      VALE=(0.0,0.0,10.0,10.0,),
+                      PROL_DROITE='EXCLU',
+                      PROL_GAUCHE='EXCLU',);
+
+tforc=0.5
+tfin=10.0;
+
+L_INST=DEFI_LIST_REEL(DEBUT=0.0,
+                      INTERVALLE=(_F(JUSQU_A=tforc,
+                                     NOMBRE=5,),
+                                  _F(JUSQU_A=tfin,
+                                     PAS=0.01,),),);
+
+RESO0=STAT_NON_LINE(MODELE=MOD_TGM,
+                    CHAM_MATER=MATER,
+                    CARA_ELEM=CARACT,
+                    EXCIT=(_F(CHARGE=LIAISON,),
+                           _F(CHARGE=FORCE,
+                              FONC_MULT=FO_MULT,
+                              ),),
+                    COMP_INCR=_F(RELATION='MULTIFIBRE',DEFORMATION='GROT_GDEP',),
+                    INCREMENT=_F(LIST_INST=L_INST,
+                                 INST_FIN=tforc,),
+                    NEWTON=_F(MATRICE='TANGENTE',
+                              REAC_ITER=1,),
+                    CONVERGENCE=_F(RESI_GLOB_RELA=1e-6,
+                                   ITER_GLOB_MAXI=50,),
+                    );
+
+RESO=STAT_NON_LINE(MODELE=MOD_TGM,
+                    CHAM_MATER=MATER,
+                    CARA_ELEM=CARACT,
+                    ETAT_INIT=_F(EVOL_NOLI=RESO0),
+                    EXCIT=(_F(CHARGE=LIAISON,),
+                           _F(CHARGE=FORCE,
+                              TYPE_CHARGE='FIXE_PILO',
+                              ),),
+                    COMP_INCR=_F(RELATION='MULTIFIBRE',DEFORMATION='GROT_GDEP',),
+                    INCREMENT=_F(LIST_INST=L_INST,
+                                 INST_FIN=tfin,),
+                    NEWTON=_F(MATRICE='TANGENTE',
+                              REAC_ITER=1,),
+                    PILOTAGE=_F(TYPE='LONG_ARC',
+                                SELECTION='ANGL_INCR_DEPL',
+                                COEF_MULT=0.01,
+                                GROUP_NO='OMEGA',
+                                NOM_CMP=('DX','DY',),
+                                ETA_PILO_MAX=2.0,),
+                    CONVERGENCE=_F(RESI_GLOB_RELA=1e-5,
+                                   ITER_GLOB_MAXI=10,),
+                    );
+
+# Valeurs de reference
+
+ETA_REF=DEFI_LIST_REEL(VALE=(0.968,
+1.242,
+1.4153,
+1.507,
+1.4605,
+1.4006,
+1.3151,
+1.1062,
+0.9275,),);
+
+DEPX_REF=DEFI_LIST_REEL(VALE=(1.773,
+3.6975,
+6.496,
+13.176,
+18.5865,
+23.0885,
+28.6505,
+38.5155,
+45.851,),);
+
+DEPY_REF=DEFI_LIST_REEL(VALE=(10.246,
+16.1245,
+22.8245,
+37.6525,
+43.3615,
+48.318,
+52.057,
+57.5425,
+60.1085,),);
+
+# Preparation des fonctions pour les tests
+
+ETA_PILO=RECU_FONCTION(RESULTAT=RESO,
+                       NOM_PARA_RESU='ETA_PILOTAGE',);
+
+DEPX=RECU_FONCTION(RESULTAT=RESO,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   GROUP_NO='PX',);
+
+DEPY=RECU_FONCTION(RESULTAT=RESO,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DY',
+                   GROUP_NO='PX',);
+
+MDEPY=CALC_FONCTION(COMB=_F(FONCTION=DEPY,
+                            COEF=-1.0,),);
+
+T_ETA=CREA_TABLE(FONCTION=_F(FONCTION=ETA_PILO,),);
+
+T_DEPX=CREA_TABLE(FONCTION=_F(FONCTION=DEPX,),);
+
+T_DEPY=CREA_TABLE(FONCTION=_F(FONCTION=MDEPY,),);
+
+TAB_COMB=CALC_TABLE(TABLE=T_ETA,
+                    ACTION=(_F(OPERATION='COMB', TABLE=T_DEPX, NOM_PARA='INST'),
+                            _F(OPERATION='COMB', TABLE=T_DEPY, NOM_PARA='INST'),),);
+IMPR_TABLE(TABLE=TAB_COMB,);
+
+DEPX_ETA=RECU_FONCTION(TABLE=TAB_COMB,
+                     PARA_X='DX',
+                     PARA_Y='ETA_PILO',
+                     INTERPOL='LIN',
+                     PROL_DROITE='CONSTANT',
+                     PROL_GAUCHE='CONSTANT',);
+
+DEPY_ETA=RECU_FONCTION(TABLE=TAB_COMB,
+                     PARA_X='DY',
+                     PARA_Y='ETA_PILO',
+                     INTERPOL='LIN',
+                     PROL_DROITE='CONSTANT',
+                     PROL_GAUCHE='CONSTANT',);
+
+# Impression des courbes
+
+IMPR_FONCTION(FORMAT='XMGRACE',
+              COURBE=(_F(FONC_X=DEPX,
+                         FONC_Y=ETA_PILO,
+                         LEGENDE='DX',MARQUEUR=0,),
+                      _F(FONC_X=MDEPY,
+                         FONC_Y=ETA_PILO,
+                         LEGENDE='-DY',MARQUEUR=0,),
+                      _F(LIST_PARA=DEPX_REF,
+                         LIST_RESU=ETA_REF,
+                         LEGENDE='DX (ref.)',),
+                      _F(LIST_PARA=DEPY_REF,
+                         LIST_RESU=ETA_REF,
+                         LEGENDE='-DY (ref.)',),),
+              TITRE='Reponse force-deplacement',
+              BORNE_X=(0.0,105.0,),
+              BORNE_Y=(-1.0,2.0,),
+              ECHELLE_X='LIN',
+              ECHELLE_Y='LIN',
+              GRILLE_X=10,
+              GRILLE_Y=0.5,
+              LEGENDE_X='Deplacement (cm)',
+              LEGENDE_Y='Force (N)',);
+
+# Tests
+
+# REFERENCE ISSUE DE LA LITTERATURE (MOYENNE DE CODES)
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=0.937235395674,
+                         VALE_REFE=0.96799999999999997,
+                         CRITERE='RELATIF',
+                         VALE_PARA=1.7729999999999999,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      _F(VALE_CALC=1.1933790415,
+                         VALE_REFE=1.242,
+                         CRITERE='RELATIF',
+                         VALE_PARA=3.6974999999999998,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      _F(VALE_CALC=1.3914459835,
+                         VALE_REFE=1.4153,
+                         CRITERE='RELATIF',
+                         VALE_PARA=6.4960000000000004,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      _F(VALE_CALC=1.4891489351,
+                         VALE_REFE=1.5069999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=13.176,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      _F(VALE_CALC=1.4634792989,
+                         VALE_REFE=1.4604999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=18.586500000000001,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      _F(VALE_CALC=1.4235078783,
+                         VALE_REFE=1.4006000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=23.0885,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      _F(VALE_CALC=1.3494817568,
+                         VALE_REFE=1.3150999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=28.650500000000001,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      _F(VALE_CALC=1.1454324353,
+                         VALE_REFE=1.1062000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=38.515500000000003,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      _F(VALE_CALC=0.961684016037,
+                         VALE_REFE=0.92749999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=45.850999999999999,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPX_ETA,),
+                      ),
+              )
+
+# Les 2 derniers tests ont des tolerances tres elevees uniquement car il est impossible de tester proprement un calcul pilote
+# La superposition des courbes de references et des courbes calculees montre une superposition quasi-parfaite.
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=0.964528504574,
+                         VALE_REFE=0.96799999999999997,
+                         CRITERE='RELATIF',
+                         VALE_PARA=10.246,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPY_ETA,),
+                      _F(VALE_CALC=1.2149051992,
+                         VALE_REFE=1.242,
+                         CRITERE='RELATIF',
+                         VALE_PARA=16.124500000000001,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPY_ETA,),
+                      _F(VALE_CALC=1.4025380463,
+                         VALE_REFE=1.4153,
+                         CRITERE='RELATIF',
+                         VALE_PARA=22.8245,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPY_ETA,),
+                      _F(VALE_CALC=1.4852010060,
+                         VALE_REFE=1.5069999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=37.652500000000003,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPY_ETA,),
+                      _F(VALE_CALC=1.4608358312,
+                         VALE_REFE=1.4604999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=43.361499999999999,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPY_ETA,),
+                      _F(VALE_CALC=1.4152575292,
+                         VALE_REFE=1.4006000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=48.317999999999998,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPY_ETA,),
+                      _F(VALE_CALC=1.3356092898,
+                         VALE_REFE=1.3150999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=52.057000000000002,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.05,
+                         FONCTION=DEPY_ETA,),
+                      _F(VALE_CALC=0.974179701474,
+                         VALE_REFE=1.1062000000000001,
+                         CRITERE='RELATIF',
+                         VALE_PARA=57.542499999999997,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.14999999999999999,
+                         FONCTION=DEPY_ETA,),
+                      _F(VALE_CALC=0.443659032765,
+                         VALE_REFE=0.92749999999999999,
+                         CRITERE='RELATIF',
+                         VALE_PARA=60.108499999999999,
+                         REFERENCE='SOURCE_EXTERNE',
+                         PRECISION=0.55000000000000004,
+                         FONCTION=DEPY_ETA,),
+                      ),
+              )
+
+# NON REGRESSION
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=0.937235395674,
+                         CRITERE='RELATIF',
+                         VALE_PARA=1.7729999999999999,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      _F(VALE_CALC=0.81059483,
+                         CRITERE='RELATIF',
+                         VALE_PARA=1.1933790415,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      _F(VALE_CALC=1.3914459835,
+                         CRITERE='RELATIF',
+                         VALE_PARA=6.4960000000000004,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      _F(VALE_CALC=1.489148935,
+                         CRITERE='RELATIF',
+                         VALE_PARA=13.176,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      _F(VALE_CALC=1.4634792989,
+                         CRITERE='RELATIF',
+                         VALE_PARA=18.586500000000001,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      _F(VALE_CALC=1.4235078783,
+                         CRITERE='RELATIF',
+                         VALE_PARA=23.0885,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      _F(VALE_CALC=1.3494817568,
+                         CRITERE='RELATIF',
+                         VALE_PARA=28.650500000000001,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      _F(VALE_CALC=1.1454324353,
+                         CRITERE='RELATIF',
+                         VALE_PARA=38.515500000000003,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      _F(VALE_CALC=0.961684016037,
+                         CRITERE='RELATIF',
+                         VALE_PARA=45.850999999999999,
+                         FONCTION=DEPX_ETA,
+                         ),
+                      ),
+              )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=0.964528504574,
+                         CRITERE='RELATIF',
+                         VALE_PARA=10.246,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      _F(VALE_CALC=1.2149051992,
+                         CRITERE='RELATIF',
+                         VALE_PARA=16.124500000000001,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      _F(VALE_CALC=1.4025380463,
+                         CRITERE='RELATIF',
+                         VALE_PARA=22.8245,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      _F(VALE_CALC=1.4852010060,
+                         CRITERE='RELATIF',
+                         VALE_PARA=37.652500000000003,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      _F(VALE_CALC=1.4608358312,
+                         CRITERE='RELATIF',
+                         VALE_PARA=43.361499999999999,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      _F(VALE_CALC=1.4152575292,
+                         CRITERE='RELATIF',
+                         VALE_PARA=48.317999999999998,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      _F(VALE_CALC=1.3356092898,
+                         CRITERE='RELATIF',
+                         VALE_PARA=52.057000000000002,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      _F(VALE_CALC=0.974179701474,
+                         CRITERE='RELATIF',
+                         VALE_PARA=57.542499999999997,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      _F(VALE_CALC=0.443659032765,
+                         CRITERE='RELATIF',
+                         VALE_PARA=60.108499999999999,
+                         FONCTION=DEPY_ETA,
+                         ),
+                      ),
+              )
+
+FIN();

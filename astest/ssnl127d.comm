@@ -1,0 +1,436 @@
+# TITRE BARRE ENCASTREE A UNE EXTREMITE ET CHARGEE PAR UNE TRACTION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# ======================================================================
+
+
+
+DEBUT(CODE=_F(NOM='SSNL127D',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED', );
+
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                 MAILLAGE=MAIL,
+                 CREA_GROUP_NO=(_F(GROUP_MA='LINS',
+                                   NOM='LIN',),
+                                _F(GROUP_MA='LINS1',
+                                   NOM='LIN1',),
+                                _F(GROUP_MA='LINL',
+                                   NOM='LINC',),
+                                   ),
+                 INFO=1,);
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                 MAILLAGE=MAIL,
+                 CREA_GROUP_NO=_F(GROUP_MA=('FACE','FACEA','BLOQ1','BLOQ',),),
+                 );
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                INFO=2,
+                CREA_GROUP_NO=(
+                               _F(DIFFE=('BLOQ','LIN',),
+                                  NOM='ENCAS',),
+                               _F(DIFFE=('BLOQ1','LIN1',),
+                                  NOM='ENCAS1',),
+                                  ),);
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_NO=_F(GROUP_MA=('PAFA',),),);
+
+MODELE=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                            PHENOMENE='MECANIQUE',
+                            MODELISATION='3D',),);
+
+
+
+# ------ TRACTION SIMPLE AVEC ECROUISSAGE ------------------------------
+# AFFECTE SUR LA SECTION CERCLE
+
+MATC2=DEFI_MATERIAU(
+                ELAS=_F(
+                   E = 2.E11,
+                   NU = 0.3,
+                   ),
+                CORR_ACIER=_F(
+                   D_CORR=0.2,
+                   ECRO_K=500.E6,
+                   ECRO_M=2.781,
+                   SY = 500.E6,
+                   )
+              )
+
+
+CHART=AFFE_CHAR_MECA(MODELE=MODELE,
+                        DDL_IMPO=(_F(GROUP_NO='FACEA',
+                                     DZ=0.0,),
+                                  _F(GROUP_NO='ENCAS',
+                                     DX=0.0,
+                                  ),
+                                  _F(GROUP_NO='ENCAS1',
+                                     DY=0.0,
+                                  ),
+                                 _F( GROUP_NO = 'FACE',
+                            DZ = 1.0),
+                                  ),);
+FONCT=DEFI_FONCTION(
+              NOM_PARA='INST',
+                  VALE=(0., 0.,
+                        1., 1.,),
+              PROL_DROITE='CONSTANT',
+             );
+
+
+#
+
+CHCOR=CREA_CHAMP(TYPE_CHAM='CART_CORR_R',
+                 OPERATION='AFFE',
+                 MAILLAGE=MAIL,
+                 AFFE=_F(
+                 TOUT='OUI',
+                 NOM_CMP='CORR',
+                 VALE=0.0,),);
+
+CHMAT1=AFFE_MATERIAU(   MAILLAGE=MAIL,
+      AFFE=_F(TOUT='OUI', MATER = MATC2,),
+      AFFE_VARC=_F(NOM_VARC='CORR', CHAM_GD=CHCOR,), )
+
+
+LINST=DEFI_LIST_REEL(DEBUT=0.0,
+                     INTERVALLE=(_F(JUSQU_A=0.002,
+                                    NOMBRE=10,),
+                                 _F(JUSQU_A=0.018,
+                                    NOMBRE=20,),
+                                 _F(JUSQU_A=0.02,
+                                    NOMBRE=10,),),);
+
+REST=STAT_NON_LINE(MODELE=MODELE,
+                   CHAM_MATER=CHMAT1,
+
+                   EXCIT=_F(CHARGE=CHART,
+                            FONC_MULT=FONCT,),
+                   COMP_INCR=_F(RELATION='CORR_ACIER',
+                                RESI_INTE_RELA=1e-06,
+                                ITER_INTE_MAXI=150,
+                                ),
+                   INCREMENT=_F(LIST_INST=LINST,),
+                   NEWTON=_F(REAC_INCR=1,
+                             PREDICTION='ELASTIQUE',
+                             MATRICE='TANGENTE',
+                             REAC_ITER=3,),
+                   RECH_LINEAIRE=_F(ITER_LINE_MAXI=3,
+                                   # RHO_MIN=1e-06,
+                                    RHO_MAX=10.0,),
+                   CONVERGENCE=_F(RESI_GLOB_RELA=1e-05,
+                                  ITER_GLOB_MAXI=10),);
+
+CALC_CHAMP(reuse=REST,RESULTAT=REST,  CONTRAINTE=('SIGM_ELNO'))
+
+NdeU=RECU_FONCTION(RESULTAT=REST,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOM_CMP='SIZZ',
+                   MAILLE='M1',
+                   NOEUD='N1');
+
+DdeU=RECU_FONCTION(RESULTAT=REST,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V2',
+                   MAILLE='M1',
+                   POINT=1,);
+
+PdeU=RECU_FONCTION(RESULTAT=REST,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   MAILLE='M1',
+                   POINT=1,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=NdeU,),
+              UNITE=8,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=PdeU,),
+              UNITE=8,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=DdeU,),
+              UNITE=8,);
+
+CHCOR2=CREA_CHAMP(TYPE_CHAM='CART_CORR_R',
+                  OPERATION='AFFE',
+                  MAILLAGE=MAIL,
+                  AFFE=_F(
+                  TOUT='OUI',
+                  NOM_CMP='CORR',
+                  VALE=2.5,),);
+
+LINST2=DEFI_LIST_REEL(DEBUT=0.0,
+                      INTERVALLE=(_F(JUSQU_A=0.002,
+                                     NOMBRE=10,),
+                                  _F(JUSQU_A=0.018,
+                                     NOMBRE=20,),),);
+
+CHMAT2=AFFE_MATERIAU(   MAILLAGE=MAIL,
+      AFFE=_F(TOUT='OUI', MATER = MATC2,),
+      AFFE_VARC=_F(NOM_VARC='CORR', CHAM_GD=CHCOR2,), )
+
+REST2=STAT_NON_LINE(MODELE=MODELE,
+                    CHAM_MATER=CHMAT2,
+
+                    EXCIT=_F(CHARGE=CHART,
+                             FONC_MULT=FONCT,),
+                    COMP_INCR=_F(RELATION='CORR_ACIER',
+                                 RESI_INTE_RELA=1e-06,
+                                 ITER_INTE_MAXI=15,
+                                 ),
+                    INCREMENT=_F(LIST_INST=LINST2,),
+                    NEWTON=_F(REAC_INCR=1,
+                              PREDICTION='ELASTIQUE',
+                              MATRICE='TANGENTE',
+                              PAS_MINI_ELAS=0.0001,
+                              REAC_ITER=3,),
+                    RECH_LINEAIRE=_F(ITER_LINE_MAXI=3,
+                                  #   RHO_MIN=1e-06,
+                                     RHO_MAX=10.0,),
+                    CONVERGENCE=_F(RESI_GLOB_RELA=1e-06,
+                                   ITER_GLOB_MAXI=10,
+                                   ITER_GLOB_ELAS=10),);
+
+CALC_CHAMP(reuse=REST2,RESULTAT=REST2,  CONTRAINTE=('SIGM_ELNO'))
+
+NdeU2=RECU_FONCTION(RESULTAT=REST2,
+                    NOM_CHAM='SIGM_ELNO',
+                    NOM_CMP='SIZZ',
+                    MAILLE='M1',
+                    NOEUD='N1');
+
+DdeU2=RECU_FONCTION(RESULTAT=REST2,
+                    NOM_CHAM='VARI_ELGA',
+                    NOM_CMP='V2',
+                    MAILLE='M1',
+                    POINT=1,);
+
+PdeU2=RECU_FONCTION(RESULTAT=REST2,
+                    NOM_CHAM='VARI_ELGA',
+                    NOM_CMP='V1',
+                    MAILLE='M1',
+                    POINT=1,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=NdeU2,),
+              UNITE=8,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=PdeU2,),
+              UNITE=8,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=DdeU2,),
+              UNITE=8,);
+
+CHCOR3=CREA_CHAMP(TYPE_CHAM='CART_CORR_R',
+                  OPERATION='AFFE',
+                  MAILLAGE=MAIL,
+                  AFFE=_F(
+                  TOUT='OUI',
+                  NOM_CMP='CORR',
+                  VALE=13.0,),);
+
+LINST3=DEFI_LIST_REEL(DEBUT=0.0,
+                      INTERVALLE=(_F(JUSQU_A=0.003,
+                                     NOMBRE=10,),
+                                  _F(JUSQU_A=0.008,
+                                     NOMBRE=30,),),);
+
+CHMAT3=AFFE_MATERIAU(   MAILLAGE=MAIL,
+      AFFE=_F(TOUT='OUI', MATER = MATC2,),
+      AFFE_VARC=_F(NOM_VARC='CORR', CHAM_GD=CHCOR3,), )
+
+REST3=STAT_NON_LINE(MODELE=MODELE,
+                    CHAM_MATER=CHMAT3,
+
+                    EXCIT=_F(CHARGE=CHART,
+                             FONC_MULT=FONCT,),
+                    COMP_INCR=_F(RELATION='CORR_ACIER',
+                                 RESI_INTE_RELA=1e-06,
+                                 ITER_INTE_MAXI=15,
+                                 ),
+                    INCREMENT=_F(LIST_INST=LINST3,),
+                    NEWTON=_F(REAC_INCR=1,
+                              PREDICTION='ELASTIQUE',
+                              MATRICE='TANGENTE',
+                              PAS_MINI_ELAS=0.0001,
+                              REAC_ITER=3,),
+                    RECH_LINEAIRE=_F(ITER_LINE_MAXI=3,
+                                  #   RHO_MIN=1e-06,
+                                     RHO_MAX=10.0,),
+                    CONVERGENCE=_F(RESI_GLOB_RELA=1e-06,
+                                   ITER_GLOB_MAXI=10,
+                                   ITER_GLOB_ELAS=10),);
+
+CALC_CHAMP(reuse=REST3,RESULTAT=REST3,  CONTRAINTE=('SIGM_ELNO'))
+
+NdeU3=RECU_FONCTION(RESULTAT=REST3,
+                    NOM_CHAM='SIGM_ELNO',
+                    NOM_CMP='SIZZ',
+                    MAILLE='M1',
+                    NOEUD='N1',);
+
+DdeU3=RECU_FONCTION(RESULTAT=REST3,
+                    NOM_CHAM='VARI_ELGA',
+                    NOM_CMP='V2',
+                    MAILLE='M1',
+                    POINT=1,);
+
+PdeU3=RECU_FONCTION(RESULTAT=REST3,
+                    NOM_CHAM='VARI_ELGA',
+                    NOM_CMP='V1',
+                    MAILLE='M1',
+                    POINT=1,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=NdeU3,),
+              UNITE=8,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=PdeU3,),
+              UNITE=8,);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=_F(FONCTION=DdeU3,),
+              UNITE=8,);
+
+S=2.8274333882308137e-05
+
+TEST_RESU(RESU=(_F(INST=0.019,
+                   RESULTAT=REST,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=7.7315678664431E+08,
+                   MAILLE='M1',),
+                _F(INST=0.02,
+                   RESULTAT=REST,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=7.4874791154054E+08,
+                   MAILLE='M1',
+                   ),
+                _F(INST=0.02,
+                   POINT=1,
+                   RESULTAT=REST,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.19625626047286,
+                   MAILLE='M1',
+                   ),
+                _F(INST=0.019199999999999998,
+                   POINT=1,
+                   RESULTAT=REST,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V2',
+                   VALE_CALC=3.4530460509451E-03,
+                   MAILLE='M1',
+                   ),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(INST=0.0164,
+                   RESULTAT=REST2,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=7.5881259858969E+08,
+                   MAILLE='M1',),
+                _F(INST=0.017999999999999999,
+                   RESULTAT=REST2,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=7.2611583586183E+08,
+                   MAILLE='M1',
+                   ),
+                _F(INST=0.017999999999999999,
+                   POINT=1,
+                   RESULTAT=REST2,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.17636942082070,
+                   MAILLE='M1',
+                   ),
+                _F(INST=0.0172,
+                   POINT=1,
+                   RESULTAT=REST2,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V2',
+                   VALE_CALC=0.015050330844946,
+                   MAILLE='M1',
+                   ),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(INST=7.4999999999999997E-3,
+                   RESULTAT=REST3,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=6.9367207532755E+08,
+                   MAILLE='M1',),
+                _F(INST=8.0E-3,
+                   RESULTAT=REST3,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=6.6127886160554E+08,
+                   MAILLE='M1',
+                   ),
+                _F(INST=8.0E-3,
+                   POINT=1,
+                   RESULTAT=REST3,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.076693605804041,
+                   MAILLE='M1',
+                   ),
+                _F(INST=7.6666700000000004E-3,
+                   POINT=1,
+                   RESULTAT=REST3,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V2',
+                   VALE_CALC=0.014998269424696,
+                   MAILLE='M1',
+                   ),
+                ),
+          )
+
+IMPR_FONCTION(FORMAT='XMGRACE',
+              PILOTE='POSTSCRIPT',
+              COURBE=(_F(FONCTION=NdeU,
+                         LEGENDE='O% CORROSION',),
+                      _F(FONCTION=NdeU2,
+                         LEGENDE='2.5% CORROSION',),
+                      _F(FONCTION=NdeU3,
+                         LEGENDE='13% CORROSION',),),);
+
+
+
+
+FIN()

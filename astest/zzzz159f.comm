@@ -1,0 +1,159 @@
+# TITRE TEST DU MODE EXTERNE DE LA MACRO-COMMANDE DE RECALAGE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='ZZZZ159F',NIV_PUB_WEB='INTERNET',VISU_EFICAS='NON'),DEBUG=_F(SDVERI='OUI'))
+# person_in_charge: aimery.assire at edf.fr
+
+import os, sys, glob, math
+from distutils.sysconfig import get_python_lib
+
+ROOT = os.getcwd()
+
+# Recuperation du chemin du fichier macr_recal_ops.py
+commande = None
+for REPPY in ['Eficas', 'Python']:
+   fic = os.path.join( ROOT, REPPY, 'Macro', 'recal.py' )
+   print fic, os.path.isfile(fic)
+   if os.path.isfile(fic):
+      commande = fic
+      print "Zzzzzzzzzz"
+      break
+if not commande:
+    raise aster.error,"<F> Probleme : impossible de recuperer le chemin de recal.py"
+
+
+ASTER_ROOT = os.environ['ASTER_ROOT']
+sys.path.append(get_python_lib(prefix=ASTER_ROOT))
+sys.path.append(os.path.join(ROOT, REPPY))
+# ne pas exporter le contenu sys.path car il contient les repertoires
+# de la version de python courante (conflit possible si as_run utilise
+# un autre python)
+lpath = os.environ.get('PYTHONPATH', '').split(os.pathsep)
+lpath.append(get_python_lib(prefix=ASTER_ROOT))
+lpath.append(os.path.join(ROOT, REPPY))
+os.environ['PYTHONPATH'] = os.pathsep.join(lpath)
+
+from Utilitai.System import ExecCommand
+from asrun.profil import ASTER_PROFIL
+
+arguments = ' --objective=fcalc --objective_type=float --gradient_type=no --mr_parameters=fort.2 '
+commande = '%s %s %s' % (sys.executable, commande, arguments)
+
+# Parametres
+fichier_out      = 'output.txt'
+fichier_grad_out = 'grad.txt'
+
+# Affichage des outputs esclaves ou non
+verbose = True
+
+
+# ------------------------------------------------------------
+def fonction(val):
+   """
+      Calcul de F et eventuellement G par Aster
+   """
+
+   # Affichage
+   print val
+
+   # Menage
+   try:    os.remove(fichier_grad_out)
+   except: pass
+
+
+   # Ajout des parametres
+   cmd = commande + '--input="%s"' % ','.join( [ str(x) for x in val ] )
+
+   # Execution de Code_Aster
+   iret = ExecCommand(cmd, follow_output=verbose, verbose=verbose)
+
+   # Lecture du fichier de F
+   try:
+      f=open(fichier_out, 'r')
+      txt = f.read()
+      f.close()
+      fval = float(txt)
+   except:
+      raise aster.error,"<F> Probleme : impossible de lire le fichier de la fonction F : %s" % fichier_out
+
+   # Affichage
+   print '  --> fonctionnelle : ' + str(fval)
+
+   # Lecture du fichier de G (option -G normal ou -G adim)
+   if os.path.isfile(fichier_grad_out):
+      try:
+         f=open(fichier_grad_out, 'r')
+         txt = f.read()
+         f.close()
+         gval = [ float(x) for x in txt.split(',') ]
+      except:
+         raise aster.error,"<F> Probleme : impossible de lire le fichier de la fonction G: %s" % fichier_grad_out
+
+      # Affichage
+      print '  --> gradient : ' + str(gval)
+      return fval, gval
+
+   return fval
+
+
+# ------------------------------------------------------------
+# Modification du profil .export
+# - Le fichier fort.3 devient le nouveau .comm
+# - On fixe les noms des fichiers esclave (fort.3) et maillage (fort.20)
+# - On retire du profil tous les fichiers resultats
+liste = glob.glob('*.export')
+fichier_export = liste[0]
+prof = ASTER_PROFIL(fichier_export)
+for lab in ('data', 'resu'):
+   l_fr = getattr(prof, lab)
+   l_tmp = l_fr[:]
+   for dico in l_tmp:
+      # fichiers
+      if not dico['isrep']:
+         # Le fichier d'UL 3 est le nouveau .comm
+         if dico['type'] == 'comm' and dico['ul'] == 1:
+            dico['path'] = os.path.join(ROOT, 'fort.3')
+
+            # On supprime tous les fichiers resultats
+            if lab == 'resu': l_fr.remove(dico)
+   setattr(prof, lab, l_fr)
+# Ecriture du nouveau fichier export
+prof.WriteExportTo(fichier_export)
+
+# ------------------------------------------------------------
+# Lancement d'une iteration
+# Attention les parametres doivent etre mis ici par ordre alphabetique
+# et non pas dans l'ordre dans lequel ils apparaissent dans le fichier maitre MACR_RECAL
+#      DSDE__,   SIGY__,   YOUN__
+x0 = [ 2000.,    200.,     200000. ]    # Point de depart
+
+# Une iteration du calcul de F
+fval = fonction(x0)
+
+TBL=CREA_TABLE(LISTE=(_F(LISTE_R=[ fval ],
+                         PARA='FVAL'),
+                      ));
+
+TEST_TABLE(TABLE=TBL,
+           NOM_PARA='FVAL',
+           VALE_CALC= 620.164494348,
+           CRITERE='ABSOLU',
+           );
+
+
+FIN()

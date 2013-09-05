@@ -1,0 +1,247 @@
+# TITRE HOMOGENEISATION D'UN MATERIAU HOMOGENE - CONT. PLANES - QUAD8
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#----------------------------------------------------------------------
+# MODELISATION C_PLAN :   8 NOEUDS -- 1 MAILLE QUAD8
+#           Y
+#          !
+#        C !---------!B                 HOMOGENEISATION THERMIQUE ET
+#          !         !                  MECANIQUE EN CONTRAINTES PLANES
+#          !         !
+#          !         !                 (EN FAIT PAS DE C.L. EN X=1 !)
+#          !---------!  -------->
+#          O          A        X
+#
+#              1.0 M
+#          !---------!
+#======================================================================
+
+DEBUT(CODE=_F(NOM='HPLV101A', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+#
+
+
+MAT=DEFI_MATERIAU( ELAS=_F(  E = 1.0,      NU = 0.3, ALPHA = 0.),
+                          THER=_F(  LAMBDA = 1.0,   RHO_CP = 0.0) )
+
+MAT2=DEFI_MATERIAU(      ELAS=_F( E = 1.0,  NU = 0.3),
+           ECRO_LINE=_F( D_SIGM_EPSI = 0., SY = 10000.) )
+
+MAILL=LIRE_MAILLAGE(   )
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MAILL,
+                          AFFE=_F(  TOUT = 'OUI',   MATER = MAT) )
+
+CHMAT2=AFFE_MATERIAU(  MAILLAGE=MAILL,
+                          AFFE=_F(  TOUT = 'OUI',   MATER = MAT2) )
+
+MODTH=AFFE_MODELE(  MAILLAGE=MAILL,
+                        AFFE=_F( TOUT = 'OUI',   MODELISATION = 'PLAN',
+                              PHENOMENE = 'THERMIQUE') )
+
+MODME=AFFE_MODELE(  MAILLAGE=MAILL,
+                        AFFE=_F( TOUT = 'OUI',   MODELISATION = 'C_PLAN',
+                              PHENOMENE = 'MECANIQUE') )
+
+#-----------------------------------------------------------------------
+
+CHARTH=AFFE_CHAR_THER(  MODELE=MODTH,
+             TEMP_IMPO=_F(  GROUP_NO = 'GRNM14',TEMP = 0.0),
+             PRE_GRAD_TEMP=_F( TOUT = 'OUI',FLUX_X = -1.0))
+
+# POUR TESTER AFFE_CHAR_THER_F/PRE_GRAD_TEMP :
+#   (FL1+FL2+FL3+FL4)(INST,Y)=0.0
+
+FL1=DEFI_FONCTION(NOM_PARA='INST',
+       VALE=(-1., -1.,  1., 1.,))
+
+FL2=DEFI_FONCTION(NOM_PARA='INST',
+       VALE=(-1., +2.,  1., 0.,))
+
+FL3=DEFI_FONCTION(NOM_PARA='Y',
+       VALE=(-1000., +5.,  1000., 0.,))
+
+FL4=DEFI_FONCTION(NOM_PARA='Y',
+       VALE=(-1000., -6.,  1000., -1.,))
+
+CHART1=AFFE_CHAR_THER_F(  MODELE=MODTH,
+             PRE_GRAD_TEMP=_F( TOUT = 'OUI', FLUX_X = FL1))
+
+CHART2=AFFE_CHAR_THER_F(  MODELE=MODTH,
+             PRE_GRAD_TEMP=_F( TOUT = 'OUI', FLUX_X = FL2))
+
+CHART3=AFFE_CHAR_THER_F(  MODELE=MODTH,
+             PRE_GRAD_TEMP=_F( TOUT = 'OUI', FLUX_X = FL3))
+
+CHART4=AFFE_CHAR_THER_F(  MODELE=MODTH,
+             PRE_GRAD_TEMP=_F( TOUT = 'OUI', FLUX_X = FL4))
+
+CHARMM=AFFE_CHAR_MECA(  MODELE=MODME,DDL_IMPO=(
+              _F(  GROUP_NO = 'GRNM14',  DX = 0.0),
+                       _F(  NOEUD = 'O',       DY = 0.0)),
+                  PRE_EPSI=_F( TOUT = 'OUI',EPXX = -1.0))
+
+TEMPGR=THER_LINEAIRE(
+                MODELE=MODTH,   CHAM_MATER=CHMAT,EXCIT=(
+                _F( CHARGE = CHARTH),
+                _F( CHARGE = CHART1),
+                _F( CHARGE = CHART2),
+                _F( CHARGE = CHART3),
+                _F( CHARGE = CHART4)) )
+
+CALC_CHAMP(reuse=TEMPGR,RESULTAT=TEMPGR,THERMIQUE=('ETHE_ELEM'))
+
+
+DEPLDM=MECA_STATIQUE(
+                  MODELE=MODME,
+                  CHAM_MATER=CHMAT,
+                  EXCIT=_F( CHARGE = CHARMM),
+
+                      )
+
+CALC_CHAMP(reuse=DEPLDM,RESULTAT=DEPLDM,CONTRAINTE=('SIGM_ELNO'))
+
+# ------------------------------------------------------------------
+L_INST=DEFI_LIST_REEL(  DEBUT=0.0,
+              INTERVALLE=_F( JUSQU_A = 1.0,      NOMBRE = 10)
+           )
+
+RAMPE=DEFI_FONCTION(   NOM_PARA='INST',
+           PROL_GAUCHE='LINEAIRE',  PROL_DROITE='LINEAIRE',
+           VALE=(0.0,0.0,1.0,1.0,))
+
+# STAT_NON_LINE 'VMIS'
+
+#---------------------
+
+
+DEPLD2=STAT_NON_LINE(
+                            MODELE=MODME,
+                        CHAM_MATER=CHMAT2,
+                             EXCIT=_F(
+                CHARGE = CHARMM,
+                FONC_MULT = RAMPE),
+                         COMP_INCR=_F(
+                RELATION = 'VMIS_ISOT_LINE',
+                ITER_INTE_MAXI = 30,
+                RESI_INTE_RELA = 1.E-8),
+                         INCREMENT=_F(
+                LIST_INST = L_INST),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                REAC_ITER = 2),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6,)
+              )
+
+IMPR_CO(  CONCEPT=_F(NOM=DEPLD2))
+
+# ------------------------------------------------------------------
+T_DZETA=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+     NOM_CHAM='TEMP', RESULTAT=TEMPGR,   NUME_ORDRE=0   )
+
+TT=POST_ELEM(   MODELE=MODTH,   CHAM_MATER=CHMAT,
+                 CHAM_GD=T_DZETA,    INST=0.,  ENER_POT=_F(  TOUT = 'OUI') )
+
+ENER_ELA=POST_ELEM(
+                          RESULTAT=DEPLD2,
+                          NUME_ORDRE=10,
+                           ENER_ELAS=_F( TOUT = 'OUI')
+                       )
+
+ENER_TOT=POST_ELEM(
+                          RESULTAT=DEPLD2,
+                          NUME_ORDRE=10,
+                           ENER_TOTALE=_F( TOUT = 'OUI')
+                       )
+
+DEM_KI11=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+          NOM_CHAM='DEPL', RESULTAT=DEPLDM,  NUME_ORDRE=1 )
+
+PM=POST_ELEM(   MODELE=MODME,   CHAM_MATER=CHMAT,
+                  TITRE=( ' CAS TEST &CODE','&RL COMMANDE &COMMANDE', ),
+                CHAM_GD=DEM_KI11,             ENER_POT=_F(  TOUT = 'OUI') )
+
+IMPR_TABLE(   TABLE=ENER_ELA)
+
+IMPR_TABLE(   TABLE=ENER_TOT )
+
+TEST_RESU(RESU=(_F(RESULTAT=TEMPGR,
+                   NUME_ORDRE=0,
+                   MAILLE='M1',
+                   POINT=1,
+                   NOM_CHAM='ETHE_ELEM',
+                   NOM_CMP='TOTALE',
+                   VALE_CALC=-0.500)
+                ),
+          )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='A',
+                      CRITERE='RELATIF',
+                      NOM_CMP='TEMP',
+                      CHAM_GD=T_DZETA,
+                      VALE_CALC=-1.0,
+                      ),
+                   _F(NOEUD='A',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DX',
+                      CHAM_GD=DEM_KI11,
+                      VALE_CALC=-1.0,
+                      ),
+                   _F(NOEUD='N6',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DX',
+                      CHAM_GD=DEM_KI11,
+                      VALE_CALC=-0.5,
+                      ),
+                   ),
+          )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=9.9999999999999995E-07,
+           VALE_CALC=0.500000000,
+           VALE_REFE=0.5,
+           NOM_PARA='TOTALE',
+           TYPE_TEST='SOMM_ABS',
+           TABLE=TT,)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=9.9999999999999995E-07,
+           VALE_CALC=0.549450549,
+           VALE_REFE=0.54945049999999995,
+           NOM_PARA='TOTALE',
+           TYPE_TEST='SOMM_ABS',
+           TABLE=PM,)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=9.9999999999999995E-07,
+           VALE_CALC=0.549450549,
+           VALE_REFE=0.54945049999999995,
+           NOM_PARA='TOTALE',
+           TYPE_TEST='SOMM_ABS',
+           TABLE=ENER_ELA,)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=9.9999999999999995E-07,
+           VALE_CALC=0.549450549,
+           VALE_REFE=0.54945049999999995,
+           NOM_PARA='TOTALE',
+           TYPE_TEST='SOMM_ABS',
+           TABLE=ENER_TOT,)
+
+FIN( )
+#

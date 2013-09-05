@@ -1,0 +1,303 @@
+# TITRE CYLINDRE SOUMIS A UNE PRESSION EN MODE 1 FOURIER (QUAD8)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# CAS TEST SSLV109B
+# ----------------------------------------------------------------------
+# CYLINDRE EN FLEXION FOURIER HARMONIQUE 1
+#
+# MODELISATION : ELEMENTS MECANIQUE AXIS_FOURIER (QUAD8)
+# MAILLAGE     : ALIBABA ==> ASTER
+#
+# ----------------------------------------------------------------------
+# GROUPES DE MAILLES: PRES_REP : BOUT
+# ----------------------------------------------------------------------
+#
+
+DEBUT(CODE=_F(NOM='SSLV109B',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+M=LIRE_MAILLAGE()
+
+MO=AFFE_MODELE(        MAILLAGE=M,
+                                AFFE=_F(  TOUT = 'OUI',
+                                       PHENOMENE = 'MECANIQUE',
+                                       MODELISATION = 'AXIS_FOURIER', ))
+
+MA=DEFI_MATERIAU(          ELAS=_F(  E = 72.,
+                                       NU = 0.3,
+                                       RHO = 0.,                        ))
+
+P=DEFI_FONCTION(      NOM_PARA='X',
+           VALE=(0.,0., .5, .5, 1., 1.,) )
+
+U0=DEFI_CONSTANTE(    VALE=0. )
+
+CM=AFFE_MATERIAU(      MAILLAGE=M,
+                                AFFE=_F(  TOUT = 'OUI',
+                                       MATER = MA,                      ))
+
+BLOQU=AFFE_CHAR_MECA_F(       MODELE=MO,DDL_IMPO=(
+               _F(  NOEUD = 'N1',           DX = U0,   DY = U0,    DZ = U0,   ),
+                        _F(  NOEUD = 'N2',           DY = U0,   ),
+                        _F(  NOEUD = 'N3',           DY = U0,   ))   )
+
+CH=AFFE_CHAR_MECA_F(       MODELE=MO,
+               PRES_REP=_F(  GROUP_MA = 'BOUT',       PRES = P,  )  )
+
+RESU=MACRO_ELAS_MULT(MODELE=MO,
+                     CHAM_MATER=CM,
+                     CHAR_MECA_GLOBAL=BLOQU,
+                     CAS_CHARGE=_F(MODE_FOURIER = 1,
+                                   TYPE_MODE = 'SYME',
+                                   CHAR_MECA = CH,
+                                   SOUS_TITRE = 'MODE FOURIER 1 SYME'),);
+
+RESU=CALC_CHAMP(reuse= RESU,
+                RESULTAT = RESU,
+                CONTRAINTE='SIGM_ELNO',);
+
+DEPLA=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+NOM_CHAM='DEPL', RESULTAT=RESU,
+                       NUME_MODE=1
+                                      )
+
+SIGMA=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+NOM_CHAM='SIGM_ELNO', RESULTAT=RESU,
+                       NUME_MODE=1
+                            )
+
+RESU=CALC_CHAMP(  reuse=RESU,
+                   ENERGIE=('EPOT_ELEM'),
+                  NUME_MODE=1,
+                  RESULTAT=RESU,
+                 )
+
+TEST_RESU(CHAM_ELEM=(_F(NOEUD='N3',
+                        NOM_CMP='SIYY',
+                        MAILLE='M1',
+                        CHAM_GD=SIGMA,
+                        VALE_CALC=-1.0000000000083,
+                        VALE_REFE=-1.0,
+                        REFERENCE = 'ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     _F(NOEUD='N7',
+                        CRITERE='ABSOLU',
+                        NOM_CMP='SIYY',
+                        MAILLE='M2',
+                        CHAM_GD=SIGMA,
+                        VALE_CALC=-2.1433549379779E-13,
+                        VALE_REFE=0.0,
+                        REFERENCE = 'ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     _F(NOEUD='N8',
+                        NOM_CMP='SIYY',
+                        MAILLE='M2',
+                        CHAM_GD=SIGMA,
+                        VALE_CALC=-0.50000000000039,
+                        VALE_REFE=-0.5,
+                        REFERENCE = 'ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     _F(NOEUD='N9',
+                        NOM_CMP='SIYY',
+                        MAILLE='M1',
+                        CHAM_GD=SIGMA,
+                        VALE_CALC=-1.0000000000039,
+                        VALE_REFE=-1.0,
+                        REFERENCE = 'ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     _F(NOEUD='N9',
+                        NOM_CMP='SIYY',
+                        MAILLE='M2',
+                        CHAM_GD=SIGMA,
+                        VALE_CALC=-1.0000000000006,
+                        VALE_REFE=-1.0,
+                        REFERENCE = 'ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     _F(NOEUD='N13',
+                        CRITERE='ABSOLU',
+                        NOM_CMP='SIYY',
+                        MAILLE='M2',
+                        CHAM_GD=SIGMA,
+                        VALE_CALC=9.9711905399147E-14,
+                        VALE_REFE=0.,
+                        REFERENCE = 'ANALYTIQUE',
+                        PRECISION=2.E-3,),
+                     _F(NOEUD='N15',
+                        NOM_CMP='SIYY',
+                        MAILLE='M2',
+                        CHAM_GD=SIGMA,
+                        VALE_CALC=-0.99999999999994,
+                        VALE_REFE=-1.0,
+                        REFERENCE = 'ANALYTIQUE',
+                        PRECISION=1.E-3,),
+                     ),)
+
+TEST_RESU(RESU=(_F(NUME_MODE=1,
+                   POINT=1,
+                   RESULTAT=RESU,
+                   NOM_CHAM='EPOT_ELEM',
+                   NOM_CMP='TOTALE',
+                   VALE_CALC=0.010416666666792,
+                   VALE_REFE=0.0104166667,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                _F(NUME_MODE=1,
+                   POINT=1,
+                   RESULTAT=RESU,
+                   NOM_CHAM='EPOT_ELEM',
+                   NOM_CMP='TOTALE',
+                   VALE_CALC=0.010416666666674,
+                   VALE_REFE=0.0104166667,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,
+                   MAILLE='M2',),
+                ),)
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N3',
+                      NOM_CMP='DX',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=2.0833333333604E-03,
+                      VALE_REFE=2.0833333330000001E-3,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N3',
+                      CRITERE='ABSOLU',
+                      NOM_CMP='DY',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=1.778769189234E-19,
+                      VALE_REFE=0.0,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N3',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=-2.0833333333346E-03,
+                      VALE_REFE=-2.0833333330000001E-3,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N7',
+                      NOM_CMP='DX',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=0.25000000000179,
+                      VALE_REFE=0.25,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N7',
+                      CRITERE='ABSOLU',
+                      NOM_CMP='DY',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=5.0575998467375E-16,
+                      VALE_REFE=0.0,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N7',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=0.25000000000179,
+                      VALE_REFE=0.25,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N8',
+                      NOM_CMP='DX',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=0.25052083333513,
+                      VALE_REFE=0.25052083333300001,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N8',
+                      NOM_CMP='DY',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=-0.041666666666916,
+                      VALE_REFE=-0.041666666666000003,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N8',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=0.24947916666846,
+                      VALE_REFE=0.24947916666600001,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N9',
+                      NOM_CMP='DX',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=0.25208333333513,
+                      VALE_REFE=0.25208333333299998,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N9',
+                      NOM_CMP='DY',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=-0.083333333333837,
+                      VALE_REFE=-0.083333333332999998,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N9',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=0.24791666666846,
+                      VALE_REFE=0.24791666666600001,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N13',
+                      NOM_CMP='DX',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=1.000000000005,
+                      VALE_REFE=1.0,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N13',
+                      CRITERE='ABSOLU',
+                      NOM_CMP='DY',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=1.6177380615656E-15,
+                      VALE_REFE=0.0,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N13',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=1.000000000005,
+                      VALE_REFE=1.0,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N15',
+                      NOM_CMP='DX',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=1.0020833333383,
+                      VALE_REFE=1.0020833333332999,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N15',
+                      NOM_CMP='DY',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=-0.16666666666720,
+                      VALE_REFE=-0.16666666666659999,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N15',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DEPLA,
+                      VALE_CALC=0.99791666667163,
+                      VALE_REFE=0.99791666666659995,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   ),
+          )
+
+FIN()
+#

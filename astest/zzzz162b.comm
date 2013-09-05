@@ -1,0 +1,339 @@
+# TITRE VALIDATION LIRE_RESU AU FORMAT MED
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='ZZZZ162B',
+              NIV_PUB_WEB='INTERNET',),
+      DEBUG=_F(SDVERI='OUI',),);
+
+#......................................................................
+# CECI EST UN TEST DE L ECRITURE ET LA RELECTURE DES CHAMPS
+# AU FORMAT MED POUR MAILLE HEXA8 - C EST LA RECOPIE DE HSNV100G
+#......................................................................
+
+MAIL=LIRE_MAILLAGE();
+
+#
+# DONNEES DE MODELISATION
+
+FCT1=DEFI_FONCTION(NOM_PARA='EPSI',VALE=(0.200E-2,400.,
+                         0.400E-2,500.,
+                         ),PROL_DROITE='LINEAIRE',PROL_GAUCHE='LINEAIRE',);
+
+#
+
+FCT2=DEFI_FONCTION(NOM_PARA='EPSI',VALE=(0.100E-2,200.,
+                         0.300E-2,300.,
+                         ),PROL_DROITE='LINEAIRE',PROL_GAUCHE='LINEAIRE',);
+
+#
+
+CTRACB=DEFI_NAPPE(NOM_PARA='TEMP',
+                  PARA=(0.,50.,),
+                  FONCTION=(FCT1,FCT2,),
+                  PROL_DROITE='LINEAIRE',
+                  PROL_GAUCHE='LINEAIRE',);
+
+#
+
+MAT=DEFI_MATERIAU(ELAS=_F(E=200.E+3,
+                          NU=.3,
+                          ALPHA=10.0E-6,),
+                  TRACTION=_F(SIGM=CTRACB,),
+                  THER=_F(LAMBDA=1.0E-3,
+                          RHO_CP=0.0E-3,),);
+
+#
+
+CM=AFFE_MATERIAU(MAILLAGE=MAIL,
+                 AFFE=_F(TOUT='OUI',
+                         MATER=MAT,),);
+
+#
+
+T0=CREA_CHAMP(TYPE_CHAM='NOEU_TEMP_R',
+              OPERATION='AFFE',
+              MAILLAGE=MAIL,
+              AFFE=_F(TOUT='OUI',
+                      NOM_CMP='TEMP',
+                      VALE=0.0,),);
+
+L_INST=DEFI_LIST_REEL(DEBUT=0.,
+                      INTERVALLE=(_F(JUSQU_A=66.666E0,
+                                     NOMBRE=1,),
+                                  _F(JUSQU_A=80.000E0,
+                                     NOMBRE=2,),
+                                  _F(JUSQU_A=90.000E0,
+                                     NOMBRE=2,),),);
+
+#
+
+TIMPVAR=DEFI_FONCTION(NOM_PARA='INST',NOM_RESU='TEMP',VALE=(0.E0,0.E0,
+                            100.E0,100.E0,
+                            ),);
+
+#
+
+MOTHER=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='THERMIQUE',
+                           MODELISATION='3D',),);
+
+#
+
+MOMECA=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='3D',),);
+
+#
+
+CHTHER=AFFE_CHAR_THER_F(MODELE=MOTHER,
+                        TEMP_IMPO=_F(GROUP_NO='GRNOTOUT',
+                                     TEMP=TIMPVAR,),);
+
+#
+
+TEMPE1=THER_LINEAIRE(MODELE=MOTHER,
+                     CHAM_MATER=CM,
+                     EXCIT=_F(CHARGE=CHTHER,),
+                     INCREMENT=_F(LIST_INST=L_INST,),
+                     ETAT_INIT=_F(CHAM_NO=T0,),);
+
+DEFI_FICHIER(UNITE=70,
+             FICHIER='MED_70',
+             TYPE='LIBRE',);
+
+IMPR_RESU(FORMAT='MED',
+          UNITE=70,
+          RESU=_F(RESULTAT=TEMPE1,),);
+
+TEMPE=LIRE_RESU(TYPE_RESU='EVOL_THER',
+                FORMAT='MED',
+                MAILLAGE=MAIL,
+                UNITE=70,
+                FORMAT_MED=_F(NOM_CHAM='TEMP',
+                              NOM_CHAM_MED='TEMPE1__TEMP',),
+                TOUT_ORDRE='OUI',);
+
+CHMECA=AFFE_CHAR_MECA(MODELE=MOMECA,
+                      DDL_IMPO=(_F(NOEUD='N3',
+                                   DX=0.,
+                                   DZ=0.,),
+                                _F(NOEUD='N4',
+                                   DZ=0.,),
+                                _F(GROUP_NO='GRNO1',
+                                   DY=0.,),
+                                _F(GROUP_NO='GRNO2',
+                                   DY=0.,),),);
+
+CTM=AFFE_MATERIAU(MAILLAGE=MAIL,
+                  AFFE=_F(TOUT='OUI',
+                          MATER=MAT,),
+                  AFFE_VARC=_F(TOUT='OUI',
+                               NOM_VARC='TEMP',
+                               EVOL=TEMPE,
+                               NOM_CHAM='TEMP',
+                               VALE_REF=0.,),);
+
+U=STAT_NON_LINE(MODELE=MOMECA,
+                CHAM_MATER=CTM,
+                EXCIT=_F(CHARGE=CHMECA,),
+                COMP_INCR=_F(RELATION='VMIS_ISOT_TRAC',),
+                INCREMENT=_F(LIST_INST=L_INST,),
+                NEWTON=_F(MATRICE='TANGENTE',
+                          REAC_ITER=1,),
+                CONVERGENCE=_F(RESI_GLOB_RELA=1.E-5,
+                               ITER_GLOB_MAXI=10,),);
+
+U=CALC_CHAMP(reuse =U,
+             RESULTAT=U,
+             CONTRAINTE=('SIGM_ELNO',),
+             DEFORMATION=('EPSI_ELNO',),
+             VARI_INTERNE=('VARI_ELNO',),);
+
+DEFI_FICHIER(UNITE=71,
+             FICHIER='MED_71',
+             TYPE='LIBRE',);
+
+IMPR_RESU(FORMAT='MED',
+          UNITE=71,
+          RESU=_F(RESULTAT=U,),);
+
+UUU=LIRE_RESU(TYPE_RESU='EVOL_NOLI',
+              FORMAT='MED',
+              MODELE=MOMECA,
+              UNITE=71,
+              FORMAT_MED=(
+              _F(NOM_CHAM='DEPL',
+                 NOM_CHAM_MED='U_______DEPL',),
+              _F(NOM_CHAM='SIGM_ELNO',
+                 NOM_CHAM_MED='U_______SIGM_ELNO',),),
+              TOUT_ORDRE='OUI',);
+
+#
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=4,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=UUU,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-87.500000000,
+                   VALE_REFE=-87.5,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=5,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=UUU,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N2',
+                   NOM_CMP='DX',
+                   VALE_CALC= 1.27500000E-03,
+                   VALE_REFE=1.2750000000000001E-3,),
+                ),
+          )
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(RESULTAT=UUU,),);
+
+MAIL2=LIRE_MAILLAGE(UNITE=71,
+                    FORMAT='MED',);
+
+MOMECA2=AFFE_MODELE(MAILLAGE=MAIL2,
+                    AFFE=_F(TOUT='OUI',
+                            PHENOMENE='MECANIQUE',
+                            MODELISATION='3D',),);
+
+SIGMRELU=LIRE_CHAMP(MAILLAGE=MAIL2,
+                    FORMAT='MED',
+                    UNITE=71,
+                    NOM_MED='U_______SIGM_ELNO',
+                    NOM_CMP_IDEM='OUI',
+                    NUME_PT=1,
+                    NUME_ORDRE=1,
+                    TYPE_CHAM='ELNO_SIEF_R',
+                    MODELE=MOMECA2,
+                    INFO=2,);
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(CHAM_GD=SIGMRELU,),);
+
+DEPLRELU=LIRE_CHAMP(MAILLAGE=MAIL2,
+                    FORMAT='MED',
+                    UNITE=71,
+                    NOM_MED='U_______DEPL',
+                    NOM_CMP_IDEM='OUI',
+                    NUME_PT=1,
+                    NUME_ORDRE=1,
+                    TYPE_CHAM='NOEU_DEPL_R',
+                    INFO=2,);
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(CHAM_GD=DEPLRELU,),);
+
+# Test de MACR_LIGN_COUPE avec CHAM_GD
+
+VARI=CREA_CHAMP(TYPE_CHAM='ELNO_VARI_R',
+                OPERATION='EXTR',
+                RESULTAT=U,
+                NOM_CHAM='VARI_ELNO',
+                INST=80,);
+
+COUP=MACR_LIGN_COUPE(CHAM_GD=VARI,
+                     NOM_CHAM='VARI_ELNO',
+                     MODELE=MOMECA,
+                     LIGN_COUPE=_F(TYPE='SEGMENT',
+                                   NB_POINTS=20,
+                                   COOR_ORIG=(0.,0.,0.,),
+                                   COOR_EXTR=(0.5,0.5,0.5,),),);
+
+#test de LIRE_RESU champ hydratation
+
+HELNO0=CREA_CHAMP(TYPE_CHAM='ELNO_HYDR_R',
+                  OPERATION='AFFE',
+                  MODELE=MOTHER,
+                  AFFE=_F(TOUT='OUI',
+                          NOM_CMP='HYDR',
+                          VALE=0.0,),);
+
+HELNO1=CREA_CHAMP(TYPE_CHAM='ELNO_HYDR_R',
+                  OPERATION='AFFE',
+                  MODELE=MOTHER,
+                  AFFE=_F(TOUT='OUI',
+                          NOM_CMP='HYDR',
+                          VALE=1.0,),);
+
+RESHYD=CREA_RESU(OPERATION='AFFE',
+                 TYPE_RESU='EVOL_THER',
+                 NOM_CHAM='HYDR_ELNO',
+                 AFFE=(
+                 _F(CHAM_GD=HELNO0,
+                    MODELE=MOTHER,
+                    INST=0.0,),
+                 _F(CHAM_GD=HELNO1,
+                    MODELE=MOTHER,
+                    INST=90,),),);
+
+RESHYD=CALC_CHAMP(reuse =RESHYD,
+                  RESULTAT=RESHYD,
+                  THERMIQUE='HYDR_NOEU',);
+
+IMPR_RESU(FORMAT='MED',
+          UNITE=72,
+          RESU=_F(RESULTAT=RESHYD,),);
+
+LUHYD=LIRE_RESU(TYPE_RESU='EVOL_THER',
+                FORMAT='MED',
+                MODELE=MOTHER,
+                UNITE=72,
+                FORMAT_MED=(
+                _F(NOM_CHAM='HYDR_ELNO',
+                   NOM_RESU='RESHYD',),
+                _F(NOM_CHAM='HYDR_NOEU',
+                   NOM_RESU='RESHYD',),),
+                TOUT_ORDRE='OUI',);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   RESULTAT=LUHYD,
+                   NOM_CHAM='HYDR_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='HYDR',
+                   VALE_CALC=0,
+                   MAILLE='M1',),
+                _F(NUME_ORDRE=1,
+                   RESULTAT=LUHYD,
+                   NOM_CHAM='HYDR_NOEU',
+                   NOEUD='N1',
+                   NOM_CMP='HYDR',
+                   VALE_CALC=0,),
+                _F(INST=90,
+                   RESULTAT=LUHYD,
+                   NOM_CHAM='HYDR_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='HYDR',
+                   VALE_CALC=1.0,
+                   MAILLE='M1',),
+                _F(INST=90,
+                   RESULTAT=LUHYD,
+                   NOM_CHAM='HYDR_NOEU',
+                   NOEUD='N1',
+                   NOM_CMP='HYDR',
+                   VALE_CALC=1.0,),
+                ),
+          )
+
+FIN();

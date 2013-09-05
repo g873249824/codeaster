@@ -1,0 +1,1198 @@
+# TITRE REPONSE TRANSITOIRE D'UN SYSTEME A UNE ACCELERATION IMPOSEE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# ----------------------------------------------------------------------
+# * SFM.VPCS  SDLD 04 / A
+# * SYSTEME MASSE-RESSORT A 3 DEGRES DE LIBERTE
+# * 3 RESSORTS  3 MASSES  --   K = 1.E+3   M = 1 --
+# * ACCELERATION IMPOSEE
+# ----------------------------------------------------------------------
+#
+DEBUT(CODE=_F(NOM='SDLD04A', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='NON'))
+
+MAILLAGE=LIRE_MAILLAGE(FORMAT='MED', )
+
+MODELE=AFFE_MODELE(  MAILLAGE=MAILLAGE,AFFE=(
+                  _F(  PHENOMENE = 'MECANIQUE',  MODELISATION = 'DIS_T',
+                         GROUP_MA = 'LIAI_NOE'),
+                       _F(  PHENOMENE = 'MECANIQUE',  MODELISATION = 'DIS_T',
+                         GROUP_NO = 'MASSES'))
+                    )
+
+#
+CON_LIM=AFFE_CHAR_MECA( MODELE=MODELE,
+                        DDL_IMPO=(_F(  GROUP_NO = 'ENCASTRE',
+                                       DX = 0., DY = 0., DZ = 0.),
+                                  _F(  GROUP_NO = 'DY',   DY = 0.),
+                                  _F(  GROUP_NO = 'DZ',   DZ = 0.))
+                         )
+
+#
+CARA_ELE=AFFE_CARA_ELEM(  MODELE=MODELE,
+                          DISCRET=(_F(  NOEUD = ('N02',  'N03',  'N04',),
+                                        CARA = 'M_T_D_N',  VALE = 1.),
+                                   _F(  NOEUD = ('N02',  'N03',  'N04',),
+                                        CARA = 'K_T_D_N',  VALE = (0.,0.,0.,)),
+                                   _F(  GROUP_MA = 'RLN_1',  CARA = 'K_T_D_L',
+                                        VALE = (1000., 0., 0.,),  REPERE = 'GLOBAL'))
+                         )
+
+#
+RIGI_ELE=CALC_MATR_ELEM(  MODELE=MODELE,        OPTION='RIGI_MECA',
+                            CARA_ELEM=CARA_ELE,   CHARGE=CON_LIM   )
+
+MASS_ELE=CALC_MATR_ELEM( MODELE=MODELE,    OPTION='MASS_MECA_DIAG',
+                            CARA_ELEM=CARA_ELE,   CHARGE=CON_LIM   )
+
+NUMEDDL=NUME_DDL(  MATR_RIGI=RIGI_ELE )
+
+#
+RIGIDITE=ASSE_MATRICE(  MATR_ELEM=RIGI_ELE,   NUME_DDL=NUMEDDL  )
+
+MASSE=ASSE_MATRICE(  MATR_ELEM=MASS_ELE,   NUME_DDL=NUMEDDL  )
+
+#
+MASS_IN=POST_ELEM(  MODELE=MODELE,
+                     CARA_ELEM=CARA_ELE,
+                     MASS_INER=_F(  TOUT = 'OUI')
+                   )
+
+MODE_MEC=MODE_ITER_SIMULT(  MATR_RIGI=RIGIDITE,  MATR_MASS=MASSE,
+                CALC_FREQ=_F(  OPTION = 'PLUS_PETITE',  NMAX_FREQ = 3)
+                           )
+
+
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   RESULTAT=MODE_MEC,
+                   VALE_CALC=2.2398606565552,
+                   VALE_REFE=2.2389999999999999,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   RESULTAT=MODE_MEC,
+                   VALE_CALC=6.2759500965466,
+                   VALE_REFE=6.2750000000000004,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=3,
+                   PARA='FREQ',
+                   RESULTAT=MODE_MEC,
+                   VALE_CALC=9.0690106504401,
+                   VALE_REFE=9.0690000000000008,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,),
+                ),
+          )
+
+MODE_MEC=NORM_MODE(reuse=MODE_MEC,  MODE=MODE_MEC,   NORME='MASS_GENE',
+                     )
+
+MODE_EXT=EXTR_MODE( FILTRE_MODE=_F( MODE = MODE_MEC,
+                             CRIT_EXTR = 'MASS_EFFE_UN',  SEUIL = 1.E-5),
+                       IMPRESSION=_F( CUMUL = 'OUI')
+                      )
+
+MODE_STA=MODE_STATIQUE(  MATR_RIGI=RIGIDITE,
+                        MODE_STAT=_F(  NOEUD = 'N01', AVEC_CMP = 'DX') )
+
+#
+MONO_X=CALC_CHAR_SEISME(   MATR_MASS=MASSE,   DIRECTION=( 1., 0., 0.,),
+                              MONO_APPUI='OUI'
+                             )
+
+MULT_X=CALC_CHAR_SEISME(   MATR_MASS=MASSE,   DIRECTION=( 1., 0., 0.,),
+                              MODE_STAT=MODE_STA,  NOEUD='N01'
+                             )
+
+ACCELERO = FORMULE(NOM_PARA='INST',VALE='2.E+05*INST**2')
+
+#-----------------------------------------------------------------------
+L_INST=DEFI_LIST_REEL(  DEBUT=0.,
+                           INTERVALLE=_F(  JUSQU_A = 0.11,  PAS = 0.001))
+
+L_INS1=DEFI_LIST_REEL(  DEBUT=0.,
+                           INTERVALLE=_F(  JUSQU_A = 0.06,  PAS = 0.001))
+
+L_INS2=DEFI_LIST_REEL(  DEBUT=0.06,
+                           INTERVALLE=_F(  JUSQU_A = 0.11,  PAS = 0.001))
+
+L_RECU=DEFI_LIST_REEL(  DEBUT=0.02,INTERVALLE=(
+                           _F(  JUSQU_A = 0.04,   PAS = 0.02),
+                                      _F(  JUSQU_A = 0.06,   PAS = 0.01),
+                                      _F(  JUSQU_A = 0.10,   PAS = 0.02)))
+
+L_ARCH=DEFI_LIST_ENTI(  DEBUT=10,
+                           INTERVALLE=_F(  JUSQU_A = 100,  PAS = 10),
+              TITRE=( 'CAS TEST: &CODE',' - ','COMMANDE: &COMMANDE', )
+                            )
+
+#-----------------------------------------------------------------------
+# CALCULS TRANSITOIRES PAR SYNTHESE MODALE
+#
+PROJ_BASE(  BASE=MODE_MEC,
+            STOCKAGE='DIAG',
+            MATR_ASSE_GENE=(
+      _F(  MATRICE = CO("MASS_GEN"),  MATR_ASSE = MASSE),
+      _F(  MATRICE = CO("RIGI_GEN"),  MATR_ASSE = RIGIDITE)),
+      VECT_ASSE_GENE=_F(  VECTEUR = CO("VECT_X"),    VECT_ASSE = MONO_X)
+         )
+
+#
+TRAN_GEN=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                   MATR_MASS=MASS_GEN,   MATR_RIGI=RIGI_GEN,
+                   SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                    EXCIT=_F(  VECT_ASSE_GENE = VECT_X, FONC_MULT = ACCELERO),
+                 INCREMENT=_F( INST_INIT = 0.,  INST_FIN = 0.06,  PAS = 0.001)
+                           )
+
+L_INC=DEFI_LIST_REEL(  DEBUT=0.,INTERVALLE=(
+                           _F(  JUSQU_A = 0.081,   PAS = 0.001),),)
+
+TRAN_GEN=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                     reuse=TRAN_GEN,  MATR_MASS=MASS_GEN,   MATR_RIGI=RIGI_GEN,
+                     SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',BETA=0.27,GAMMA=0.52),
+                  ETAT_INIT=_F(  RESULTAT = TRAN_GEN,NUME_ORDRE = 60,),
+#                              INST_INIT = 0.06, PRECISION = 1.E-4),
+
+                      EXCIT=_F( VECT_ASSE_GENE = VECT_X, FONC_MULT = ACCELERO),
+                  INCREMENT=_F(  LIST_INST=L_INC,
+                                 INST_FIN= 0.08,)  )
+
+
+TRAN_GEN=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                     reuse=TRAN_GEN,  MATR_MASS=MASS_GEN,   MATR_RIGI=RIGI_GEN,
+                     SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                  ETAT_INIT=_F(  RESULTAT = TRAN_GEN,
+                              INST_INIT = 0.07, PRECISION = 1.E-4, CRITERE = 'ABSOLU'),
+                      EXCIT=_F(  VECT_ASSE_GENE = VECT_X, FONC_MULT = ACCELERO),
+                  INCREMENT=_F(  INST_FIN = 0.1, PAS = 0.001) ,
+                  )
+
+N04_DX_1=RECU_FONCTION(  NOEUD='N04',   NOM_CMP='DX',   NOM_CHAM='DEPL',
+                           RESU_GENE=TRAN_GEN,  LIST_INST=L_RECU  )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-2.679999E-03,
+                         VALE_REFE=-2.7000000000000001E-3,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.02,
+                         PRECISION=0.014999999999999999,
+                         FONCTION=N04_DX_1,),
+                      _F(VALE_CALC=-0.04271887,
+                         VALE_REFE=-0.042599999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.040000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_1,),
+                      _F(VALE_CALC=-0.10423999,
+                         VALE_REFE=-0.1041,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.050000000000000003,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_1,),
+                      _F(VALE_CALC=-0.21606092,
+                         VALE_REFE=-0.21579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_1,),
+                      _F(VALE_CALC=-0.68201996,
+                         VALE_REFE=-0.68130000000000002,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_1,),
+                      _F(VALE_CALC=-1.659539,
+                         VALE_REFE=-1.6579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.10000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_1,),
+                      ),
+              )
+
+#
+# LA MEME REPONSE DYNAMIQUE EST TRAITEE PAR EULER ET L'EXCITATION
+# EST FOURNIE PAR NUME_MODE : ON OBTIENT LA FONCTION EXCITATRICE DE
+# CHAQUE MODE EN MULTIPLIANT ACCELERO PAR LA VALEUR DU CHARGEMENT
+# GENERALISE (OBTENU PAR IMPR_CO(VECT_X) )
+
+F1 = FORMULE(NOM_PARA='INST',VALE='-1.65597E+00*2.E+05*INST**2')
+F2 = FORMULE(NOM_PARA='INST',VALE='-4.73952E-01*2.E+05*INST**2')
+F3 = FORMULE(NOM_PARA='INST',VALE='1.82018E-01*2.E+05*INST**2')
+
+TRAN_NUM=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                  MATR_MASS=MASS_GEN,   MATR_RIGI=RIGI_GEN,
+                  SCHEMA_TEMPS=_F(SCHEMA='EULER',),
+                  EXCIT=(
+                  _F(  NUME_ORDRE = 1,  FONC_MULT = F1),
+                  _F(  NUME_ORDRE = 2,  FONC_MULT = F2),
+                  _F(  NUME_ORDRE = 3,  FONC_MULT = F3)),
+                  INCREMENT=_F( INST_INIT = 0.,  INST_FIN = 0.1,  PAS = 0.001)
+                           )
+
+N04_DX_N=RECU_FONCTION(  NOEUD='N04',   NOM_CMP='DX',   NOM_CHAM='DEPL',
+                           RESU_GENE=TRAN_NUM,   LIST_INST=L_RECU  )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-2.659999E-03,
+                         VALE_REFE=-2.7000000000000001E-3,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.02,
+                         PRECISION=0.014999999999999999,
+                         FONCTION=N04_DX_N,),
+                      _F(VALE_CALC=-0.04263892,
+                         VALE_REFE=-0.042599999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.040000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_N,),
+                      _F(VALE_CALC=-0.10411529,
+                         VALE_REFE=-0.1041,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.050000000000000003,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_N,),
+                      _F(VALE_CALC=-0.21588218,
+                         VALE_REFE=-0.21579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_N,),
+                      _F(VALE_CALC=-0.68163173,
+                         VALE_REFE=-0.68130000000000002,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_N,),
+                      _F(VALE_CALC=-1.658910,
+                         VALE_REFE=-1.6579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.10000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_N,),
+                      ),
+              )
+
+# ON TESTE ICI LE CUMUL OBTENU PAR LES VECT_ASSE ET NUME_MODE DANS
+# DYNA_VIBRA
+
+TRAN_NUC=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                 MATR_MASS=MASS_GEN,   MATR_RIGI=RIGI_GEN,
+                 SCHEMA_TEMPS=_F(SCHEMA='EULER',),
+                 EXCIT=(
+                 _F(  VECT_ASSE_GENE = VECT_X,  FONC_MULT = ACCELERO),
+                 _F(  NUME_ORDRE = 1,  FONC_MULT = F1),
+                 _F(  NUME_ORDRE = 2,  FONC_MULT = F2),
+                 _F(  NUME_ORDRE = 3,  FONC_MULT = F3)),
+                 INCREMENT=_F( INST_INIT = 0.,  INST_FIN = 0.1,  PAS = 0.001)
+                           )
+
+N04_DX_C=RECU_FONCTION(  NOEUD='N04',   NOM_CMP='DX',   NOM_CHAM='DEPL',
+                             RESU_GENE=TRAN_NUC,  LIST_INST=L_RECU  )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-5.319997E-03,
+                         VALE_REFE=-5.4000000000000003E-3,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.02,
+                         PRECISION=0.014999999999999999,
+                         FONCTION=N04_DX_C,),
+                      _F(VALE_CALC=-0.08527785,
+                         VALE_REFE=-0.085199999999999998,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.040000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_C,),
+                      _F(VALE_CALC=-0.20823060,
+                         VALE_REFE=-0.2082,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.050000000000000003,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_C,),
+                      _F(VALE_CALC=-0.43176440,
+                         VALE_REFE=-0.43159999999999998,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_C,),
+                      _F(VALE_CALC=-1.363264,
+                         VALE_REFE=-1.3626,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_C,),
+                      _F(VALE_CALC=-3.317821,
+                         VALE_REFE=-3.3159999999999998,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.10000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_C,),
+                      ),
+              )
+
+# -----------------------------------------
+# PRISE EN COMPTE DE LA CORRECTION STATIQUE
+# -----------------------------------------
+
+CHAM_NO=AFFE_CHAR_MECA(  MODELE=MODELE,
+                PESANTEUR=_F(GRAVITE=1.,
+                             DIRECTION=(-1., 0., 0.,),),
+                        )
+
+#CHANNO = AFFE_CHAR_MECA( MODELE: MODELE
+#           FORCE_NODALE: ( NOEUD: (N02 N03 N04) FX: -1. )
+
+#                       );
+
+MODCOR=MACRO_ELAS_MULT(
+                MODELE=MODELE,   CARA_ELEM=CARA_ELE,
+                CHAR_MECA_GLOBAL=CON_LIM,
+                 SOLVEUR=_F( METHODE = 'LDLT'),
+                NUME_DDL=CO("NUME_DD2"),
+                CAS_CHARGE=_F( NOM_CAS = 'CORRSTAT', CHAR_MECA = CHAM_NO)
+                        )
+
+RIGI_CS=ASSE_MATRICE(  MATR_ELEM=RIGI_ELE,  NUME_DDL=NUME_DD2 )
+
+MASS_CS=ASSE_MATRICE(  MATR_ELEM=MASS_ELE,  NUME_DDL=NUME_DD2 )
+
+VECT_ELE=CALC_VECT_ELEM(  OPTION='CHAR_MECA',
+                            CARA_ELEM=CARA_ELE,   CHARGE=CHAM_NO )
+
+VECTEUR=ASSE_VECTEUR(  VECT_ELEM=VECT_ELE,   NUME_DDL=NUME_DD2 )
+
+MODE_ICS=MODE_ITER_SIMULT(  MATR_RIGI=RIGI_CS,   MATR_MASS=MASS_CS,
+                CALC_FREQ=_F(  OPTION = 'PLUS_PETITE',  NMAX_FREQ = 3)
+                           )
+
+
+MODE_ICS=NORM_MODE(reuse=MODE_ICS,  MODE=MODE_ICS,   NORME='MASS_GENE',
+                     )
+
+MODE_CS=EXTR_MODE( FILTRE_MODE=_F( MODE = MODE_ICS,
+                                  CRIT_EXTR = 'MASS_EFFE_UN',
+                                  SEUIL = 1.E-5),
+                      IMPRESSION=_F( CUMUL = 'OUI')
+                     )
+
+DERI_PRE = FORMULE(NOM_PARA='INST',VALE='4.E+05*INST')
+DERI_SEC = FORMULE(NOM_PARA='INST',VALE='4.E+05')
+#
+PROJ_BASE(  BASE=MODE_CS,   NB_VECT=2,MATR_ASSE_GENE=(
+       _F(  MATRICE = CO("MASG_CS2"),  MATR_ASSE = MASS_CS),
+       _F(  MATRICE = CO("RIGG_CS2"),  MATR_ASSE = RIGI_CS)),
+       VECT_ASSE_GENE=_F(  VECTEUR = CO("VECT_GC2"),  VECT_ASSE = VECTEUR)
+                )
+
+TRA_GCS=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                 MATR_MASS=MASG_CS2,   MATR_RIGI=RIGG_CS2,
+                 SCHEMA_TEMPS=_F(SCHEMA='DEVOGE',),
+                 MODE_CORR=MODCOR,
+                 EXCIT=_F(  VECT_ASSE_GENE = VECT_GC2,  FONC_MULT = ACCELERO,
+                        CORR_STAT = 'OUI',
+                        D_FONC_DT = DERI_PRE,  D_FONC_DT2 = DERI_SEC),
+                INCREMENT=_F(  INST_INIT = 0.,  INST_FIN = 0.1,  PAS = 0.001)
+                           )
+
+#
+N04_DXC3=RECU_FONCTION(  NOEUD='N04',   NOM_CMP='DX',   NOM_CHAM='DEPL',
+                           CORR_STAT='OUI',
+                           RESU_GENE=TRA_GCS,  LIST_INST=L_RECU  )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-3.985089E-03,
+                         VALE_REFE=-4.0000000000000001E-3,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.02,
+                         PRECISION=0.014999999999999999,
+                         FONCTION=N04_DXC3,),
+                      _F(VALE_CALC=-0.04640441,
+                         VALE_REFE=-0.046399999999999997,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.040000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DXC3,),
+                      _F(VALE_CALC=-0.10859070,
+                         VALE_REFE=-0.1085,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.050000000000000003,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DXC3,),
+                      _F(VALE_CALC=-0.22038525,
+                         VALE_REFE=-0.2203,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DXC3,),
+                      _F(VALE_CALC=-0.68434700,
+                         VALE_REFE=-0.68420000000000003,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DXC3,),
+                      _F(VALE_CALC=-1.659437,
+                         VALE_REFE=-1.659,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.10000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DXC3,),
+                      ),
+              )
+
+#-----------------------------------------------------------------------
+# CALCULS TRANSITOIRES DIRECTS
+#-----------------------------------------------------------------------
+
+L_INS=DEFI_LIST_REEL(  DEBUT=0.,
+                           INTERVALLE=_F(  JUSQU_A = 0.1,  PAS = 0.01))
+
+TRAN_LI1=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='PHYS',
+                           ENERGIE=_F(),
+                           MATR_MASS=MASSE,      MATR_RIGI=RIGIDITE,
+                           SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                           INCREMENT=_F( LIST_INST = L_INST),
+#                           ARCHIVAGE=_F(  LIST_ARCH = L_ARCH),
+                           ARCHIVAGE=_F(  LIST_INST = L_INS,),
+                     EXCIT=_F(  VECT_ASSE = MONO_X,  FONC_MULT = ACCELERO)
+                           )
+
+ENERLI1=RECU_TABLE(CO=TRAN_LI1,NOM_TABLE='PARA_CALC',);
+
+IMPR_TABLE(TABLE=ENERLI1);
+
+TEST_TABLE(
+           VALE_CALC=297.98917705174,
+           NOM_PARA='TRAV_EXT',
+           TABLE=ENERLI1,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=18.890174787929,
+           NOM_PARA='ENER_TOT',
+           TABLE=ENERLI1,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=279.09900226382,
+           NOM_PARA='ENER_CIN',
+           TABLE=ENERLI1,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=10343.480087248,
+           NOM_PARA='TRAV_EXT',
+           TABLE=ENERLI1,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=1718.1508336655,
+           NOM_PARA='ENER_TOT',
+           TABLE=ENERLI1,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=8625.3292535832,
+           NOM_PARA='ENER_CIN',
+           TABLE=ENERLI1,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+N04_DX_2=RECU_FONCTION(
+                         NOEUD='N04',   NOM_CMP='DX',   NOM_CHAM='DEPL',
+                             RESULTAT=TRAN_LI1,  LIST_INST=L_RECU  )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-2.679999E-03,
+                         VALE_REFE=-2.7000000000000001E-3,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.02,
+                         PRECISION=0.014999999999999999,
+                         FONCTION=N04_DX_2,),
+                      _F(VALE_CALC=-0.04271887,
+                         VALE_REFE=-0.042599999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.040000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_2,),
+                      _F(VALE_CALC=-0.10423999,
+                         VALE_REFE=-0.1041,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.050000000000000003,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_2,),
+                      _F(VALE_CALC=-0.21606092,
+                         VALE_REFE=-0.21579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_2,),
+                      _F(VALE_CALC=-0.68194120,
+                         VALE_REFE=-0.68130000000000002,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_2,),
+                      _F(VALE_CALC=-1.659361,
+                         VALE_REFE=-1.6579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.10000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_2,),
+                      ),
+              )
+
+#-----------------------------------------------------------------------
+#
+
+
+L_INS11=DEFI_LIST_REEL(  DEBUT=0.,
+                           INTERVALLE=_F(  JUSQU_A = 0.06,  PAS = 0.01))
+
+TRAN_LI2=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='PHYS',
+                             ENERGIE=_F(),
+                             MATR_MASS=MASSE,   MATR_RIGI=RIGIDITE,
+                             SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                             INCREMENT=_F( LIST_INST = L_INS1),
+#                             ARCHIVAGE=_F(  LIST_ARCH = L_ARCH,
+                              ARCHIVAGE=_F(  LIST_INST = L_INS11,
+                                    CHAM_EXCLU = ( 'VITE',  'ACCE', )),
+                     EXCIT=_F(  VECT_ASSE = MULT_X,  FONC_MULT = ACCELERO)
+                           )
+L_INS22=DEFI_LIST_REEL(  DEBUT=0.06,
+                           INTERVALLE=_F(  JUSQU_A = 0.11,  PAS = 0.01))
+
+TRAN_LI2=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='PHYS',
+                             ENERGIE=_F(),
+                             reuse=TRAN_LI2,   MATR_MASS=MASSE,   MATR_RIGI=RIGIDITE,
+                             SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                             INCREMENT=_F( LIST_INST = L_INS2),
+#                             ARCHIVAGE=_F(  LIST_ARCH = L_ARCH,
+                             ARCHIVAGE=_F(  LIST_INST = L_INS22,
+                                    CHAM_EXCLU = ( 'VITE',  'ACCE', )),
+                             ETAT_INIT=_F(  RESULTAT = TRAN_LI2,
+                                            NUME_ORDRE = 6,),
+                     EXCIT=_F(  VECT_ASSE = MULT_X, FONC_MULT = ACCELERO)
+                           )
+
+ENERLI2=RECU_TABLE(CO=TRAN_LI2,NOM_TABLE='PARA_CALC',);
+
+IMPR_TABLE(TABLE=ENERLI2);
+
+TEST_TABLE(
+           VALE_CALC=297.98917705174,
+           NOM_PARA='TRAV_EXT',
+           TABLE=ENERLI2,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=18.890174787929,
+           NOM_PARA='ENER_TOT',
+           TABLE=ENERLI2,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=279.09900226382,
+           NOM_PARA='ENER_CIN',
+           TABLE=ENERLI2,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=10045.490910196,
+           NOM_PARA='TRAV_EXT',
+           TABLE=ENERLI2,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=1699.2606588776,
+           NOM_PARA='ENER_TOT',
+           TABLE=ENERLI2,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=8346.2302513194,
+           NOM_PARA='ENER_CIN',
+           TABLE=ENERLI2,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+DEPL_0_1=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+                     RESULTAT=TRAN_LI2, NOM_CHAM='DEPL', INST=0.10  )
+
+F_D_0_10=RECU_FONCTION(  CHAM_GD=DEPL_0_1,
+                             NOEUD='N04',   NOM_CMP='DX'  )
+
+N04_DX_3=RECU_FONCTION(
+                        NOEUD='N04',   NOM_CMP='DX',   NOM_CHAM='DEPL',
+                             RESULTAT=TRAN_LI2,  LIST_INST=L_RECU  )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-2.679999E-03,
+                         VALE_REFE=-2.7000000000000001E-3,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.02,
+                         PRECISION=0.014999999999999999,
+                         FONCTION=N04_DX_3,),
+                      _F(VALE_CALC=-0.04271887,
+                         VALE_REFE=-0.042599999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.040000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_3,),
+                      _F(VALE_CALC=-0.10423999,
+                         VALE_REFE=-0.1041,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.050000000000000003,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_3,),
+                      _F(VALE_CALC=-0.21606092,
+                         VALE_REFE=-0.21579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_3,),
+                      _F(VALE_CALC=-0.68194120,
+                         VALE_REFE=-0.68130000000000002,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_3,),
+                      _F(VALE_CALC=-1.659361,
+                         VALE_REFE=-1.6579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.10000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=F_D_0_10,),
+                      ),
+              )
+
+#-----------------------------------------------------------------------
+LISTDIF=DEFI_LIST_REEL(  DEBUT=0.,INTERVALLE=(
+                           _F(  JUSQU_A = 0.06,   PAS = 0.001),),)
+
+TRAN_LI4=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='PHYS',
+                             ENERGIE=_F(),
+                             MATR_MASS=MASSE,   MATR_RIGI=RIGIDITE,
+                             SCHEMA_TEMPS=_F(SCHEMA='DIFF_CENTRE',),
+                             INCREMENT=_F( LIST_INST=LISTDIF),
+                             ARCHIVAGE=_F(  LIST_INST = LISTDIF,
+                                    CHAM_EXCLU = ( 'VITE',  'ACCE', )),
+                     EXCIT=_F(  VECT_ASSE = MULT_X,  FONC_MULT = ACCELERO)
+                           )
+LIST=DEFI_LIST_REEL(  DEBUT=0.06,
+                        INTERVALLE=(_F(  JUSQU_A = 0.09,  PAS = 0.001),
+                                    _F(  JUSQU_A = 0.11,  PAS = 0.001),),)
+
+TRAN_LI4=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='PHYS',
+                          ENERGIE=_F(),
+                          reuse=TRAN_LI4,   MATR_MASS=MASSE,   MATR_RIGI=RIGIDITE,
+                               SCHEMA_TEMPS=_F(SCHEMA='DIFF_CENTRE',),
+#                             INCREMENT=_F(  PAS = 0.001,
+#                                        INST_FIN = 0.11),
+                             INCREMENT=_F(LIST_INST=LIST,),
+                             ARCHIVAGE=_F(  PAS_ARCH = 10,
+                                    CHAM_EXCLU = ( 'VITE',  'ACCE', )),
+                             ETAT_INIT=_F(  RESULTAT = TRAN_LI4,
+                                         INST_INIT = 0.06,
+                                         CRITERE = 'ABSOLU',
+                                         PRECISION = 1E-6,),
+                     EXCIT=_F(  VECT_ASSE = MULT_X, FONC_MULT = ACCELERO)
+                           )
+
+ENERLI4=RECU_TABLE(CO=TRAN_LI4,NOM_TABLE='PARA_CALC',);
+
+IMPR_TABLE(TABLE=ENERLI4);
+
+TEST_TABLE(
+           VALE_CALC=297.83780745174,
+           NOM_PARA='TRAV_EXT',
+           TABLE=ENERLI4,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=18.868804672244,
+           NOM_PARA='ENER_TOT',
+           TABLE=ENERLI4,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=279.13238261395,
+           NOM_PARA='ENER_CIN',
+           TABLE=ENERLI4,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.059999999999999998,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=9981.5172542499,
+           NOM_PARA='TRAV_EXT',
+           TABLE=ENERLI4,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=1677.4128729798,
+           NOM_PARA='ENER_TOT',
+           TABLE=ENERLI4,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=8305.2841327718,
+           NOM_PARA='ENER_CIN',
+           TABLE=ENERLI4,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+DEPLB0_1=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+                     RESULTAT=TRAN_LI4, NOM_CHAM='DEPL', INST=0.10  )
+
+F_DB0_10=RECU_FONCTION(  CHAM_GD=DEPLB0_1,
+                             NOEUD='N04',   NOM_CMP='DX'  )
+
+N04BDX_3=RECU_FONCTION( NOEUD='N04',   NOM_CMP='DX',   NOM_CHAM='DEPL',
+                             RESULTAT=TRAN_LI4,  LIST_INST=L_RECU  )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-2.659999E-03,
+                         VALE_REFE=-2.7000000000000001E-3,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.02,
+                         PRECISION=0.014999999999999999,
+                         FONCTION=N04BDX_3,),
+                      _F(VALE_CALC=-0.04263893,
+                         VALE_REFE=-0.042599999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.040000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=N04BDX_3,),
+                      _F(VALE_CALC=-0.10411531,
+                         VALE_REFE=-0.1041,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.050000000000000003,
+                         PRECISION=1.E-2,
+                         FONCTION=N04BDX_3,),
+                      _F(VALE_CALC=-0.21588222,
+                         VALE_REFE=-0.21579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=1.E-2,
+                         FONCTION=N04BDX_3,),
+                      _F(VALE_CALC=-0.67445945,
+                         VALE_REFE=-0.68130000000000002,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=0.014999999999999999,
+                         FONCTION=N04BDX_3,),
+                      _F(VALE_CALC=-1.644687,
+                         VALE_REFE=-1.6579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.10000000000000001,
+                         PRECISION=1.E-2,
+                         FONCTION=F_DB0_10,),
+                      ),
+              )
+
+#-----------------------------------------------------------------------
+#
+
+DEPL_INI=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+                     RESULTAT=TRAN_LI2, NOM_CHAM='DEPL', INST=0.06  )
+
+VITE_INI=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+                     RESULTAT=TRAN_LI2, NOM_CHAM='VITE', INST=0.06  )
+
+TRAN_LI3=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='PHYS',
+                             ENERGIE=_F(),
+                             MATR_MASS=MASSE,   MATR_RIGI=RIGIDITE,
+                             ETAT_INIT=_F( DEPL = DEPL_INI,
+                                        VITE = VITE_INI),
+                             SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                             INCREMENT=_F(  LIST_INST = L_INS2),
+                             ARCHIVAGE=_F(  PAS_ARCH = 10),
+                     EXCIT=_F(  VECT_ASSE = MULT_X,  FONC_MULT = ACCELERO)
+                           )
+
+ENERLI3=RECU_TABLE(CO=TRAN_LI3,NOM_TABLE='PARA_CALC',);
+
+IMPR_TABLE(TABLE=ENERLI3);
+
+TEST_TABLE(
+           VALE_CALC=10045.490910196,
+           NOM_PARA='TRAV_EXT',
+           TABLE=ENERLI3,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=1699.2606588776,
+           NOM_PARA='ENER_TOT',
+           TABLE=ENERLI3,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+TEST_TABLE(
+           VALE_CALC=8346.2302513197,
+           NOM_PARA='ENER_CIN',
+           TABLE=ENERLI3,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.11,),
+           )
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=0,
+                   RESULTAT=TRAN_LI3,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N01',
+                   NOM_CMP='DX',
+                   VALE_CALC=0.0E+00,
+                   VALE_REFE=0.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,
+                   CRITERE='ABSOLU',),
+                _F(NUME_ORDRE=0,
+                   RESULTAT=TRAN_LI3,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N02',
+                   NOM_CMP='DX',
+                   VALE_CALC=-548.34247438031,
+                   VALE_REFE=-548.34199999999998,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=0,
+                   RESULTAT=TRAN_LI3,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N03',
+                   NOM_CMP='DX',
+                   VALE_CALC=-699.8587951176,
+                   VALE_REFE=-699.85900000000004,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=0,
+                   RESULTAT=TRAN_LI3,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N04',
+                   NOM_CMP='DX',
+                   VALE_CALC=-718.62633821609,
+                   VALE_REFE=-718.62599999999998,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.E-3,),
+                ),
+          )
+
+N04_DX_4=RECU_FONCTION(  NOEUD='N04',   NOM_CMP='DX',   NOM_CHAM='DEPL',
+                         RESULTAT=TRAN_LI3   )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.21606092,
+                         VALE_REFE=-0.21579999999999999,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_4,),
+                      _F(VALE_CALC=-0.68194120,
+                         VALE_REFE=-0.68130000000000002,
+                         REFERENCE='NON_DEFINI',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=1.E-2,
+                         FONCTION=N04_DX_4,),
+                      ),
+              )
+
+#-----------------------------------------------------------------------
+
+
+INST_MAX=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+                     RESULTAT=TRAN_LI3, NOM_CHAM='ACCE',
+                     TYPE_RESU='INST',     TYPE_MAXI='NORM_TRAN' )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N02',
+                      NOM_CMP='DX',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N03',
+                      NOM_CMP='DX',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N04',
+                      NOM_CMP='DX',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N02',
+                      NOM_CMP='DY',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N03',
+                      NOM_CMP='DY',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N04',
+                      NOM_CMP='DY',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N02',
+                      NOM_CMP='DZ',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N03',
+                      NOM_CMP='DZ',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N04',
+                      NOM_CMP='DZ',
+                      CHAM_GD=INST_MAX,
+                      VALE_CALC=0.11000000000000,
+                      VALE_REFE=0.11,
+                      REFERENCE = 'ANALYTIQUE',
+                      PRECISION=1.E-3,),
+                   ),
+          )
+
+#-----------------------------------------------------------------------
+# TEST DU MOT-CLE ACCE_MONO_APPUI : OBTENTION DES ACCELERATONS ABSOLUES
+
+
+LISTINST=DEFI_LIST_REEL( DEBUT=0.,
+                                INTERVALLE=_F( JUSQU_A = 0.1,
+                                            PAS = 0.01)
+                             )
+
+ACCE_R_1=RECU_FONCTION(   RESU_GENE=TRAN_GEN,
+                                LIST_INST=LISTINST,
+                                    NOEUD='N04',
+                                  NOM_CMP='DX',
+                                 NOM_CHAM='ACCE',
+                                 INTERPOL='LIN'
+                             )
+
+ACCE_ENT=CALC_FONC_INTERP(    FONCTION=ACCELERO,
+                                   LIST_PARA=LISTINST,
+                                NOM_PARA = 'INST',  )
+
+ACCE_A_1=CALC_FONCTION( COMB=(  _F( FONCTION = ACCE_R_1, COEF = 1.),
+                                _F( FONCTION = ACCE_ENT, COEF = 1.))
+                             )
+
+RESTPHYS=REST_GENE_PHYS(   RESU_GENE=TRAN_GEN, NOM_CHAM='ACCE',  NOEUD='N04',
+                           LIST_INST=LISTINST,  )
+
+ACCE_R_2=RECU_FONCTION(  RESULTAT=RESTPHYS,
+                         NOM_CHAM='ACCE', NOEUD='N04', NOM_CMP='DX',
+                         INTERPOL='LIN',   )
+
+ACCE_A_2=CALC_FONCTION( COMB=(  _F( FONCTION = ACCE_R_2, COEF = 1.),
+                                _F( FONCTION = ACCE_ENT, COEF = 1.))
+                             )
+
+RESPHYA=REST_GENE_PHYS(        RESU_GENE=TRAN_GEN,
+                                     LIST_INST=LISTINST,
+                                      NOM_CHAM='ACCE_ABSOLU',
+                               ACCE_MONO_APPUI=ACCE_ENT,
+                                     DIRECTION=( 1., 0., 0., )
+                             )
+
+REST_ABS=RECU_FONCTION(  RESULTAT=RESPHYA,
+                                  NOEUD='N04',
+                                NOM_CMP='DX',
+                               NOM_CHAM='ACCE_ABSOLU',
+                               INTERPOL='LIN'
+                            )
+
+RECU_ABS=RECU_FONCTION(   RESU_GENE=TRAN_GEN,
+                          NOEUD='N04',  NOM_CMP='DX',   NOM_CHAM='ACCE',
+                          ACCE_MONO_APPUI=ACCE_ENT,
+                          LIST_INST=LISTINST,
+                          INTERPOL='LIN'
+                             )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-179.9936,
+                         VALE_REFE=-179.994,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.029999999999999999,
+                         FONCTION=ACCE_R_1,),
+                      _F(VALE_CALC=-975.6172,
+                         VALE_REFE=-975.62,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.070000000000000007,
+                         FONCTION=ACCE_R_1,),
+                      _F(VALE_CALC=-1942.590,
+                         VALE_REFE=-1942.6099999999999,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=ACCE_R_1,),
+                      ),
+              )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=6.374486E-03,
+                         VALE_REFE=6.37449E-3,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.029999999999999999,
+                         FONCTION=ACCE_A_1,),
+                      _F(VALE_CALC=4.382841,
+                         VALE_REFE=4.3804600000000002,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.070000000000000007,
+                         FONCTION=ACCE_A_1,),
+                      _F(VALE_CALC=57.40979,
+                         VALE_REFE=57.387099999999997,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=ACCE_A_1,),
+                      ),
+              )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-179.9936,
+                         VALE_REFE=-179.994,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.029999999999999999,
+                         FONCTION=ACCE_R_2,),
+                      _F(VALE_CALC=-975.6172,
+                         VALE_REFE=-975.62,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.070000000000000007,
+                         FONCTION=ACCE_R_2,),
+                      _F(VALE_CALC=-1942.590,
+                         VALE_REFE=-1942.6099999999999,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=ACCE_R_2,),
+                      ),
+              )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=6.374486E-03,
+                         VALE_REFE=6.37449E-3,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.029999999999999999,
+                         FONCTION=ACCE_A_2,),
+                      _F(VALE_CALC=4.382841,
+                         VALE_REFE=4.3804600000000002,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.070000000000000007,
+                         FONCTION=ACCE_A_2,),
+                      _F(VALE_CALC=57.40979,
+                         VALE_REFE=57.387099999999997,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=ACCE_A_2,),
+                      ),
+              )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=6.374486E-03,
+                         VALE_REFE=6.37449E-3,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.029999999999999999,
+                         FONCTION=RECU_ABS,),
+                      _F(VALE_CALC=4.382841,
+                         VALE_REFE=4.3804600000000002,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.070000000000000007,
+                         FONCTION=RECU_ABS,),
+                      _F(VALE_CALC=57.40979,
+                         VALE_REFE=57.387099999999997,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=RECU_ABS,),
+                      ),
+              )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=6.374486E-03,
+                         VALE_REFE=6.37449E-3,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.029999999999999999,
+                         FONCTION=REST_ABS,),
+                      _F(VALE_CALC=4.382841,
+                         VALE_REFE=4.3804600000000002,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.070000000000000007,
+                         FONCTION=REST_ABS,),
+                      _F(VALE_CALC=57.40979,
+                         VALE_REFE=57.387099999999997,
+                         REFERENCE = 'ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=REST_ABS,),
+                      ),
+              )
+
+FIN()

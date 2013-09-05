@@ -1,0 +1,309 @@
+# TITRE TUBE GENERATEUR DE CHALEUR AVEC CONDUCTIVITE VARIABLE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+# MAILLES : HEXA8 , PENTA6
+#
+
+DEBUT(CODE=_F(NOM='TPNA300C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#
+# LECTURE DU MAILLAGE ----------------------------------------------
+#
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED', )
+
+#
+# DEFINITION DU MATERIAU ------------------------
+#
+
+CONDUC=DEFI_FONCTION(   NOM_PARA='TEMP',  NOM_RESU='LAMBDA',
+                                VALE=(    0.0,      21.461,
+                                        100.0,      44.861,),
+                          PROL_DROITE='LINEAIRE',
+                         PROL_GAUCHE='LINEAIRE'
+                         )
+
+ENTHAL=DEFI_FONCTION(   NOM_PARA='TEMP',  NOM_RESU='BETA',
+                                VALE=(    0.0,      0.0,
+                                        100.0,    100.0, ),
+                          PROL_DROITE='LINEAIRE',
+                         PROL_GAUCHE='LINEAIRE'
+                         )
+
+MATER=DEFI_MATERIAU(   THER_NL=_F(  LAMBDA = CONDUC,
+                                      BETA = ENTHAL)
+                         )
+
+#
+# AFFECTATIONS: MATERIAU, MODELE, CHARGEMENT ----------------------
+#
+
+CHMAT=AFFE_MATERIAU(   MAILLAGE=MAIL,
+                                AFFE=_F(  TOUT = 'OUI',  MATER = MATER)
+                         )
+
+MOTH=AFFE_MODELE(     MAILLAGE=MAIL,
+                                AFFE=_F(  TOUT = 'OUI',
+                                       MODELISATION = '3D',
+                                       PHENOMENE = 'THERMIQUE')
+                         )
+
+CHARGE=AFFE_CHAR_THER(   MODELE=MOTH,TEMP_IMPO=(
+                          _F( GROUP_NO = 'NOE_EXT',  TEMP = -17.78),
+                          _F( GROUP_NO = 'NOE_INT',  TEMP = -17.78)),
+                             SOURCE=_F( TOUT = 'OUI',         SOUR = 1.035E7)
+                          )
+
+#
+# RESOLUTION ------------------------------------------------------
+#
+
+TEMPE=THER_NON_LINE(        MODELE=MOTH,
+                             ETAT_INIT=_F(  STATIONNAIRE = 'OUI'),
+                            CHAM_MATER=CHMAT,
+                                 EXCIT=_F(  CHARGE = CHARGE)
+                        )
+
+T_RES=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+NOM_CHAM='TEMP', RESULTAT=TEMPE, INST=0. )
+
+#
+# ANALYSE DES RESULTATS -------------------------------------------
+#
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N11',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-17.780000000,
+                      VALE_REFE=-17.780000000000001,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N22',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-4.904339887,
+                      VALE_REFE=-5.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N43',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.059999999999999998,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=2.088263316,
+                      VALE_REFE=2.2200000000000002,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N67',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=5.582347454,
+                      VALE_REFE=5.5599999999999996,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N102',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=6.632098396,
+                      VALE_REFE=6.6699999999999999,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N150',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=5.614923369,
+                      VALE_REFE=5.5599999999999996,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N208',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=2.773923045,
+                      VALE_REFE=2.7799999999999998,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N251',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.16,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-1.921263684,
+                      VALE_REFE=-1.6699999999999999,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N291',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-8.625691190,
+                      VALE_REFE=-8.8900000000000006,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N307',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-17.780000000,
+                      VALE_REFE=-17.780000000000001,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N3',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-17.780000000,
+                      VALE_REFE=-17.780000000000001,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N14',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-4.904340882,
+                      VALE_REFE=-5.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N30',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.059999999999999998,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=2.088262841,
+                      VALE_REFE=2.2200000000000002,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N51',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=5.582346191,
+                      VALE_REFE=5.5599999999999996,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N68',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=6.632098372,
+                      VALE_REFE=6.6699999999999999,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N90',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=5.614924298,
+                      VALE_REFE=5.5599999999999996,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N114',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=2.773928498,
+                      VALE_REFE=2.7799999999999998,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N134',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.16,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-1.921257693,
+                      VALE_REFE=-1.6699999999999999,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N151',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-8.625684116,
+                      VALE_REFE=-8.8900000000000006,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N171',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-17.780000000,
+                      VALE_REFE=-17.780000000000001,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N7',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-17.780000000,
+                      VALE_REFE=-17.780000000000001,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N19',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-4.927786311,
+                      VALE_REFE=-5.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N37',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=2.162353348,
+                      VALE_REFE=2.2200000000000002,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N61',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=5.544451276,
+                      VALE_REFE=5.5599999999999996,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N85',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=6.652170087,
+                      VALE_REFE=6.6699999999999999,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N124',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=5.598895319,
+                      VALE_REFE=5.5599999999999996,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N177',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=2.822672666,
+                      VALE_REFE=2.7799999999999998,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N220',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.14000000000000001,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-1.902896793,
+                      VALE_REFE=-1.6699999999999999,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N255',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-8.579775952,
+                      VALE_REFE=-8.8900000000000006,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N266',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=T_RES,
+                      VALE_CALC=-17.780000000,
+                      VALE_REFE=-17.780000000000001,
+                      REFERENCE='NON_DEFINI',),
+                   ),
+          )
+
+FIN()
+#
+#
+#
+#
+#
+#
+#

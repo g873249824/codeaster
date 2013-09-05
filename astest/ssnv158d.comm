@@ -1,0 +1,359 @@
+# ======================================================================
+# TITRE ETUDE  : ESSAI TRIAXIAL DRAINE AVEC LE MODELE DE LAIGLE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+#
+#
+# ======================================================================
+#                CONFINEMENT DE 1 MPa
+# ======================================================================
+DEBUT(   CODE=_F( NOM = 'SSNV158D',NIV_PUB_WEB='INTERNET')   )
+#***********************************************************************
+#    MAILLAGE + MODELE
+#***********************************************************************
+
+MAILLAGE=LIRE_MAILLAGE( )
+
+MODELE=AFFE_MODELE(     MAILLAGE=MAILLAGE,
+                             AFFE=_F(  TOUT = 'OUI',
+                                    PHENOMENE = 'MECANIQUE',
+                                    MODELISATION = 'AXIS')
+                           )
+
+#***********************************************************************
+#    INCREMENTS DE TEMPS
+#***********************************************************************
+
+TEMPS1=DEFI_LIST_REEL(   DEBUT=0.,
+                           INTERVALLE=_F(  JUSQU_A = 4.0,   NOMBRE = 1)
+                         )
+
+#***********************************************************************
+#    MATERIAU : SOL
+#***********************************************************************
+
+SOL=DEFI_MATERIAU(    ELAS=_F(  E  = 1500.0,
+                                NU = 0.27  ,),
+                                LAIGLE =_F(  GAMMA_ULT =    0.132   ,
+                                             GAMMA_E   =    0.005   ,
+                                             M_ULT     =    2.0     ,
+                                             M_E       =    7.0     ,
+                                             A_E       =    0.65    ,
+                                             M_PIC     =   15.0     ,
+                                             A_PIC     =    0.5     ,
+                                             ETA       =    0.45    ,
+                                             SIGMA_C   =    4.5     ,
+                                             GAMMA     =    0.23    ,
+                                             KSI       =    0.25    ,
+                                             GAMMA_CJS =    0.7     ,
+                                             SIGMA_P1  =    9.09    ,
+                                             PA        =    1.0E-2  )
+                           )
+
+CHMAT=AFFE_MATERIAU(    MAILLAGE=MAILLAGE,
+                             AFFE=_F(  TOUT = 'OUI',  MATER = SOL)
+                          )
+
+#***********************************************************************
+#    CHARGEMENT MECANIQUE : FORCE DE COMPRESSION + DDL IMPOSES
+#***********************************************************************
+
+CHAR_U1=AFFE_CHAR_MECA(    MODELE=MODELE,
+                              PRES_REP=_F(   MAILLE = 'M4',
+                                          PRES = 1.)
+                       )
+
+CHAR_U2=AFFE_CHAR_MECA(    MODELE=MODELE,
+                             PRES_REP=_F(   MAILLE = 'M3',
+                                         PRES = 1.)
+                        )
+
+DEPL_1=AFFE_CHAR_MECA(    MODELE=MODELE,
+                              FACE_IMPO=_F(  MAILLE = 'M2',
+                                          DY = 0.)
+                           )
+
+COEF1=DEFI_FONCTION(      NOM_PARA='INST',
+                           PROL_DROITE='CONSTANT',
+                         VALE=( 0.0,  0.0,
+                                4.0,  1.0,)
+                       )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION
+#***********************************************************************
+
+
+
+U1=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF1), _F(
+                CHARGE = CHAR_U2,
+                FONC_MULT = COEF1), _F(
+                CHARGE = DEPL_1)),
+                         COMP_INCR=_F(
+                RELATION = 'LAIGLE',
+                RESI_INTE_RELA = 1.E-6,
+                ITER_INTE_MAXI = 100),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE'),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 50,),
+                         INCREMENT=_F(
+                LIST_INST = TEMPS1)
+              )
+
+U1=CALC_CHAMP(reuse=U1,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=U1)
+
+
+#***********************************************************************
+#    INCREMENTS DE TEMPS
+#***********************************************************************
+
+TEMPS2=DEFI_LIST_REEL(   DEBUT=4.,
+                            INTERVALLE=(
+                              _F(  JUSQU_A = 5.000,   NOMBRE = 1000,  ),
+                    ))
+
+
+#***********************************************************************
+#    NOUVEAU CHARGEMENT MECANIQUE : DEPLACEMENT UNIAXIALE UNITAIRE
+#***********************************************************************
+
+
+SIG_INI=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',
+                     NOM_CHAM='SIEF_ELGA', RESULTAT=U1,
+                     INST=4.
+                      )
+
+VAR_INI=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELGA_VARI_R',
+                     NOM_CHAM='VARI_ELGA', RESULTAT=U1,
+                     INST=4.
+                      )
+
+DEPL_2=AFFE_CHAR_MECA(    MODELE=MODELE,
+                              FACE_IMPO=_F(  MAILLE = 'M4',
+                                          DY = 1.)
+                           )
+
+COEF2=DEFI_FONCTION(      NOM_PARA='INST',
+                          PROL_DROITE='LINEAIRE',
+                          PROL_GAUCHE='CONSTANT',
+                          VALE=( 4.0,  0.0,
+                                 5.0,  -0.2, )
+                   )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION
+#***********************************************************************
+
+
+U2=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U2,
+                FONC_MULT = COEF1), _F(
+                CHARGE = DEPL_1), _F(
+                CHARGE = DEPL_2,
+                FONC_MULT = COEF2)),
+                         COMP_INCR=_F(
+                RELATION = 'LAIGLE',
+                RESI_INTE_RELA = 1.E-6,
+                ITER_INTE_MAXI = 100,
+                ITER_INTE_PAS  = -10,),
+                         ETAT_INIT=_F(
+                SIGM = SIG_INI,
+                VARI = VAR_INI),
+                         INCREMENT=_F(
+                LIST_INST = TEMPS2,
+                                  ),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                REAC_ITER = 1,
+                ),
+                       SOLVEUR=_F(
+                SYME ='OUI'),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6,
+                ITER_GLOB_MAXI = 100)
+              )
+
+U2=CALC_CHAMP(reuse=U2,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=U2)
+
+
+U2=CALC_CHAMP(  reuse      = U2,
+             RESULTAT   = U2,
+             TOUT_ORDRE = 'OUI',
+             CONTRAINTE='SIGM_NOEU',
+               )
+
+#-------------------------
+#    TEST_RESU AU POINT 4
+#-------------------------
+
+RODEPX=RECU_FONCTION(RESULTAT=U2,
+                     NOM_CHAM='DEPL',
+                     NOM_CMP='DX',
+                     NOEUD='N4',
+                     TITRE='DEP X',);
+RODEPY=RECU_FONCTION(RESULTAT=U2,
+                     NOM_CHAM='DEPL',
+                     NOM_CMP='DY',
+                     NOEUD='N4',
+                     TITRE='DEP Y',);
+ROSIGX=RECU_FONCTION(RESULTAT=U2,
+                     NOM_CHAM='SIGM_NOEU',
+                     NOM_CMP='SIXX',
+                     NOEUD='N4',
+                     TITRE='SIG X',);
+ROSIGY=RECU_FONCTION(RESULTAT=U2,
+                     NOM_CHAM='SIGM_NOEU',
+                     NOM_CMP='SIYY',
+                     NOEUD='N4',
+                     TITRE='SIG Y',);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=296,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-1.0000006319542,
+                   ),
+                _F(NUME_ORDRE=596,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-1.0000000028749,
+                   ),
+                _F(NUME_ORDRE=296,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1.0000006319542,
+                   ),
+                _F(NUME_ORDRE=596,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1.0000000028749,
+                   ),
+                _F(NUME_ORDRE=196,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-4.7247538992523,
+                   ),
+                _F(NUME_ORDRE=296,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-4.1666773893324,
+                   ),
+                _F(NUME_ORDRE=312,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-4.0928092858039,
+                   ),
+                _F(NUME_ORDRE=496,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-3.4030828139161,
+                   ),
+                _F(NUME_ORDRE=596,
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOEUD='N4',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-3.1056273750942,
+                   ),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=196,
+                   RESULTAT=U2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N4',
+                   NOM_CMP='DX',
+                   VALE_CALC=0.024607957414976,
+                   ),
+                _F(NUME_ORDRE=396,
+                   RESULTAT=U2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N4',
+                   NOM_CMP='DX',
+                   VALE_CALC=0.047711015556631,
+                   ),
+                _F(NUME_ORDRE=596,
+                   RESULTAT=U2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N4',
+                   NOM_CMP='DX',
+                   VALE_CALC=0.068830057376256,
+                   ),
+                _F(NUME_ORDRE=196,
+                   RESULTAT=U2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N4',
+                   NOM_CMP='DY',
+                   VALE_CALC=-0.039200000000013,
+                   ),
+                _F(NUME_ORDRE=296,
+                   RESULTAT=U2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N4',
+                   NOM_CMP='DY',
+                   VALE_CALC=-0.0592,
+                   ),
+                _F(NUME_ORDRE=396,
+                   RESULTAT=U2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N4',
+                   NOM_CMP='DY',
+                   VALE_CALC=-0.0792,
+                   ),
+                _F(NUME_ORDRE=496,
+                   RESULTAT=U2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N4',
+                   NOM_CMP='DY',
+                   VALE_CALC=-0.0992,
+                   ),
+                _F(NUME_ORDRE=596,
+                   RESULTAT=U2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N4',
+                   NOM_CMP='DY',
+                   VALE_CALC=-0.1192,
+                   ),
+                ),
+          )
+
+FIN()
+#

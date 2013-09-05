@@ -1,0 +1,144 @@
+# TITRE TRACTION BIAXIALE EN 3D - COMPORTEMENT ENDO_ISOT_BETON
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#----------------------------------------------------------------------
+#   TEST MODELE ENDO_ISOT_BETON
+#   EN DEPLACEMENT IMPOSE
+#
+#----------------------------------------------------------------------
+#                ELEMENT 3D CUBE A 8 NOEUDS
+#              ETAT HOMOGENE CONTRAINTE DEFORMATION
+#       UNITES : NEWTON , MILLIMETRE , SECONDE (N,MM,S,->MPA)
+#
+#
+#                      A                     A = 0.01 MM
+#                <------------->
+#
+#                / N8            N7
+#          Y   >O--------------O
+#              /L             /L
+#         N4 L/ L         N3 / L
+#           >O--+-----------O  L
+#            L  L           L  L
+#            L  L     S     L  L
+#            L  L Z         L  L
+#            L  L/ N5       L  L N6
+#            L >O-----------L--O
+#            L /V           L /
+#         N1 L/          N2 L/
+#           >O--------------O-> X
+#
+#
+#
+#
+#
+#----------------------------------------------------------------------
+#
+DEBUT(CODE=_F(NOM='SSNV149A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+CUBE=LIRE_MAILLAGE(    )
+
+TROISD=AFFE_MODELE(            MAILLAGE=CUBE,
+                                    AFFE=_F(   PHENOMENE = 'MECANIQUE',
+                                            MODELISATION = '3D',
+                                            MAILLE = 'ma1'))
+
+BETON=DEFI_MATERIAU(         ELAS=_F( E = 30000.0E6,
+                                      NU = 0.2),
+
+                BETON_ECRO_LINE=_F( SYT = 3.0E6,
+                                    D_SIGM_EPSI = -6000.E6,
+                                    SYC = 11.225E6)
+                   )
+
+MATBET=AFFE_MATERIAU(           MAILLAGE=CUBE,
+                                    AFFE=_F(  MAILLE = 'ma1',
+                                           MATER = BETON)
+                         )
+
+COND_LIM=AFFE_CHAR_MECA(
+                      MODELE=TROISD,DDL_IMPO=(
+                    _F(  GROUP_NO = 'facexyn',   DZ = 0.),
+                    _F(  GROUP_NO = 'faceyzn',   DX = 0.),
+                    _F(  NOEUD = 'n1',  DY = 0.),
+                    _F(  NOEUD = 'n5',  DY = 0.))
+               )
+
+TRAC=AFFE_CHAR_MECA(
+                      MODELE=TROISD,DDL_IMPO=(
+                    _F(  GROUP_NO = 'faceyzp',  DX = 1.),
+                    _F(  NOEUD = 'n2',  DY = 0.),
+                    _F(  NOEUD = 'n6',  DY = 0.))
+                            )
+
+LINST1=DEFI_LIST_REEL(             DEBUT=0.,INTERVALLE=(
+
+                            _F( JUSQU_A = 0.5,  NOMBRE = 1),
+                            _F( JUSQU_A = 1.,  NOMBRE = 10),
+                            _F( JUSQU_A = 2.,  NOMBRE = 2),
+                            _F( JUSQU_A = 3.,  NOMBRE = 10))
+                         )
+
+COEF1=DEFI_FONCTION(
+                              NOM_PARA='INST',
+                                  VALE=(   0.,   0.,
+                                           1.,  2.E-6,
+                                           2.,  -1.E-8,
+#                                           3.,  -1.1E-5,
+                                           3.,  -2.E-5,
+                                       )
+                        )
+
+SOLNL2=STAT_NON_LINE(TITRE='TEST LOI ENDO_ISOT_BETON',
+                     MODELE=TROISD,
+                     EXCIT=( _F(CHARGE = COND_LIM),
+                             _F(CHARGE = TRAC,
+                                FONC_MULT = COEF1)),
+                INCREMENT=_F(LIST_INST = LINST1),
+                CHAM_MATER=MATBET,
+                COMP_INCR=_F(RELATION = 'ENDO_ISOT_BETON'),
+                NEWTON=_F(MATRICE = 'TANGENTE',
+                          REAC_INCR = 1,
+                          REAC_ITER = 1),
+                CONVERGENCE=_F(ITER_GLOB_MAXI = 100)
+               )
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=17,
+                   RESULTAT=SOLNL2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='n2',
+                   NOM_CMP='DX',
+                   VALE_CALC=-8.006E-06,),
+                _F(NUME_ORDRE=17,
+                   POINT=1,
+                   RESULTAT=SOLNL2,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-2.0362854317491E7,
+                   MAILLE='ma1',),
+                _F(NUME_ORDRE=17,
+                   POINT=1,
+                   RESULTAT=SOLNL2,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.81406453783811,
+                   MAILLE='ma1',),
+                ),
+          )
+
+FIN()
+#

@@ -1,0 +1,163 @@
+# TITRE IMPACT DE DEUX POUTRES ELASTIQUES
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
+# (AT YOUR OPTION) ANY LATER VERSION.                                                    
+#                                                                       
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
+#                                                                       
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# ======================================================================
+# Etude du choc de deux poutres maillees 3D
+# en traction compression.
+
+DEBUT(CODE=_F(NOM='SDNL111D',
+              NIV_PUB_WEB='INTERNET',),);
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_NO=_F(TOUT_GROUP_MA='OUI',),);
+
+MODELE=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=_F(GROUP_MA=('POU1','POU2',),
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='3D',),);
+
+MAIL=MODI_MAILLAGE(reuse =MAIL,
+                   MAILLAGE=MAIL,
+                   ORIE_PEAU_3D=(_F(GROUP_MA='CNT_POU1',),
+                                 _F(GROUP_MA='CNT_POU2',),),
+                   INFO=2,);
+
+MATER=DEFI_MATERIAU(ELAS=_F(E=2.E11,
+                            NU=0.3,
+                            RHO=7800.,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                    AFFE=(_F(GROUP_MA='POU1',
+                             MATER=MATER,),
+                          _F(GROUP_MA='POU2',
+                             MATER=MATER,),),);
+# *******************************************
+
+CONDLIM=AFFE_CHAR_MECA(MODELE=MODELE,
+                       DDL_IMPO=(_F(TOUT='OUI',
+                                    DX=0.,
+                                    DY=0.,),
+                                 _F(GROUP_NO='CL_POU2',
+                                    DZ=0.,),),);
+
+VITINI=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+                  OPERATION='AFFE',
+                  MAILLAGE=MAIL,
+                  AFFE=(
+                  _F(TOUT='OUI',
+                     NOM_CMP=('DX','DY','DZ',),
+                     VALE=(0.0,0.0,0.0,),),
+                  _F(GROUP_NO='POU1',
+                     NOM_CMP='DZ',
+                     VALE=-1.0,),
+                  _F(GROUP_NO='POU2',
+                     NOM_CMP='DZ',
+                     VALE=0.0,),),);
+# *******************************************
+
+CONTACT = DEFI_CONTACT(MODELE      = MODELE,
+                       FORMULATION = 'DISCRETE',
+                       ZONE =_F(
+                             ALGO_CONT = 'LAGRANGIEN',
+                             MAILLE_MAIT='M101',
+                             MAILLE_ESCL='M103',
+                           ),
+                      );
+
+
+# ************************************************************
+
+L_INST=DEFI_LIST_REEL(DEBUT=0.,
+                      INTERVALLE=_F(JUSQU_A=1.E-3,
+                                    PAS=1.E-6,),);
+
+RESU=DYNA_NON_LINE(MODELE=MODELE,
+                   CHAM_MATER=CHMAT,
+                   EXCIT=(
+                          _F(CHARGE=CONDLIM,),),
+                   CONTACT  = CONTACT,       
+                   COMP_INCR=_F(RELATION='ELAS',
+                                DEFORMATION='PETIT_REAC',),
+                   ETAT_INIT=_F(
+                   VITE=VITINI,),
+                   INCREMENT=_F(LIST_INST=L_INST,),
+                   SCHEMA_TEMPS=_F(SCHEMA='HHT',
+                                   FORMULATION='DEPLACEMENT',
+                                   ALPHA=-0.1,),
+                   NEWTON=_F(MATRICE='TANGENTE',),
+                   SOLVEUR=_F(SYME='OUI',
+                              METHODE='MULT_FRONT',),);
+#
+# TEST DE LA CONFORMITE AVEC LA SOLUTION DE REFERENCE ANALYTIQUE
+
+TEST_RESU(RESU=(_F(GROUP_NO='N1',
+                   INST=2.0E-4,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DZ',
+                   VALE_CALC=-1.05E-04,
+                   VALE_REFE=-1.05E-4,
+                   CRITERE='RELATIF',
+                   PRECISION=0.05, ),
+                _F(GROUP_NO='N1',
+                   INST=4.0E-4,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DZ',
+                   VALE_CALC=-1.55245955E-04,
+                   VALE_REFE=-1.55E-4,
+                   CRITERE='RELATIF',
+                   PRECISION=0.05, ),
+                _F(GROUP_NO='N1',
+                   INST=6.E-4,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DZ',
+                   VALE_CALC=-5.54055910E-05,
+                   VALE_REFE=-5.54E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=0.05, ),
+                _F(GROUP_NO='N1',
+                   INST=8.0E-4,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DZ',
+                   VALE_CALC= 9.55019370E-05,
+                   VALE_REFE=9.92E-05,
+                   CRITERE='RELATIF',
+                   PRECISION=0.05, ),
+                _F(GROUP_NO='N1',
+                   INST=1.E-3,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DZ',
+                   VALE_CALC= 2.95547595E-04,
+                   VALE_REFE=2.99E-4,
+                   CRITERE='RELATIF',
+                   PRECISION=0.05, ),
+                ),
+          )
+
+FIN();
+#

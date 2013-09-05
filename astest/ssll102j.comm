@@ -1,0 +1,150 @@
+# TITRE POUTRE ENCASTREE A UNE EXTREMITE ET CHARGEE PAR DES FORCES
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#       UNITAIRES SUR SON AUTRE EXTREMITE.
+# MODELISATION POU_D_EM
+#======================================================================
+
+DEBUT(CODE=_F(NOM='SSLL102J', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+#lecture maillage lineique
+
+MA=LIRE_MAILLAGE(INFO=2,);
+# lecture maillage section
+
+MASEC=LIRE_MAILLAGE(FORMAT='MED',UNITE=18,);
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='POU_D_EM',),);
+
+GF=DEFI_GEOM_FIBRE(
+           SECTION = _F ( GROUP_FIBRE='SEC1',
+                            MAILLAGE_SECT = MASEC , GROUP_MA_SECT = 'SURF1',
+                            COOR_AXE_POUTRE = (0., 0.,)),
+            )
+
+MATR=DEFI_MATERIAU(ELAS=_F(E=200000000000.0,
+                           NU=0.3,),);
+
+COMPF=DEFI_COMPOR(GEOM_FIBRE=GF,MATER_SECT=MATR,
+                  MULTIFIBRE=(_F(GROUP_FIBRE='SEC1',MATER=MATR),))
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=_F(TOUT='OUI',MATER=MATR,),
+                    AFFE_COMPOR=_F(GROUP_MA = 'G1',COMPOR=COMPF));
+
+CAREL=AFFE_CARA_ELEM(MODELE=MO,INFO=2,
+                     POUTRE=_F(GROUP_MA = 'G1',
+                               SECTION='GENERALE',
+                               CARA = ('A','IY','IZ','JX','RY','RZ','RT'),
+                               VALE = ( 0.02,  0.166666666666e-4,  0.666666666666e-4,
+                                        4.5776e-5,  0.1,  0.05,  0.0892632 )),
+                 ORIENTATION=_F(GROUP_MA=('G1'),
+                          CARA='ANGL_VRIL', VALE=0.0,),
+
+                          GEOM_FIBRE=GF,
+                          MULTIFIBRE=_F(GROUP_MA='G1',
+                                  GROUP_FIBRE='SEC1'),
+                  );
+
+# ------ TORSION GX : --------------------------------------------------
+
+CHARG4=AFFE_CHAR_MECA(MODELE=MO,
+                      DDL_IMPO=_F(GROUP_NO='A',
+                                  DX=0.0,
+                                  DY=0.0,
+                                  DZ=0.0,
+                                  DRX=0.0,
+                                  DRY=0.0,
+                                  DRZ=0.0,),
+                      FORCE_NODALE=_F(GROUP_NO='B',
+                                      MX= 5.7735026919E-01,
+                                      MY= 5.7735026919E-01,
+                                      MZ= 5.7735026919E-01,
+                                      ),);
+
+MEST4=MECA_STATIQUE(MODELE=MO,
+                    CHAM_MATER=CHMAT,
+                    CARA_ELEM=CAREL,
+                    EXCIT=_F(CHARGE=CHARG4,),);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MEST4,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N3',
+                   NOM_CMP='DX',
+                   VALE_CALC=-6.4348889159599E-22,
+                   VALE_REFE=0.0,
+                   CRITERE='ABSOLU',
+                   PRECISION=1.E-13,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MEST4,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N3',
+                   NOM_CMP='DY',
+                   VALE_CALC= 8.8498743803991E-22,
+                   VALE_REFE=0.0,
+                   CRITERE='ABSOLU',
+                   PRECISION=1.E-13,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MEST4,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N3',
+                   NOM_CMP='DZ',
+                   VALE_CALC=-2.3822801641527E-22,
+                   VALE_REFE=0.0,
+                   CRITERE='ABSOLU',
+                   PRECISION=1.E-13,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MEST4,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N3',
+                   NOM_CMP='DRX',
+                   VALE_CALC= 3.27925266E-07,
+                   VALE_REFE=3.2792524999999997E-07,
+                   CRITERE='RELATIF',
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MEST4,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N3',
+                   NOM_CMP='DRY',
+                   VALE_CALC= 3.2792526649794E-07,
+                   VALE_REFE=3.2792524999999997E-07,
+                   CRITERE='ABSOLU',
+                   PRECISION=1.E-13,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MEST4,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N3',
+                   NOM_CMP='DRZ',
+                   VALE_CALC= 3.2792526649794E-07,
+                   VALE_REFE=3.2792524999999997E-07,
+                   CRITERE='ABSOLU',
+                   PRECISION=1.E-13,),
+                ),
+          )
+
+FIN();
+#

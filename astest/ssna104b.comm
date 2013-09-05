@@ -1,0 +1,149 @@
+# TITRE CYLINDRE CREUX VISCOPLASTICITE LINEAIRE, PRESSION INTERNE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSNA104B',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MA = LIRE_MAILLAGE(FORMAT='MED',);
+
+MA = DEFI_GROUP(reuse =MA,
+                MAILLAGE=MA,
+                CREA_GROUP_NO =(
+                       _F(GROUP_MA = 'DAB',),
+                       _F(GROUP_MA = 'DCD',),
+                        )
+                )
+
+MO = AFFE_MODELE( MAILLAGE =MA,
+                  AFFE=_F(
+                       TOUT ='OUI',
+                       PHENOMENE = 'MECANIQUE',
+                       MODELISATION = 'AXIS',)
+                 )
+
+IRRA_0=CREA_CHAMP(  OPERATION='AFFE',
+                      TYPE_CHAM='NOEU_IRRA_R',
+                      MAILLAGE=MA,
+                      AFFE=_F( TOUT = 'OUI', NOM_CMP = 'IRRA',
+                            VALE = 0.0 ,))
+
+IRRA_1=CREA_CHAMP(  OPERATION='AFFE',
+                      TYPE_CHAM='NOEU_IRRA_R',
+                      MAILLAGE=MA,
+                      AFFE=_F( TOUT = 'OUI', NOM_CMP = 'IRRA',
+                            VALE = 0.9 ,))
+
+MAT = DEFI_MATERIAU(
+            ELAS=_F( E = 1., NU = 0.3, ALPHA = 0.),
+            LEMA_SEUIL=_F( A=0.866025403785,S=1.E-10)
+           )
+
+BLOC = AFFE_CHAR_MECA (MODELE = MO,
+                       DDL_IMPO=_F(GROUP_NO =('DAB','DCD'),
+                                   DY=0.)
+                      )
+PRES = AFFE_CHAR_MECA (MODELE = MO,
+                          PRES_REP=_F (GROUP_MA = 'DDA',
+                                    PRES = 1.E-3)
+                          )
+
+L_INST=DEFI_LIST_REEL(  DEBUT=0.0,
+                        INTERVALLE=(
+                        _F( PAS = 1.E-6,       JUSQU_A = 1.E-6),
+                        _F( PAS = 0.999E-3,    JUSQU_A = 0.001),
+                        _F( PAS = 1.E-3,       JUSQU_A = 0.01),
+                        _F( PAS = 2.E-3,       JUSQU_A = 0.03),
+                        _F( PAS = 5.E-3,       JUSQU_A = 0.1),
+                        _F( PAS = 1.E-2,       JUSQU_A = 0.9),
+)
+                      )
+
+FLUENC=CREA_RESU(
+                      OPERATION='AFFE', TYPE_RESU='EVOL_VARC',
+                      NOM_CHAM='IRRA',
+                      AFFE=(
+                      _F( CHAM_GD = IRRA_0, INST= 0.0 ),
+                      _F( CHAM_GD = IRRA_1, INST= 0.9 ),
+                          )
+                      )
+
+CHMAT = AFFE_MATERIAU (MAILLAGE = MA,
+          AFFE =_F(TOUT='OUI',  MATER = MAT),
+          AFFE_VARC=_F(NOM_VARC='IRRA', EVOL =FLUENC, ),
+                       )
+RESU = STAT_NON_LINE (MODELE = MO,
+                      CHAM_MATER = CHMAT,
+                      EXCIT =(
+                         _F( CHARGE = BLOC),
+                         _F( CHARGE = PRES),),
+                      COMP_INCR =_F(RELATION ='LEMA_SEUIL',PARM_THETA = 1.,
+                                    ITER_INTE_MAXI = 1000),
+                      INCREMENT =_F(LIST_INST =L_INST),
+                      NEWTON    =_F(
+                                MATRICE ='TANGENTE',
+                                REAC_ITER= 1),
+                      CONVERGENCE=_F(
+                                RESI_GLOB_RELA = 1.E-6,
+                                ITER_GLOB_MAXI = 25)
+                        )
+
+RESU = CALC_CHAMP( reuse= RESU,
+                  RESULTAT = RESU,
+                   CONTRAINTE=('SIGM_ELNO'),)
+RESU = CALC_CHAMP ( reuse= RESU,
+                  RESULTAT = RESU,
+                  CONTRAINTE='SIGM_NOEU',)
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=115,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DX',
+                   VALE_CALC= 2.14484459E-03,
+                   VALE_REFE=2.1449799999999999E-3,),
+                _F(NUME_ORDRE=115,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-4.81687233E-06,
+                   VALE_REFE=0.0,
+                   CRITERE='ABSOLU',),
+                _F(NUME_ORDRE=115,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC= 2.75747584E-04,
+                   VALE_REFE=2.7912E-4,
+                   PRECISION=0.014999999999999999,),
+                _F(NUME_ORDRE=115,
+                   GROUP_NO='B',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC= 6.63504108E-04,
+                   VALE_REFE=6.6660000000000005E-4,
+                   PRECISION=5.0000000000000001E-3,),
+                ),
+          )
+
+FIN()

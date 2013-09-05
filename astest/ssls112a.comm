@@ -1,0 +1,383 @@
+# person_in_charge: xavier.desroches at edf.fr
+# TITRE PLAQUE STRATIFIEE EN FLEXION - DKQ - B/A = 1
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# SSLS112A
+# PLAQUE DE STRATIFIE RECTANGULAIRE EXCENTREE
+# CALCUL 1 : 1 QUADRICOUCHE , CE CALCUL SERT DE REFERENCE
+# CALCUL 2 : 2 BICOUCHES EXCENTRES
+# MODELISATION DKQ
+#             67 NOEUDS  50 MAILLES QUAD4
+#----------------------------------------------------------------------
+#POINTS:  A4                          A3
+#           -------------------------
+#           -                       -
+#           -                       -
+#           -                       -
+#           -                       -
+#           -------------------------
+#         A1                          A2
+#
+# ______________________________________________________________________
+#
+#
+
+
+DEBUT(CODE=_F(NOM='SSLS112A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+#
+#
+
+MA1=LIRE_MAILLAGE(VERI_MAIL=_F(VERIF='OUI'),FORMAT='MED',);
+
+MA1=DEFI_GROUP(reuse =MA1,
+               MAILLAGE=MA1,
+               CREA_GROUP_MA=_F(NOM='TOUT',
+                                TOUT='OUI',),);
+
+MA=CREA_MAILLAGE(MAILLAGE=MA1,
+                 CREA_GROUP_MA=_F(NOM='PLAQ2',
+                                  GROUP_MA='PLAQ1',
+                                  PREF_MAILLE='MAIL',),);
+
+MA=DEFI_GROUP(reuse =MA,
+              MAILLAGE=MA,
+              CREA_GROUP_NO=(_F(GROUP_MA='PLAQ1',
+                                NOM='PLAQ1',),
+                             _F(GROUP_MA='PLAQ2',
+                                NOM='PLAQ2',),),);
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='DKT',),);
+
+MO1=AFFE_MODELE(MAILLAGE=MA,
+                AFFE=_F(GROUP_MA='PLAQ1',
+                        PHENOMENE='MECANIQUE',
+                        MODELISATION='DKT',),);
+
+EP=AFFE_CARA_ELEM(MODELE=MO,
+                  COQUE=(_F(GROUP_MA='TOUT',
+                            COQUE_NCOU=2,
+                            EPAIS=0.20000000000000001,),
+                         _F(GROUP_MA='PLAQ1',
+                            EPAIS=0.20000000000000001,
+                            COQUE_NCOU=2,
+                            ANGL_REP=(0.0,0.0),
+                            EXCENTREMENT=0.10000000000000001,
+                            INER_ROTA='OUI',),
+                         _F(GROUP_MA='PLAQ2',
+                            EPAIS=0.20000000000000001,
+                            ANGL_REP=(0.0,0.0),
+                            EXCENTREMENT=-0.10000000000000001,
+                            COQUE_NCOU=2,
+                            INER_ROTA='OUI',),),);
+
+EP1=AFFE_CARA_ELEM(MODELE=MO1,
+                   COQUE=_F(GROUP_MA='TOUT',
+                            EPAIS=0.40000000000000002,
+                            COQUE_NCOU=4,
+                            ANGL_REP=(0.0,0.0),),);
+
+MAT1A=DEFI_MATERIAU(ELAS_ORTH=_F(E_L=2.E10,
+                                 E_T=2.E10,
+                                 NU_LT=0.29999999999999999,
+                                 G_LT=2.E9,),);
+
+MAT1B=DEFI_MATERIAU(ELAS_ORTH=_F(E_L=1.5000000000E10,
+                                 E_T=1.5000000000E10,
+                                 NU_LT=0.29999999999999999,
+                                 G_LT=1.500000000E9,),);
+
+MAT1C=DEFI_MATERIAU(ELAS_ORTH=_F(E_L=2.E10,
+                                 E_T=2.E10,
+                                 NU_LT=0.29999999999999999,
+                                 G_LT=2.E9,),);
+
+MAT1D=DEFI_MATERIAU(ELAS_ORTH=_F(E_L=1.5000000000E10,
+                                 E_T=1.5000000000E10,
+                                 NU_LT=0.29999999999999999,
+                                 G_LT=1.500000000E9,),);
+#
+#
+
+
+MU=DEFI_COMPOSITE(COUCHE=(_F(EPAIS=0.10000000000000001,
+                             MATER=MAT1D,
+                             ORIENTATION=0.0,),
+                          _F(EPAIS=0.10000000000000001,
+                             MATER=MAT1C,
+                             ORIENTATION=0.0,),
+                          _F(EPAIS=0.10000000000000001,
+                             MATER=MAT1B,
+                             ORIENTATION=0.0,),
+                          _F(EPAIS=0.10000000000000001,
+                             MATER=MAT1A,
+                             ORIENTATION=0.0,),),);
+
+MU1=DEFI_COMPOSITE(COUCHE=(_F(EPAIS=0.10000000000000001,
+                              MATER=MAT1B,
+                              ORIENTATION=0.0,),
+                           _F(EPAIS=0.10000000000000001,
+                              MATER=MAT1A,
+                              ORIENTATION=0.0,),),);
+
+MU2=DEFI_COMPOSITE(COUCHE=(_F(EPAIS=0.10000000000000001,
+                              MATER=MAT1D,
+                              ORIENTATION=0.0,),
+                           _F(EPAIS=0.10000000000000001,
+                              MATER=MAT1C,
+                              ORIENTATION=0.0,),),);
+
+CHMUL=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=MU,),);
+
+CHMU2=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=(_F(GROUP_MA='PLAQ1',
+                             MATER=MU1,),
+                          _F(GROUP_MA='PLAQ2',
+                             MATER=MU2,),),);
+
+CHME=AFFE_CHAR_MECA(MODELE=MO,
+                    DDL_IMPO=(_F(GROUP_NO='A1',
+                                 DX=0.0,
+                                 DY=0.0,
+                                 DZ=0.0,
+                                 DRX=0.0,
+                                 DRY=0.0,
+                                 DRZ=0.0,),
+                              _F(GROUP_NO='A2',
+                                 DX=0.0,
+                                 DY=0.0,),),
+                    FORCE_NODALE=_F(GROUP_NO='A3',
+                                    FZ=-1000.0,),);
+
+CHME1=AFFE_CHAR_MECA(MODELE=MO1,
+                     DDL_IMPO=(_F(GROUP_NO='A1',
+                                  DX=0.0,
+                                  DY=0.0,
+                                  DZ=0.0,
+                                  DRX=0.0,
+                                  DRY=0.0,
+                                  DRZ=0.0,),
+                               _F(GROUP_NO='A2',
+                                  DX=0.0,
+                                  DY=0.0,),),
+                     FORCE_NODALE=_F(GROUP_NO='A3',
+                                     FZ=-1000.0,),);
+# ______________________________________________________________________
+#
+#                         RESOLUTION
+# ______________________________________________________________________
+#
+#
+#  2 BICOUCHES
+#
+DEP=MECA_STATIQUE(MODELE=MO,
+                   CHAM_MATER=CHMU2,
+                   CARA_ELEM=EP,
+                   EXCIT=_F(CHARGE=CHME,),
+                  );
+
+DEP=CALC_CHAMP(reuse=DEP,RESULTAT=DEP,CONTRAINTE=('SIGM_ELNO','EFGE_ELNO'))
+
+
+DEP1INF=POST_CHAMP(RESULTAT=DEP,
+                   EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                                   NUME_COUCHE=1,
+                                   NIVE_COUCHE='INF',),);
+DEP2SUP=POST_CHAMP(RESULTAT=DEP,
+                   EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                                   NUME_COUCHE=2,
+                                   NIVE_COUCHE='SUP',),);
+IMPR_RESU(RESU=_F(RESULTAT=DEP2SUP,NOM_CHAM='SIGM_ELNO',
+                   NUME_ORDRE=1,MAILLE=('M10',)))
+
+IMPR_RESU(RESU=_F(RESULTAT=DEP1INF,NOM_CHAM='SIGM_ELNO',
+                   NUME_ORDRE=1,MAILLE=('MAILM10',)))
+
+
+
+# ______________________________________________________________________
+#
+#
+#
+#  QUADRICOUCHE
+#
+DEPQ=MECA_STATIQUE(MODELE=MO1,
+                   CHAM_MATER=CHMUL,
+                   CARA_ELEM=EP1,
+                   EXCIT=_F(CHARGE=CHME1,),
+                  );
+
+DEPQ=CALC_CHAMP(reuse=DEPQ,RESULTAT=DEPQ,CONTRAINTE=('SIGM_ELNO','EFGE_ELNO'))
+
+
+#
+# COUCHE 1
+#
+DEPQ1INF=POST_CHAMP(RESULTAT=DEPQ,
+                    EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                                   NUME_COUCHE=1,
+                                   NIVE_COUCHE='INF',),);
+IMPR_RESU(RESU=_F(RESULTAT=DEPQ1INF,NOM_CHAM='SIGM_ELNO',
+                   NUME_ORDRE=1,MAILLE=('M10',)))
+
+#
+# COUCHE 4
+#
+DEPQ4SUP=POST_CHAMP(RESULTAT=DEPQ,
+                    EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                                   NUME_COUCHE=4,
+                                   NIVE_COUCHE='SUP',),);
+IMPR_RESU(RESU=_F(RESULTAT=DEPQ4SUP,NOM_CHAM='SIGM_ELNO',
+                   NUME_ORDRE=1,MAILLE=('M10',)))
+
+
+# ______________________________________________________________________
+#
+#
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N1',
+                   NOM_CMP='DX',
+                   VALE_CALC=-3.68041952E-06,
+                   VALE_REFE=-3.6804200000000001E-06,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N1',
+                   NOM_CMP='DY',
+                   VALE_CALC=-4.93941638E-07,
+                   VALE_REFE=-4.9394200000000004E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N1',
+                   NOM_CMP='DZ',
+                   VALE_CALC=-5.69776359E-03,
+                   VALE_REFE=-5.6977599999999996E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N1',
+                   NOM_CMP='DRX',
+                   VALE_CALC=-4.36167689E-04,
+                   VALE_REFE=-4.36167E-4,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N1',
+                   NOM_CMP='DRY',
+                   VALE_CALC= 5.08667058E-04,
+                   VALE_REFE=5.0866699999999997E-4,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N10',
+                   NOM_CMP='DX',
+                   VALE_CALC=-2.17236021E-06,
+                   VALE_REFE=-2.1723599999999999E-06,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N10',
+                   NOM_CMP='DY',
+                   VALE_CALC=-7.83905184E-07,
+                   VALE_REFE=-7.8390499999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N10',
+                   NOM_CMP='DZ',
+                   VALE_CALC=-3.94626326E-03,
+                   VALE_REFE=-3.94626E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N10',
+                   NOM_CMP='DRX',
+                   VALE_CALC=-4.12120895E-04,
+                   VALE_REFE=-4.1212099999999999E-4,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N10',
+                   NOM_CMP='DRY',
+                   VALE_CALC= 4.55063822E-04,
+                   VALE_REFE=4.5506399999999998E-4,),
+                ),
+          )
+
+#
+# TEST DES CONTRAINTES PAR ELEMENTS AUX NOEUDS
+#
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP1INF,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N12',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-5.51925887E+03,
+                   VALE_REFE=-5519.2600000000002,
+                   MAILLE='MAILM10',),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEP2SUP,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N12',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 2.87629002E+04,
+                   VALE_REFE=2.8762900000000001E4,
+                   MAILLE='M10',),
+                _F(NUME_ORDRE=1,
+                   RESULTAT=DEPQ1INF,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N12',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-5519.2600000000002,
+                   MAILLE='M10',),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=DEPQ4SUP,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N12',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 2.87629002E+04,
+                   VALE_REFE=2.8762900000000001E4,
+                   MAILLE='M10',),
+                ),
+          )
+
+FIN();
+#
+#

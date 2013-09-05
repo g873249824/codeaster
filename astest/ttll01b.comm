@@ -1,0 +1,262 @@
+# TITRE CHOC THERMIQUE SUR UN MUR INFINI QUAD8 - TEMP_INIT
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#CAS_TEST__: TTLL01B
+# CAS TEST TTLL01B
+#
+#  CAS 2D AVEC CHOC VERITABLE POUR TESTER TEMP_INI.
+#
+#
+
+DEBUT(CODE=_F(NOM='TTLL01B', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED', )
+
+TIMPVAR=DEFI_CONSTANTE(   NOM_RESU='TEMP',    VALE=100.0E0 )
+
+ACIER=DEFI_MATERIAU( THER=_F(  LAMBDA = 1.0, RHO_CP = 1.0))
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MAIL,
+                AFFE=_F(  TOUT = 'OUI', MATER = ACIER) )
+
+MOTH=AFFE_MODELE(  MAILLAGE=MAIL,
+                      AFFE=_F( TOUT = 'OUI', MODELISATION = 'PLAN',
+                                      PHENOMENE = 'THERMIQUE'))
+
+#
+
+TEMP0=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='NOEU_TEMP_R',
+MAILLAGE=MAIL,
+                   AFFE=_F(   TOUT = 'OUI', NOM_CMP = 'TEMP', VALE = 0.0E0)
+                        )
+
+# ---------------------------------------------------------------------
+
+
+CHTH=AFFE_CHAR_THER_F(MODELE=MOTH,
+          TEMP_IMPO=_F( GROUP_NO = 'GRNM14', TEMP = TIMPVAR)
+         )
+
+LR8=DEFI_LIST_REEL(        DEBUT=0.,INTERVALLE=(
+       _F(    JUSQU_A = 1.E-3, NOMBRE = 10),
+       _F(    JUSQU_A = 1.E-2, NOMBRE = 9),
+       _F(    JUSQU_A = 1.E-1, NOMBRE = 9),
+       _F(    JUSQU_A = 1.E0,  NOMBRE = 9),
+       _F(    JUSQU_A = 2.0,   NOMBRE = 10))
+                       )
+
+TEMPE=THER_LINEAIRE(        MODELE=MOTH,
+           ETAT_INIT=_F( CHAM_NO = TEMP0),
+          INCREMENT=_F( LIST_INST = LR8),
+             CHAM_MATER=CHMAT, EXCIT=_F( CHARGE = CHTH)
+             )
+
+TEMP_1=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+RESULTAT=TEMPE, NOM_CHAM='TEMP',
+             INST=0.1 )
+
+TEMP_2=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+RESULTAT=TEMPE, NOM_CHAM='TEMP',
+             INST=0.2 )
+
+TEMP_3=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+RESULTAT=TEMPE, NOM_CHAM='TEMP',
+             INST=0.7 )
+
+TEMP_4=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+RESULTAT=TEMPE, NOM_CHAM='TEMP',
+             INST=2.0 )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N9',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_1,
+                      VALE_CALC=65.368652069,
+                      VALE_REFE=65.48,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N9',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_2,
+                      VALE_CALC=75.841249594,
+                      VALE_REFE=75.58,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N9',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_3,
+                      VALE_CALC=92.874831356,
+                      VALE_REFE=93.01,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N9',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_4,
+                      VALE_CALC=99.700350985,
+                      VALE_REFE=99.72,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N33',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_1,
+                      VALE_CALC=8.112934414,
+                      VALE_REFE=8.09,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N33',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.03,
+                      CHAM_GD=TEMP_2,
+                      VALE_CALC=25.871575509,
+                      VALE_REFE=26.37,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N33',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_3,
+                      VALE_CALC=78.071412436,
+                      VALE_REFE=78.47,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N33',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_4,
+                      VALE_CALC=99.077775110,
+                      VALE_REFE=99.13,
+                      REFERENCE='ANALYTIQUE',),),
+          )
+
+# ----------------------------------------------------------------------
+# POUR VALIDER AFFE_CHAR_THER_F/TEMP_IMPO/EVOL_THER :
+# ON RECUPERE L'EVOLUTION THERMIQUE (TEMPE) SUR UNE PARTIE DU BORD
+# ET ON L'IMPOSE COMME TEMP_IMPO.
+# LE RESULTAT DOIT ETRE LE MEME.
+# ----------------------------------------------------------------------
+
+CHTH2=AFFE_CHAR_THER_F(MODELE=MOTH,TEMP_IMPO=(
+          _F( GROUP_NO = 'GRNM14', TEMP = TIMPVAR),
+        # _F( GROUP_MA = 'GRMA12', NOEUD = ('N67','N68','N69',), EVOL_THER = TEMPE),
+          )
+         )
+
+TIMP=PROJ_CHAMP(RESULTAT=TEMPE,METHODE='COLLOCATION',  MODELE_1=MOTH,MODELE_2=MOTH, NOM_CHAM='TEMP',
+                VIS_A_VIS=_F(TOUT_1   =  'OUI',
+                             NOEUD_2 = ('N41','N42','N102', # NOEUDS DE GRMA12
+                                        'N67','N68','N69',) ,
+                             CAS_FIGURE='2D'))
+
+CHTH3=AFFE_CHAR_CINE(MODELE=MOTH, EVOL_IMPO=TIMP)
+
+
+
+
+TEMPE2=THER_LINEAIRE(        MODELE=MOTH,   CHAM_MATER=CHMAT,
+           ETAT_INIT=_F( CHAM_NO = TEMP0),
+           INCREMENT=_F( LIST_INST = LR8, NUME_INST_FIN = 29),
+            EXCIT=_F( CHARGE = CHTH2)
+             )
+
+TEST_RESU(RESU=(_F(INST=0.1,
+                   RESULTAT=TEMPE2,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N9',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=65.368652069,
+                   VALE_REFE=65.48,
+                   REFERENCE='ANALYTIQUE',
+                   PRECISION=1.E-2,),
+                _F(INST=0.1,
+                   RESULTAT=TEMPE2,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N33',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=8.112934414,
+                   VALE_REFE=8.09,
+                   REFERENCE='ANALYTIQUE',
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+#----------------------------------------------------------
+# TEST DE IMPR_RESU
+#----------------------------------------------------------
+
+IMPR_RESU( FORMAT = 'IDEAS',  UNITE = 37, RESU=_F( RESULTAT = TEMPE ),)
+
+#----------------------------------------------------------
+# TEST DE LIRE_RESU
+#----------------------------------------------------------
+
+TEMPEE=LIRE_RESU(       MODELE=MOTH,
+                             UNITE=37,
+                            FORMAT='IDEAS',
+                         TYPE_RESU='EVOL_THER',
+                          NOM_CHAM='TEMP',
+                               INST=(0.70, 1., 2., ),
+                         PRECISION=1.E-4,
+                           CRITERE='RELATIF'
+                    )
+
+TEMP_1E=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+                    RESULTAT=TEMPEE, NOM_CHAM='TEMP', INST=.7 )
+
+TEST_RESU(CHAM_NO=_F(NOEUD='N33',
+                     REFERENCE='AUTRE_ASTER',
+                     NOM_CMP='TEMP',
+                     PRECISION=0.03,
+                     CHAM_GD=TEMP_1E,
+                     VALE_CALC=78.071400000,
+                     VALE_REFE=78.47,),
+          )
+
+# ---------------------------------------------------------------------
+
+
+TEMPAE=LIRE_RESU(        MAILLAGE=MAIL,
+                               FORMAT='IDEAS',
+                                 UNITE=37,
+                            TYPE_RESU='EVOL_THER',
+                             NOM_CHAM='TEMP',
+                            NUME_ORDRE=37,
+                         FORMAT_IDEAS=_F( NOM_CHAM = 'TEMP',
+                             NUME_DATASET = 55,
+                                       RECORD_6 = ( 2, 4, 1, 5, 2, 9999, ),
+                             POSI_ORDRE = ( 7, 4, ),
+                             POSI_INST = ( 8, 1, ),
+                             NOM_CMP = 'TEMP')
+                    )
+
+TEMPAE=THER_LINEAIRE(reuse=TEMPAE,       MODELE=MOTH,
+                         ETAT_INIT=_F( EVOL_THER = TEMPAE,
+                         NUME_ORDRE = 37),
+                         INCREMENT=_F( LIST_INST = LR8),
+                           CHAM_MATER=CHMAT, EXCIT=_F( CHARGE = CHTH)
+                        )
+
+TEMP_2E=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+                    RESULTAT=TEMPAE, NOM_CHAM='TEMP', INST=2. )
+
+TEST_RESU(CHAM_NO=_F(NOEUD='N33',
+                     REFERENCE='AUTRE_ASTER',
+                     NOM_CMP='TEMP',
+                     PRECISION=0.03,
+                     CHAM_GD=TEMP_2E,
+                     VALE_CALC=99.077773216,
+                     VALE_REFE=99.13,),
+          )
+
+FIN()
+#

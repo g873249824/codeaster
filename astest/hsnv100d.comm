@@ -1,0 +1,259 @@
+# TITRE THERMO-PLASTICITE EN TRACTION SIMPLE TUYAU 6 MODES
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='HSNV100D', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+TITRE='THERMO-PLASTICITE EN TRACTION SIMPLE'
+
+MAIL=LIRE_MAILLAGE( )
+
+MAIL=DEFI_GROUP( reuse=MAIL,   MAILLAGE=MAIL,
+  CREA_GROUP_MA=_F(  NOM = 'TOUT', TOUT = 'OUI'))
+
+MOMECA=AFFE_MODELE(  MAILLAGE=MAIL,
+    AFFE=_F( TOUT = 'OUI', MODELISATION = 'TUYAU_6M', PHENOMENE = 'MECANIQUE'))
+
+YOUNG=200000.
+
+POISSON=0.3
+
+DILAT=10.0E-6
+
+PENTE=DEFI_CONSTANTE( VALE=50000. )
+
+SIGY=DEFI_FONCTION(     NOM_PARA='TEMP',
+                           PROL_DROITE='LINEAIRE',
+                                  VALE=(  0.,  400.,
+                                         50.,  200.,  )
+                         )
+
+EP=0.01
+
+REXT=2.
+
+RINT=REXT - EP
+
+CAREL=AFFE_CARA_ELEM(   MODELE=MOMECA,
+           POUTRE=_F(
+       GROUP_MA = 'TOUT',
+  SECTION = 'CERCLE',TUYAU_NCOU=1,
+          CARA = (   'R', 'EP',  ), VALE = (  REXT, EP, ))
+)
+
+SURF=pi* (REXT*REXT-RINT*RINT)
+
+MAT=DEFI_MATERIAU(
+          ELAS=_F( E = YOUNG, NU = POISSON, ALPHA = DILAT),
+           ECRO_LINE_FO=_F(  D_SIGM_EPSI = PENTE, SY = SIGY)
+                        )
+
+TIMPVAR=DEFI_FONCTION(    NOM_PARA='INST',  NOM_RESU='TEMP',
+           VALE=(  0.E0,  0.E0, 100.E0, 100.E0,),);
+
+CHP_TEMP=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='NOEU_TEMP_F',
+MAILLAGE=MAIL,
+               AFFE=_F(  TOUT = 'OUI',
+                      NOM_CMP = ('TEMP', ),
+                      VALE_F = (TIMPVAR,))
+                        )
+#
+L_INST=DEFI_LIST_REEL(       DEBUT=0.,INTERVALLE=(
+
+                    _F( JUSQU_A = 66.666E0,   NOMBRE = 1),
+                      _F( JUSQU_A = 80.000E0,   NOMBRE = 20),
+                      _F( JUSQU_A = 90.000E0,   NOMBRE = 20))
+         )
+
+TEMPE=CREA_RESU(    OPERATION='AFFE', TYPE_RESU='EVOL_THER',
+                          NOM_CHAM='TEMP',
+                           AFFE=_F(  LIST_INST = L_INST,
+                                     CHAM_GD = CHP_TEMP)
+                     )
+
+CM=AFFE_MATERIAU(    MAILLAGE=MAIL,
+          AFFE=_F( TOUT = 'OUI',MATER = MAT),
+          AFFE_VARC=_F(TOUT='OUI',
+                       EVOL=TEMPE,
+                       NOM_VARC='TEMP',
+                       NOM_CHAM='TEMP',
+                       VALE_REF=0),);
+
+
+CHMECA=AFFE_CHAR_MECA(    MODELE=MOMECA,DDL_IMPO=(
+ _F( GROUP_NO = 'GRNO1', DX = 0., DZ = 0., DY = 0., DRX = 0., DRY = 0., DRZ = 0.),
+           _F( GROUP_NO = 'GRNO2',  DY = 0.)),)
+
+U=STAT_NON_LINE(
+                            MODELE=MOMECA,
+                        CHAM_MATER=CM,
+                             EXCIT=_F(
+                CHARGE = CHMECA),
+                         CARA_ELEM=CAREL,
+                         COMP_INCR=_F(
+                RELATION = 'VMIS_ISOT_LINE' ),
+                         INCREMENT=_F(
+                LIST_INST = L_INST),
+                            NEWTON=_F(
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-5,
+                ITER_GLOB_MAXI = 10)
+              )
+
+U=CALC_CHAMP(reuse=U,CONTRAINTE=('EFGE_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=U)
+
+
+U=CALC_CHAMP(reuse=U,
+          FORCE='FORC_NODA',
+            RESULTAT=U
+         )
+
+F66=133.333*SURF
+
+F80=100.*SURF
+
+F90=75.*SURF
+
+N66=-133.333*SURF
+
+N80=-100.*SURF
+
+N90=-75.*SURF
+
+TEST_RESU(RESU=(_F(INST=90.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=TEMPE,
+                   NOM_CHAM='TEMP',
+                   NOEUD='N1',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=90.000000000,
+                   VALE_REFE=90.0,),
+                _F(INST=66.665999999999997,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   SOUS_POINT=1,
+                   RESULTAT=U,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-133.332000000,
+                   VALE_REFE=-133.333,
+                   PRECISION=2.E-3,
+                   MAILLE='M1',),
+                _F(INST=80.0,
+                   REFERENCE='ANALYTIQUE',
+                   SOUS_POINT=3,
+                   RESULTAT=U,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N2',
+                   NOM_CMP='V1',
+                   VALE_CALC= 2.99999590E-04,
+                   VALE_REFE=2.9999999999999997E-4,
+                   PRECISION=2.E-3,
+                   MAILLE='M1',),
+                _F(INST=80.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   SOUS_POINT=1,
+                   RESULTAT=U,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-100.000245598,
+                   VALE_REFE=-100.0,
+                   PRECISION=2.E-3,
+                   MAILLE='M1',),
+                _F(INST=90.0,
+                   REFERENCE='ANALYTIQUE',
+                   SOUS_POINT=3,
+                   RESULTAT=U,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V1',
+                   VALE_CALC= 5.24999693E-04,
+                   VALE_REFE=5.2499999999999997E-4,
+                   PRECISION=2.E-3,
+                   MAILLE='M1',),
+                _F(INST=90.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   SOUS_POINT=1,
+                   RESULTAT=U,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-75.000184172,
+                   VALE_REFE=-75.0,
+                   PRECISION=3.0000000000000001E-3,
+                   MAILLE='M1',),
+                _F(INST=66.665999999999997,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=U,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N1',
+                   NOM_CMP='DY',
+                   VALE_CALC=16.713105784,
+                   VALE_REFE=16.713231133915333,),
+                _F(INST=80.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=U,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N1',
+                   NOM_CMP='DY',
+                   VALE_CALC=12.534985473,
+                   VALE_REFE=12.53495468782322,),
+                _F(INST=90.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=U,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N1',
+                   NOM_CMP='DY',
+                   VALE_CALC=9.401239102,
+                   VALE_REFE=9.4012160158674138,),
+                _F(INST=66.665999999999997,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=U,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N2',
+                   NOM_CMP='N',
+                   VALE_CALC=-16.713105784,
+                   VALE_REFE=-16.713231133915333,
+                   MAILLE='M1',),
+                _F(INST=80.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=U,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N2',
+                   NOM_CMP='N',
+                   VALE_CALC=-12.534985473,
+                   VALE_REFE=-12.53495468782322,
+                   MAILLE='M1',),
+                _F(INST=90.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=U,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='N',
+                   VALE_CALC=-9.401239102,
+                   VALE_REFE=-9.4012160158674138,
+                   MAILLE='M1',),
+                ),
+          )
+
+FIN()
+#
+#
+#
+#

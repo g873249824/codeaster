@@ -1,0 +1,2587 @@
+# TITRE VALIDATION DE L'OPERATEUR DEFI_CABLE_BP
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#-----------------------------------------------------------------------
+#
+
+DEBUT(   CODE=_F(  NOM = 'ZZZZ111A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#
+
+MAILLAGE=LIRE_MAILLAGE(FORMAT='MED',    UNITE=20 )
+
+#
+
+MODELE=AFFE_MODELE(
+                 MAILLAGE=MAILLAGE,AFFE=(
+                     _F(  GROUP_MA = 'VOILE',
+                            PHENOMENE = 'MECANIQUE',
+                            MODELISATION = 'DKT'),
+                     _F(  GROUP_MA = ( 'CABLE001',  'CABLE002',
+                                             'CABLE003',  'CABLE004', ),
+                            PHENOMENE = 'MECANIQUE',
+                            MODELISATION = 'BARRE')) )
+
+#
+
+CARAELEM=AFFE_CARA_ELEM(
+                      MODELE=MODELE,
+                       COQUE=_F(  GROUP_MA = 'VOILE',
+                               EPAIS = 6.0E-1),
+                       BARRE=_F(  GROUP_MA = ( 'CABLE001',  'CABLE002',
+                                            'CABLE003',  'CABLE004', ),
+                               SECTION = 'GENERALE',
+                               CARA = ( 'A', ),
+                               VALE = ( 1.5E-4, )) )
+
+#
+
+BETON=DEFI_MATERIAU(
+#                       ELAS=_F(  E = 3.0E+10,
+#                              NU = 0.2),
+                 BPEL_BETON=_F(  PERT_FLUA = 0.07,
+                              PERT_RETR = 0.08) )
+
+#
+
+ACIER=DEFI_MATERIAU(
+                       ELAS=_F(  E = 2.1E+11,
+                              NU = 0.3),
+                 BPEL_ACIER=_F(  RELAX_1000 = 2.0,
+                              MU0_RELAX = 0.3,
+                              F_PRG = 1.77E+9,
+                              FROT_COURB = 0.2,
+                              FROT_LINE = 3.0E-3) )
+
+#
+
+CHMATER=AFFE_MATERIAU(
+                   MAILLAGE=MAILLAGE,AFFE=(
+                       _F(  GROUP_MA = 'VOILE',
+                              MATER = BETON),
+                       _F(  GROUP_MA = ( 'CABLE001',  'CABLE002',
+                                           'CABLE003',  'CABLE004', ),
+                              MATER = ACIER)) )
+
+#
+
+CABLEPR=DEFI_CABLE_BP(            MODELE=MODELE,
+                                  CHAM_MATER=CHMATER,
+                                   CARA_ELEM=CARAELEM,
+                              GROUP_MA_BETON='VOILE',DEFI_CABLE=(
+                                  _F(
+                               GROUP_MA = 'CABLE001',
+                               NOEUD_ANCRAGE = ( 'NC001001',  'NC001129', ),),
+#                               TYPE_ANCRAGE = ( 'ACTIF',   'ACTIF',  )),
+                                  _F(
+                               GROUP_MA = 'CABLE002',
+                               NOEUD_ANCRAGE = ( 'NC002001',  'NC002129', ),),
+#                               TYPE_ANCRAGE = ( 'ACTIF',   'ACTIF',  )),
+                                  _F(
+                               GROUP_MA = 'CABLE003',
+                            GROUP_NO_ANCRAGE = ( 'NC003001',  'NC003129', ),),
+#                               TYPE_ANCRAGE = ( 'ACTIF',   'ACTIF',  )),
+                                  _F(
+                               GROUP_MA = 'CABLE004',
+                               NOEUD_ANCRAGE = ( 'NC004001',  'NC004129', ),)),
+#                               TYPE_ANCRAGE = ( 'ACTIF',   'ACTIF',  ))),
+                               TYPE_ANCRAGE = ( 'ACTIF',   'ACTIF',  ),
+                                TENSION_INIT=2.0E+5,
+                               RECUL_ANCRAGE=5.0E-4,
+                               TYPE_RELAX='BPEL',
+                               R_J = 0.7970032677, 
+                                 # RELAXATION=_F(  R_J = 0.7970032677),
+                                       TITRE=(
+                             'VALIDATION DE L OPERATEUR DEFI_CABLE_BP', )
+                                           )
+
+TABL_CA=RECU_TABLE(    CO=CABLEPR,
+                         NOM_TABLE='CABLE_BP'  )
+
+IMPR_TABLE(   TABLE=TABL_CA,
+               NOM_PARA=( 'NUME_CABLE', 'NOEUD_CABLE', 'ABSC_CURV', ),
+               PAGINATION='NUME_CABLE'
+           )
+
+#
+########################################################################
+# TESTS CONCERNANT LES NOEUDS APPARTENANT AU PREMIER CABLE
+########################################################################
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001032
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=7.608541635,
+           VALE_REFE=7.6085450000000003,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.755052219,
+           VALE_REFE=0.76085449999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.33624586E+05,
+           VALE_REFE=1.3344460000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001032',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001033
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=7.853978561,
+           VALE_REFE=7.8539820000000002,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.779595960,
+           VALE_REFE=0.78539820000000005,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.32750992E+05,
+           VALE_REFE=1.32572E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=2,
+           VALE_REFE_I=2,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=0.0,
+           VALE_CALC=0.0,
+           VALE_REFE=0.0,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001033',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001034
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=8.099415487,
+           VALE_REFE=8.0994189999999993,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.804139702,
+           VALE_REFE=0.80994189999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.31881782E+05,
+           VALE_REFE=1.3170360000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001034',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001064
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.462523265,
+           VALE_REFE=15.462529999999999,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.540451959,
+           VALE_REFE=1.5462530000000001,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07753067E+05,
+           VALE_REFE=1.076002E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001064',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001065
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.707960191,
+           VALE_REFE=15.70796,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.564995701,
+           VALE_REFE=1.5707960000000001,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07010712E+05,
+           VALE_REFE=1.0685860000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=2,
+           VALE_REFE_I=2,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=0.0,
+           VALE_CALC=0.0,
+           VALE_REFE=0.0,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001065',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001066
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.953397117,
+           VALE_REFE=15.9534,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.589539443,
+           VALE_REFE=1.59534,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07753067E+05,
+           VALE_REFE=1.076002E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001066',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001096
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.316504895,
+           VALE_REFE=23.316510000000001,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.325851699,
+           VALE_REFE=2.3316509999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.31881782E+05,
+           VALE_REFE=1.3170360000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001096',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001097
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.561941821,
+           VALE_REFE=23.56194,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.350395441,
+           VALE_REFE=2.3561939999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.32750992E+05,
+           VALE_REFE=1.32572E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=2,
+           VALE_REFE_I=2,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=0.0,
+           VALE_CALC=0.0,
+           VALE_REFE=0.0,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001097',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC001098
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.807378747,
+           VALE_REFE=23.807379999999998,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.374939183,
+           VALE_REFE=2.380738,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.33624586E+05,
+           VALE_REFE=1.3344460000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC001098',),
+           )
+
+#
+########################################################################
+# TESTS CONCERNANT LES NOEUDS APPARTENANT AU DEUXIEME CABLE
+########################################################################
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002032
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=7.608541635,
+           VALE_REFE=7.6085450000000003,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.755052219,
+           VALE_REFE=0.76085449999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.33624586E+05,
+           VALE_REFE=1.3344460000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002032',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002033
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=7.853978561,
+           VALE_REFE=7.8539820000000002,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.779595960,
+           VALE_REFE=0.78539820000000005,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.32750992E+05,
+           VALE_REFE=1.32572E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=12,
+           VALE_REFE_I=12,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=0.0,
+           VALE_CALC=0.0,
+           VALE_REFE=0.0,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002033',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002034
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=8.099415487,
+           VALE_REFE=8.0994189999999993,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.804139702,
+           VALE_REFE=0.80994189999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.31881782E+05,
+           VALE_REFE=1.3170360000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002034',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002064
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.462523265,
+           VALE_REFE=15.462529999999999,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.540451959,
+           VALE_REFE=1.5462530000000001,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07753067E+05,
+           VALE_REFE=1.076002E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002064',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002065
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.707960191,
+           VALE_REFE=15.70796,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.564995701,
+           VALE_REFE=1.5707960000000001,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07010712E+05,
+           VALE_REFE=1.0685860000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=12,
+           VALE_REFE_I=12,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=0.0,
+           VALE_CALC=0.0,
+           VALE_REFE=0.0,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002065',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002066
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.953397117,
+           VALE_REFE=15.9534,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.589539443,
+           VALE_REFE=1.59534,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07753067E+05,
+           VALE_REFE=1.076002E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002066',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002096
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.316504895,
+           VALE_REFE=23.316510000000001,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.325851699,
+           VALE_REFE=2.3316509999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.31881782E+05,
+           VALE_REFE=1.3170360000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002096',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002097
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.561941821,
+           VALE_REFE=23.56194,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.350395441,
+           VALE_REFE=2.3561939999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.32750992E+05,
+           VALE_REFE=1.32572E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=12,
+           VALE_REFE_I=12,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=0.0,
+           VALE_CALC=0.0,
+           VALE_REFE=0.0,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002097',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC002098
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.807378747,
+           VALE_REFE=23.807379999999998,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.374939183,
+           VALE_REFE=2.380738,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.33624586E+05,
+           VALE_REFE=1.3344460000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC= 9.03362491E-03,
+           VALE_REFE=9.033625E-3,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC002098',),
+           )
+
+#
+########################################################################
+# TESTS CONCERNANT LES NOEUDS APPARTENANT AU TROISIEME CABLE
+########################################################################
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003032
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=7.646584343,
+           VALE_REFE=7.6465870000000002,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.755052219,
+           VALE_REFE=0.76085449999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.33606881E+05,
+           VALE_REFE=1.33427E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.059018566,
+           VALE_REFE=0.059018569999999999,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003032',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003033
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=7.893248454,
+           VALE_REFE=7.8932520000000004,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.779595960,
+           VALE_REFE=0.78539820000000005,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.32732807E+05,
+           VALE_REFE=1.3255379999999999E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=2,
+           VALE_REFE_I=2,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.050000000,
+           VALE_REFE=0.050000000000000003,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003033',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003034
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=8.139912564,
+           VALE_REFE=8.1399159999999995,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.804139702,
+           VALE_REFE=0.80994189999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.31863124E+05,
+           VALE_REFE=1.31685E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.059018566,
+           VALE_REFE=0.059018569999999999,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003034',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003064
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.539835881,
+           VALE_REFE=15.53984,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.540451959,
+           VALE_REFE=1.5462530000000001,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07722490E+05,
+           VALE_REFE=1.0756960000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.059018566,
+           VALE_REFE=0.059018569999999999,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003064',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003065
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.786499992,
+           VALE_REFE=15.7865,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.564995701,
+           VALE_REFE=1.5707960000000001,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.06979810E+05,
+           VALE_REFE=1.068278E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=2,
+           VALE_REFE_I=2,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.050000000,
+           VALE_REFE=0.050000000000000003,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003065',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003066
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=16.033164102,
+           VALE_REFE=16.033169999999998,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.589539443,
+           VALE_REFE=1.59534,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07722490E+05,
+           VALE_REFE=1.0756960000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.059018566,
+           VALE_REFE=0.059018569999999999,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003066',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003096
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.433087419,
+           VALE_REFE=23.43309,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.325851699,
+           VALE_REFE=2.3316509999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.31863124E+05,
+           VALE_REFE=1.31685E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.059018566,
+           VALE_REFE=0.059018569999999999,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003096',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003097
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.679751530,
+           VALE_REFE=23.679749999999999,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.350395441,
+           VALE_REFE=2.3561939999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.32732807E+05,
+           VALE_REFE=1.3255379999999999E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=2,
+           VALE_REFE_I=2,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.050000000,
+           VALE_REFE=0.050000000000000003,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003097',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC003098
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.926415641,
+           VALE_REFE=23.92642,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.374939183,
+           VALE_REFE=2.380738,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.33606881E+05,
+           VALE_REFE=1.33427E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=13,
+           VALE_REFE_I=13,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.059018566,
+           VALE_REFE=0.059018569999999999,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC003098',),
+           )
+
+#
+########################################################################
+# TESTS CONCERNANT LES NOEUDS APPARTENANT AU QUATRIEME CABLE
+########################################################################
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004032
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=7.684627051,
+           VALE_REFE=7.6846300000000003,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.755052219,
+           VALE_REFE=0.76085449999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.33589178E+05,
+           VALE_REFE=1.3340929999999999E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004032',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.109003507,
+           VALE_REFE=0.1090035,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004032',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004033
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=7.932518347,
+           VALE_REFE=7.9325210000000004,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.779595960,
+           VALE_REFE=0.78539820000000005,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.32714625E+05,
+           VALE_REFE=1.3253560000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=12,
+           VALE_REFE_I=12,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004033',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.100000000,
+           VALE_REFE=0.10000000000000001,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004033',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004034
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=8.180409642,
+           VALE_REFE=8.1804129999999997,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=0.804139702,
+           VALE_REFE=0.80994189999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.31844467E+05,
+           VALE_REFE=1.3166639999999999E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004034',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.109003507,
+           VALE_REFE=0.1090035,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004034',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004064
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.617148498,
+           VALE_REFE=15.617150000000001,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.540451959,
+           VALE_REFE=1.5462530000000001,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07691921E+05,
+           VALE_REFE=1.0753910000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004064',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.109003507,
+           VALE_REFE=0.1090035,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004064',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004065
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=15.865039793,
+           VALE_REFE=15.86504,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.564995701,
+           VALE_REFE=1.5707960000000001,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.06948914E+05,
+           VALE_REFE=1.0679689999999999E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=12,
+           VALE_REFE_I=12,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004065',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.100000000,
+           VALE_REFE=0.10000000000000001,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004065',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004066
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=16.112931088,
+           VALE_REFE=16.112929999999999,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=1.589539443,
+           VALE_REFE=1.59534,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.07691921E+05,
+           VALE_REFE=1.0753910000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004066',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.109003507,
+           VALE_REFE=0.1090035,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004066',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004096
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.549669944,
+           VALE_REFE=23.549669999999999,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.325851699,
+           VALE_REFE=2.3316509999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.31844467E+05,
+           VALE_REFE=1.3166639999999999E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004096',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.109003507,
+           VALE_REFE=0.1090035,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004096',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004097
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=23.797561239,
+           VALE_REFE=23.797560000000001,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.350395441,
+           VALE_REFE=2.3561939999999999,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.32714625E+05,
+           VALE_REFE=1.3253560000000001E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=12,
+           VALE_REFE_I=12,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004097',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.100000000,
+           VALE_REFE=0.10000000000000001,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004097',),
+           )
+
+#
+#-----------------------------
+# TESTS POUR LE NOEUD NC004098
+#-----------------------------
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=24.045452534,
+           VALE_REFE=24.045459999999999,
+           NOM_PARA='ABSC_CURV',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=2.374939183,
+           VALE_REFE=2.380738,
+           NOM_PARA='ALPHA',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=5.0000000000000001E-3,
+           VALE_CALC= 1.33589178E+05,
+           VALE_REFE=1.3340929999999999E5,
+           NOM_PARA='TENSION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           VALE_CALC_I=0,
+           VALE_REFE_I=0,
+           NOM_PARA='INDICE_PROJECTION',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004098',),
+           )
+
+#
+
+TEST_TABLE(CRITERE='RELATIF',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-3,
+           VALE_CALC=0.109003507,
+           VALE_REFE=0.1090035,
+           NOM_PARA='EXCENTRICITE',
+           TABLE=TABL_CA,
+           FILTRE=_F(NOM_PARA='NOEUD_CABLE',
+                     VALE_K='NC004098',),
+           )
+
+#
+
+FIN( )
+#

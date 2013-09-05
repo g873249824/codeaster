@@ -1,0 +1,490 @@
+# TITRE  POUTRE ANALYSE HARMONIQUE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+
+DEBUT(CODE=_F(NOM='SHLL101A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MAILLAGE=LIRE_MAILLAGE( )
+
+MAILLAGE=DEFI_GROUP( reuse=MAILLAGE,   MAILLAGE=MAILLAGE,
+  CREA_GROUP_MA=_F(  NOM = 'TOUT', TOUT = 'OUI'))
+
+#
+
+MODELE=AFFE_MODELE(   MAILLAGE=MAILLAGE,
+                           AFFE=_F(  TOUT = 'OUI',
+                                  PHENOMENE = 'MECANIQUE',
+                                  MODELISATION = 'POU_D_E')
+                         )
+
+#
+
+MAT=DEFI_MATERIAU( ELAS=_F(  E = 1.658E+11,
+                                   RHO = 1.3404106E+04,
+                                   AMOR_ALPHA = 1.E-3,
+                                   AMOR_BETA = 0.,
+                                   NU = 0.3)
+                          )
+
+#
+
+CHAMPMAT=AFFE_MATERIAU(  MAILLAGE=MAILLAGE,
+                            AFFE=_F(  TOUT = 'OUI', MATER = MAT)  )
+
+#
+
+CARA_ELE=AFFE_CARA_ELEM(  MODELE=MODELE,
+                    POUTRE=_F(
+       GROUP_MA = 'TOUT',
+
+                             SECTION = 'GENERALE',
+                             CARA = ( 'A',  'IZ', 'IY',  'JX', ),
+                             VALE = ( 3.4390E-03,  1.3770E-05,  1.3770E-05,
+                                    2.7540E-05, ))
+                           )
+
+#
+# LA STRUCTURE EST ENCASTREE A SA BASE
+#-----------------------------------------------
+
+COND_LIM=AFFE_CHAR_MECA(   MODELE=MODELE,
+                              DDL_IMPO=_F(  NOEUD = 'N1',
+                                         DX = 0.,  DY = 0.,  DZ = 0.,
+                                         DRX = 0.,  DRY = 0.,  DRZ = 0.)
+                            )
+
+#
+#------------------------------#
+#  CALCUL DES MATRICES         #
+#------------------------------#
+#
+
+RIGI_ELE=CALC_MATR_ELEM(  MODELE=MODELE,   OPTION='RIGI_MECA',
+                              CHAM_MATER=CHAMPMAT,   CARA_ELEM=CARA_ELE,
+                              CHARGE=COND_LIM )
+
+MASS_ELE=CALC_MATR_ELEM(  MODELE=MODELE,   OPTION='MASS_MECA',
+                              CHAM_MATER=CHAMPMAT,   CARA_ELEM=CARA_ELE,
+                              CHARGE=COND_LIM )
+
+AMOR_ELE=CALC_MATR_ELEM(  MODELE=MODELE,   OPTION='AMOR_MECA',
+                              RIGI_MECA=RIGI_ELE,   MASS_MECA=MASS_ELE,
+                              CHAM_MATER=CHAMPMAT,   CARA_ELEM=CARA_ELE,
+                              CHARGE=COND_LIM )
+
+#
+
+NUMEDDL=NUME_DDL(  MATR_RIGI=RIGI_ELE)
+
+#
+
+RIGIDITE=ASSE_MATRICE(  MATR_ELEM=RIGI_ELE,   NUME_DDL=NUMEDDL )
+
+MASSE=ASSE_MATRICE(  MATR_ELEM=MASS_ELE,   NUME_DDL=NUMEDDL )
+
+AMORTIS=ASSE_MATRICE(  MATR_ELEM=AMOR_ELE,   NUME_DDL=NUMEDDL )
+
+#
+
+FONC=DEFI_CONSTANTE( VALE=1. )
+
+#
+#-------------------------------#
+# TRACTION : SANS AMORTISSEMENT #
+#-------------------------------#
+#
+
+CHA_F=AFFE_CHAR_MECA(  MODELE=MODELE,
+                           FORCE_NODALE=_F(  NOEUD = 'N2',  FX = 3.E3)  )
+
+#
+
+V_F_ELE=CALC_VECT_ELEM(   OPTION='CHAR_MECA',
+                              CHAM_MATER=CHAMPMAT,   CARA_ELEM=CARA_ELE,
+                              CHARGE=CHA_F
+                          )
+
+#
+
+VECAS_F=ASSE_VECTEUR(  VECT_ELEM=V_F_ELE,  NUME_DDL=NUMEDDL )
+
+#
+
+DYNA_F=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                            MATR_MASS=MASSE,
+                            MATR_RIGI=RIGIDITE,
+                            FREQ=10.,
+                            EXCIT=_F( VECT_ASSE = VECAS_F, FONC_MULT = FONC)
+                         )
+
+#
+
+DYNA_F=CALC_CHAMP(reuse=DYNA_F,RESULTAT=DYNA_F,CONTRAINTE=('EFGE_ELNO'))
+
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   VALE_CALC_C=3000.0+0.0E+00j,
+                   VALE_REFE_C=(3000+0j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_F,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N2',
+                   NOM_CMP='N',
+                   MAILLE='E1',),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=5.3180163616023E-05+0.0E+00j,
+                   VALE_REFE_C=(5.3180000000000002e-05+0j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_F,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N2',
+                   NOM_CMP='DX',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.0E+00+3.341408226656E-03j,
+                   VALE_REFE_C=0.0033409999999999998j,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_F,
+                   NOM_CHAM='VITE',
+                   NOEUD='N2',
+                   NOM_CMP='DX',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=-0.20994687075014+0.0E+00j,
+                   VALE_REFE_C=(-0.2099+0j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_F,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N2',
+                   NOM_CMP='DX',
+                   ),
+                ),
+          )
+
+#
+#-------------------------------#
+# FLEXION  : SANS AMORTISSEMENT #
+#-------------------------------#
+#
+
+CHA_FL=AFFE_CHAR_MECA(  MODELE=MODELE,
+                            FORCE_NODALE=_F(  NOEUD = 'N2',  FY = 3.E3)  )
+
+#
+
+V_FL_ELE=CALC_VECT_ELEM(   OPTION='CHAR_MECA',
+                               CHAM_MATER=CHAMPMAT,   CARA_ELEM=CARA_ELE,
+                               CHARGE=CHA_FL
+                           )
+
+#
+
+VECAS_FL=ASSE_VECTEUR(  VECT_ELEM=V_FL_ELE,  NUME_DDL=NUMEDDL )
+
+#
+
+DYNA_FL=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                             MATR_MASS=MASSE,
+                             MATR_RIGI=RIGIDITE,
+                             FREQ=10.,
+                             EXCIT=_F( VECT_ASSE = VECAS_FL, FONC_MULT = FONC)
+                          )
+
+#
+
+DYNA_FL=CALC_CHAMP(reuse=DYNA_FL,RESULTAT=DYNA_FL,CONTRAINTE=('EFGE_ELNO'))
+
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   VALE_CALC_C=3000.0+0.0E+00j,
+                   VALE_REFE_C=(3000+0j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_FL,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N2',
+                   NOM_CMP='VY',
+                   MAILLE='E1',),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.018286737610121+0.0E+00j,
+                   VALE_REFE_C=(0.018280000000000001+0j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_FL,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N2',
+                   NOM_CMP='DY',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.0E+00+1.1489896106816j,
+                   VALE_REFE_C=1.1489j,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_FL,
+                   NOM_CHAM='VITE',
+                   NOEUD='N2',
+                   NOM_CMP='DY',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=-72.193146399366+0.0E+00j,
+                   VALE_REFE_C=(-72.189999999999998+0j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_FL,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N2',
+                   NOM_CMP='DY',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.018204601705818+0.0E+00j,
+                   VALE_REFE_C=(0.018200000000000001+0j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_FL,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N2',
+                   NOM_CMP='DRZ',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.0E+00+1.1438288596105j,
+                   VALE_REFE_C=1.1437999999999999j,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_FL,
+                   NOM_CHAM='VITE',
+                   NOEUD='N2',
+                   NOM_CMP='DRZ',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=-71.868886846327+0.0E+00j,
+                   VALE_REFE_C=(-71.859999999999999+0j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_FL,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N2',
+                   NOM_CMP='DRZ',
+                   ),
+                ),
+          )
+
+#
+#-------------------------------#
+# TRACTION : AVEC AMORTISSEMENT #
+#-------------------------------#
+#
+
+CHA_AF=AFFE_CHAR_MECA(  MODELE=MODELE,
+                            FORCE_NODALE=_F(  NOEUD = 'N2',  FX = 3.E3) )
+
+#
+
+V_AF_ELE=CALC_VECT_ELEM(   OPTION='CHAR_MECA',
+                               CHAM_MATER=CHAMPMAT,   CARA_ELEM=CARA_ELE,
+                               CHARGE=CHA_AF
+                           )
+
+#
+
+VECAS_AF=ASSE_VECTEUR(  VECT_ELEM=V_AF_ELE,  NUME_DDL=NUMEDDL )
+
+#
+
+DYNA_AF=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                             MATR_MASS=MASSE,
+                             MATR_RIGI=RIGIDITE,
+                             MATR_AMOR=AMORTIS,
+                             FREQ=10.,
+                             EXCIT=_F( VECT_ASSE = VECAS_AF, FONC_MULT = FONC)
+                          )
+
+#
+
+DYNA_AF=CALC_CHAMP(reuse=DYNA_AF,RESULTAT=DYNA_AF,CONTRAINTE=('EFGE_ELNO'))
+
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   VALE_CALC_C=2987.9489982409-189.75715700284j,
+                   VALE_REFE_C=(2987.9000000000001-189.69999999999999j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AF,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N2',
+                   NOM_CMP='N',
+                   MAILLE='E1',),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=5.2966538867595E-05-3.3637722189074E-06j,
+                   VALE_REFE_C=(5.2960000000000001e-05-3.3629999999999998e-06j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AF,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N2',
+                   NOM_CMP='DX',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=2.1135204182538E-04+3.3279857878503E-03j,
+                   VALE_REFE_C=(0.00021130000000000001+0.0033270000000000001j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AF,
+                   NOM_CHAM='VITE',
+                   NOEUD='N2',
+                   NOM_CMP='DX',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=-0.20910351404724+0.013279640438396j,
+                   VALE_REFE_C=(-0.20910000000000001+0.013270000000000001j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AF,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N2',
+                   NOM_CMP='DX',
+                   ),
+                ),
+          )
+
+#
+#-------------------------------#
+# FLEXION  : AVEC AMORTISSEMENT #
+#-------------------------------#
+#
+
+CHA_AFL=AFFE_CHAR_MECA(  MODELE=MODELE,
+                             FORCE_NODALE=_F(  NOEUD = 'N2',  FY = 3.E3) )
+
+#
+
+V_AFL_E=CALC_VECT_ELEM(   OPTION='CHAR_MECA',
+                              CHAM_MATER=CHAMPMAT,   CARA_ELEM=CARA_ELE,
+                              CHARGE=CHA_AFL
+                          )
+
+#
+
+VEC_AFL=ASSE_VECTEUR(  VECT_ELEM=V_AFL_E,  NUME_DDL=NUMEDDL )
+
+#
+
+DYNA_AFL=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                              MATR_MASS=MASSE,
+                              MATR_RIGI=RIGIDITE,
+                              MATR_AMOR=AMORTIS,
+                              FREQ=10.,
+                              EXCIT=_F( VECT_ASSE = VEC_AFL,
+                                     FONC_MULT = FONC)
+                           )
+
+#
+
+DYNA_AFL=CALC_CHAMP(reuse=DYNA_AFL,RESULTAT=DYNA_AFL,CONTRAINTE=('EFGE_ELNO'))
+
+#
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   VALE_CALC_C=3021.593862057+121.24049468602j,
+                   VALE_REFE_C=(3021.5+121.2j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AFL,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N2',
+                   NOM_CMP='VY',
+                   MAILLE='E1',),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=-156.78288798772-858.38245907456j,
+                   VALE_REFE_C=(-156.69999999999999-858.29999999999995j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AFL,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N2',
+                   NOM_CMP='MFZ',
+                   MAILLE='E1',),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.017466974696561-4.4698058882228E-03j,
+                   VALE_REFE_C=(0.01746-0.0044689999999999999j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AFL,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N2',
+                   NOM_CMP='DY',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.28084618682826+1.0974823877431j,
+                   VALE_REFE_C=(0.28079999999999999+1.097j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AFL,
+                   NOM_CHAM='VITE',
+                   NOEUD='N2',
+                   NOM_CMP='DY',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=-68.956852135559+17.646086346567j,
+                   VALE_REFE_C=(-68.950000000000003+17.640000000000001j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AFL,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N2',
+                   NOM_CMP='DY',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.017579733246503-3.4028460768841E-03j,
+                   VALE_REFE_C=(0.017579000000000001-0.0034020000000000001j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AFL,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N2',
+                   NOM_CMP='DRZ',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=0.21380712472872+1.1045672163856j,
+                   VALE_REFE_C=(0.21379999999999999+1.1045j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AFL,
+                   NOM_CHAM='VITE',
+                   NOEUD='N2',
+                   NOM_CMP='DRZ',
+                   ),
+                _F(NUME_ORDRE=1,
+                   VALE_CALC_C=-69.402005047864+13.433897846658j,
+                   VALE_REFE_C=(-69.400000000000006+13.43j),
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=5.0000000000000001E-4,
+                   RESULTAT=DYNA_AFL,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N2',
+                   NOM_CMP='DRZ',
+                   ),
+                ),
+          )
+
+FIN()
+#
+#
+#

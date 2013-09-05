@@ -1,0 +1,346 @@
+# TITRE POUTRE EULER_BERNOULLI MULTIFIBRES (STATIQUE NON-LINEAIRE MAZARS)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+DEBUT(CODE=_F(NOM='SSNL120B', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='NON'))
+
+# lecture maillage lineique
+POUT=LIRE_MAILLAGE(UNITE=17,FORMAT='MED',);
+# lecture maillage section1
+MASEC=LIRE_MAILLAGE(UNITE=18,FORMAT='MED',);
+
+MOPOU=AFFE_MODELE(
+   MAILLAGE=POUT,
+   AFFE=_F(TOUT='OUI', PHENOMENE='MECANIQUE', MODELISATION='POU_D_EM',),);
+
+GF=DEFI_GEOM_FIBRE(
+   SECTION = _F(GROUP_FIBRE='SECF', MAILLAGE_SECT = MASEC , TOUT_SECT = 'OUI',COOR_AXE_POUTRE = (0.5, 0.5,)),
+)
+
+# Module d'Young
+EB = 3.7272E10
+Nu = 0.20
+BETON = DEFI_MATER_GC(
+   MAZARS=_F(
+      UNITE_LONGUEUR = 'M',
+      FCJ      = 40.963E+06, EIJ=EB,
+      EPSI_C   = 1.75754E-03, NU=Nu,
+      SIGM_LIM = 35.0E+06,
+      EPSI_LIM = 3.5E-03, AT=0.70,
+   ),
+   RHO=2400.0,  INFO=2,
+)
+
+
+COMPF=DEFI_COMPOR(
+   GEOM_FIBRE=GF,MATER_SECT=BETON,
+   MULTIFIBRE=_F(GROUP_FIBRE='SECF',MATER=BETON, RELATION='MAZARS_GC'),
+)
+
+CHMAT=AFFE_MATERIAU(
+   MAILLAGE=POUT,
+   AFFE=_F(GROUP_MA='POUTRE', MATER=BETON),
+   AFFE_COMPOR=_F(TOUT='OUI',COMPOR=COMPF),
+)
+
+POUCA=AFFE_CARA_ELEM(
+   MODELE=MOPOU, INFO=1,
+   POUTRE=_F(GROUP_MA=('POUTRE'), SECTION='RECTANGLE', CARA=('H'), VALE=(1.0)),
+   ORIENTATION=_F(GROUP_MA=('POUTRE'), CARA='ANGL_VRIL', VALE=0.0,),
+   GEOM_FIBRE=GF,
+   MULTIFIBRE=_F(GROUP_MA='POUTRE', GROUP_FIBRE='SECF', PREC_AIRE=1.0E-05, PREC_INERTIE=2.6E-01),
+)
+
+BLOCAGE=AFFE_CHAR_MECA(
+   MODELE=MOPOU,
+   DDL_IMPO=(
+      _F(GROUP_NO='A', DX=0.0, DY=0.0, DZ=0.0, DRX=0.0, DRY=0.0, DRZ=0.0,),
+      _F(GROUP_NO='B',         DY=0.0, DZ=0.0, DRX=0.0, DRY=0.0, DRZ=0.0,), ),
+)
+
+DEPLAC=AFFE_CHAR_MECA(
+   MODELE=MOPOU,
+   DDL_IMPO=_F(GROUP_NO='B', DX=1.E-4,),
+)
+
+FOFO1=DEFI_FONCTION(
+   NOM_PARA='INST',
+   VALE=(   0.0,       0.0,
+            1.0,       1.4,
+            2.0,       0.5,
+            3.0,      10.0,
+            4.0,     -40.0,
+            5.0,     -20.0,
+            6.0,     -50.0,
+            7.0,       0.0,),
+   PROL_DROITE='EXCLU',
+   PROL_GAUCHE='EXCLU',
+)
+
+LINST1=DEFI_LIST_REEL(
+   DEBUT=0.0,
+   INTERVALLE=(
+      _F(JUSQU_A=1.0,  NOMBRE=50,),
+      _F(JUSQU_A=2.0,  NOMBRE=50,),
+      _F(JUSQU_A=3.0,  NOMBRE=50,),
+      _F(JUSQU_A=4.0,  NOMBRE=50,),
+      _F(JUSQU_A=5.0,  NOMBRE=50,),
+      _F(JUSQU_A=6.0,  NOMBRE=50,),
+      _F(JUSQU_A=7.0,  NOMBRE=50,),),
+)
+
+U1MAZAR=STAT_NON_LINE(
+   MODELE=MOPOU,
+   CHAM_MATER=CHMAT,
+   CARA_ELEM=POUCA,
+   EXCIT=(
+      _F(CHARGE=BLOCAGE,),
+      _F(CHARGE=DEPLAC, FONC_MULT=FOFO1,),),
+   COMP_INCR=_F(RELATION='MULTIFIBRE', TOUT='OUI',),
+   INCREMENT=_F(LIST_INST=LINST1, ),
+   NEWTON=_F(MATRICE='TANGENTE',REAC_ITER=1,),
+)
+
+import numpy as NP
+# Sigma est en MPa, il faut multiplier par 1.0E+06 dans le TEST_RESU
+instant =           [ 0.6,       1.0,       2.0,       2.10 ,      3.0,      3.56,         4.0,        5.0,       5.68,       6.0    ]
+domtrac =           [ 0.0235302, 0.4788408, 0.4788408, 0.50532268, 0.975378, 0.9753784,    0.9753784,  0.9753784, 0.9753784,  0.9753784 ]
+domcomp =           [ 0.0,       0.0,       0.0,       0.0,        0.0,      0.38963675,   0.84425,    0.84425,   0.8484054,  0.9239058 ]
+sigma   = NP.array( [ 3.0571785, 2.7194502, 0.9712322, 2.6734539,  0.9176946, -40.94903, -23.220435, -11.610218, -22.826938, -14.180916  ] )
+# Pour tester V1 = CRITELS = sigma/SIGM_ELS = sigma / 35.0
+critels = sigma / 35.0
+# nom_vari       = ('CRITSIG','CRITEPS','ENDO','EPSEQT','EPSEQC','RSIGMA','TEMP_MAX','DISSIP',),
+#                    V1        V2        V3     V4       V5       V6       V7         V8
+MPa = 1.0E+06
+mclf = {}
+mclf['RESU'] = []
+for ii in range(len(instant)):
+   mclf['RESU'].append( _F(RESULTAT=U1MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='SIXX',INST=instant[ii],
+                           VALE_CALC=sigma[ii]*MPa, VALE_REFE=sigma[ii]*MPa,
+                           NOM_CHAM='SIEF_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('RELATIF','ABSOLU'), ), )
+   mclf['RESU'].append( _F(RESULTAT=U1MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='V1',  INST=instant[ii],
+                           VALE_CALC=critels[ii], VALE_REFE=critels[ii],
+                           NOM_CHAM='VARI_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('RELATIF','ABSOLU'), ), )
+   if (sigma[ii] > 0.0 ):
+      mclf['RESU'].append( _F(RESULTAT=U1MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='V3',  INST=instant[ii],
+                              VALE_CALC=domtrac[ii], VALE_REFE=domtrac[ii],
+                              NOM_CHAM='VARI_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('ABSOLU'), ), )
+   else:
+      mclf['RESU'].append( _F(RESULTAT=U1MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='V3',  INST=instant[ii],
+                              VALE_CALC=domcomp[ii], VALE_REFE=domcomp[ii],
+                              NOM_CHAM='VARI_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('ABSOLU'), ), )
+
+TEST_RESU(**mclf)
+
+# Pour tester V2 = CRITELU = epsi*sqrt(1.0+2.0*Nu*Nu)/EPSI_LIM = DX*sqrt(1.0+2.0*Nu*Nu)/35.0E-04
+instant =           [ 1.0,  2.0,  3.0,   4.0,   5.0,   6.0, 7.0 ]
+critelu = NP.array( [ 1.4,  0.5, 10.0, -40.0, -20.0, -50.0, 0.0 ] ) * NP.sqrt(1.0+2.0*Nu*Nu)/35.0
+mclf = {}
+mclf['RESU'] = []
+for ii in range(len(instant)):
+   mclf['RESU'].append( _F(RESULTAT=U1MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='V2',  INST=instant[ii],
+                           VALE_CALC=critelu[ii], VALE_REFE=critelu[ii],
+                           NOM_CHAM='VARI_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('ABSOLU'), ), )
+TEST_RESU(**mclf)
+
+FOFO2=DEFI_FONCTION(
+   NOM_PARA='INST',
+   VALE=(   0.0,       0.0,
+            1.0,       1.4,
+            2.0,     -40.0,
+            3.0,      10.0,
+            4.0,     -50.0,
+            5.0,       0.0,),
+   PROL_DROITE='EXCLU',
+   PROL_GAUCHE='EXCLU',
+)
+
+LINST2=DEFI_LIST_REEL(
+   DEBUT=0.0,
+   INTERVALLE=(
+      _F(JUSQU_A=1.0,  NOMBRE=50,),
+      _F(JUSQU_A=2.0,  NOMBRE=50,),
+      _F(JUSQU_A=3.0,  NOMBRE=50,),
+      _F(JUSQU_A=4.0,  NOMBRE=50,),
+      _F(JUSQU_A=5.0,  NOMBRE=50,),),
+)
+
+U2MAZAR=STAT_NON_LINE(
+   MODELE=MOPOU,
+   CHAM_MATER=CHMAT,
+   CARA_ELEM=POUCA,
+   EXCIT=(
+      _F(CHARGE=BLOCAGE,),
+      _F(CHARGE=DEPLAC, FONC_MULT=FOFO2,),),
+   COMP_INCR=_F(RELATION='MULTIFIBRE', TOUT='OUI',),
+   INCREMENT=_F(LIST_INST=LINST2,),
+   NEWTON=_F(MATRICE='TANGENTE',REAC_ITER=1,),
+)
+
+# Sigma est en MPa, il faut multiplier par 1.0E+06 dans le TEST_RESU
+instant =            [ 1.0,        2.0,       3.0,         4.0,    ]
+sigma   = NP.array(  [ 2.71945,  -23.2204356, 0.917694,  -14.180916, ] )
+domtrac =            [ 0.478841,   0.4788408, 0.9753784,  0.9753784, ]
+domcomp =            [ 0.0,        0.84425,   0.84425,    0.9239058, ]
+# Pour tester V1 = CRITELS = sigma/SIGM_ELS = sigma / 35.0
+critels = sigma/35.0
+# nom_vari       = ('CRITSIG','CRITEPS','ENDO','EPSEQT','EPSEQC','RSIGMA','TEMP_MAX','DISSIP',),
+#                    V1        V2        V3     V4       V5       V6       V7         V8
+
+MPa = 1.0E+06
+mclf = {}
+mclf['RESU'] = []
+for ii in range(len(instant)):
+   mclf['RESU'].append( _F(RESULTAT=U2MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='SIXX',INST=instant[ii],
+                           VALE_CALC=sigma[ii]*MPa, VALE_REFE=sigma[ii]*MPa,
+                           NOM_CHAM='SIEF_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('RELATIF','ABSOLU'), ), )
+   mclf['RESU'].append( _F(RESULTAT=U2MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='V1',  INST=instant[ii],
+                           VALE_CALC=critels[ii], VALE_REFE=critels[ii],
+                           NOM_CHAM='VARI_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('RELATIF','ABSOLU'), ), )
+   if (sigma[ii] > 0.0 ):
+      mclf['RESU'].append( _F(RESULTAT=U2MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='V3',  INST=instant[ii],
+                              VALE_CALC=domtrac[ii], VALE_REFE=domtrac[ii],
+                              NOM_CHAM='VARI_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('ABSOLU'), ), )
+   else:
+      mclf['RESU'].append( _F(RESULTAT=U2MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='V3',  INST=instant[ii],
+                              VALE_CALC=domcomp[ii], VALE_REFE=domcomp[ii],
+                              NOM_CHAM='VARI_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('ABSOLU'), ), )
+TEST_RESU(**mclf)
+
+# Pour tester V2 = CRITELU = epsi*sqrt(1.0+2.0*Nu*Nu)/EPSI_LIM = DX*sqrt(1.0+2.0*Nu*Nu)/35.0E-04
+instant =            [ 1.0,  2.0,   3.0,   4.0, 5.0 ]
+critelu = NP.array(  [ 1.4, -40.0, 10.0, -50.0, 0.0 ] ) * NP.sqrt(1.0+2.0*Nu*Nu)/35.0
+mclf = {}
+mclf['RESU'] = []
+for ii in range(len(instant)):
+   mclf['RESU'].append( _F(RESULTAT=U2MAZAR,MAILLE='M1',POINT=1,SOUS_POINT=1,NOM_CMP='V2',  INST=instant[ii],
+                           VALE_CALC=critelu[ii], VALE_REFE=critelu[ii],
+                           NOM_CHAM='VARI_ELGA', REFERENCE='ANALYTIQUE', CRITERE=('ABSOLU'), ), )
+TEST_RESU(**mclf)
+
+
+"""
+# ===========================================================================
+# COURBES DES FIGURES DE LA DOCUMENTATION : EN COMMENTAIRE CI-DESSOUS
+# ===========================================================================
+# Table contenant les resultats en contrainte aux sous-points
+S1MAZAR = CREA_TABLE( RESU=_F(RESULTAT=U1MAZAR, NOM_CHAM='SIEF_ELGA',TOUT='OUI',TOUT_CMP='OUI'), )
+# Table contenant les resultats en variables aux sous-points
+V1MAZAR = CREA_TABLE( RESU=_F(RESULTAT=U1MAZAR, NOM_CHAM='VARI_ELGA',TOUT='OUI',TOUT_CMP='OUI'), )
+
+fic = './REPE_OUT/contraintes_sous_points1.table'
+unit = DEFI_FICHIER(FICHIER = fic, ACTION='ASSOCIER', TYPE='ASCII',ACCES='NEW')
+IMPR_TABLE(UNITE=unit,TABLE=S1MAZAR,FORMAT='ASTER')
+IMPR_TABLE(UNITE=unit,TABLE=V1MAZAR,FORMAT='ASTER')
+DEFI_FICHIER(UNITE = unit, ACTION='LIBERER',)
+DETRUIRE(INFO=1,ALARME='NON',CONCEPT=(_F(NOM=unit,),),)
+
+fic = './REPE_OUT/courbes1.post'
+unit = DEFI_FICHIER(FICHIER = fic, ACTION='ASSOCIER', TYPE='ASCII',ACCES='NEW')
+# Beton
+DOMTRAC1 = RECU_FONCTION(
+   TABLE=V1MAZAR, PARA_X='INST', PARA_Y='V1',
+   FILTRE =(
+      _F(NOM_PARA='MAILLE',     CRIT_COMP='EQ', VALE_K='M1'),
+      _F(NOM_PARA='POINT',      CRIT_COMP='EQ', VALE_I=  1),
+      _F(NOM_PARA='SOUS_POINT', CRIT_COMP='EQ', VALE_I=  1),),
+)
+DOMCOMP1 = RECU_FONCTION(
+   TABLE=V1MAZAR, PARA_X='INST', PARA_Y='V2',
+   FILTRE =(
+      _F(NOM_PARA='MAILLE',     CRIT_COMP='EQ', VALE_K='M1'),
+      _F(NOM_PARA='POINT',      CRIT_COMP='EQ', VALE_I=  1),
+      _F(NOM_PARA='SOUS_POINT', CRIT_COMP='EQ', VALE_I=  1), ),
+)
+DEFBET1 = RECU_FONCTION(
+   TABLE=V1MAZAR, PARA_X='INST', PARA_Y='V3',
+   FILTRE =(
+      _F(NOM_PARA='MAILLE',     CRIT_COMP='EQ', VALE_K='M1'),
+      _F(NOM_PARA='POINT',      CRIT_COMP='EQ', VALE_I=  1),
+      _F(NOM_PARA='SOUS_POINT', CRIT_COMP='EQ', VALE_I=  1), ),
+)
+CONBET1 = RECU_FONCTION(
+   TABLE=V1MAZAR, PARA_X='INST', PARA_Y='V5',
+   FILTRE =(
+      _F(NOM_PARA='MAILLE',     CRIT_COMP='EQ', VALE_K='M1'),
+      _F(NOM_PARA='POINT',      CRIT_COMP='EQ', VALE_I=  1),
+      _F(NOM_PARA='SOUS_POINT', CRIT_COMP='EQ', VALE_I=  1), ),
+)
+
+IMPR_FONCTION(UNITE=unit,FORMAT='TABLEAU',
+   COURBE=(
+      _F(FONCTION=DEFBET1), _F(FONCTION=CONBET1),
+      _F(FONCTION=DOMTRAC1),_F(FONCTION=DOMCOMP1),
+   )
+)
+DEFI_FICHIER(UNITE = unit, ACTION='LIBERER',)
+DETRUIRE(INFO=1,ALARME='NON',CONCEPT=(_F(NOM=unit,),),)
+
+
+# Table contenant les resultats en contrainte aux sous-points
+S2MAZAR = CREA_TABLE( RESU=_F(RESULTAT=U2MAZAR, NOM_CHAM='SIEF_ELGA',TOUT='OUI',TOUT_CMP='OUI'), )
+# Table contenant les resultats en variables aux sous-points
+V2MAZAR = CREA_TABLE( RESU=_F(RESULTAT=U2MAZAR, NOM_CHAM='VARI_ELGA',TOUT='OUI',TOUT_CMP='OUI'), )
+
+fic = './REPE_OUT/contraintes_sous_points2.table'
+unit = DEFI_FICHIER(FICHIER = fic, ACTION='ASSOCIER', TYPE='ASCII',ACCES='NEW')
+IMPR_TABLE(UNITE=unit,TABLE=S2MAZAR,FORMAT='ASTER')
+IMPR_TABLE(UNITE=unit,TABLE=V2MAZAR,FORMAT='ASTER')
+DEFI_FICHIER(UNITE = unit, ACTION='LIBERER',)
+DETRUIRE(INFO=1,ALARME='NON',CONCEPT=(_F(NOM=unit,),),)
+
+fic = './REPE_OUT/courbes2.post'
+unit = DEFI_FICHIER(FICHIER = fic, ACTION='ASSOCIER', TYPE='ASCII',ACCES='NEW')
+# Beton
+DOMTRAC2 = RECU_FONCTION(
+   TABLE=V2MAZAR, PARA_X='INST', PARA_Y='V1',
+   FILTRE =(
+      _F(NOM_PARA='MAILLE',     CRIT_COMP='EQ', VALE_K='M1'),
+      _F(NOM_PARA='POINT',      CRIT_COMP='EQ', VALE_I=  1),
+      _F(NOM_PARA='SOUS_POINT', CRIT_COMP='EQ', VALE_I=  1),),
+)
+DOMCOMP2 = RECU_FONCTION(
+   TABLE=V2MAZAR, PARA_X='INST', PARA_Y='V2',
+   FILTRE =(
+      _F(NOM_PARA='MAILLE',     CRIT_COMP='EQ', VALE_K='M1'),
+      _F(NOM_PARA='POINT',      CRIT_COMP='EQ', VALE_I=  1),
+      _F(NOM_PARA='SOUS_POINT', CRIT_COMP='EQ', VALE_I=  1), ),
+)
+DEFBET2 = RECU_FONCTION(
+   TABLE=V2MAZAR, PARA_X='INST', PARA_Y='V3',
+   FILTRE =(
+      _F(NOM_PARA='MAILLE',     CRIT_COMP='EQ', VALE_K='M1'),
+      _F(NOM_PARA='POINT',      CRIT_COMP='EQ', VALE_I=  1),
+      _F(NOM_PARA='SOUS_POINT', CRIT_COMP='EQ', VALE_I=  1), ),
+)
+CONBET2 = RECU_FONCTION(
+   TABLE=V2MAZAR, PARA_X='INST', PARA_Y='V5',
+   FILTRE =(
+      _F(NOM_PARA='MAILLE',     CRIT_COMP='EQ', VALE_K='M1'),
+      _F(NOM_PARA='POINT',      CRIT_COMP='EQ', VALE_I=  1),
+      _F(NOM_PARA='SOUS_POINT', CRIT_COMP='EQ', VALE_I=  1), ),
+)
+
+IMPR_FONCTION(UNITE=unit,FORMAT='TABLEAU',
+   COURBE=(
+      _F(FONCTION=DEFBET2), _F(FONCTION=CONBET2),
+      _F(FONCTION=DOMTRAC2),_F(FONCTION=DOMCOMP2),
+   )
+)
+DEFI_FICHIER(UNITE = unit, ACTION='LIBERER',)
+DETRUIRE(INFO=1,ALARME='NON',CONCEPT=(_F(NOM=unit,),),)
+"""
+FIN()

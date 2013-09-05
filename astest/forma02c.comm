@@ -1,0 +1,100 @@
+# coding=utf-8
+# TITRE FORMATION DE BASE A L'UTILISATION D'ASTER - TP MECANIQUE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# coding=utf-8
+#
+#        TUYAUTERIE COMPORTANT UN COUDE
+#     MODELISATION PAR DES ELEMENTS COQUES
+#     ---------------------------------------
+
+DEBUT(CODE=_F(NOM='FORMA02C',
+NIV_PUB_WEB='INTERNET',),DEBUG=_F(SDVERI='OUI'))
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+
+MAIL=MODI_MAILLAGE(reuse =MAIL,
+                   MAILLAGE=MAIL,
+                   ORIE_NORM_COQUE=_F(GROUP_MA='TUYAU',
+                                      VECT_NORM=(1,0,0,),
+                                      GROUP_NO='AI1',),);
+
+MATER=DEFI_MATERIAU(ELAS=_F(E=204000000000.0,
+                            NU=0.3,
+                            ALPHA=1.096e-05,),);
+
+#CALCUL MECANIQUE
+#ENCASTREMENT SUR LA SECTION BASE ET EFOND
+#SYMETRIE PAR RAPPORT AU PLAN XOY
+#CHARGEMENT PRESSION
+EPTUB = 0.02;
+
+REXT = 0.2;
+
+RMOY = (REXT - (EPTUB / 2));
+
+RINT = (RMOY - (EPTUB / 2));
+
+PRES = ((15000000 * RINT) / RMOY);
+
+
+MODMECA=AFFE_MODELE(MAILLAGE=MAIL,
+                    AFFE=_F(GROUP_MA='TUYAU',
+                            PHENOMENE='MECANIQUE',
+                            MODELISATION='DKT',),);
+
+CARAMECA=AFFE_CARA_ELEM(MODELE=MODMECA,
+                        COQUE=_F(GROUP_MA='TUYAU',
+                                 EPAIS=EPTUB,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                    MODELE=MODMECA,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=MATER,),);
+
+CHMECA=AFFE_CHAR_MECA(MODELE=MODMECA,
+                      DDL_IMPO=(_F(GROUP_MA=('EFOND','BASE',),
+                                   LIAISON='ENCASTRE',),
+                                _F(GROUP_MA='SYMETRIE',
+                                   DZ=0,),),
+                      PRES_REP=_F(GROUP_MA='TUYAU',
+                                  PRES=PRES,),);
+
+RESU=MECA_STATIQUE(MODELE=MODMECA,
+                   CHAM_MATER=CHMAT,
+                   CARA_ELEM=CARAMECA,
+                   EXCIT=_F(CHARGE=CHMECA,),);
+
+
+#IMPRESSION DES RESULTATS
+
+IMPR_RESU(FORMAT='MED',
+          RESU=_F(MAILLAGE=MAIL,
+                  RESULTAT=RESU,),);
+
+#TEST DE NON REGRESSION
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='N_TEST',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DX',
+                  VALE_CALC=4.6722300000000001E-4,
+                  ),
+          )
+
+FIN();

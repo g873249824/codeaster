@@ -1,0 +1,629 @@
+# TITRE SYSTEME MASSES-RESSORTS LINEAIRE MULTI-SUPPORTE (ROTATION)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# ----------------------------------------------------------------------
+# SYSTEME 3 MASSES, 4 RESSORTS ENCASTRES-ENCASTRES SOUMIS A DES
+# ACCE_IMPO DIFFERENTES (STRUCTURE MULTI-SUPPORTEE)
+#    ACCE_IMPO = ACCELER1 (A.T*T) EN Z=0 (NO1) ET
+#    ACCE_IMPO = ACCELER2 (0) EN Z=4 (NO5)
+# ----------------------------------------------------------------------
+# REF: PAS DE REF BIBLIO MAIS CALCUL ANALYTIQUE
+# ----------------------------------------------------------------------
+
+DEBUT(CODE=_F(NOM='SDLD103B', NIV_PUB_WEB='INTERNET'), BASE=_F(FICHIER='GLOBALE', LONG_REPE=20000), DEBUG=_F(SDVERI='OUI'))
+
+MAILLAGE=LIRE_MAILLAGE( )
+
+MODELE=AFFE_MODELE(  MAILLAGE=MAILLAGE,AFFE=(
+         _F(  PHENOMENE = 'MECANIQUE', MODELISATION = 'DIS_TR',
+                GROUP_MA = 'RESSORT'),
+              _F(  PHENOMENE = 'MECANIQUE', MODELISATION = 'DIS_TR',
+                GROUP_NO = 'MASSES'))
+                    )
+
+#
+CARA_ELE=AFFE_CARA_ELEM(  MODELE=MODELE,DISCRET=(
+                _F(  CARA = 'K_TR_D_L',  REPERE = 'GLOBAL',
+                          GROUP_MA = 'RESSORT',
+                          VALE = ( 0., 0., 0., 10000., 0., 10000., )),
+                _F(  CARA = 'M_TR_L',  REPERE = 'GLOBAL',
+                          GROUP_MA = 'RESSORT',
+                          VALE = (0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                          0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                          0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                          0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                          0., 0., 0., 0., 0., 0., 0., 0., 0.,  )),
+                        _F(  GROUP_NO = 'MASSES',
+                          CARA = 'M_TR_N',
+                          VALE = ( 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., 10.,
+                                 0.,  0.,  0.,  0., 10.,  0.,  0.,  0.,  0.,  0.,
+                                10.,  )))
+                         )
+
+#
+CON_LIM=AFFE_CHAR_MECA(  MODELE=MODELE,DDL_IMPO=(
+# ------------ LES DEPL_IMPO SONT DEFINIS DANS LE REPERE GLOBAL
+               _F(  GROUP_NO = 'ENCASTRE', DRX = 0.,  DRY = 0.,  DRZ = 0.,
+                                             DX = 0.,  DY = 0.,  DZ = 0.),
+               _F(  GROUP_NO = 'MASSES',   DRY = 0.,  DRZ = 0.,
+                                             DX = 0.,  DY = 0.,  DZ = 0.))
+                        )
+
+#
+ASSEMBLAGE(  MODELE=MODELE,   CHARGE=CON_LIM,   CARA_ELEM=CARA_ELE,
+                   NUME_DDL=CO("NUMEDDL"),MATR_ASSE=(
+                 _F(  MATRICE = CO("RIGIDITE"),  OPTION = 'RIGI_MECA'),
+                           _F(  MATRICE = CO("MASSE"),     OPTION = 'MASS_MECA'))
+               )
+
+#
+# CALCUL DES MODES AVEC BLOCAGE DES ANCRAGES:
+#---------------------------------------------
+MODE_MEC=MODE_ITER_INV(  MATR_RIGI=RIGIDITE,   MATR_MASS=MASSE,
+                 CALC_FREQ=_F(  OPTION = 'AJUSTE',  FREQ = (3.8,  7.,  9.3, ))
+                         )
+
+MODE_MEC=NORM_MODE(reuse=MODE_MEC,  MODE=MODE_MEC,   NORME='MASS_GENE' )
+
+#
+# CALCUL DES MODES STATIQUES AUX POINTS D ANCRAGE:
+#-------------------------------------------------
+MODE_STA=MODE_STATIQUE(  MATR_RIGI=RIGIDITE,   MATR_MASS=MASSE,
+                         MODE_STAT=_F(  TOUT = 'OUI', AVEC_CMP = 'DRX') )
+
+#
+# DESCRIPTION DES PAS DE CALCUL
+#------------------------------
+L_INST=DEFI_LIST_REEL(  DEBUT=0.,
+                        INTERVALLE=_F(  JUSQU_A = 1., PAS = 0.0001) )
+
+#
+# DESCRIPTION DES ACCELEROGRAMMES:
+#---------------------------------
+ACCE1 = FORMULE(NOM_PARA='INST',VALE='2.E+05*INST**2 ')
+ACCELER1=CALC_FONC_INTERP( FONCTION=ACCE1, LIST_PARA=L_INST,
+                      NOM_PARA = 'INST',
+                       PROL_DROITE='LINEAIRE',
+                      PROL_GAUCHE='LINEAIRE',
+                      NOM_RESU='ACCE'
+                     )
+
+ACCE2 = FORMULE(NOM_PARA='INST',VALE='0.*INST ')
+ACCELER2=CALC_FONC_INTERP( FONCTION=ACCE2, LIST_PARA=L_INST,
+                      NOM_PARA = 'INST',
+                       PROL_DROITE='LINEAIRE',
+                      PROL_GAUCHE='LINEAIRE',
+                      NOM_RESU='ACCE'
+                     )
+
+#
+# INTEGRATION DES ACCELEROGRAMMES:
+#---------------------------------
+VITE1 = FORMULE(NOM_PARA='INST',VALE='(2.E+05*INST**3)/3. ')
+VITESSE1=CALC_FONC_INTERP( FONCTION=VITE1, LIST_PARA=L_INST,
+                      NOM_PARA = 'INST',
+                       PROL_DROITE='LINEAIRE',
+                      PROL_GAUCHE='LINEAIRE',
+                      NOM_RESU='VITE'
+                     )
+
+DEPL1 = FORMULE(NOM_PARA='INST',VALE='(2.E+05*INST**4)/12. ')
+DEPLACE1=CALC_FONC_INTERP( FONCTION=DEPL1, LIST_PARA=L_INST,
+                      NOM_PARA = 'INST',
+                       PROL_DROITE='LINEAIRE',
+                      PROL_GAUCHE='LINEAIRE',
+                      NOM_RESU='DEPL'
+                     )
+
+VITE2 = FORMULE(NOM_PARA='INST',VALE='0.*INST ')
+VITESSE2=CALC_FONC_INTERP( FONCTION=VITE2, LIST_PARA=L_INST,
+                      NOM_PARA = 'INST',
+                       PROL_DROITE='LINEAIRE',
+                      PROL_GAUCHE='LINEAIRE',
+                      NOM_RESU='VITE'
+                     )
+
+DEPL2 = FORMULE(NOM_PARA='INST',VALE='0.*INST ')
+DEPLACE2=CALC_FONC_INTERP( FONCTION=DEPL2, LIST_PARA=L_INST,
+                      NOM_PARA = 'INST',
+                       PROL_DROITE='LINEAIRE',
+                      PROL_GAUCHE='LINEAIRE',
+                      NOM_RESU='DEPL'
+                     )
+
+#
+# ON ETUDIE LA STRUCTURE EN VRAI MULTI-APPUI:
+#    ACCE_IMPO = ACCELER1 (A.T*T) EN Z=0 (NO1) ET
+#    ACCE_IMPO = ACCELER2 (0) EN Z=4 (NO5)
+#----------------------------------------------------------
+#
+MULT_X1=CALC_CHAR_SEISME(  MATR_MASS=MASSE,
+                            DIRECTION=( 0., 0., 0., 1., 0., 0.,),
+                            MODE_STAT=MODE_STA,   NOEUD='NO1' )
+
+MULT_X2=CALC_CHAR_SEISME(  MATR_MASS=MASSE,
+                            DIRECTION=( 0., 0., 0., 1., 0., 0.,),
+                            MODE_STAT=MODE_STA,   NOEUD='NO5' )
+
+#
+# PROJECTION DES MATRICES M ET K SUR LA BASE MODALE
+#---------------------------------------------------
+PROJ_BASE(BASE=MODE_MEC,
+          STOCKAGE='DIAG',
+          MATR_ASSE_GENE=(
+           _F( MATRICE = CO("MASS_GEN"), MATR_ASSE = MASSE),
+           _F( MATRICE = CO("RIGI_GEN"), MATR_ASSE = RIGIDITE)),VECT_ASSE_GENE=(
+           _F( VECTEUR = CO("VECT_X1"), VECT_ASSE = MULT_X1),
+           _F( VECTEUR = CO("VECT_X2"), VECT_ASSE = MULT_X2))
+               )
+
+#
+# CALCUL TRANSITOIRE PAR SUPERPOSITION MODALE
+# -------------------------------------------
+TRAN_GEE=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                 MATR_MASS=MASS_GEN,   MATR_RIGI=RIGI_GEN,
+                 SCHEMA_TEMPS=_F(SCHEMA='EULER',),
+                 MODE_STAT=MODE_STA,
+                 EXCIT=(
+                _F( VECT_ASSE_GENE = VECT_X1,
+                        ACCE = ACCELER1,
+                        MULT_APPUI = 'OUI',
+                        DIRECTION = ( 0., 0., 0., 1., 0., 0.,),
+                        NOEUD = 'NO1',
+                        VITE = VITESSE1,
+                        DEPL = DEPLACE1),
+                _F( VECT_ASSE_GENE = VECT_X2,
+                        ACCE = ACCELER2,
+                        MULT_APPUI = 'OUI',
+                        DIRECTION = ( 0., 0., 0., 1., 0., 0.,),
+                        NOEUD = 'NO5',
+                        VITE = VITESSE2,
+                        DEPL = DEPLACE2)),
+                 ARCHIVAGE=_F(  PAS_ARCH = 1),
+                 INCREMENT=_F( INST_INIT = 0., INST_FIN = 1.0, PAS = 0.001)
+                )
+
+#
+L_RECU=DEFI_LIST_REEL(  DEBUT=0.,
+                      INTERVALLE=_F(  JUSQU_A = 1.0,  NOMBRE = 20) )
+
+#
+# CALCUL ANALYTIQUE DES DEPLACEMENTS
+# ----------------------------------
+
+OMEGA1=sqrt(2000./(2.+sqrt(2.)))
+
+OMEGA2=sqrt(2000.)
+
+OMEGA3=sqrt(2000./(2.-sqrt(2.)))
+
+F1 = FORMULE(NOM_PARA='INST',VALE='cos(OMEGA1*INST)-1. ')
+F2 = FORMULE(NOM_PARA='INST',VALE='cos(OMEGA2*INST)-1. ')
+F3 = FORMULE(NOM_PARA='INST',VALE='cos(OMEGA3*INST)-1. ')
+
+# CALCUL DU DEPLACEMENT RELATIF AU NOEUD 2 : XRNO2
+# ------------------------------------------------
+
+XRNO2a = FORMULE(NOM_PARA='INST',VALE='''
+-25.*(7*INST**2+((10.+7.*sqrt(2.))*F1(INST) +F2(INST)
+                        +(10.-7.*sqrt(2.))*F3(INST))*0.001)
+        ''')
+
+XR2='XRNO2'
+
+XRNO2=CALC_FONC_INTERP(     FONCTION=XRNO2a,
+                            NOM_RESU=XR2,    LIST_PARA=L_RECU,
+                            NOM_PARA = 'INST', )
+
+# CALCUL DU DEPLACEMENT RELATIF AU NOEUD 3 : XRNO3
+# ------------------------------------------------
+
+XRNO3a = FORMULE(NOM_PARA='INST',VALE='''
+-25.*(8*INST**2+((10.*sqrt(2.)+14.)*F1(INST)
+                        +(-10.*sqrt(2.)+14.)*F3(INST))*0.001)
+         ''')
+
+XR3='XRNO3'
+
+XRNO3=CALC_FONC_INTERP(     FONCTION=XRNO3a,
+                            NOM_RESU=XR3,    LIST_PARA=L_RECU,
+                            NOM_PARA = 'INST', )
+
+# CALCUL DU DEPLACEMENT RELATIF AU NOEUD 4 : XRNO4
+# ------------------------------------------------
+
+XRNO4a = FORMULE(NOM_PARA='INST',VALE='''
+-25.*(5*INST**2+((10.+7.*sqrt(2.))*F1(INST) -F2(INST)
+                        +(10.-7.*sqrt(2.))*F3(INST))*0.001)
+        ''')
+
+XR4='XRNO4'
+
+XRNO4=CALC_FONC_INTERP(     FONCTION=XRNO4a,
+                            NOM_RESU=XR4,    LIST_PARA=L_RECU,
+                            NOM_PARA = 'INST', )
+
+# CALCUL ANALYTIQUE DU DEPLACEMENT D ENTRAINEMENT AU NOEUD 2 : XRNOE2
+# -------------------------------------------------------------------
+
+XRNOE2a = FORMULE(NOM_PARA='INST',VALE='(300000.*INST**4)/24.')
+XRE2='XRNOE2'
+
+XRNOE2=CALC_FONC_INTERP(     FONCTION=XRNOE2a,
+                             NOM_RESU=XRE2,    LIST_PARA=L_RECU,
+                             NOM_PARA = 'INST', )
+
+# CALCUL ANALYTIQUE DU DEPLACEMENT D ENTRAINEMENT AU NOEUD 3 : XRNOE3
+# -------------------------------------------------------------------
+
+XRNOE3a = FORMULE(NOM_PARA='INST',VALE='(100000.*INST**4)/12.')
+XRE3='XRNOE3'
+
+XRNOE3=CALC_FONC_INTERP(     FONCTION=XRNOE3a,
+                             NOM_RESU=XRE3,    LIST_PARA=L_RECU,
+                             NOM_PARA = 'INST', )
+
+# CALCUL ANALYTIQUE DU DEPLACEMENT D ENTRAINEMENT AU NOEUD 4 : XRNOE4
+# -------------------------------------------------------------------
+
+XRNOE4a = FORMULE(NOM_PARA='INST',VALE='(100000.*INST**4)/24.')
+XRE4='XRNOE4'
+
+XRNOE4=CALC_FONC_INTERP(     FONCTION=XRNOE4a,
+                             NOM_RESU=XRE4,    LIST_PARA=L_RECU,
+                             NOM_PARA = 'INST', )
+
+# CALCUL ANALYTIQUE DU DEPLACEMENT ABSOLU AU NOEUD 2 : XRNOA2
+# -----------------------------------------------------------
+# CALCUL ANALYTIQUE DU DEPLACEMENT ABSOLU AU NOEUD 3 : XRNOA3
+# -----------------------------------------------------------
+# CALCUL ANALYTIQUE DU DEPLACEMENT ABSOLU AU NOEUD 4 : XRNOA4
+# -----------------------------------------------------------
+
+# RECUPERATION DES DEPLACEMENTS RELATIFS CALCULES
+# -----------------------------------------------
+NO2DXR_E=RECU_FONCTION(  NOEUD='NO2',  NOM_CMP='DRX',  NOM_CHAM='DEPL',
+                             RESU_GENE=TRAN_GEE,
+                           INTERP_NUME='LIN',      INTERPOL='LIN',
+                             LIST_INST=L_RECU    )
+
+NO3DXR_E=RECU_FONCTION(  NOEUD='NO3',  NOM_CMP='DRX',  NOM_CHAM='DEPL',
+                             RESU_GENE=TRAN_GEE,
+                           INTERP_NUME='LIN',      INTERPOL='LIN',
+                             LIST_INST=L_RECU    )
+
+NO4DXR_E=RECU_FONCTION(  NOEUD='NO4',  NOM_CMP='DRX',  NOM_CHAM='DEPL',
+                             RESU_GENE=TRAN_GEE,
+                           INTERP_NUME='LIN',      INTERPOL='LIN',
+                             LIST_INST=L_RECU    )
+
+#
+# RECUPERATION DES DEPLACEMENTS ABSOLUS CALCULES
+# ----------------------------------------------
+NO2DXA_E=RECU_FONCTION(  NOEUD='NO2',  NOM_CMP='DRX',  NOM_CHAM='DEPL',
+                            RESU_GENE=TRAN_GEE,
+                          MULT_APPUI='OUI',         INTERP_NUME='LIN',
+                             LIST_INST=L_RECU,     INTERPOL='LIN'
+                        )
+
+NO3DXA_E=RECU_FONCTION(  NOEUD='NO3',  NOM_CMP='DRX',  NOM_CHAM='DEPL',
+                            RESU_GENE=TRAN_GEE,
+                          MULT_APPUI='OUI',         INTERP_NUME='LIN',
+                             LIST_INST=L_RECU,     INTERPOL='LIN'
+                        )
+
+NO4DXA_E=RECU_FONCTION(  NOEUD='NO4',  NOM_CMP='DRX',  NOM_CHAM='DEPL',
+                            RESU_GENE=TRAN_GEE,
+                          MULT_APPUI='OUI',         INTERP_NUME='LIN',
+                             LIST_INST=L_RECU,     INTERPOL='LIN'
+                        )
+
+#
+# COMPARAISON DES RESULTATS NUMERIQUES/ RESULTATS ANALYTIQUES
+# -----------------------------------------------------------
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.8477247,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO2a(0.10),
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=NO2DXR_E,),
+                      _F(VALE_CALC=-15.52008616,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO2a(0.30),
+                         VALE_PARA=0.29999999999999999,
+                         FONCTION=NO2DXR_E,),
+                      _F(VALE_CALC=-43.644996626,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO2a(0.50),
+                         VALE_PARA=0.5,
+                         FONCTION=NO2DXR_E,),
+                      _F(VALE_CALC=-85.08321188,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO2a(0.70),
+                         VALE_PARA=0.69999999999999996,
+                         FONCTION=NO2DXR_E,),
+                      _F(VALE_CALC=-174.790389602,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO2a(1.),
+                         VALE_PARA=1.0,
+                         FONCTION=NO2DXR_E,),
+                      ),
+              )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.7684199,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO3a(0.10),
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=NO3DXR_E,),
+                      _F(VALE_CALC=-17.69223178,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO3a(0.30),
+                         VALE_PARA=0.29999999999999999,
+                         FONCTION=NO3DXR_E,),
+                      _F(VALE_CALC=-49.9310695,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO3a(0.50),
+                         VALE_PARA=0.5,
+                         FONCTION=NO3DXR_E,),
+                      _F(VALE_CALC=-97.07142331,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO3a(0.70),
+                         VALE_PARA=0.69999999999999996,
+                         FONCTION=NO3DXR_E,),
+                      _F(VALE_CALC=-199.72222064,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO3a(1.),
+                         VALE_PARA=1.0,
+                         FONCTION=NO3DXR_E,),
+                      ),
+              )
+
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=-0.4096040,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO4a(0.10),
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=NO4DXR_E,),
+                      _F(VALE_CALC=-11.037130134,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO4a(0.30),
+                         VALE_PARA=0.29999999999999999,
+                         FONCTION=NO4DXR_E,),
+                      _F(VALE_CALC=-31.241586889,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO4a(0.50),
+                         VALE_PARA=0.5,
+                         FONCTION=NO4DXR_E,),
+                      _F(VALE_CALC=-60.58350352,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO4a(0.70),
+                         VALE_PARA=0.69999999999999996,
+                         FONCTION=NO4DXR_E,),
+                      _F(VALE_CALC=-124.803557014,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= XRNO4a(1.),
+                         VALE_PARA=1.0,
+                         FONCTION=NO4DXR_E,),
+                      ),
+              )
+
+val01=XRNO2a(0.10)+XRNOE2a(0.10)
+val02=XRNO2a(0.30)+XRNOE2a(0.30)
+val03=XRNO2a(0.50)+XRNOE2a(0.50)
+val04=XRNO2a(0.70)+XRNOE2a(0.70)
+val05=XRNO2a(1.)+XRNOE2a(1.)
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=0.402275,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val01,
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=NO2DXA_E,),
+                      _F(VALE_CALC=85.7299138,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val02,
+                         VALE_PARA=0.29999999999999999,
+                         FONCTION=NO2DXA_E,),
+                      _F(VALE_CALC=737.605003374,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val03,
+                         VALE_PARA=0.5,
+                         FONCTION=NO2DXA_E,),
+                      _F(VALE_CALC=2916.166788120,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val04,
+                         VALE_PARA=0.69999999999999996,
+                         FONCTION=NO2DXA_E,),
+                      _F(VALE_CALC=12325.2096,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val05,
+                         VALE_PARA=1.0,
+                         FONCTION=NO2DXA_E,),
+                      ),
+              )
+
+val06=XRNO3a(0.01)+XRNOE3a(0.01)
+val07=XRNO3a(0.02)+XRNOE3a(0.02)
+val08=XRNO3a(0.03)+XRNOE3a(0.03)
+val09=XRNO3a(0.04)+XRNOE3a(0.04)
+val10=XRNO3a(0.05)+XRNOE3a(0.05)
+val11=XRNO3a(0.06)+XRNOE3a(0.06)
+val12=XRNO3a(0.07)+XRNOE3a(0.07)
+val13=XRNO3a(0.08)+XRNOE3a(0.08)
+val14=XRNO3a(0.09)+XRNOE3a(0.09)
+val15=XRNO3a(0.10)+XRNOE3a(0.10)
+val16=XRNO3a(0.30)+XRNOE3a(0.30)
+val17=XRNO3a(0.50)+XRNOE3a(0.50)
+val18=XRNO3a(0.70)+XRNOE3a(0.70)
+val19=XRNO3a(1.)+XRNOE3a(1.)
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=7.326267E-05 ,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val06,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=1.E-2,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=1.465253E-04,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val07,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.02,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=2.197880E-04,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val08,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.029999999999999999,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=2.930507E-04,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val09,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.040000000000000001,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=3.663E-04,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val10,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.050000000000000003,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=0.0132757318529,
+                         VALE_REFE= val11,
+                         REFERENCE='ANALYTIQUE',
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.059999999999999998,
+                         PRECISION=0.02,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=0.0261851503467,
+                         VALE_REFE= val12,
+                         REFERENCE='ANALYTIQUE',
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.070000000000000007,
+                         PRECISION=0.029999999999999999,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=0.0390945688405,
+                         VALE_REFE= val13,
+                         REFERENCE='ANALYTIQUE',
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.080000000000000002,
+                         PRECISION=0.029999999999999999,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=0.0520039873344,
+                         VALE_REFE= val14,
+                         REFERENCE='ANALYTIQUE',
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.089999999999999997,
+                         PRECISION=0.029999999999999999,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=0.0649134,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val15,
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=49.8077682,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val16,
+                         VALE_PARA=0.29999999999999999,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=470.90226388,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val17,
+                         VALE_PARA=0.5,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=1903.76191003,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val18,
+                         VALE_PARA=0.69999999999999996,
+                         FONCTION=NO3DXA_E,),
+                      _F(VALE_CALC=8133.611112698,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val19,
+                         VALE_PARA=1.0,
+                         FONCTION=NO3DXA_E,),
+                      ),
+              )
+
+val20=XRNO4a(0.10)+XRNOE4a(0.10)
+val21=XRNO4a(0.30)+XRNOE4a(0.30)
+val22=XRNO4a(0.50)+XRNOE4a(0.50)
+val23=XRNO4a(0.70)+XRNOE4a(0.70)
+val24=XRNO4a(1.)+XRNOE4a(1.)
+TEST_FONCTION(VALEUR=(_F(VALE_CALC=7.0626E-03,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val20,
+                         CRITERE='ABSOLU',
+                         VALE_PARA=0.10000000000000001,
+                         FONCTION=NO4DXA_E,),
+                      _F(VALE_CALC=22.71286987,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val21,
+                         VALE_PARA=0.29999999999999999,
+                         FONCTION=NO4DXA_E,),
+                      _F(VALE_CALC=229.17507978,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val22,
+                         VALE_PARA=0.5,
+                         FONCTION=NO4DXA_E,),
+                      _F(VALE_CALC=939.83316315,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val23,
+                         VALE_PARA=0.69999999999999996,
+                         FONCTION=NO4DXA_E,),
+                      _F(VALE_CALC=4041.863109653,
+                         REFERENCE='ANALYTIQUE',
+                         PRECISION=1.E-3,
+                         VALE_REFE= val24,
+                         VALE_PARA=1.0,
+                         FONCTION=NO4DXA_E,),
+                      ),
+              )
+
+FIN()
+#

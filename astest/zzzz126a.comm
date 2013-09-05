@@ -1,0 +1,685 @@
+# TITRE VALIDATION DE LA COMMANDE  CREA_CHAMP/ASSE ET CREA_CHAMP/EXTR/TABLE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='ZZZZ126A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#================================================================
+#  1) UN CALCUL MECANIQUE SANS SIGNIFICATION NE SERVANT QU'A
+#     PRODUIRE UNE EVOL_NOLI AVEC PLUS DE 3 VARIABLES INTERNES
+#================================================================
+
+MA=LIRE_MAILLAGE()
+
+MO=AFFE_MODELE(   MAILLAGE=MA,    AFFE=_F(  TOUT = 'OUI',
+       PHENOMENE = 'MECANIQUE', MODELISATION = 'AXIS')  )
+
+MAT=DEFI_MATERIAU(    ELAS=_F(  E = 200000.,
+             NU = 0.3,  ALPHA = 1.E-4),
+       ECRO_LINE=_F(  D_SIGM_EPSI = 20000., SY = 2000.))
+
+CHMAT=AFFE_MATERIAU(    MAILLAGE=MA,
+        AFFE=_F(  TOUT = 'OUI',  MATER = MAT))
+
+LISTPL=DEFI_LIST_REEL(    DEBUT=0.,
+                           INTERVALLE=_F(  JUSQU_A = 1.,  NOMBRE = 2))
+
+CHARG=AFFE_CHAR_MECA(    MODELE=MO,
+                 DDL_IMPO=_F(  NOEUD = ( 'A1',),  DY = 0.),
+                 PRES_REP=_F(  MAILLE = 'S1',  PRES = 0.002) )
+
+SOLPL=STAT_NON_LINE(     MODELE=MO,
+             CHAM_MATER=CHMAT,    EXCIT=_F(    CHARGE = CHARG),
+         COMP_INCR=_F(  RELATION = 'VMIS_CINE_LINE'),
+         INCREMENT=_F( LIST_INST = LISTPL),
+            NEWTON=_F(  MATRICE = 'TANGENTE'),
+       CONVERGENCE=_F( ITER_GLOB_MAXI = 100)
+                             )
+
+CALC_CHAMP(reuse=SOLPL,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=SOLPL)
+
+
+#================================================================
+#  VALIDATION :CREA_CHAMP/AFFE, TYPE_CHAM='NOEU_XXXX_X'
+#================================================================
+
+# A : CHAM_NO_DEPL_R :
+# ------------------
+
+ACH01=CREA_CHAMP( OPERATION='AFFE',   TYPE_CHAM='NOEU_DEPL_R',
+    MAILLAGE=MA,
+    AFFE=(_F( TOUT  = 'OUI', NOM_CMP='DY', VALE=0.5),
+          _F( NOEUD = ('A4','A2','A3',), NOM_CMP = ('DX','DZ',), VALE = (1.,3.,)),
+          _F( NOEUD = ('A2',), NOM_CMP = ('DY','DZ',), VALE = (8.,2.,)),),
+    )
+
+ACH02=CREA_CHAMP( OPERATION='AFFE',  TYPE_CHAM='NOEU_DEPL_R',
+    CHAM_NO=ACH01, MODELE=MO, PROL_ZERO='OUI',
+    AFFE=(_F( NOEUD=('A2','A1'), NOM_CMP=('DY'), VALE=(3.),),),
+    )
+
+# B : CHAM_NO_NEUT_I :
+# ------------------
+
+ACH03=CREA_CHAMP( OPERATION='AFFE',  TYPE_CHAM='NOEU_NEUT_I',
+    MAILLAGE=MA,
+    AFFE=(_F( TOUT  = 'OUI', NOM_CMP=('X15','X120'), VALE_I=(1,2),),
+          _F( NOEUD = ('A2',), NOM_CMP = ('X2'), VALE_I =3 ),),
+    )
+
+IMPR_RESU(FORMAT='RESULTAT',
+          UNITE=8,
+          RESU=_F(CHAM_GD=ACH03,
+                  IMPR_COOR='NON',
+                  FORMAT_R='1PE12.5',),
+          INFO=1,);
+
+# C : CHAM_NO_NEUT_F :
+# ------------------
+
+FORM = FORMULE(NOM_PARA=('X','Y'),VALE='2.*X +3.*Y +5.')
+ACH04=CREA_CHAMP(OPERATION='AFFE',  TYPE_CHAM='NOEU_NEUT_F',
+      MAILLAGE=MA,
+      AFFE=_F( NOEUD = ('A2','A3',), NOM_CMP = ('X1',), VALE_F = (FORM,),),
+    )
+
+# D : CHAM_NO_DEPL_C :
+# ------------------
+
+ACH05=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='NOEU_DEPL_C',
+    MAILLAGE=MA,
+    AFFE=_F( NOEUD = ('A4','A2','A3',), NOM_CMP = ('DY','DX'),
+             VALE_C = (('RI',1.0,0.5,),('RI',0.0,1.0,)))
+    )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='A2',
+                      NOM_CMP='DY',
+                      CHAM_GD=ACH01,
+                      VALE_CALC=8.0,),
+                   _F(NOEUD='A2',
+                      NOM_CMP='DY',
+                      CHAM_GD=ACH02,
+                      VALE_CALC=3.0,),
+                   _F(NOEUD='A2',
+                      VALE_CALC_C=('RI', 1.0, 0.5),
+                      NOM_CMP='DY',
+                      CHAM_GD=ACH05,),
+                   ),
+          )
+
+#================================================================
+#  VALIDATION :CREA_CHAMP/AFFE, TYPE_CHAM='ELEM_XXXX_X'
+#================================================================
+
+
+# E : CHAM_ELEM_NEUT_I :
+# ---------------------
+
+ACH06=CREA_CHAMP(INFO=2,
+                 TYPE_CHAM='ELEM_DCEL_I',
+                 OPERATION='AFFE',
+                 AFFE=_F(NOM_CMP='NPG_DYN',
+                         MAILLE=('M1','M2','M3',),
+                         VALE_I=1),
+                 OPTION = 'NSPG_NBVA',
+                 MODELE=MO,
+                 PROL_ZERO='OUI',
+                 );
+
+IMPR_RESU(FORMAT='RESULTAT',
+          UNITE=8,
+          RESU=_F(CHAM_GD=ACH06,
+                  IMPR_COOR='NON',
+                  FORMAT_R='1PE12.5',),
+          INFO=1,);
+
+#================================================================
+#  VALIDATION :CREA_CHAMP/ASSE
+#================================================================
+
+
+# A : CHAM_NO_DEPL_R :
+# ---------------------------------------
+
+
+ACH1=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='NOEU_DEPL_R',
+    MAILLAGE=MA,
+    AFFE=_F( NOEUD = ('A1','A2','A3',), NOM_CMP = ('DX','DZ',), VALE = (1.,3.,))
+    )
+
+ACH2=CREA_CHAMP( OPERATION='AFFE', TYPE_CHAM='NOEU_DEPL_R',
+    MAILLAGE=MA,
+    AFFE=_F( NOEUD = ('A3','A1','A2',), NOM_CMP = ('DZ','DY',), VALE = (2.,4.,))
+    )
+
+ACH3=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='NOEU_DEPL_R',
+     MAILLAGE=MA,ASSE=(
+     _F( TOUT = 'OUI', CHAM_GD = ACH1),
+     _F( NOEUD = ('A2',), CHAM_GD = ACH2, COEF_R = 2.),
+     _F( NOEUD = ('A3',), CHAM_GD = ACH2, CUMUL = 'OUI', COEF_R = 3.))
+     )
+
+ACH4=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='NOEU_DEPL_R',
+     MAILLAGE=MA,
+     ASSE=_F( TOUT = 'OUI', CHAM_GD = ACH3, COEF_R = 1.,
+     NOM_CMP = ('DZ',),  NOM_CMP_RESU = ('DX',))
+     )
+
+ACH4=CREA_CHAMP(reuse=ACH4,OPERATION='ASSE', TYPE_CHAM='NOEU_DEPL_R',
+     MAILLAGE=MA,
+     ASSE=(_F( TOUT = 'OUI', CHAM_GD = ACH4, COEF_R = 1.,CUMUL='OUI',
+     NOM_CMP = ('DX',),  NOM_CMP_RESU = ('DX',)),
+           _F( TOUT = 'OUI', CHAM_GD = ACH4, COEF_R = 1.,CUMUL='OUI',
+     NOM_CMP = ('DX',),  NOM_CMP_RESU = ('DX',)))
+     )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='A2',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='DX',
+                      PRECISION=1.E-12,
+                      CHAM_GD=ACH3,
+                      VALE_CALC=1.0,
+                      VALE_REFE=1.0,),
+                   _F(NOEUD='A3',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='DX',
+                      PRECISION=1.E-12,
+                      CHAM_GD=ACH3,
+                      VALE_CALC=1.0,
+                      VALE_REFE=1.0,),
+                   _F(NOEUD='A3',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='DY',
+                      PRECISION=1.E-12,
+                      CHAM_GD=ACH3,
+                      VALE_CALC=12.0,
+                      VALE_REFE=12.0,),
+                   _F(NOEUD='A3',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='DZ',
+                      PRECISION=1.E-12,
+                      CHAM_GD=ACH3,
+                      VALE_CALC=9.0,
+                      VALE_REFE=9.0,),
+                   _F(NOEUD='A3',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='DX',
+                      PRECISION=1.E-12,
+                      CHAM_GD=ACH4,
+                      VALE_CALC=18.0,
+                      VALE_REFE=18.0,),
+                   ),
+          )
+
+# B : CHAM_ELEM_SIEF_R (ELNO):
+# ---------------------------------------
+
+BCH1=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='CART_SIEF_R', MAILLAGE=MA,
+    AFFE=_F( MAILLE = ('M1','M2','M3',), NOM_CMP = ('SIXX','SIZZ',), VALE = (1.,3.,))
+    )
+
+BCH2=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='CART_SIEF_R', MAILLAGE=MA,
+    AFFE=_F( MAILLE = ('M3','M1','M2',), NOM_CMP = ('SIZZ','SIYY',), VALE = (2.,4.,))
+    )
+
+BCH3=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELNO_SIEF_R',
+     MODELE=MO, PROL_ZERO='OUI', ASSE=(
+     _F( TOUT = 'OUI', CHAM_GD = BCH1),
+     _F( MAILLE = ('M2',), CHAM_GD = BCH2, COEF_R = 2.),
+     _F( MAILLE = ('M3',), CHAM_GD = BCH2, CUMUL = 'OUI', COEF_R = 3.))
+     )
+
+BCH4=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELNO_SIEF_R',
+     MODELE=MO,PROL_ZERO='OUI',
+     ASSE=_F( TOUT = 'OUI', CHAM_GD = BCH3, COEF_R = 1.,
+     NOM_CMP = ('SIZZ',),  NOM_CMP_RESU = ('SIXX',))
+     )
+
+BCH4=CREA_CHAMP(reuse=BCH4,OPERATION='ASSE', TYPE_CHAM='ELNO_SIEF_R',
+     MODELE=MO, PROL_ZERO='OUI',
+     ASSE=(_F( TOUT = 'OUI', CHAM_GD = BCH4, COEF_R = 1.,CUMUL='OUI',
+     NOM_CMP = ('SIXX',),  NOM_CMP_RESU = ('SIXX',)),
+           _F( TOUT = 'OUI', CHAM_GD = BCH4, COEF_R = 1.,CUMUL='OUI',
+     NOM_CMP = ('SIXX',),  NOM_CMP_RESU = ('SIXX',)))
+     )
+
+TEST_RESU(CHAM_ELEM=(_F(NOEUD='A2',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='SIXX',
+                        PRECISION=1.E-12,
+                        MAILLE='M2',
+                        CHAM_GD=BCH3,
+                        VALE_CALC=1.0,
+                        VALE_REFE=1.0,),
+                     _F(NOEUD='A3',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='SIXX',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=BCH3,
+                        VALE_CALC=1.0,
+                        VALE_REFE=1.0,),
+                     _F(NOEUD='A3',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='SIYY',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=BCH3,
+                        VALE_CALC=12.0,
+                        VALE_REFE=12.0,),
+                     _F(NOEUD='A3',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='SIZZ',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=BCH3,
+                        VALE_CALC=9.0,
+                        VALE_REFE=9.0,),
+                     _F(NOEUD='A3',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='SIXX',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=BCH4,
+                        VALE_CALC=18.0,
+                        VALE_REFE=18.0,),
+                     ),
+          )
+
+# C : CHAM_ELEM_SIEF_R (ELGA):
+# ---------------------------------------
+
+CCH1=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='CART_SIEF_R', MAILLAGE=MA,
+    AFFE=_F( MAILLE = ('M1','M2','M3',), NOM_CMP = ('SIXX','SIZZ',), VALE = (1.,3.,))
+    )
+
+CCH2=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='CART_SIEF_R', MAILLAGE=MA,
+    AFFE=_F( MAILLE = ('M3','M1','M2',), NOM_CMP = ('SIZZ','SIYY',), VALE = (2.,4.,))
+    )
+
+CCH3=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELGA_SIEF_R',
+     MODELE=MO, PROL_ZERO='OUI',ASSE=(
+     _F( TOUT = 'OUI',  CHAM_GD = CCH1),
+     _F( MAILLE = ('M2',), CHAM_GD = CCH2, COEF_R = 2.),
+     _F( MAILLE = ('M3',), CHAM_GD = CCH2, CUMUL = 'OUI', COEF_R = 3.))
+     )
+
+CCH4=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELGA_SIEF_R',
+     MODELE=MO, PROL_ZERO='OUI', OPTION='SIEF_ELGA',
+     ASSE=_F( TOUT = 'OUI', CHAM_GD = CCH3, COEF_R = 1.,
+     NOM_CMP = ('SIZZ',),  NOM_CMP_RESU = ('SIXX',))
+     )
+
+CCH4=CREA_CHAMP(reuse=CCH4, OPERATION='ASSE', TYPE_CHAM='ELGA_SIEF_R',
+     MODELE=MO, PROL_ZERO='OUI', OPTION='SIEF_ELGA',
+     ASSE=(_F( TOUT = 'OUI', CHAM_GD = CCH4, COEF_R = 1.,CUMUL='OUI',
+     NOM_CMP = ('SIXX',),  NOM_CMP_RESU = ('SIXX',)),
+           _F( TOUT = 'OUI', CHAM_GD = CCH4, COEF_R = 1.,CUMUL='OUI',
+     NOM_CMP = ('SIXX',),  NOM_CMP_RESU = ('SIXX',))
+     ))
+
+
+TEST_RESU(CHAM_ELEM=(_F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='SIXX',
+                        PRECISION=1.E-12,
+                        MAILLE='M2',
+                        CHAM_GD=CCH3,
+                        VALE_CALC=1.0,
+                        VALE_REFE=1.0,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='SIXX',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=CCH3,
+                        VALE_CALC=1.0,
+                        VALE_REFE=1.0,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='SIYY',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=CCH3,
+                        VALE_CALC=12.0,
+                        VALE_REFE=12.0,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='SIZZ',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=CCH3,
+                        VALE_CALC=9.0,
+                        VALE_REFE=9.0,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='SIXX',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=CCH4,
+                        VALE_CALC=18.0,
+                        VALE_REFE=18.0,),
+                     ),
+          )
+
+# D : CHAM_ELEM_VARI_R (ELNO):
+# ---------------------------------------
+
+DCH1=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='CART_NEUT_R', MAILLAGE=MA,
+    AFFE=_F( MAILLE = ('M1','M2','M3',), NOM_CMP = ('X1','X3',), VALE = (1.,3.,))
+    )
+
+DCH2=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='CART_NEUT_R', MAILLAGE=MA,
+    AFFE=_F( MAILLE = ('M3','M1','M2',), NOM_CMP = ('X3','X2',), VALE = (2.,4.,))
+    )
+
+DCH3=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='ELNO_VARI_R',
+     MODELE=MO, PROL_ZERO='OUI',ASSE=(
+     _F( TOUT = 'OUI',  CHAM_GD = DCH1,
+       NOM_CMP = ('X1','X3',), NOM_CMP_RESU = ('V1','V3',)),
+     _F( MAILLE = ('M2',), CHAM_GD = DCH2, COEF_R = 2.,
+       NOM_CMP = ('X2','X3',), NOM_CMP_RESU = ('V2','V3',)),
+     _F( MAILLE = ('M3',), CHAM_GD = DCH2, CUMUL = 'OUI', COEF_R = 3.,
+       NOM_CMP = ('X2','X3',), NOM_CMP_RESU = ('V2','V3',)))
+     )
+
+DCH4=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='ELNO_VARI_R',
+     MODELE=MO, PROL_ZERO='OUI',
+     ASSE=_F( TOUT = 'OUI', CHAM_GD = DCH3, COEF_R = 2.,
+     NOM_CMP = ('V3',),  NOM_CMP_RESU = ('V1',))
+     )
+
+TEST_RESU(CHAM_ELEM=(_F(NOEUD='A2',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='V1',
+                        PRECISION=1.E-12,
+                        MAILLE='M2',
+                        CHAM_GD=DCH3,
+                        VALE_CALC=1.0,
+                        VALE_REFE=1.0,),
+                     _F(NOEUD='A3',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='V1',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=DCH3,
+                        VALE_CALC=1.0,
+                        VALE_REFE=1.0,),
+                     _F(NOEUD='A3',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='V2',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=DCH3,
+                        VALE_CALC=12.0,
+                        VALE_REFE=12.0,),
+                     _F(NOEUD='A3',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='V3',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=DCH3,
+                        VALE_CALC=9.0,
+                        VALE_REFE=9.0,),
+                     _F(NOEUD='A3',
+                        REFERENCE='ANALYTIQUE',
+                        NOM_CMP='V1',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=DCH4,
+                        VALE_CALC=18.0,
+                        VALE_REFE=18.0,),
+                     ),
+          )
+
+# E : CHAM_ELEM_VARI_R (ELGA):
+# ---------------------------------------
+
+ECH1=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='CART_NEUT_R', MAILLAGE=MA,
+    AFFE=_F( MAILLE = ('M1','M2','M3',), NOM_CMP = ('X1','X3',), VALE = (1.,3.,))
+    )
+
+ECH2=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='CART_NEUT_R', MAILLAGE=MA,
+    AFFE=_F( MAILLE = ('M3','M1','M2',), NOM_CMP = ('X3','X2',), VALE = (2.,4.,))
+    )
+
+ECH3=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='ELGA_VARI_R',
+     MODELE=MO, PROL_ZERO='OUI',ASSE=(
+     _F( TOUT = 'OUI',  CHAM_GD = ECH1,
+       NOM_CMP = ('X1','X3',), NOM_CMP_RESU = ('V1','V3',)),
+     _F( MAILLE = ('M2',), CHAM_GD = ECH2, COEF_R = 2.,
+       NOM_CMP = ('X2','X3',), NOM_CMP_RESU = ('V2','V3',)),
+     _F( MAILLE = ('M3',), CHAM_GD = ECH2, CUMUL = 'OUI', COEF_R = 3.,
+       NOM_CMP = ('X2','X3',), NOM_CMP_RESU = ('V2','V3',)))
+     )
+
+ECH4=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELGA_VARI_R',
+     MODELE=MO, PROL_ZERO='OUI',
+     ASSE=_F( TOUT = 'OUI', CHAM_GD = ECH3, COEF_R = 2.,
+     NOM_CMP = ('V3',),  NOM_CMP_RESU = ('V1',))
+     )
+
+TEST_RESU(CHAM_ELEM=(_F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='V1',
+                        PRECISION=1.E-12,
+                        MAILLE='M2',
+                        CHAM_GD=ECH3,
+                        VALE_CALC=1.0,
+                        VALE_REFE=1.0,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='V1',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=ECH3,
+                        VALE_CALC=1.0,
+                        VALE_REFE=1.0,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='V2',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=ECH3,
+                        VALE_CALC=12.0,
+                        VALE_REFE=12.0,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='V3',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=ECH3,
+                        VALE_CALC=9.0,
+                        VALE_REFE=9.0,),
+                     _F(REFERENCE='ANALYTIQUE',
+                        POINT=1,
+                        NOM_CMP='V1',
+                        PRECISION=1.E-12,
+                        MAILLE='M3',
+                        CHAM_GD=ECH4,
+                        VALE_CALC=18.0,
+                        VALE_REFE=18.0,),
+                     ),
+          )
+
+#================================================================
+#  VALIDATION :CREA_CHAMP/EXTR/TABLE
+#================================================================
+
+# F : CHAM_NO_DEPL_R (NOEU)
+# -------------------------
+
+T1=LIRE_TABLE(UNITE=39,FORMAT='ASTER',NUME_TABLE=1,SEPARATEUR=' ');
+IMPR_TABLE(TABLE=T1)
+IMPR_CO(CONCEPT=_F(NOM=T1))
+
+CH1=CREA_CHAMP(OPERATION='EXTR', INFO=2,
+              TYPE_CHAM='NOEU_DEPL_R',TABLE=T1,MAILLAGE=MA)
+
+TEST_RESU(CHAM_NO=_F(NOEUD='A2',
+                     REFERENCE='ANALYTIQUE',
+                     NOM_CMP='DX',
+                     PRECISION=1.E-12,
+                     CHAM_GD=CH1,
+                     VALE_CALC=-2.141430000000E-08,
+                     VALE_REFE=-2.1414299999999999E-08,),
+          )
+
+# G : CHAM_ELEM_SIEF_R (ELNO)
+# ---------------------------
+
+T2=LIRE_TABLE(UNITE=39,FORMAT='ASTER',NUME_TABLE=2,SEPARATEUR=' ');
+
+CH2=CREA_CHAMP(OPERATION='EXTR', INFO=2,
+              TYPE_CHAM='ELNO_SIEF_R',TABLE=T2,
+              MODELE=MO,PROL_ZERO='OUI',OPTION='SIGM_ELNO')
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=2,
+                       NOM_CMP='SIXX',
+                       PRECISION=1.E-06,
+                       MAILLE='M1',
+                       CHAM_GD=CH2,
+                       VALE_CALC=777.0,
+                       VALE_REFE=777.0,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(CRITERE='ABSOLU',
+                       REFERENCE='ANALYTIQUE',
+                       POINT=2,
+                       NOM_CMP='SIXX',
+                       PRECISION=1.E-3,
+                       MAILLE='M4',
+                       CHAM_GD=CH2,
+                       VALE_CALC= 0.0+00,
+                       VALE_REFE=0.0,),
+          )
+
+# H : CHAM_ELEM_SIEF_R (ELGA)
+# ---------------------------
+
+T3=LIRE_TABLE(UNITE=39,FORMAT='ASTER',NUME_TABLE=3,SEPARATEUR=' ');
+
+CH3=CREA_CHAMP(OPERATION='EXTR', INFO=2,
+              TYPE_CHAM='ELGA_SIEF_R',TABLE=T3,
+              MODELE=MO, PROL_ZERO='OUI', OPTION='SIEF_ELGA')
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=1,
+                       NOM_CMP='SIYY',
+                       PRECISION=1.E-06,
+                       SOUS_POINT=2,
+                       MAILLE='M1',
+                       CHAM_GD=CH3,
+                       VALE_CALC=30.000000000,
+                       VALE_REFE=30.0,),
+          )
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       POINT=1,
+                       NOM_CMP='SIXX',
+                       PRECISION=1.E-06,
+                       SOUS_POINT=4,
+                       MAILLE='M4',
+                       CHAM_GD=CH3,
+                       VALE_CALC=399.0,
+                       VALE_REFE=399.0,),
+          )
+
+# I : CHAM_ELEM_ENER_R (ELEM)
+# ---------------------------
+
+T4=LIRE_TABLE(UNITE=39,FORMAT='ASTER',NUME_TABLE=4,SEPARATEUR=' ');
+
+CH4=CREA_CHAMP(OPERATION='EXTR',INFO=2,
+              TYPE_CHAM='ELEM_ENER_R',TABLE=T4,
+              MODELE=MO, PROL_ZERO='OUI', OPTION='EPOT_ELEM')
+
+TEST_RESU(CHAM_ELEM=_F(REFERENCE='ANALYTIQUE',
+                       TYPE_TEST='MIN',
+                       CHAM_GD=CH4,
+                       VALE_CALC=1125.0,
+                       VALE_REFE=1125.0,),
+          )
+
+# J : CART_ENER_R
+# ---------------------------
+
+CH5=CREA_CHAMP(OPERATION='EXTR',INFO=2,
+              TYPE_CHAM='CART_ENER_R',TABLE=T4, MAILLAGE=MA, )
+# remarque : on ne teste pas CH5 car TEST_RESU ne sait pas traiter les cartes.
+
+
+# ###################################################
+# VALIDATION DE CREA_CHAMP/EXTR POUR UN EVOL_VARC
+
+# Definition des champs d'irradiation
+IRRA_0=CREA_CHAMP(
+   TYPE_CHAM='NOEU_IRRA_R', OPERATION='AFFE', MAILLAGE=MA,
+   AFFE=_F(TOUT='OUI', NOM_CMP='IRRA', VALE=5.0,),
+)
+IRRA_1=CREA_CHAMP(
+   TYPE_CHAM='NOEU_IRRA_R', OPERATION='AFFE', MAILLAGE=MA,
+   AFFE=(
+      _F(TOUT='OUI',   NOM_CMP='IRRA', VALE=15.0,),
+   ),
+)
+# Definition de EVOL_VARC
+IRRAD=CREA_RESU(
+   OPERATION='AFFE', TYPE_RESU='EVOL_VARC', NOM_CHAM='IRRA',
+   AFFE=(
+      _F(CHAM_GD=IRRA_0, INST=   0.0,),
+      _F(CHAM_GD=IRRA_1, INST=  10.0,),
+   ),
+)
+
+IRRA_2=CREA_CHAMP(
+   TYPE_CHAM='NOEU_IRRA_R', OPERATION='EXTR',
+   RESULTAT=IRRAD, NOM_CHAM='IRRA',
+   INST= 5.0, INTERPOL='LIN',
+)
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='A1',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='IRRA',
+                      CHAM_GD=IRRA_2,
+                      VALE_CALC=10.0,
+                      VALE_REFE=10.0,),
+                   _F(NOEUD='A2',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='IRRA',
+                      CHAM_GD=IRRA_2,
+                      VALE_CALC=10.0,
+                      VALE_REFE=10.0,),
+                   _F(NOEUD='B1',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='IRRA',
+                      CHAM_GD=IRRA_2,
+                      VALE_CALC=10.0,
+                      VALE_REFE=10.0,),
+                   _F(NOEUD='B2',
+                      REFERENCE='ANALYTIQUE',
+                      NOM_CMP='IRRA',
+                      CHAM_GD=IRRA_2,
+                      VALE_CALC=10.0,
+                      VALE_REFE=10.0,),
+                   ),
+          )
+
+FIN()
+#
+#

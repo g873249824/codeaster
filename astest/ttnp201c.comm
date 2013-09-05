@@ -1,0 +1,194 @@
+# TITRE TRANSFERT THERMIQUE AVEC CONDUCTIVITE DEPENDANTE DU TEMPS MODELE AXIS
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+DEBUT(CODE=_F(NOM='TTNP201C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MAILTH=LIRE_MAILLAGE(FORMAT='MED',);
+
+MODELETH=AFFE_MODELE(MAILLAGE=MAILTH,
+                     AFFE=_F(TOUT='OUI',
+                             PHENOMENE='THERMIQUE',
+                             MODELISATION='AXIS_DIAG',),);
+#DEFINITION DES INSTANTS DE CHANGEMENT DE CONDUCTIVITE
+TFIN = 200;
+
+INTER = 55;
+
+TMOY = 50;
+
+#DEFINITION DES PARAMETRES MATERIAUX
+RCP=DEFI_CONSTANTE(VALE=1.0,);
+LAMBD=DEFI_FONCTION(NOM_PARA='INST',VALE=(0.,0.001,
+                          TMOY,0.001,
+                          INTER,0.005,
+                          TFIN,0.005,
+                          ),PROL_DROITE='CONSTANT',PROL_GAUCHE='CONSTANT',);
+
+BETON=DEFI_MATERIAU(THER_FO=_F(LAMBDA=LAMBD,
+                               RHO_CP=RCP,),);
+
+# TEMPERATURE INITIALE
+T_0 = 100;
+
+# AFFECTATION DES MATERIAUX SUR LES MAILLAGE
+#
+
+CHMATTH=AFFE_MATERIAU(MAILLAGE=MAILTH,
+                      AFFE=_F(TOUT='OUI',
+                              MATER=BETON,),);
+
+# LISTE D'INSTANTS
+
+LINST_SE=DEFI_LIST_REEL(DEBUT=0.0,INTERVALLE=(_F(JUSQU_A=40,PAS=0.1,),
+_F(JUSQU_A=80,PAS=0.05,),
+_F(JUSQU_A=TFIN,PAS=0.1,),),);
+
+LINST_AR=DEFI_LIST_REEL(DEBUT=0.0,
+                        INTERVALLE=_F(JUSQU_A=TFIN,
+                                      PAS=1.0,),);
+#CHARGEMENT THERMIQUE FLUX ET TEMPERATURE IMPOSEE
+CHASEC2=AFFE_CHAR_THER(MODELE=MODELETH,
+FLUX_REP=_F(GROUP_MA='SI',FLUN=-1.0,),
+TEMP_IMPO=_F(GROUP_MA='SE',TEMP=T_0,),);
+
+#RESOLUTION
+RESUTHER=THER_LINEAIRE(MODELE=MODELETH,
+CHAM_MATER=CHMATTH,
+EXCIT=_F(CHARGE=CHASEC2,),
+INCREMENT=_F(LIST_INST=LINST_SE,),
+ARCHIVAGE=_F(LIST_INST=LINST_AR,),
+ETAT_INIT=_F(VALE=T_0,),);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=50,
+                   GROUP_NO='NI',
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=-149.040183992,
+                   VALE_REFE=-151.51943700000001,
+                   PRECISION=0.02,),
+                _F(NUME_ORDRE=51,
+                   GROUP_NO='NI',
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=-145.077365255,
+                   VALE_REFE=-143.50504699999999,
+                   PRECISION=0.02,),
+                _F(NUME_ORDRE=50,
+                   GROUP_NO='NC',
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=99.817081695,
+                   VALE_REFE=99.853043999999997,
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=72,
+                   GROUP_NO='NI',
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=-55.078769014,
+                   VALE_REFE=-55.165585,
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=72,
+                   GROUP_NO='NC',
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=88.284696368,
+                   VALE_REFE=88.240905999999995,
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=200,
+                   GROUP_NO='NI',
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=-126.868959683,
+                   VALE_REFE=-127.175546,
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=200,
+                   GROUP_NO='NC',
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=22.637528148,
+                   VALE_REFE=22.430517999999999,
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=50,
+                   GROUP_NO='NI',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=-149.04018399162001,
+                   ),
+                _F(NUME_ORDRE=51,
+                   GROUP_NO='NI',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=-145.07736525531999,
+                   ),
+                _F(NUME_ORDRE=50,
+                   GROUP_NO='NC',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=99.817081694517,
+                   ),
+                _F(NUME_ORDRE=72,
+                   GROUP_NO='NI',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=-55.078769014477999,
+                   ),
+                _F(NUME_ORDRE=72,
+                   GROUP_NO='NC',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=88.284696368138995,
+                   ),
+                _F(NUME_ORDRE=200,
+                   GROUP_NO='NI',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=-126.86895968315,
+                   ),
+                _F(NUME_ORDRE=200,
+                   GROUP_NO='NC',
+                   RESULTAT=RESUTHER,
+                   NOM_CHAM='TEMP',
+                   NOM_CMP='TEMP',
+                   VALE_CALC=22.637528147564002,
+                   ),
+                ),
+          )
+
+FIN();

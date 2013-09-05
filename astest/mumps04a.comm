@@ -1,0 +1,579 @@
+# TITRE VALIDATION DE MUMPS AVEC UNE MATRICE NON-SYMETRIQUE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+########################################################################"
+# CE TEST VALIDE LE SOLVEUR MUMPS SUR UN PROBLEME NON SYMETRIQUE :
+# ON RESOUD UN PROBLEME NON SYMETRIQUE AVEC 2 SOLVEURS DIFFERENTS
+# (MULT_FRONT ET MUMPS CENTRALISE ET DISTRIBUE MAILLE/SD).
+# POUR VALIDER LEUR INTEROPERABILITE, ON LES PANACHE ENTRE PAS DE TEMPS.
+# ON VERIFIE QUE LES 4 SOLUTIONS SONT LES MEMES.
+# ON MODULE LE RENUMEROTEUR POUR LE PREMIER CALCUL MUMPS (METIS/SCOTCH).
+#
+# POUR OBTENIR UN PROBLEME NON SYMETRIQUE, ON UTILISE LA MODELISATION
+# D_PLAN_GRAD_EPSI.
+# LE PROBLEME MECANIQUE RESOLU EST CELUI DU TEST SSNV131B
+#
+# WARNING: EN MODE PARALLELE, PAS PLUS DE 2 PROCS CAR LE DERNIER
+#          CALCUL EST BASE SUR UNE REPARTITION EN 2 SOUS-DOMAINES.
+#          (LE MODELE NE COMPORTE QUE DEUX MAILLES VOLUMIQUES !)
+# WARNING: MUMPS DISTRIBUE IGNORE LES COMPOSANTES NULLES DE LA MATRICE.
+#          POUR CE TEST IL FAUT PREVOIR UNE TAILLE D'ESPACE MEMOIRE POUR
+#          LE PIVOTAGE PLUS GRANDE QU'EN CENTRALISE (MOT-CLE PCENT_PIVOT).
+# PARALLELE: VALEUR CONSEILLEE 2 PROCS
+########################################################################""
+
+
+
+DEBUT(CODE=_F( NOM = 'MUMPS04A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE( )
+
+ACIER=DEFI_MATERIAU( ELAS=_F( E = 200000., NU = 0.),
+                ECRO_LINE=_F( SY = 2000., D_SIGM_EPSI = -50000.),
+                NON_LOCAL=_F( LONG_CARA = 10.) )
+
+MAT=AFFE_MATERIAU(  MAILLAGE=MA, AFFE=_F( TOUT = 'OUI', MATER = ACIER) )
+
+
+MO=AFFE_MODELE( MAILLAGE=MA, AFFE=_F(
+                TOUT = 'OUI', PHENOMENE = 'MECANIQUE', MODELISATION = 'D_PLAN_GRAD_EPSI'),
+                PARTITION=_F(PARALLELISME='MAIL_DISPERSE'))
+
+
+RAMPE=DEFI_FONCTION( NOM_PARA='INST', VALE=(0., 0., 5., 5.), PROL_DROITE='EXCLU', PROL_GAUCHE='EXCLU', VERIF='CROISSANT')
+
+LIAISON=AFFE_CHAR_MECA( MODELE=MO, DDL_IMPO=_F( GROUP_NO = 'BAS', DX = 0., DY = 0.) )
+TRACTION=AFFE_CHAR_MECA(MODELE=MO, DDL_IMPO=_F( GROUP_NO = 'HAUT', DY = 0.01))
+
+INSTANTS=DEFI_LIST_REEL( DEBUT=0., INTERVALLE=_F(JUSQU_A = 5., NOMBRE = 5) )
+
+
+#---------------------------------------------------------------------------------------------
+# CALCUL 1 : SOLVEUR MULT_FRONT
+#-------------------------------
+EVOL1=STAT_NON_LINE(    SOLVEUR=_F(METHODE='MULT_FRONT'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 2),
+                MODELE=MO,EXCIT=(_F(CHARGE = LIAISON),
+                _F(CHARGE = TRACTION,FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_INCR = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+EVOL1=STAT_NON_LINE( reuse=EVOL1, SOLVEUR=_F(METHODE='MULT_FRONT'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 3),
+                         ETAT_INIT=_F(
+                EVOL_NOLI = EVOL1,
+                NUME_ORDRE = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+TEST_RESU(RESU=(_F(INST=3.0,
+                   POINT=1,
+                   RESULTAT=EVOL1,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.83333333333334003,
+                   MAILLE='M1',),
+                _F(INST=3.0,
+                   POINT=1,
+                   RESULTAT=EVOL1,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=999.99999999993997,
+                   MAILLE='M1',),
+                ),
+          )
+
+#---------------------------------------------------------------------------------------------
+# CALCUL 2.1 : SOLVEUR MUMPS CENTRALISE + METIS
+#----------------------------------------------
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='CENTRALISE'))
+EVOL21=STAT_NON_LINE(    SOLVEUR=_F(METHODE='MUMPS',RENUM='METIS'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_INCR = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='CENTRALISE'))
+EVOL21=STAT_NON_LINE( reuse=EVOL21, SOLVEUR=_F(METHODE='MUMPS',RENUM='METIS'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 3),
+                         ETAT_INIT=_F(
+                EVOL_NOLI = EVOL21,
+                NUME_ORDRE = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+TEST_RESU(RESU=(_F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL21,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.833333333,
+                   VALE_REFE=0.83333333333334003,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                _F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL21,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=1000.000000000,
+                   VALE_REFE=999.99999999993997,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                ),
+          )
+
+#---------------------------------------------------------------------------------------------
+# CALCUL 2.2 : SOLVEUR MUMPS CENTRALISE + SCOTCH
+#-----------------------------------------------
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='CENTRALISE'))
+EVOL22=STAT_NON_LINE(    SOLVEUR=_F(METHODE='MUMPS',RENUM='SCOTCH'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_INCR = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='CENTRALISE'))
+EVOL22=STAT_NON_LINE( reuse=EVOL22, SOLVEUR=_F(METHODE='MUMPS',RENUM='SCOTCH'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 3),
+                         ETAT_INIT=_F(
+                EVOL_NOLI = EVOL22,
+                NUME_ORDRE = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+TEST_RESU(RESU=(_F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL22,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.833333333,
+                   VALE_REFE=0.83333333333334003,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                _F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL22,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC= 1.00000000E+03,
+                   VALE_REFE=999.99999999993997,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                ),
+          )
+
+#---------------------------------------------------------------------------------------------
+# CALCUL 2.3 : SOLVEUR MUMPS CENTRALISE + MIXER_PRECISION + FILTRAGE
+#-------------------------------
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='CENTRALISE'))
+EVOL23=STAT_NON_LINE(    SOLVEUR=_F(METHODE='MUMPS',MIXER_PRECISION='OUI'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_INCR = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='CENTRALISE'))
+EVOL23=STAT_NON_LINE( reuse=EVOL23, SOLVEUR=_F(METHODE='MUMPS',FILTRAGE_MATRICE=1.E-8),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 3),
+                         ETAT_INIT=_F(
+                EVOL_NOLI = EVOL23,
+                NUME_ORDRE = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+TEST_RESU(RESU=(_F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL23,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.83333333331410,
+                   VALE_REFE=0.83333333333334003,
+                   TOLE_MACHINE=1.E-5,              # TODO TOLE_MACHINE
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                _F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL23,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=999.999994355,
+                   VALE_REFE=1000.0000108474,
+                   TOLE_MACHINE=2.E-5,              # TODO TOLE_MACHINE
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                ),
+          )
+
+#---------------------------------------------------------------------------------------------
+# CALCUL 3 : SOLVEUR MUMPS DISTRIBUE PAR MAILLES
+#-------------------------------
+EVOL3=STAT_NON_LINE(    SOLVEUR=_F(METHODE='MUMPS',
+   ),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 2),
+                MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_INCR = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='MAIL_CONTIGU'))
+EVOL3=STAT_NON_LINE( reuse=EVOL3, SOLVEUR=_F(METHODE='MUMPS'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 3),
+                         ETAT_INIT=_F(
+                EVOL_NOLI = EVOL3,
+                NUME_ORDRE = 2),
+                            MODELE=MO,EXCIT=(
+                            _F(CHARGE = LIAISON), _F(CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+TEST_RESU(RESU=(_F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL3,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.833333333,
+                   VALE_REFE=0.83333333333334003,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                _F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL3,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=1000.000000000,
+                   VALE_REFE=999.99999999993997,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                ),
+          )
+
+#---------------------------------------------------------------------------------------------
+# CALCUL 4 : PANACHAGE SOLVEUR MULTFRONTAL/MUMPS DISTRIBUE PAR MAILLE
+#-------------------------------
+
+EVOL4=STAT_NON_LINE(    SOLVEUR=_F(METHODE='MULT_FRONT'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 2),
+                MODELE=MO,EXCIT=(
+                 _F(CHARGE = LIAISON),
+                 _F(CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_INCR = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+EVOL4=STAT_NON_LINE( reuse=EVOL4, SOLVEUR=_F(METHODE='MUMPS',
+   ),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 3),
+                         ETAT_INIT=_F(
+                EVOL_NOLI = EVOL4,
+                NUME_ORDRE = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+TEST_RESU(RESU=(_F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL4,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.833333333,
+                   VALE_REFE=0.83333333333334003,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                _F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL4,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC= 1.00000000E+03,
+                   VALE_REFE=999.99999999993997,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                ),
+          )
+
+#---------------------------------------------------------------------------------------------
+# CALCUL 5 : PANACHAGE SOLVEUR MUMPS CENTRALISE/DISTRIBUE PAR MAILLE
+#-------------------------------
+
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='CENTRALISE'))
+EVOL5=STAT_NON_LINE(    SOLVEUR=_F(METHODE='MUMPS'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 2),
+                MODELE=MO,EXCIT=(
+                 _F(CHARGE = LIAISON),
+                 _F(CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_INCR = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+MODI_MODELE(reuse=MO, MODELE=MO, PARTITION=_F(PARALLELISME='MAIL_CONTIGU'))
+EVOL5=STAT_NON_LINE( reuse=EVOL5, SOLVEUR=_F(METHODE='MUMPS'),
+                        CHAM_MATER=MAT,
+                         INCREMENT=_F(
+                LIST_INST = INSTANTS,
+                NUME_INST_FIN = 3),
+                         ETAT_INIT=_F(
+                EVOL_NOLI = EVOL5,
+                NUME_ORDRE = 2),
+                            MODELE=MO,EXCIT=(
+                             _F(
+                CHARGE = LIAISON), _F(
+                CHARGE = TRACTION,
+                FONC_MULT = RAMPE)),
+                         COMP_INCR=_F(
+                RELATION = 'ENDO_FRAGILE'),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE',
+                PREDICTION = 'TANGENTE',
+                REAC_ITER = 1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-4,
+                ITER_GLOB_MAXI = 2,
+                ARRET = 'OUI'),
+              )
+
+TEST_RESU(RESU=(_F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL5,
+                   NOM_CHAM='VARI_ELGA',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.833333333,
+                   VALE_REFE=0.83333333333334003,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                _F(INST=3.0,
+                   REFERENCE='AUTRE_ASTER',
+                   POINT=1,
+                   RESULTAT=EVOL5,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=1000.000000000,
+                   VALE_REFE=999.99999999993997,
+                   PRECISION=1.E-3,
+                   MAILLE='M1',),
+                ),
+          )
+
+FIN()

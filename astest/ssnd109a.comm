@@ -1,0 +1,272 @@
+# TITRE VALIDATION MONOCRISTAL CHARGEMENT CYCLIQUE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# person_in_charge: jean-michel.proix at edf.fr
+
+DEBUT(CODE=_F(NOM='SSND109A',
+NIV_PUB_WEB='INTERNET',),DEBUG=_F(SDVERI='OUI'))
+TFIN = 2.5;
+
+TDEB = 0.0;
+
+NPAS = 1000;
+
+
+LINST=DEFI_LIST_REEL(DEBUT=TDEB,
+                     INTERVALLE=_F(JUSQU_A=TFIN,
+                                   NOMBRE=NPAS,),);
+
+LARCH=DEFI_LIST_REEL(DEBUT=TDEB,
+                     INTERVALLE=_F(JUSQU_A=TFIN,
+                                   NOMBRE=100,),);
+
+COEF=DEFI_FONCTION(NOM_PARA='INST',VALE=(0.0,0.0,
+                         0.5,0.002,
+                         1.5,-0.002,
+                         2.5,0.002,
+                         ),);
+
+ACIER=DEFI_MATERIAU(ELAS=_F(E=190000.0,
+                            NU=0.3,),
+                    MONO_VISC1=_F(N=10.,
+                                  K=10.,
+                                  C=100000.,),
+                    MONO_ISOT1=_F(R_0=40.,
+                                  Q=0.,
+                                  B=5.,
+                                  H=0.,),
+                    MONO_CINE1=_F(D=4150.,),);
+
+CMP_MONO=DEFI_COMPOR(MONOCRISTAL=_F(MATER=ACIER,
+                                    ECOULEMENT='MONO_VISC1',
+                                    ECRO_ISOT='MONO_ISOT1',
+                                    ECRO_CINE='MONO_CINE1',
+                                    ELAS='ELAS',
+                                    FAMI_SYST_GLIS='OCTAEDRIQUE',),);
+
+
+CMP_POLY=DEFI_COMPOR(POLYCRISTAL=(
+                        _F(MONOCRISTAL=CMP_MONO,FRAC_VOL=1,ANGL_EULER=(0.,0.,0.),),
+                        ),
+                    LOCALISATION='BETA',DL=0.,DA=0.,
+                    );
+
+DEFLIST1=DEFI_LIST_INST(DEFI_LIST=_F(LIST_INST=LINST,),
+                        ECHEC=_F(SUBD_PAS=10,
+                                 SUBD_NIVEAU=10,),
+                        );
+
+IMPL1=SIMU_POINT_MAT(COMP_INCR=_F(RELATION='MONOCRISTAL',
+                                  COMPOR=CMP_MONO,
+                                  #ALGO_INTE='NEWTON_PERT',
+                                  ),
+                     MATER=ACIER,
+                   #  SUPPORT='ELEMENT',
+                    # INCREMENT=_F(LIST_INST=LINST,),
+                     INCREMENT=_F(LIST_INST=DEFLIST1,),
+                     NEWTON=_F(MATRICE='TANGENTE',
+                               REAC_ITER=1,),
+                     ARCHIVAGE=_F(LIST_INST=LARCH,),
+                     EPSI_IMPOSE=_F(EPXX=COEF,),
+                     INFO=1);
+
+REPONSE1=CALC_TABLE(TABLE=IMPL1,
+                    ACTION=_F(OPERATION='EXTR',
+                              NOM_PARA=('INST','EPXX','SIXX',),),);
+
+
+EPS1=RECU_FONCTION(TABLE=REPONSE1,
+                   PARA_X='INST',
+                   PARA_Y='EPXX',);
+
+SIG1=RECU_FONCTION(TABLE=REPONSE1,
+                   PARA_X='INST',
+                   PARA_Y='SIXX',);
+
+EXPL2=SIMU_POINT_MAT(COMP_INCR=_F(RELATION='MONOCRISTAL',
+                                  COMPOR=CMP_MONO,
+                                  ALGO_INTE='RUNGE_KUTTA',),
+                     MATER=ACIER,
+                     INCREMENT=_F(LIST_INST=LINST,),
+                     NEWTON=_F(MATRICE='TANGENTE',
+                               REAC_ITER=1,),
+                     ARCHIVAGE=_F(LIST_INST=LARCH,),
+                     EPSI_IMPOSE=_F(EPXX=COEF,),
+                     INFO=1);
+
+REPONSE2=CALC_TABLE(TABLE=EXPL2,
+                    ACTION=_F(OPERATION='EXTR',
+                              NOM_PARA=('INST','EPXX','SIXX',),),);
+
+
+EPS2=RECU_FONCTION(TABLE=REPONSE2,
+                   PARA_X='INST',
+                   PARA_Y='EPXX',);
+
+SIG2=RECU_FONCTION(TABLE=REPONSE2,
+                   PARA_X='INST',
+                   PARA_Y='SIXX',);
+
+EXPL3=SIMU_POINT_MAT(COMP_INCR=_F(RELATION='POLYCRISTAL',
+                                  COMPOR=CMP_POLY,
+                                  ALGO_INTE='RUNGE_KUTTA',),
+                     MATER=ACIER,
+                     INCREMENT=_F(LIST_INST=LINST,),
+                     NEWTON=_F(MATRICE='TANGENTE',
+                               REAC_ITER=1,),
+                     ARCHIVAGE=_F(LIST_INST=LARCH,),
+                     EPSI_IMPOSE=_F(EPXX=COEF,),);
+
+REPONSE3=CALC_TABLE(TABLE=EXPL3,
+                    ACTION=_F(OPERATION='EXTR',
+                              NOM_PARA=('INST','EPXX','SIXX',),),);
+
+
+EPS3=RECU_FONCTION(TABLE=REPONSE3,
+                   PARA_X='INST',
+                   PARA_Y='EPXX',);
+
+SIG3=RECU_FONCTION(TABLE=REPONSE3,
+                   PARA_X='INST',
+                   PARA_Y='SIXX',);
+
+EPSZ=LIRE_FONCTION(INDIC_PARA=(1,1,),
+                   INDIC_RESU=(1,2,),
+                   UNITE=34,
+                   NOM_PARA='INST',
+                   PROL_DROITE='LINEAIRE',);
+
+SIGZ=LIRE_FONCTION(INDIC_PARA=(1,1,),
+                   INDIC_RESU=(1,3,),
+                   UNITE=34,
+                   NOM_PARA='INST',
+                   PROL_DROITE='LINEAIRE',);
+
+IMPR_FONCTION(FORMAT='TABLEAU',
+              COURBE=(_F(FONCTION=EPSZ,),
+                      _F(FONCTION=SIGZ,),
+                      _F(FONCTION=SIG1,),
+                      _F(FONCTION=SIG2,),
+                      _F(FONCTION=SIG3,),),
+              UNITE=8,);
+
+INST = 0.5;
+
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=0.002,
+                        VALE_REFE=2.E-3,
+                        VALE_PARA=0.5,
+                        REFERENCE='ANALYTIQUE',
+                        NOM_PARA='INST',
+                        FONCTION=EPS2,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=156.114553295,
+                        VALE_REFE=156.11500000000001,
+                        VALE_PARA=0.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG1,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=156.210724634,
+                        VALE_REFE=156.11500000000001,
+                        VALE_PARA=0.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG2,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=156.210724634,
+                        VALE_REFE=156.11500000000001,
+                        VALE_PARA=0.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG3,),
+              )
+
+INST = 1.5;
+
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=-0.002,
+                        VALE_REFE=-2.E-3,
+                        VALE_PARA=1.5,
+                        REFERENCE='ANALYTIQUE',
+                        NOM_PARA='INST',
+                        FONCTION=EPS2,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=-163.886054826,
+                        VALE_REFE=-163.886,
+                        VALE_PARA=1.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG1,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=-163.973873214,
+                        VALE_REFE=-163.886,
+                        VALE_PARA=1.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG2,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=-163.973873214,
+                        VALE_REFE=-163.886,
+                        VALE_PARA=1.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG3,),
+              )
+
+INST = 2.5;
+
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=0.002,
+                        VALE_REFE=2.E-3,
+                        VALE_PARA=2.5,
+                        REFERENCE='ANALYTIQUE',
+                        NOM_PARA='INST',
+                        FONCTION=EPS2,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=163.181774631,
+                        VALE_REFE=163.182,
+                        VALE_PARA=2.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG1,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=163.280596719,
+                        VALE_REFE=163.182,
+                        VALE_PARA=2.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG2,),
+              )
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=163.280596719,
+                        VALE_REFE=163.182,
+                        VALE_PARA=2.5,
+                        REFERENCE='SOURCE_EXTERNE',
+                        NOM_PARA='INST',
+                        FONCTION=SIG3,),
+              )
+
+FIN();

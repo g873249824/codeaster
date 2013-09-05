@@ -1,0 +1,183 @@
+# TITRE CHOC THERMIQUE SUR UN MUR INFINI QUAD8
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#CAS_TEST__: TTLL01A
+# CAS TEST TTLL01A
+
+DEBUT(CODE=_F(NOM='TTLL01A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#
+#  CAS 2D AVEC CHOC SOUS FORME DE RAMPE :
+#         PAS DE DISCONTINUITE
+#
+
+
+TIMPVAR=DEFI_FONCTION(
+       NOM_RESU='TEMP',  NOM_PARA='INST',
+       VALE=(0.0E0,    0.0E0,
+            1.0E-3,  100.0E0,
+            100.,    100.0E0, )
+      )
+
+ACIER=DEFI_MATERIAU( THER=_F(  LAMBDA = 1.0, RHO_CP = 1.0))
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED', )
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MAIL,
+                AFFE=_F(  TOUT = 'OUI', MATER = ACIER) )
+
+MOTH=AFFE_MODELE(  MAILLAGE=MAIL,
+                      AFFE=_F( TOUT = 'OUI', MODELISATION = 'PLAN',
+                                      PHENOMENE = 'THERMIQUE'))
+
+CHTH=AFFE_CHAR_THER_F(MODELE=MOTH,
+          TEMP_IMPO=_F( GROUP_NO = 'GRNM14', TEMP = TIMPVAR)
+         )
+
+LR8=DEFI_LIST_REEL(        DEBUT=0.,INTERVALLE=(
+       _F(    JUSQU_A = 1.E-3, NOMBRE = 10),
+       _F(    JUSQU_A = 1.E-2, NOMBRE = 9),
+       _F(    JUSQU_A = 1.E-1, NOMBRE = 9),
+       _F(    JUSQU_A = 1.E0,  NOMBRE = 9),
+       _F(    JUSQU_A = 2.0,   NOMBRE = 10))
+                       )
+
+F=DEFI_CONSTANTE(    VALE=1. )
+
+TEMPE=THER_LINEAIRE(        MODELE=MOTH,
+           ETAT_INIT=_F( STATIONNAIRE = 'OUI'),
+          INCREMENT=_F( LIST_INST = LR8, INST_FIN = 2.E-2),
+             CHAM_MATER=CHMAT, EXCIT=_F( CHARGE = CHTH,  FONC_MULT = F)
+             )
+
+LIS=DEFI_LIST_REEL(  VALE=( 0.1,  0.2,  0.7,  2., )  )
+
+TEMPE=THER_LINEAIRE(reuse=TEMPE,        MODELE=MOTH,
+                              ETAT_INIT=_F(  EVOL_THER = TEMPE,
+                                          INST = 2.E-2),
+                              INCREMENT=_F(  LIST_INST = LR8),
+                              CHAM_MATER=CHMAT,
+                                  EXCIT=_F(  CHARGE = CHTH),
+                              ARCHIVAGE=_F(  LIST_INST = LIS)
+             )
+
+TEMP_1=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+NOM_CHAM='TEMP', RESULTAT=TEMPE,
+            INST=0.1 )
+
+TEMP_2=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+NOM_CHAM='TEMP', RESULTAT=TEMPE,
+            INST=0.2 )
+
+TEMP_3=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+NOM_CHAM='TEMP', RESULTAT=TEMPE,
+            INST=0.7 )
+
+TEMP_4=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_TEMP_R',
+NOM_CHAM='TEMP', RESULTAT=TEMPE,
+            INST=2.0 )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N9',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_1,
+                      VALE_CALC=65.294443647,
+                      VALE_REFE=65.48,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N9',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_2,
+                      VALE_CALC=75.814296681,
+                      VALE_REFE=75.58,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N9',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_3,
+                      VALE_CALC=92.866910042,
+                      VALE_REFE=93.01,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N9',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_4,
+                      VALE_CALC=99.700018023,
+                      VALE_REFE=99.72,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N33',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_1,
+                      VALE_CALC=8.035652463,
+                      VALE_REFE=8.09,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N33',
+                      NOM_CMP='TEMP',
+                      PRECISION=0.03,
+                      CHAM_GD=TEMP_2,
+                      VALE_CALC=25.789700844,
+                      VALE_REFE=26.37,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N33',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_3,
+                      VALE_CALC=78.047045803,
+                      VALE_REFE=78.47,
+                      REFERENCE='ANALYTIQUE',),
+                   _F(NOEUD='N33',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=TEMP_4,
+                      VALE_CALC=99.076750353,
+                      VALE_REFE=99.13,
+                      REFERENCE='ANALYTIQUE',),
+                   ),
+          )
+
+#--------------------------------------------------------------------------
+# TEST DE L'OPTION MASS_THER SOUS LA COMMANDE CALC_MATR_ELEM
+
+
+MASSTHER=CALC_MATR_ELEM( MODELE=MOTH,
+                       CHAM_MATER=CHMAT,
+                       OPTION='MASS_THER', )
+
+TEST_RESU(OBJET=_F(
+                   VALE_CALC=0.92222222222222,
+                   NOM='MASSTHER.ME001     .RESL',),
+          )
+
+
+#--------------------------------------------------------------------------
+# TEST (INFORMATIQUE SEULEMENT) DE L'OPTION MASS_THER SOUS LA COMMANDE ASSEMBLAGE
+
+ASSEMBLAGE( MODELE=MOTH,
+            CHARGE=CHTH,
+            CHAM_MATER=CHMAT,
+            NUME_DDL=CO("NUM"),
+            MATR_ASSE=(
+                       _F(MATRICE=CO("MTH_ASS"),
+                          OPTION='MASS_THER'),
+                       _F(MATRICE=CO("KTH_ASS"),
+                          OPTION='RIGI_THER'),
+                       )
+)
+
+
+FIN()

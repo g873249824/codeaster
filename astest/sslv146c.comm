@@ -1,0 +1,529 @@
+# TITRE CUBE PLEIN RENFORCE PAR DES ARMATURES SOUS CHARGEMENT TRIAXIAL QUAD8 GRILLE_MEMBRANE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSLV146C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#-----------------------------------------------------------------------
+# VALIDATION DES GRILLES QUADRATIQUE QUADRANGLE
+#-----------------------------------------------------------------------
+
+MAIL1=LIRE_MAILLAGE(   )
+
+MAILTOT=CREA_MAILLAGE(
+            MAILLAGE = MAIL1,
+            LINE_QUAD = _F(TOUT='OUI'))
+
+#
+# -----------------------------------------------------
+# DEFINITION DES MATERIAUX
+# -----------------------------------------------------
+#
+
+ACIER=DEFI_MATERIAU(
+            ELAS=_F(  E = 2.E11,   NU = 0.0,),
+                          )
+BETON=DEFI_MATERIAU(
+            ELAS=_F(  E = 2.E14,   NU = 0.0,),
+                          )
+
+#
+# -------------------------------------------------
+# AFFECTATION DES MATERIAUX
+# -------------------------------------------------
+#
+MATAF=AFFE_MATERIAU(    MAILLAGE=MAILTOT,
+                          AFFE=(
+                          _F(  GROUP_MA = ('GEOX','GEOY','GEOZ'),
+                                 MATER = ACIER,
+                               ),
+                          _F(  GROUP_MA = ('GEOB'),
+                                 MATER = BETON,
+                               )
+                               )
+                      )
+
+#
+# -------------------------------------------------
+# AFFECTATION DES MODELES
+# -------------------------------------------------
+#
+LEMOD=AFFE_MODELE(    MAILLAGE=MAILTOT,     VERIF='MAILLE',
+                        AFFE=(
+                              _F(  GROUP_MA = ('GEOX','GEOY','GEOZ'),
+                               PHENOMENE = 'MECANIQUE',
+                               MODELISATION = 'GRILLE_MEMBRANE',
+                             ),
+                              _F(  GROUP_MA = ('GEOB',),
+                               PHENOMENE = 'MECANIQUE',
+                               MODELISATION = '3D',
+                             )
+                          )
+                      )
+
+# -------------------------------------------------
+# AFFECTATION DES CARACTERISTIQUES
+# -------------------------------------------------
+#
+LACAR=AFFE_CARA_ELEM(    MODELE=LEMOD,
+                       GRILLE=(
+                               _F( GROUP_MA = 'GEOX',
+                                SECTION = .01,
+                                ANGL_REP=(30,0),),
+                               _F( GROUP_MA = 'GEOY',
+                                SECTION = .02,
+                                ANGL_REP=(0,40),),
+                               _F( GROUP_MA = 'GEOZ',
+                                SECTION = .03,
+                                ANGL_REP=(15,70),),
+                              )
+                        )
+
+# ----------------------------------------------
+# CHARGEMENT
+# ----------------------------------------------
+#
+ZCHM=AFFE_CHAR_MECA(
+             MODELE=LEMOD,
+            DDL_IMPO=(
+                   _F( GROUP_MA  = 'B0X',
+                       DX = 0.,  ),
+                   _F( GROUP_MA  = 'B1X',
+                       DX = 1.,  ),
+                   _F( GROUP_MA  = 'B0Y',
+                       DY = 0.,  ),
+                   _F( GROUP_MA  = 'B1Y',
+                       DY = 2.,  ),
+                   _F( GROUP_MA  = 'B0Z',
+                       DZ = 0.,  ),
+                   _F( GROUP_MA  = 'B1Z',
+                       DZ = 3.,  ),
+
+                )
+            )
+#
+# ----------------------------------------------
+# CALCUL
+# ----------------------------------------------
+#
+RESU0=MECA_STATIQUE(    MODELE=LEMOD,       CHAM_MATER=MATAF,
+                               CARA_ELEM=LACAR,
+                               EXCIT=_F(  CHARGE =ZCHM,    )       )
+RESU0=CALC_CHAMP(reuse=RESU0,CONTRAINTE=('SIGM_ELNO'),DEFORMATION=('EPSI_ELGA','EPSI_ELNO'),RESULTAT=RESU0)
+
+
+
+ZLIST=DEFI_LIST_REEL(   DEBUT=0.,
+             INTERVALLE=_F( JUSQU_A = 1.0,  NOMBRE = 1, )
+           )
+
+LEDEP=STAT_NON_LINE(
+                            MODELE=LEMOD,
+                        CHAM_MATER=MATAF,
+                         CARA_ELEM=LACAR,
+                             EXCIT=_F(
+                CHARGE = ZCHM,
+                ),
+                         COMP_INCR=_F(
+                RELATION = 'ELAS',
+                ),
+                         INCREMENT=_F(
+                LIST_INST = ZLIST,
+                NUME_INST_FIN = 1,
+                ),
+              )
+
+
+
+LEDEP=CALC_CHAMP(reuse =LEDEP,RESULTAT=LEDEP,
+             FORCE=('FORC_NODA'),
+             CONTRAINTE=('SIGM_ELNO'),
+             DEFORMATION=('EPSI_ELGA','EPSI_ELNO'),
+             VARI_INTERNE=('VARI_ELNO'),
+             )
+
+#
+# -------------------------------------------------
+# POST TRAITEMENT DES RESULTATS
+# -------------------------------------------------
+#
+
+TEST_RESU(RESU=(_F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.066978724,
+                   VALE_REFE=1.0669999999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.066978724,
+                   VALE_REFE=1.0669999999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA2',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.826313867,
+                   VALE_REFE=1.8263,
+                   PRECISION=1.E-3,
+                   MAILLE='MA3',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.826313867,
+                   VALE_REFE=1.8263,
+                   PRECISION=1.E-3,
+                   MAILLE='MA4',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=2.000000000,
+                   VALE_REFE=2.0,
+                   PRECISION=1.E-3,
+                   MAILLE='MA5',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=2.000000000,
+                   VALE_REFE=2.0,
+                   PRECISION=1.E-3,
+                   MAILLE='MA6',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.066978724,
+                   VALE_REFE=1.0669999999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.826313867,
+                   VALE_REFE=1.8263,
+                   PRECISION=1.E-3,
+                   MAILLE='MA3',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=2.000000000,
+                   VALE_REFE=2.0,
+                   PRECISION=1.E-3,
+                   MAILLE='MA5',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 2.13395745E+11,
+                   VALE_REFE=2.13397000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 2.13395745E+11,
+                   VALE_REFE=2.13397000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA2',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 3.65262773E+11,
+                   VALE_REFE=3.65270000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA3',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 3.65262773E+11,
+                   VALE_REFE=3.65270000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA4',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 4.00000000E+11,
+                   VALE_REFE=4.E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA5',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 4.00000000E+11,
+                   VALE_REFE=4.E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA6',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 2.13395745E+11,
+                   VALE_REFE=2.13397000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 3.65262773E+11,
+                   VALE_REFE=3.65270000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA3',),
+                _F(INST=1.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=LEDEP,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 4.00000000E+11,
+                   VALE_REFE=4.E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA5',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.066978724,
+                   VALE_REFE=1.0669999999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.066978724,
+                   VALE_REFE=1.0669999999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA2',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.826313867,
+                   VALE_REFE=1.8263499999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA3',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.826313867,
+                   VALE_REFE=1.8263499999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA4',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=2.000000000,
+                   VALE_REFE=2.0,
+                   PRECISION=1.E-3,
+                   MAILLE='MA5',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELGA',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=2.000000000,
+                   VALE_REFE=2.0,
+                   PRECISION=1.E-3,
+                   MAILLE='MA6',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.066978724,
+                   VALE_REFE=1.0669999999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=1.826313867,
+                   VALE_REFE=1.8263499999999999,
+                   PRECISION=1.E-3,
+                   MAILLE='MA3',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU0,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=2.000000000,
+                   VALE_REFE=2.0,
+                   PRECISION=1.E-3,
+                   MAILLE='MA5',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 2.13395745E+11,
+                   VALE_REFE=2.13397000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 2.13395745E+11,
+                   VALE_REFE=2.13397000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA2',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 3.65262773E+11,
+                   VALE_REFE=3.65270000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA3',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 3.65262773E+11,
+                   VALE_REFE=3.65270000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA4',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 4.00000000E+11,
+                   VALE_REFE=4.E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA5',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   POINT=1,
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 4.00000000E+11,
+                   VALE_REFE=4.E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA6',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 2.13395745E+11,
+                   VALE_REFE=2.13397000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 3.65262773E+11,
+                   VALE_REFE=3.65270000000E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA3',),
+                _F(INST=0.0,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU0,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='NO1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC= 4.00000000E+11,
+                   VALE_REFE=4.E11,
+                   PRECISION=1.E-3,
+                   MAILLE='MA5',),
+                ),
+          )
+
+FIN()
+#

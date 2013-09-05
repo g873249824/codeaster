@@ -1,0 +1,254 @@
+# TITRE PLAQUE RECTANGULAIRE SIMPLEMENT APPUIEE COMPRIMEE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='SSLS110B',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+# MAILLAGE 1/4 DE LA PLAQUE
+#
+# MODELISATION MEC3QU9H OU MEC3TR7H
+#
+#
+#
+
+MATERI_1=DEFI_MATERIAU( ELAS=_F(  E = 210000.,     NU = 0.3000, ) )
+
+#
+
+MAILLA_1=LIRE_MAILLAGE(FORMAT='MED'   )
+
+MAILLA_1=DEFI_GROUP( reuse=MAILLA_1,   MAILLAGE=MAILLA_1,
+  CREA_GROUP_MA=_F(  NOM = 'TOUT',   TOUT = 'OUI',   ))
+
+#
+
+CH_MAT_1=AFFE_MATERIAU(  MAILLAGE=MAILLA_1,
+                            AFFE=_F(  TOUT = 'OUI',   MATER = MATERI_1,  ) )
+
+#
+
+MODELE_1=AFFE_MODELE(  MAILLAGE=MAILLA_1, VERIF='MAILLE',
+                     AFFE=_F( TOUT = 'OUI', MODELISATION = 'COQUE_3D',
+                                PHENOMENE = 'MECANIQUE', ) )
+
+#
+
+CHARGE_1=AFFE_CHAR_MECA(MODELE=MODELE_1,DDL_IMPO=(
+                  _F( GROUP_NO = 'G_23',                   DZ = 0.,
+                                                                   ),
+                           _F( GROUP_NO = 'G_34',                   DZ = 0.,
+                                                                   ),
+                           _F( GROUP_NO = 'G_12',           DY = 0.,
+                                           DRX = 0.,          DRZ = 0.,  ),
+                           _F( GROUP_NO = 'G_41',   DX = 0.,
+                                                   DRY = 0.,    DRZ = 0.,)),
+                  FORCE_ARETE=_F(  GROUP_MA = 'G_2233',       FX = -1.,   )
+#
+                  )
+
+CARAC_1=AFFE_CARA_ELEM(   MODELE=MODELE_1,
+                               COQUE=_F(
+       GROUP_MA = 'TOUT',
+  EPAIS = 5.,
+###                                          A_CIS: 1.D5
+                                                             )
+                           )
+
+#
+
+MATELE_1=CALC_MATR_ELEM(   MODELE=MODELE_1,     CHARGE=CHARGE_1,
+                               CARA_ELEM=CARAC_1,
+                               CHAM_MATER=CH_MAT_1,
+                               OPTION='RIGI_MECA' )
+
+#
+#
+
+NU=NUME_DDL(   MATR_RIGI=MATELE_1 )
+
+MATASS_1=ASSE_MATRICE(   MATR_ELEM=MATELE_1,   NUME_DDL=NU )
+
+
+RESU=MECA_STATIQUE(MODELE=MODELE_1,
+                   CHAM_MATER=CH_MAT_1,
+                   CARA_ELEM=CARAC_1,
+                   EXCIT=_F(CHARGE=CHARGE_1,),
+                   );
+#
+#
+####################################################################
+#
+###### ETAT DE CONTRAINTES
+#
+
+SIGMA_1=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',
+                    RESULTAT=RESU, NUME_ORDRE=1,
+                    NOM_CHAM='SIEF_ELGA' ),
+
+#
+#
+#
+###### MATRICE DE RIGIDITE GEOMETRIQUE ELEMENTAIRE
+#
+
+RIGELG_1=CALC_MATR_ELEM(  MODELE=MODELE_1, OPTION='RIGI_GEOM',
+                             CARA_ELEM=CARAC_1,  SIEF_ELGA=SIGMA_1 )
+
+#
+#
+###### MATRICE DE RIGIDITE GEOMETRIQUE ASSEMBLEE
+#
+#
+
+RIGASG_1=ASSE_MATRICE(MATR_ELEM=RIGELG_1,NUME_DDL=NU)
+
+#
+#
+##### RESOLUTION DU PROBLEME DE VALEURS PROPRES
+#
+#
+
+MOD_1=MODE_ITER_SIMULT(                   MATR_RIGI=MATASS_1,
+                                              MATR_RIGI_GEOM=RIGASG_1,
+######                             NUME_MODE_NEGA        : 'NON'
+                TYPE_RESU='MODE_FLAMB',
+                CALC_CHAR_CRIT=_F(  NMAX_CHAR_CRIT = 9,    DIM_SOUS_ESPACE = 30,         ),
+                            )
+
+
+#
+#
+#
+#
+#
+##### CHARGE CRITIQUE 1 ( MODE 1 ) = MODE 1 TOUTE LA PLAQUE
+#
+
+TEST_RESU(RESU=_F(PARA='CHAR_CRIT',
+                  NUME_MODE=9,
+                  RESULTAT=MOD_1,
+                  VALE_CALC=-377.689592810,
+                  VALE_REFE=-379.60016927266759,
+                  REFERENCE='ANALYTIQUE',
+                  CRITERE='RELATIF',
+                  PRECISION=6.0000000000000001E-3,),
+          )
+
+#
+#
+##### CHARGE CRITIQUE 2 ( MODE 2 ) = MODE 3 TOUTE LA PLAQUE
+#
+
+TEST_RESU(RESU=_F(PARA='CHAR_CRIT',
+                  NUME_MODE=8,
+                  RESULTAT=MOD_1,
+                  VALE_CALC=-1.05744294E+03,
+                  VALE_REFE=-1054.4449146462989,
+                  REFERENCE='ANALYTIQUE',
+                  CRITERE='RELATIF',
+                  PRECISION=3.0000000000000001E-3,),
+          )
+
+#
+#
+#
+##### CHARGE CRITIQUE 3 ( MODE 3 ) = MODE 5 TOUTE LA PLAQUE
+#
+
+TEST_RESU(RESU=_F(PARA='CHAR_CRIT',
+                  NUME_MODE=7,
+                  RESULTAT=MOD_1,
+                  VALE_CALC=-2.58295877E+03,
+                  VALE_REFE=-2566.0971442832338,
+                  REFERENCE='ANALYTIQUE',
+                  CRITERE='RELATIF',
+                  PRECISION=7.0000000000000001E-3,),
+          )
+
+#
+#
+#
+##### TEST DES DEFORMATIONS GENERALISEES EN MEMBRANE
+#
+RESU=CALC_CHAMP(reuse=RESU,RESULTAT=RESU,DEFORMATION=('DEGE_ELNO','DEGE_ELGA'))
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   GROUP_NO='G_3',
+                   MAILLE ='MA000240',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEGE_ELNO',
+                   NOM_CMP='EXX',
+                   VALE_CALC=-9.5238095238095E-07,
+                   VALE_REFE=-9.52380952E-07,
+                   PRECISION= 1.E-6),
+                _F(NUME_ORDRE=1,
+                   GROUP_NO='G_3',
+                   MAILLE ='MA000240',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEGE_ELNO',
+                   NOM_CMP='EYY',
+                   VALE_CALC=2.8571428571428E-07,
+                   VALE_REFE=2.85714286E-07,
+                   PRECISION= 1.E-6),
+                _F(NUME_ORDRE=1,
+                   GROUP_NO='G_3',
+                   MAILLE ='MA000240',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEGE_ELNO',
+                   NOM_CMP='EXY',
+                   VALE_CALC=-1.2705494208815E-20,
+                   VALE_REFE=0.,
+                   CRITERE = 'ABSOLU',
+                   PRECISION= 1.E-10)))
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   POINT=1,
+                   MAILLE ='MA000240',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEGE_ELGA',
+                   NOM_CMP='EXX',
+                   VALE_CALC=-9.5238095238095E-07,
+                   VALE_REFE=-9.52380952E-07,
+                   PRECISION= 1.E-6),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   MAILLE ='MA000240',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEGE_ELGA',
+                   NOM_CMP='EYY',
+                   VALE_CALC=2.8571428571429E-07,
+                   VALE_REFE=2.85714286E-07,
+                   PRECISION= 1.E-6),
+                _F(NUME_ORDRE=1,
+                   POINT=1,
+                   MAILLE ='MA000240',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU,
+                   NOM_CHAM='DEGE_ELGA',
+                   NOM_CMP='EXY',
+                   VALE_CALC=-4.2351647362715E-21,
+                   VALE_REFE=0.,
+                   CRITERE = 'ABSOLU',
+                   PRECISION= 1.E-10)))
+#
+FIN()
+#

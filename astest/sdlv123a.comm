@@ -1,0 +1,254 @@
+
+DEBUT(CODE=_F(NOM='SDLV123A',
+NIV_PUB_WEB='INTERNET',),DEBUG=_F(SDVERI='OUI'))
+# TITRE DYNAMIQUE D'UNE FISSURE FINIE STATIONNAIRE DANS UN MILIEU
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# INFINI EN D_PLAN SOUMISE A UNE PRESSION
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_NO=_F(GROUP_MA=('LP1P111','LP2P4'),),);
+
+
+MODELE=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=(_F(GROUP_MA=('SUT',),
+                            PHENOMENE='MECANIQUE',
+                            MODELISATION='D_PLAN',),
+                         _F(GROUP_MA=('LP4P41','LP111P41',),
+                            PHENOMENE='MECANIQUE',
+                            MODELISATION='D_PLAN_ABSO',),),);
+
+
+acier=DEFI_MATERIAU(ELAS=_F(E=200000000000.0,
+                            NU=0.3,
+                            RHO=7500.0,),);
+
+
+CHAMPMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                       AFFE=(_F(GROUP_MA=('SUT',),
+                                MATER=acier,),),);
+
+FPRES=DEFI_CONSTANTE(NOM_RESU='PRES',
+                     VALE=100000000.0,)
+
+ZERO=DEFI_CONSTANTE(VALE=0.0,)
+
+CH_P=AFFE_CHAR_MECA_F(MODELE=MODELE,
+                        DDL_IMPO=(_F(GROUP_NO='LP2P4',
+                                     DY=ZERO,),
+                                   _F(GROUP_NO='LP1P111',
+                                      DX=ZERO,),
+                                  _F(GROUP_NO='P4',
+                                     DX=ZERO,DY=ZERO,),),
+                        PRES_REP=_F(GROUP_MA='LP1P2',
+                                    PRES=FPRES,),);
+
+FONC=DEFI_FONCTION(NOM_PARA='INST',
+                   VALE=(0.0,0.0,1.E-6,1.0,0.1,1.0,),);
+
+
+TEMPLI=DEFI_LIST_REEL(DEBUT=0.0,
+                      INTERVALLE=_F(JUSQU_A=0.1,
+                                    NOMBRE=5000,),);
+
+RIGIEL=CALC_MATR_ELEM( MODELE=MODELE,
+                       CHAM_MATER=CHAMPMAT,
+                       CHARGE=CH_P,
+                       OPTION='RIGI_MECA')
+
+MASSEL=CALC_MATR_ELEM( MODELE=MODELE,
+                       CHAM_MATER=CHAMPMAT,
+                       OPTION='MASS_MECA')
+
+AMOR_ELE=CALC_MATR_ELEM(    MODELE=MODELE,
+                              OPTION='AMOR_MECA',
+                              CHAM_MATER=CHAMPMAT,
+                              RIGI_MECA = RIGIEL,
+                              MASS_MECA = MASSEL,
+                              CHARGE=CH_P
+                            )
+
+NUMEROTA=NUME_DDL( MATR_RIGI=RIGIEL)
+
+RIGI=ASSE_MATRICE( MATR_ELEM=RIGIEL,
+                   NUME_DDL=NUMEROTA
+                  )
+
+MASSE=ASSE_MATRICE( MATR_ELEM=MASSEL,
+                   NUME_DDL=NUMEROTA
+                  )
+
+AMORT=ASSE_MATRICE( MATR_ELEM=AMOR_ELE,
+                    NUME_DDL=NUMEROTA
+                  )
+
+#-----------------------------------------------------------------------
+# 1 -ER NON AMORTI
+evol=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='PHYS',
+                       MODELE=MODELE,
+                       CHAM_MATER=CHAMPMAT,
+                       MATR_MASS=MASSE,
+                       MATR_RIGI=RIGI,
+                       MATR_AMOR=AMORT,
+                       SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                       EXCIT=_F(CHARGE=CH_P,
+                                FONC_MULT=FONC,),
+                       INCREMENT=_F(LIST_INST=TEMPLI,),
+                       ARCHIVAGE=_F(PAS_ARCH=100,),);
+#CALC_CHAMP( reuse=evol,RESULTAT=evol,
+#                      MODELE=MODELE,
+#                      CHAM_MATER=CHAMPMAT,
+#                       EXCIT=_F(CHARGE=CH_P,
+#                                FONC_MULT=FONC,),
+#                       TOUT_ORDRE='OUI',
+#                       CONTRAINTE=('SIGM_ELNO',)
+#          )
+
+THETA1=CALC_THETA( MODELE=MODELE,
+                   DIRECTION=(1.,0.,0.,),
+                   THETA_2D=_F (GROUP_NO = ('P2',),
+                                MODULE = 1. ,
+                                R_INF = 3.,
+                                R_SUP = 10.)
+                               )
+
+THETA2=CALC_THETA( MODELE=MODELE,
+                   DIRECTION=(1.,0.,0.,),
+                   THETA_2D=_F (GROUP_NO = ('P2',),
+                                MODULE = 1. ,
+                                R_INF = 5.,
+                                R_SUP = 15.)
+                               )
+
+THETA3=CALC_THETA( MODELE=MODELE,
+                   DIRECTION=(1.,0.,0.,),
+                   THETA_2D=_F (GROUP_NO = ('P2',),
+                                MODULE = 1. ,
+                                R_INF = 5.,
+                                R_SUP = 18.)
+                               )
+
+G1=CALC_G(          RESULTAT=evol,
+                    TOUT_ORDRE='OUI',
+                    THETA=_F(THETA=THETA1,SYME='OUI'),
+                    EXCIT=_F(CHARGE=CH_P,
+                             FONC_MULT=FONC,),
+                  )
+
+G2=CALC_G(          RESULTAT=evol,
+                    TOUT_ORDRE='OUI',
+                    THETA=_F(THETA=THETA2,SYME='OUI'),
+                    EXCIT=_F(CHARGE=CH_P,
+                             FONC_MULT=FONC,),
+                  )
+
+G3=CALC_G(          RESULTAT=evol,
+                    TOUT_ORDRE='OUI',
+                    THETA=_F(THETA=THETA3,SYME='OUI'),
+                    EXCIT=_F(CHARGE=CH_P,
+                             FONC_MULT=FONC,),
+                  )
+
+
+G4=CALC_G(          THETA=_F(THETA=THETA1,SYME='OUI'),
+                    RESULTAT=evol,
+                    NUME_ORDRE=5,
+                    EXCIT=_F(CHARGE=CH_P,
+                             FONC_MULT=FONC,),
+                  )
+
+IMPR_TABLE ( TABLE   = G1 );
+
+IMPR_TABLE ( TABLE   = G2 );
+
+IMPR_TABLE ( TABLE   = G3 );
+
+
+
+#----------------------------------------------------------
+# TEST DE IMPR_RESU
+#----------------------------------------------------------
+#
+IMPR_RESU( FORMAT='CASTEM', UNITE = 37,
+           MODELE=MODELE,
+           RESU=(_F(MAILLAGE=MAIL,),
+                 _F(RESULTAT=evol,),
+                  ),);
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.014,
+           VALE_CALC= 5.64807008E+05,
+           VALE_REFE=5.67700E5,
+           NOM_PARA='G',
+           TABLE=G1,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.014,
+           VALE_CALC= 1.12973435E+06,
+           VALE_REFE=1.135000E6,
+           NOM_PARA='G',
+           TABLE=G1,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.014,
+           VALE_CALC= 1.68312143E+06,
+           VALE_REFE=1.703000E6,
+           NOM_PARA='G',
+           TABLE=G1,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=3,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.014,
+           VALE_CALC= 5.69165277E+05,
+           VALE_REFE=5.67700E5,
+           NOM_PARA='G',
+           TABLE=G2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.014,
+           VALE_CALC= 1.13176716E+06,
+           VALE_REFE=1.135000E6,
+           NOM_PARA='G',
+           TABLE=G2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.014,
+           VALE_CALC= 1.68567971E+06,
+           VALE_REFE=1.703000E6,
+           NOM_PARA='G',
+           TABLE=G2,
+           FILTRE=_F(NOM_PARA='NUME_ORDRE',
+                     VALE_I=3,),
+           )
+
+FIN();

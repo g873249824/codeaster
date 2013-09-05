@@ -1,0 +1,267 @@
+# TITRE CONTACT DE DEUX BLOCS
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# CAS_TEST__:SSNP121I
+# ON TEST LE CONTACT QUADRATIQUE
+# MODELISATION 3D ELEMENTS LINEAIRES VS ELEMENTS QUADRATIQUES
+#
+
+DEBUT(CODE=_F(NOM='SSNP121I',NIV_PUB_WEB='INTERNET'),IGNORE_ALARM='CONTACT3_16',DEBUG=_F(SDVERI='OUI'))
+MA=LIRE_MAILLAGE(FORMAT='MED',);
+MA=DEFI_GROUP( reuse=MA,MAILLAGE=MA,CREA_GROUP_NO=(
+_F(  GROUP_MA = 'SURESC',),
+_F(  GROUP_MA = 'SURMAI',),
+_F(  GROUP_MA = 'SURCHA',),
+_F(  GROUP_MA = 'ENCAST',),
+),
+);
+
+#---------------------------------------------------
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=(_F(GROUP_MA=('V1','V2'),
+                       PHENOMENE='MECANIQUE',
+                    MODELISATION='3D',),),);
+#--------------------------------------------------
+MA=MODI_MAILLAGE(reuse =MA,
+               MAILLAGE=MA,
+           ORIE_PEAU_3D=_F(GROUP_MA='SURESC',),
+                 );
+
+MA=MODI_MAILLAGE(reuse =MA,
+               MAILLAGE=MA,
+           ORIE_PEAU_3D=_F(GROUP_MA='SURMAI',),
+                );
+
+MA=MODI_MAILLAGE(reuse =MA,
+               MAILLAGE=MA,
+           ORIE_PEAU_3D=_F(GROUP_MA='SURCHA',),
+                 );
+
+MA=MODI_MAILLAGE(reuse =MA,
+               MAILLAGE=MA,
+           ORIE_PEAU_3D=_F(GROUP_MA='ENCAST',),
+                 );
+#--------------------------------------------------
+
+MAT2=DEFI_MATERIAU(ELAS=_F(E = 20.0E+05,NU = 0.,));
+#
+MAT1=DEFI_MATERIAU(ELAS=_F( E = 20.0E+05,NU = 0.,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                        AFFE=(_F(GROUP_MA = ('V1'),
+                                    MATER = MAT2,),
+                              _F(GROUP_MA = ('V2'),
+                                    MATER = MAT1,),),)
+#--------------------------------------------------------
+CHA1=AFFE_CHAR_MECA(MODELE=MO,
+   DDL_IMPO=(_F(GROUP_NO = 'SURCHA',  DX = 0.0, DY = -0.00, DZ = -.10,),
+             _F(GROUP_NO = 'ENCAST',  DX = 0.0, DY = -0.00, DZ = 0.0,),),);
+
+#PRESSION=AFFE_CHAR_MECA(
+#        MODELE=MO,
+#        PRES_REP=_F(GROUP_MA='CD',PRES=10.0,),
+
+CHA2 = DEFI_CONTACT(MODELE         = MO,
+                    FORMULATION    = 'CONTINUE',
+                    ALGO_RESO_GEOM = 'POINT_FIXE',
+                    ALGO_RESO_CONT = 'POINT_FIXE',
+                    ITER_GEOM_MAXI = 4,
+                    ITER_CONT_MAXI = 30,
+                    INFO           = 2,
+
+                    ZONE =_F(
+                             GROUP_MA_ESCL = 'SURESC',
+                             GROUP_MA_MAIT = 'SURMAI',
+                             CONTACT_INIT  = 'INTERPENETRE',
+                             INTEGRATION   = 'SIMPSON',
+                             ORDRE_INT     = 4,
+                             ALGO_CONT     = 'STANDARD',
+                             COEF_CONT     = 1000.,
+                          ),
+                   );
+
+
+#-----------------------------------------------------------
+L_INST=DEFI_LIST_REEL(DEBUT=0.0,
+                 INTERVALLE=_F(JUSQU_A=1., NOMBRE=1,));
+
+FONC=DEFI_FONCTION(NOM_PARA='INST',
+                       VALE=(0., 0.0,1., 1.0,));
+#-----------------------------------------------
+RESU=STAT_NON_LINE (MODELE     = MO,
+                    CHAM_MATER = CHMAT,
+                    INCREMENT  =_F(LIST_INST=L_INST,
+                               NUME_INST_FIN=1,),
+                    EXCIT      =(_F(CHARGE=CHA1,
+                                 FONC_MULT=FONC,),),
+                    CONTACT    = CHA2,
+                    COMP_ELAS  =_F(RELATION='ELAS'),
+                         NEWTON=_F(MATRICE='ELASTIQUE',REAC_ITER=1),
+                    CONVERGENCE=_F(ARRET='OUI',
+                          ITER_GLOB_MAXI=30,
+                          RESI_GLOB_MAXI=1.E-8,),);
+
+
+RESU=CALC_CHAMP(reuse=RESU,RESULTAT=RESU,CRITERES=('SIEQ_ELNO'),CONTRAINTE=('SIGM_ELNO'))
+
+
+RESU=CALC_CHAMP( reuse=RESU,
+           RESULTAT=RESU,
+
+             CONTRAINTE='SIGM_NOEU',CRITERES='SIEQ_NOEU');
+
+SIELNO=CREA_CHAMP(  OPERATION='EXTR',
+                    TYPE_CHAM='ELNO_SIEF_R',
+                     NOM_CHAM='SIGM_ELNO',
+                     RESULTAT=RESU,
+                   NUME_ORDRE=1);
+
+IMPR_RESU(FORMAT='CASTEM',
+          RESU=_F(MAILLAGE=MA,
+                  RESULTAT=RESU,
+                  NOM_CHAM=('DEPL',),),);
+#
+IMPR_RESU(MODELE=MO,FORMAT='RESULTAT',
+            RESU=(_F( MAILLAGE=MA,
+                      GROUP_NO=('SURESC','SURMAI'),
+                      RESULTAT=RESU,
+                      NOM_CHAM='DEPL',
+                      NOM_CMP=('LAGS_C','DX','DY','DZ'),),),);
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A21',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='LAGS_C',
+                  VALE_CALC=-9.99999992E+04,
+                  VALE_REFE=-1.E5,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A22',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='LAGS_C',
+                  VALE_CALC=-9.99999992E+04,
+                  VALE_REFE=-1.E5,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A23',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='LAGS_C',
+                  VALE_CALC=-9.99999992E+04,
+                  VALE_REFE=-1.E5,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A24',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='LAGS_C',
+                  VALE_CALC=-9.99999992E+04,
+                  VALE_REFE=-1.E5,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  REFERENCE='ANALYTIQUE',
+                  TYPE_TEST='MAX',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='LAGS_C',
+                  VALE_CALC=-9.99999992E+04,
+                  VALE_REFE=-1.E5,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  REFERENCE='ANALYTIQUE',
+                  TYPE_TEST='MIN',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='LAGS_C',
+                  VALE_CALC=-1.00000001E+05,
+                  VALE_REFE=-1.E5,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A21',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-0.050000000,
+                  VALE_REFE=-0.050000000000000003,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A22',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-0.050000000,
+                  VALE_REFE=-0.050000000000000003,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A23',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-0.050000000,
+                  VALE_REFE=-0.050000000000000003,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='A24',
+                  REFERENCE='ANALYTIQUE',
+                  RESULTAT=RESU,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-0.050000000,
+                  VALE_REFE=-0.050000000000000003,
+                  CRITERE='RELATIF',
+                  PRECISION=1.E-3,),
+          )
+
+#;
+FIN( );
+#

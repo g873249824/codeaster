@@ -1,0 +1,142 @@
+# TITRE Calcul d'indicateur d'erreur en thermique lineaire
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# Calcul de l'indicateur d'erreur en thermique lineaire stationnaire (mur plan
+# en tetra10) couplee avec un remaillage sur l'erreur totale via HOMARD.
+# Cas test de non-regression informatique sur les options 'ERTH_ELEM'
+# (valeurs par element de l'indicateur), 'ERTH_ELNO' (valeurs aux noeuds
+# par elements) et de leurs adherence avec le processus de remaillage.
+
+#-------------------------------------------------------------------------------
+#                            PREALABLES
+#-------------------------------------------------------------------------------
+DEBUT(CODE=_F(NOM='TPLL01J', NIV_PUB_WEB='INTERNET', VISU_EFICAS='NON',), DEBUG=_F(SDVERI='OUI'),PAR_LOT='OUI',)
+# Concepts a chaque iteration
+nbcalc = 2
+M=[None]*nbcalc
+MODE=[None]*nbcalc
+MATE=[None]*nbcalc
+CHA1=[None]*nbcalc
+RESU=[None]*nbcalc
+
+MATERI=DEFI_MATERIAU( THER=_F(  LAMBDA = 0.75, RHO_CP = 2.0))
+#
+MD1=LIRE_MAILLAGE(FORMAT='MED', )
+M[0]=CREA_MAILLAGE(MAILLAGE=MD1,
+                   LINE_QUAD=_F(TOUT='OUI',),);
+
+#-------------------------------------------------------------------------------
+#                     BOUCLE CALCUL INDICATEUR/REMAILLAGE
+#-------------------------------------------------------------------------------
+# On fait nbcalc iterations
+for k in range(nbcalc):
+
+# Affectation des materiaux/modele/chargement
+   MATE[k]=AFFE_MATERIAU( MAILLAGE=M[k],
+                AFFE=_F(  TOUT = 'OUI', MATER = MATERI) )
+   MODE[k]=AFFE_MODELE( MAILLAGE=M[k],
+                      AFFE=_F( TOUT = 'OUI', MODELISATION = '3D',
+                                      PHENOMENE = 'THERMIQUE'))
+   if ( k==0 ) :
+     M[k]=MODI_MAILLAGE( reuse=M[k],
+                 MAILLAGE=M[k],
+                 ORIE_PEAU_3D=_F(  GROUP_MA = ( 'ECHA', 'F1INF', 'FLUX', 'Z_0', 'Z_0_05', 'FACE_A', 'FACE_B', ),  )
+                      )
+   CHA1[k]=AFFE_CHAR_THER( MODELE=MODE[k],
+             TEMP_IMPO=_F( GROUP_MA = 'F1INF',   TEMP = 100.),
+             FLUX_REP=(_F( GROUP_MA = 'FLUX',    FLUN = -1200.),
+                       _F( GROUP_MA = ('Z_0', 'Z_0_05', 'FACE_A', 'FACE_B',),    FLUN = 0.),),
+             ECHANGE=_F( GROUP_MA = 'ECHA',  COEF_H = 30., TEMP_EXT = 140.))
+
+# Calcul thermique
+
+   RESU[k]=THER_LINEAIRE( MODELE=MODE[k],
+           CHAM_MATER=MATE[k], EXCIT=_F( CHARGE = CHA1[k]))
+
+# Calcul de l'indicateur d'erreur
+
+   RESU[k]=CALC_ERREUR( reuse=RESU[k],
+              TOUT='OUI',
+               RESULTAT=RESU[k],
+#              INFO=2,
+              OPTION=('ERTH_ELEM','ERTH_ELNO'),)
+
+   #IMPR_RESU( FORMAT='MED', RESU=_F( RESULTAT = RESU[k]))
+   #IMPR_RESU( FORMAT='RESULTAT', RESU=_F( RESULTAT = RESU[k]))
+
+   if ( k < nbcalc-1 ) :
+# Adaptation du maillage en se basant sur la composante ERTABS du champ
+# ERTH_ELEM de RESU[k]. Critere de raffinement = 2%.
+# Ancien maillage: M[k]. Maillage raffine: M[k+1]
+#
+     M[k+1]=CO('M_%d' % (k+1))
+
+     MACR_ADAP_MAIL( ADAPTATION='RAFFINEMENT',
+                     MAILLAGE_N = M[k],
+                     MAILLAGE_NP1 = M[k+1],
+                     RESULTAT_N = RESU[k],
+                     NOM_CHAM = 'ERTH_ELEM',
+                     NUME_ORDRE = 0,
+                     NOM_CMP = 'ERTABS',
+                     CRIT_RAFF_PE = 0.1,
+                     NIVE_MAX = 5,
+                     QUALITE='OUI' )
+
+# Tests de non-regression de ERTH_ELEM/ERTH_ELNO_TEMP et de la
+# connection ASTER/HOMARD
+# La maille MA1 est le tetraedre du groupe TEST_V dans MA[0]
+TEST_RESU(RESU=_F(NUME_ORDRE=0,
+                  POINT=1,
+                  RESULTAT=RESU_0,
+                  NOM_CHAM='ERTH_ELEM',
+                  NOM_CMP='ERTREL',
+                  VALE_CALC=3.1952033225416E-05,
+                  CRITERE='RELATIF',
+                  MAILLE='MA1',
+                  ),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=0,
+                  GROUP_NO='G',
+                  RESULTAT=RESU_0,
+                  NOM_CHAM='ERTH_ELNO',
+                  NOM_CMP='ERTREL',
+                  VALE_CALC=3.1952033225416E-05,
+                  CRITERE='RELATIF',
+                  MAILLE='MA1',
+                  ),
+          )
+
+# Pour trouver le numero de la maille a tester :
+# ----------------------------------------------
+#num=M[1].sdj.GROUPEMA.get()['TEST_V'.ljust(8)]
+#assert len(num)==1
+#print 'la maille de TEST_V est : '+M[1].sdj.NOMMAI.get()[num[0]-1]
+
+# La maille MA65 est le tetraedre du groupe TEST_V dans MA[1]
+TEST_RESU(RESU=_F(NUME_ORDRE=0,
+                  POINT=1,
+                  RESULTAT=RESU_1,
+                  NOM_CHAM='ERTH_ELEM',
+                  NOM_CMP='ERTREL',
+                  VALE_CALC=2.9540823691112E-05,
+                  CRITERE='RELATIF',
+                  MAILLE='M97',
+                  ),
+          )
+
+FIN()

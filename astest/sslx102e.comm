@@ -1,0 +1,235 @@
+# TITRE TUYAUTERIE COUDEE EN FLEXION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# MODELISATION TUYAU
+
+DEBUT(CODE=_F(NOM='SSLX102E',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+M1=LIRE_MAILLAGE(VERI_MAIL=_F(VERIF='OUI'),)
+
+M1=DEFI_GROUP( reuse=M1,   MAILLAGE=M1,
+  CREA_GROUP_MA=_F(  NOM = 'TOUT', TOUT = 'OUI'))
+
+MA=CREA_MAILLAGE(     MAILLAGE=M1,
+       MODI_MAILLE=_F(  OPTION = 'SEG3_4', TOUT = 'OUI')
+)
+
+MA=DEFI_GROUP( reuse=MA,   INFO=2,
+                MAILLAGE=MA,
+           CREA_GROUP_NO=_F(  NOM = 'AD',
+OPTION = 'NOEUD_ORDO',
+GROUP_MA = 'AD',
+#NOEUD_ORIG : N296
+#NOEUD_EXTR : N297
+GROUP_NO_ORIG = 'A',
+GROUP_NO_EXTR = 'D')
+                   )
+
+MO=AFFE_MODELE(        MAILLAGE=MA, INFO=2,
+     AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'MECANIQUE',
+     MODELISATION = 'TUYAU_3M')
+               )
+
+CAREL=AFFE_CARA_ELEM(   MODELE=MO, INFO=2,
+          POUTRE=_F( GROUP_MA = 'TOUT', SECTION = 'CERCLE',TUYAU_NCOU=1,
+           CARA = (   'R',  'EP', ), VALE = (  0.10959,  0.00818, )),
+ORIENTATION=_F( GROUP_NO = 'D', CARA = 'GENE_TUYAU', VALE = (0., 0., 1.,))
+                              )
+
+MAT=DEFI_MATERIAU(   ELAS=_F( E = 2.E11, NU = 0.3,  RHO = 7900.),
+                   ECRO_LINE=_F( D_SIGM_EPSI = 12.5E9, SY = 200.E6)
+                   )
+
+CHMAT=AFFE_MATERIAU(   MAILLAGE=MA,
+                       AFFE=_F( TOUT = 'OUI', MATER = MAT))
+
+#FLEXION PLANE
+
+CHAR1=AFFE_CHAR_MECA(  MODELE=MO,
+     DDL_IMPO=_F( GROUP_NO = 'A', DX = 0., DY = 0., DZ = 0., DRX = 0., DRY = 0., DRZ = 0.),
+     FORCE_NODALE=_F( GROUP_NO = 'D', MZ = 17.E3)
+    )
+
+#RESU1 = MECA_STATIQUE (MODELE: MO CHAM_MATER : CHMAT CARA_ELEM : CAREL
+#                        EXCIT: ( CHARGE: CHAR1 )  );
+
+RAMPE=DEFI_FONCTION(  NOM_PARA='INST',
+            PROL_GAUCHE='LINEAIRE', PROL_DROITE='LINEAIRE',
+            VALE=(0.0,0.0,1.0,1.0,) )
+
+L_INST=DEFI_LIST_REEL(  DEBUT=0.0,
+                INTERVALLE=_F( JUSQU_A = 1.,   NOMBRE = 1) )
+
+RESU1=STAT_NON_LINE(
+                            MODELE=MO,
+                        CHAM_MATER=CHMAT,
+                         CARA_ELEM=CAREL,
+                             EXCIT=_F(
+                CHARGE = CHAR1,
+                FONC_MULT = RAMPE),
+                         COMP_INCR=_F( RELATION = 'ELAS', ),
+                         INCREMENT=_F(
+                LIST_INST = L_INST),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+RESU1=CALC_CHAMP(reuse=RESU1,CONTRAINTE=('EFGE_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=RESU1)
+
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='D',
+                  RESULTAT=RESU1,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DY',
+                  VALE_CALC=0.018540399,
+                  VALE_REFE=0.0186137,
+                  REFERENCE='SOURCE_EXTERNE',
+                  PRECISION=1.E-2,),
+          )
+
+# FLEXION HORS PLAN
+
+CHAR2=AFFE_CHAR_MECA(  MODELE=MO,
+     DDL_IMPO=_F( GROUP_NO = 'A', DX = 0., DY = 0., DZ = 0., DRX = 0., DRY = 0., DRZ = 0.),
+     FORCE_NODALE=_F( GROUP_NO = 'D', MY = 17.E3)
+    )
+
+RESU2=STAT_NON_LINE(
+                            MODELE=MO,
+                        CHAM_MATER=CHMAT,
+                         CARA_ELEM=CAREL,
+                             EXCIT=_F(
+                CHARGE = CHAR2,
+                FONC_MULT = RAMPE),
+                         COMP_INCR=_F( RELATION = 'ELAS', ),
+                         INCREMENT=_F(
+                LIST_INST = L_INST),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+RESU2=CALC_CHAMP(reuse=RESU2,CONTRAINTE=('EFGE_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=RESU2)
+
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  GROUP_NO='D',
+                  RESULTAT=RESU2,
+                  NOM_CHAM='DEPL',
+                  NOM_CMP='DZ',
+                  VALE_CALC=-0.015314626,
+                  VALE_REFE=-0.01535,
+                  REFERENCE='SOURCE_EXTERNE',
+                  PRECISION=1.E-2,),
+          )
+
+MASSEAB=POST_ELEM(   MODELE=MO,
+       CHAM_MATER=CHMAT,
+       CARA_ELEM=CAREL,
+       MASS_INER=_F(
+     GROUP_MA = 'AB')
+     )
+
+MASSEBC=POST_ELEM(   MODELE=MO,
+       CHAM_MATER=CHMAT,
+       CARA_ELEM=CAREL,
+       MASS_INER=_F(
+     GROUP_MA = 'BC')
+     )
+
+TEST_TABLE(VALE_CALC=51.403651316543,
+           NOM_PARA='MASSE',
+           TABLE=MASSEAB,)
+
+TEST_TABLE(VALE_CALC=20.522601760416,
+           NOM_PARA='MASSE',
+           TABLE=MASSEBC,)
+
+TEST_TABLE(VALE_CALC=0.90500000000000003,
+           NOM_PARA='CDG_Y',
+           TABLE=MASSEAB,)
+
+TEST_TABLE(VALE_CALC=0.099197553938579,
+           NOM_PARA='CDG_X',
+           TABLE=MASSEBC,)
+
+TEST_TABLE(VALE_CALC=0.099197539675762,
+           NOM_PARA='CDG_Y',
+           TABLE=MASSEBC,)
+
+# TEST DES NOEUDS ORDONNES PAR DEFI_GROUP
+
+EVOL=POST_RELEVE_T(    ACTION=_F( INTITULE = 'DEPL',
+  GROUP_NO = 'AD',  RESULTAT = RESU1, NOM_CHAM = 'DEPL',
+  TOUT_CMP = 'OUI',  OPERATION = 'EXTRACTION'))
+
+TEST_TABLE(VALE_CALC=2.4669563248862,
+           NOM_PARA='ABSC_CURV',
+           TABLE=EVOL,
+           FILTRE=(_F(NOM_PARA='NOEUD',
+                      VALE_K='NS1',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=1,),
+                   ),
+           )
+
+TEST_TABLE(VALE_CALC=0.20604091457393,
+           NOM_PARA='ABSC_CURV',
+           TABLE=EVOL,
+           FILTRE=(_F(NOM_PARA='NOEUD',
+                      VALE_K='NS18',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=1,),
+                   ),
+           )
+
+TEST_TABLE(VALE_CALC=2.8790381540341,
+           NOM_PARA='ABSC_CURV',
+           TABLE=EVOL,
+           FILTRE=(_F(NOM_PARA='NOEUD',
+                      VALE_K='N37',),
+                   _F(NOM_PARA='NUME_ORDRE',
+                      VALE_I=1,),
+                   ),
+           )
+
+#----------------------------------------------------------------------------
+# Validation EFGE_ELGA pour les elements de tuyau apres STAT_NON_LINE :
+#----------------------------------------------------------------------
+RESU2=CALC_CHAMP(reuse=RESU2,RESULTAT=RESU2,CONTRAINTE=('EFGE_ELGA'))
+
+TEST_RESU(RESU=_F(INST=1.0,
+                  POINT=3,
+                  RESULTAT=RESU2,
+                  NOM_CHAM='EFGE_ELGA',
+                  NOM_CMP='MFY',
+                  VALE_CALC=-1.7000E4,
+                  MAILLE='M3',),
+          )
+
+RESU2B=CALC_CHAMP(RESULTAT= RESU2, CONTRAINTE=('EFGE_ELGA'), )
+TEST_RESU(RESU=_F(INST=1.0,
+                  POINT=3,
+                  RESULTAT=RESU2B,
+                  NOM_CHAM='EFGE_ELGA',
+                  NOM_CMP='MFY',
+                  VALE_CALC=-1.7000E4,
+                  MAILLE='M3',),
+          )
+
+#----------------------------------------------------------------------------
+FIN()

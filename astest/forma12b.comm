@@ -1,0 +1,111 @@
+# TITRE TP DYNAMIQUE TRANSITOIRE LINEAIRE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# person_in_charge: emmanuel.boyere at edf.fr
+
+DEBUT(CODE=_F(NOM='FORMA12B',
+NIV_PUB_WEB='INTERNET',),DEBUG=_F(SDVERI='NON'))
+# SDVERI='NON' car la verification est trop couteuse en CPU
+
+MAIL=LIRE_MAILLAGE(UNITE=20,
+                   FORMAT='MED',);
+
+MODELE=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='3D',),);
+
+BA=DEFI_MATERIAU(ELAS=_F(E=2E10,
+                         NU=.2,
+                         RHO=2500.0,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=BA,),);
+
+BLOCAGE=AFFE_CHAR_MECA(MODELE=MODELE,
+                       DDL_IMPO=_F(GROUP_MA='Enca',
+                                   DX=0.0,
+                                   DY=0.0,
+                                   DZ=0.0,),);
+
+omega = 25.0;
+
+ex = 0.3;
+
+mb = 500.0;
+
+Balourd = ((mb * (((2 * pi) * omega) ** 2)) * ex);
+
+r = 0.5;
+
+surf = (pi * (r ** 2));
+
+Press = 30000;
+
+
+FOSA=AFFE_CHAR_MECA(MODELE=MODELE,
+                    PRES_REP=_F(GROUP_MA='Moteur',
+                                PRES=(Balourd / surf),),);
+
+ASSEMBLAGE(MODELE=MODELE,
+                CHAM_MATER=CHMAT,
+                CHARGE=BLOCAGE,
+                NUME_DDL=CO('NUMEDDL'),
+                MATR_ASSE=(_F(MATRICE=CO('RIGIDITE'),
+                              OPTION='RIGI_MECA',),
+                           _F(MATRICE=CO('MASSE'),
+                              OPTION='MASS_MECA',),),
+                VECT_ASSE=(_F(VECTEUR=CO("FOAS"),
+                              OPTION='CHAR_MECA',
+                              CHARGE=FOSA),),);
+
+sin25 = FORMULE(VALE='sin(2*pi*omega *INST)',
+                NOM_PARA='INST',);
+
+cos25 = FORMULE(VALE='cos(2*pi*omega *INST)',
+                NOM_PARA='INST',);
+
+LIR=DEFI_LIST_REEL(DEBUT=0.0,
+                   INTERVALLE=_F(JUSQU_A=1.0,
+                                 PAS=1E-3,),);
+
+DYNATRA=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='PHYS',
+                       MATR_MASS=MASSE,
+                       MATR_RIGI=RIGIDITE,
+                       SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                       EXCIT=_F(VECT_ASSE=FOAS,
+                                FONC_MULT=sin25,),
+                       INCREMENT=_F(LIST_INST=LIR,),);
+
+DEPMOMO=RECU_FONCTION(RESULTAT=DYNATRA,
+                      NOM_CHAM='DEPL',
+                      NOM_CMP='DZ',
+                      GROUP_NO='Mom',);
+
+IMPR_FONCTION(FORMAT='XMGRACE',
+              UNITE=29,
+              COURBE=_F(FONCTION=DEPMOMO,
+                        MARQUEUR=0,),);
+
+TEST_FONCTION(VALEUR=_F(VALE_CALC=3.4581919999999999E-4,
+                        VALE_PARA=0.91000000000000003,
+                        FONCTION=DEPMOMO,
+                        ),
+              )
+
+FIN();

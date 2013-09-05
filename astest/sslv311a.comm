@@ -1,0 +1,431 @@
+# TITRE  MURAKAMI 9.39 FISSURE EN QUART D'ELLIPSE AU COIN D'UN DISQUE
+#
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#
+
+DEBUT(CODE=_F(NOM = 'SSLV311A', NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE(FORMAT='MED',);
+
+
+MA2=CREA_MAILLAGE(MAILLAGE=MA,
+                  QUAD_LINE=_F(TOUT='OUI',),);
+
+
+MA2=DEFI_GROUP(reuse=MA2,
+               MAILLAGE=MA2,
+               CREA_GROUP_NO=(_F(GROUP_MA = ('SSUP_S','FACE2',),),
+                              _F(NOM='LFF',GROUP_MA = 'LFF',OPTION='NOEUD_ORDO'),),
+               CREA_GROUP_MA=_F(NOM='GRMAXP',OPTION='BANDE',POINT=(0.3,0.0,0.0),VECT_NORMALE=(1.,0.,0.),DIST=0.3,),
+              )
+
+MO=AFFE_MODELE(MAILLAGE=MA2,
+               AFFE=_F( TOUT = 'OUI',
+                        PHENOMENE = 'MECANIQUE',
+                        MODELISATION = '3D')
+              );
+
+
+MAT1=DEFI_MATERIAU(ELAS=_F(E = 2.E11,
+                           NU = 0.3,
+                           RHO = 7800.)
+                  );
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA2,
+                    AFFE=_F( TOUT = 'OUI',
+                             MATER = MAT1)
+                   );
+
+
+###########################################
+# CONDITIONS AUX LIMITES ET CHARGEMENT
+###########################################
+
+CL=AFFE_CHAR_MECA(MODELE=MO,
+                  DDL_IMPO=(
+                            _F(GROUP_NO = 'SSUP_S',
+                               DY = 0.),
+                            _F(GROUP_NO = 'FACE2',
+                               DY = 0.),
+                            _F(GROUP_NO = 'PA',
+                               DZ = 0.),
+                            _F(GROUP_NO = 'PB',
+                               DZ = 0.)),
+                  LIAISON_DDL=_F(GROUP_NO = ( 'PA', 'PB',  ),
+                                 DDL = ( 'DX',  'DX',),
+                                 COEF_MULT = ( 1., 1.,  ),
+                                 COEF_IMPO = 0.)
+                 );
+
+
+FNX=DEFI_FONCTION(NOM_PARA='X',
+                  VALE=(-2.0, -2.0*(500.*500.*7800.),
+                        2.0, 2.0*(500.*500.*7800.)));
+
+
+FNY=DEFI_FONCTION(NOM_PARA='Y',
+                  VALE=(-2.0, -2.0*(500.*500.*7800.),
+                        2.0, 2.0*(500.*500.*7800.)));
+
+
+FNZ=DEFI_FONCTION(NOM_PARA='Z',
+                  VALE=(-2.0, 0.0,
+                        2.0, 0.0));
+
+
+CH1=AFFE_CHAR_MECA_F(MODELE=MO,
+                    FORCE_INTERNE=_F(TOUT='OUI',
+                                     FX=FNX,
+                                     FY=FNY,)
+                   );
+
+CH2=AFFE_CHAR_MECA_F(MODELE=MO,
+                    FORCE_INTERNE=_F(TOUT='OUI',
+                                     FZ=FNZ,)
+                   );
+
+##########################
+# CALCUL MECANIQUE
+##########################
+
+CHAMDEPL=MECA_STATIQUE(MODELE=MO,
+                       CHAM_MATER=CHMAT,
+                       EXCIT=(_F( CHARGE = CL),
+                              _F( CHARGE = CH1,),
+                              _F( CHARGE = CH2,),)
+                      );
+
+
+
+###############################
+# DEFINITION DE LA FISSURE
+###############################
+
+FISS=DEFI_FOND_FISS(MAILLAGE=MA2,
+                  SYME='OUI',
+                  FOND_FISS=_F(GROUP_NO='LFF',),
+                  LEVRE_SUP=_F(GROUP_MA='LEVREINF',),
+                     );
+
+###################################
+# CALCUL DE G ET DES K LOCAUX
+###################################
+
+
+RAY_INF1=DEFI_CONSTANTE(   VALE=0.00075);
+
+RAY_SUP1=DEFI_CONSTANTE(   VALE=0.0025);
+
+GLO1=CALC_G(RESULTAT=CHAMDEPL,
+            OPTION='CALC_K_G',
+            THETA=_F(FOND_FISS=FISS,
+                     R_INF_FO=RAY_INF1,
+                     R_SUP_FO=RAY_SUP1,),
+            LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                       LISSAGE_G='LAGRANGE',),
+            INFO=2,
+           );
+
+###########################
+# TEST DES VALEURS
+###########################
+IMPR_TABLE(TABLE=GLO1,)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.12,
+           VALE_CALC=6.336961399357E+07,
+           VALE_REFE=5.6600000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.106,
+           VALE_CALC=6.2278210724233E+07,
+           VALE_REFE=5.9500000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=2,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.10000000000000001,
+           VALE_CALC=6.5426885911065E+07,
+           VALE_REFE=6.2900000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=3,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=6.6420246084091E+07,
+           VALE_REFE=6.6400000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=4,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=6.9413845312653E+07,
+           VALE_REFE=6.9800000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=5,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=7.2861644783148E+07,
+           VALE_REFE=7.2700000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=6,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=7.6081420578262E+07,
+           VALE_REFE=7.5600000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=7,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=8.0554142723604E+07,
+           VALE_REFE=7.9100000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=8,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=8.2619467441977E+07,
+           VALE_REFE=8.2000000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=9,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=8.6970114680491E+07,
+           VALE_REFE=8.5400000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=10,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=8.7847024649877E+07,
+           VALE_REFE=8.8900000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=11,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=9.1902104783696E+07,
+           VALE_REFE=9.1800000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=12,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.040000000000000001,
+           VALE_CALC=9.170032471222E+07,
+           VALE_REFE=9.4700000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=13,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=9.5604325237953E+07,
+           VALE_REFE=9.6400000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=14,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=9.5028264077854E+07,
+           VALE_REFE=9.7500000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=15,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=9.8273158545897E+07,
+           VALE_REFE=9.7500000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=16,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=9.7194800846869E+07,
+           VALE_REFE=9.6400000E7,
+           NOM_PARA='K1',
+           TABLE=GLO1,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=17,),
+           )
+
+# TESTS SUR K2 ET K3 POUR S'ASSURER QU'ILS SONT BIEN NULS
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=9.9999999999999998E-17,
+           VALE_CALC=0.0E+00,
+           VALE_REFE=0.0,
+           NOM_PARA='K2',
+           TYPE_TEST='MAX',
+           TABLE=GLO1,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=9.9999999999999998E-17,
+           VALE_CALC=0.0E+00,
+           VALE_REFE=0.0,
+           NOM_PARA='K2',
+           TYPE_TEST='MIN',
+           TABLE=GLO1,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=9.9999999999999998E-17,
+           VALE_CALC=0.0E+00,
+           VALE_REFE=0.0,
+           NOM_PARA='K3',
+           TYPE_TEST='MAX',
+           TABLE=GLO1,)
+
+TEST_TABLE(CRITERE='ABSOLU',
+           REFERENCE='ANALYTIQUE',
+           PRECISION=9.9999999999999998E-17,
+           VALE_CALC=0.0E+00,
+           VALE_REFE=0.0,
+           NOM_PARA='K3',
+           TYPE_TEST='MIN',
+           TABLE=GLO1,)
+
+###################################
+# VERIFICATION : SOLUTION IDENTIQUE AVEC ROTATION
+###################################
+
+CH3=AFFE_CHAR_MECA(MODELE=MO,
+                  ROTATION=_F(VITESSE = 500., 
+                              AXE = (0., 0., 1.,),),
+                 );
+
+CHAMDEP2=MECA_STATIQUE(MODELE=MO,
+                       CHAM_MATER=CHMAT,
+                       EXCIT=(_F( CHARGE = CL),
+                              _F( CHARGE = CH3))
+                      );
+
+# lissage de lagrange
+GLO2=CALC_G(RESULTAT=CHAMDEP2,
+            OPTION='CALC_K_G',
+            THETA=_F(FOND_FISS=FISS,
+                     R_INF_FO=RAY_INF1,
+                     R_SUP_FO=RAY_SUP1,),
+            LISSAGE=_F(LISSAGE_THETA='LAGRANGE',
+                       LISSAGE_G='LAGRANGE',),
+            )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.12,
+           VALE_CALC=6.336961399357E+07,
+           VALE_REFE=5.6600000E7,
+           NOM_PARA='K1',
+           TABLE=GLO2,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=1,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=8.0554142723604E+07,
+           VALE_REFE=7.9100000E7,
+           NOM_PARA='K1',
+           TABLE=GLO2,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=8,),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=9.7194800846869E+07,
+           VALE_REFE=9.6400000E7,
+           NOM_PARA='K1',
+           TABLE=GLO2,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=17,),
+           )
+
+# lissage de lagrange Regu
+GLO4=CALC_G(RESULTAT=CHAMDEP2,
+            OPTION='CALC_K_G',
+            THETA=_F(FOND_FISS=FISS,
+                     R_INF_FO=RAY_INF1,
+                     R_SUP_FO=RAY_SUP1,),
+            LISSAGE=_F(LISSAGE_THETA='LAGRANGE_REGU',
+                       LISSAGE_G='LAGRANGE_REGU',),
+            )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=9.4544029993447E+07,
+           VALE_REFE=9.6400000E7,
+           NOM_PARA='K1',
+           TABLE=GLO4,
+           FILTRE=_F(NOM_PARA='NUM_PT',
+                     VALE_I=17,),
+           )
+
+FIN()

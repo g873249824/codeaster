@@ -1,0 +1,361 @@
+# TITRE  : POUTRE EN TRACTION (ELEMENTS VOLUMIQUES)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# ======================================================================
+#---------------------------------------------------------------------
+#  - CALCUL DE MOYENNE DE LA DEFORMATION
+#    JAUGE VIRTUELLE
+#  - RESULTATS ISSUS DE DYNA_VIBRA
+#---------------------------------------------------------------------
+#
+import numpy as NP
+
+DEBUT( CODE=_F( NOM = 'SDLV131B',NIV_PUB_WEB='INTERNET'),
+       DEBUG=_F(SDVERI='OUI'),
+       IMPR_MACRO='NON',
+       PAR_LOT='OUI',
+       ERREUR=_F(ERREUR_F='EXCEPTION',),
+     )
+
+force = 1.E3
+young = 2.1E11
+poisson = 0.3
+rho = 7800.
+longueur = 1.
+section = 0.3*0.2
+
+POUTRE=LIRE_MAILLAGE(FORMAT='MED',VERI_MAIL=_F(VERIF='OUI'), );
+
+MODEL=AFFE_MODELE(MAILLAGE=POUTRE,
+                  AFFE=_F( GROUP_MA = 'TOUT_ELT',
+                           PHENOMENE = 'MECANIQUE',
+                           MODELISATION = '3D',),);
+
+POUTRE=DEFI_GROUP(reuse =POUTRE,
+                MAILLAGE=POUTRE,
+                CREA_GROUP_NO=(
+                             _F(GROUP_MA='AY',NOM='AY',),
+                             _F(GROUP_MA='AZ',NOM='AZ',),
+                             _F(GROUP_MA='SURF2',NOM='SURF2',),
+                              ),);
+#
+#---------------------------------------------------------------------
+#                     CARACTERISTIQUES MATERIAUX
+#---------------------------------------------------------------------
+#
+ACIER=DEFI_MATERIAU(ELAS=_F( E = young,
+                             NU = poisson,
+                             RHO = rho),);
+
+MAT=AFFE_MATERIAU( MAILLAGE=POUTRE,
+                   AFFE=_F( GROUP_MA = 'TOUT_ELT', MATER = ACIER)
+                 );
+
+#
+#---------------------------------------------------------------------
+#                     CHARGEMENTS
+#---------------------------------------------------------------------
+#
+CHAR0=AFFE_CHAR_MECA( MODELE=MODEL,
+                      DDL_IMPO=(  # traction - compression
+                               _F( GROUP_NO = 'AY',DY=0.,),
+                               _F( GROUP_NO = 'AZ',DZ=0.,),
+                        ),
+                      FACE_IMPO=( # encastrement
+                               _F( GROUP_MA = 'SURF1',DX=0.,),
+                        ),
+                      LIAISON_UNIF=( # pour la force de traction
+                               _F( GROUP_NO = 'SURF2',DDL=('DX',)),
+                        ),
+                      );
+#
+#---------------------------------------------------------------------
+#                     RESOLUTION
+#---------------------------------------------------------------------
+#
+M_EL_RIG=CALC_MATR_ELEM( MODELE=MODEL,
+                         CHAM_MATER=MAT,
+                         CHARGE=CHAR0,
+                         OPTION='RIGI_MECA'
+                           );
+
+M_EL_MAS=CALC_MATR_ELEM( MODELE=MODEL,
+                         CHAM_MATER=MAT,
+                         CHARGE=CHAR0,
+                         OPTION='MASS_MECA'
+                           );
+
+NU=NUME_DDL( MATR_RIGI=M_EL_RIG)
+M_AS_RIG=ASSE_MATRICE( MATR_ELEM=M_EL_RIG,   NUME_DDL=NU)
+M_AS_MAS=ASSE_MATRICE( MATR_ELEM=M_EL_MAS,   NUME_DDL=NU)
+
+rota = 90.
+rota_rad = rota*NP.pi/180.
+cosinus = NP.cos(rota_rad)
+sinus = NP.sin(rota_rad)
+
+CHF=AFFE_CHAR_MECA(MODELE=MODEL,
+                   FORCE_FACE=(_F(GROUP_MA='SURF2',FX=force),
+                                  ),)
+
+dynaharmo = 1
+if dynaharmo:
+  ftrac = 1.+2.j
+  freq = 200.
+  LIFREQ=DEFI_LIST_REEL(DEBUT=0.,
+                        INTERVALLE=_F( JUSQU_A = 1000., NOMBRE = 10))
+
+  DYNAHARM=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                           MATR_MASS=M_AS_MAS, MATR_RIGI=M_AS_RIG,
+                           LIST_FREQ=LIFREQ,
+                           TOUT_CHAM='OUI',
+                           MODELE = MODEL, CHAM_MATER = MAT, # modele obligatoire a cause de charge
+                           EXCIT=(_F(COEF_MULT_C=ftrac,CHARGE=CHF,PHAS_DEG = 0.,),),
+                       )
+
+  CALC_CHAMP(reuse=DYNAHARM,RESULTAT=DYNAHARM,DEFORMATION=('EPSI_ELGA','EPSI_ELNO'))
+
+
+  DYNAHARM=CALC_CHAMP( reuse=DYNAHARM, RESULTAT=DYNAHARM,
+                    DEFORMATION='EPSI_NOEU'
+                     )
+
+projection = 0
+if projection:
+# MESURE
+    MAILMESU=LIRE_MAILLAGE(UNITE=22)
+
+    MODLMESU=AFFE_MODELE( MAILLAGE=MAILMESU,
+                          AFFE=(
+             #il faut des elements autre que 0D pour la projection (L1,L2,L3)
+                              _F( MAILLE = ('P3','P4','P5','P6','L1','L2','L3',),
+                                  PHENOMENE = 'MECANIQUE',
+                                  MODELISATION = 'DIS_T'),
+                                ),)
+
+    OBSJAU = OBSERVATION(
+                   RESULTAT = DYNAHARM,
+                   MODELE_1 = MODEL,
+                   MODELE_2 = MODLMESU,
+                   PROJECTION = 'OUI',
+                   TOUT_ORDRE = 'OUI',
+                   NOM_CHAM = 'EPSI_NOEU',
+                   EPSI_MOYENNE = (  # pour JAUGE : une occ par jauge
+                              _F( GROUP_MA='SURF3',SEUIL_VARI=(0.1,),MASQUE=('EPYY','EPXY','EPXZ','EPYZ'),),
+                              _F( GROUP_MA='SURF4',MASQUE=('EPZZ','EPXY','EPXZ','EPYZ'),),
+                              _F( GROUP_MA='SURF5',SEUIL_VARI=0.1,MASQUE=('EPYY','EPXY','EPXZ','EPYZ'),),
+                              _F( GROUP_MA='SURF6',MASQUE=('EPZZ','EPXY','EPXZ','EPYZ'),),
+                              ),
+                   MODI_REPERE = _F(
+                                    TYPE_CHAM = 'TENS_3D',
+                                    GROUP_MA=('P4','P6',),  # sur le modele mesure (rotation 90 degre)
+                                    REPERE = 'DIR_JAUGE',  VECT_X = (cosinus,sinus,0.),  VECT_Y = (-sinus,cosinus,0.),
+                              ),
+                   FILTRE =(
+                              _F( GROUP_NO = 'P3',
+                                NOM_CHAM = 'EPSI_NOEU',
+                                DDL_ACTIF = ('EPXX','EPZZ',),),
+                              _F( GROUP_NO = 'P4',
+                                NOM_CHAM = 'EPSI_NOEU',
+                                DDL_ACTIF = ('EPXX','EPYY',),),
+                              _F( GROUP_NO = 'P5',
+                                NOM_CHAM = 'EPSI_NOEU',
+                                  DDL_ACTIF = ('EPXX','EPZZ',),),
+                              _F( GROUP_NO = 'P6',
+                                NOM_CHAM = 'EPSI_NOEU',
+                                  DDL_ACTIF = ('EPXX','EPYY',),),
+                              ),
+                  );
+
+    OBSMXT = OBSERVATION(
+                   RESULTAT = DYNAHARM,
+                   MODELE_1 = MODEL,
+                   MODELE_2 = MODLMESU,
+                   PROJECTION = 'OUI',
+                   TOUT_ORDRE = 'OUI',
+                   NOM_CHAM = ('EPSI_NOEU','DEPL','VITE',),
+        FILTRE =(
+                   _F( GROUP_NO = 'P5',
+                     NOM_CHAM = ('EPSI_NOEU',),
+                     DDL_ACTIF = ('EPXX','EPZZ',),),
+                   _F( GROUP_NO = 'P5',
+                     NOM_CHAM = 'DEPL',
+                     DDL_ACTIF = ('DX','DZ',),),
+                   _F( GROUP_NO = 'P5',
+                     NOM_CHAM = 'VITE',
+                     DDL_ACTIF = ('DX','DZ',),),
+                   ),
+                  );
+
+
+else:
+    OBSJAU = OBSERVATION(
+                   RESULTAT = DYNAHARM,
+                   MODELE_1 = MODEL,
+                   MODELE_2 = MODEL,
+                   PROJECTION = 'NON',
+                   TOUT_ORDRE = 'OUI',
+                   MATR_RIGI=M_AS_RIG,
+                   MATR_MASS=M_AS_MAS,
+                   NOM_CHAM = 'EPSI_NOEU',
+                   EPSI_MOYENNE = (  # pour JAUGE : une occ par jauge
+                              _F(
+                                 GROUP_MA=('SURF3',),
+                                 SEUIL_VARI=(0.1,),
+                                 MASQUE=('EPYY','EPXY','EPXZ','EPYZ'),
+                                 ),
+                              _F( GROUP_MA='SURF4',MASQUE=('EPZZ','EPXY','EPXZ','EPYZ'),),
+                              _F( GROUP_MA='SURF5',SEUIL_VARI=0.1,MASQUE=('EPYY','EPXY','EPXZ','EPYZ'),),
+                              _F( GROUP_MA='SURF6',MASQUE=('EPZZ','EPXY','EPXZ','EPYZ'),),
+                              ),
+                   MODI_REPERE = (
+                               _F( TYPE_CHAM = 'TENS_3D',
+                                    GROUP_MA=('SURF4','SURF6',), # (rotation 90 degre)
+                                    REPERE = 'DIR_JAUGE',  VECT_X = (cosinus,sinus,0.),  VECT_Y = (-sinus,cosinus,0.),),
+                              ),
+                   FILTRE = (
+                              _F( GROUP_NO = 'P3',
+                                  NOM_CHAM = 'EPSI_NOEU',
+                                  DDL_ACTIF = ('EPXX','EPZZ',),
+                                 ),
+                              _F( GROUP_NO = 'P4',
+                                  NOM_CHAM = 'EPSI_NOEU',
+                                  DDL_ACTIF = ('EPXX','EPYY',),
+                                 ),
+                              _F( GROUP_NO = 'P5',
+                                  NOM_CHAM = 'EPSI_NOEU',
+                                  DDL_ACTIF = ('EPXX','EPZZ',),
+                                 ),
+                              _F( GROUP_NO = 'P6',
+                                  NOM_CHAM = 'EPSI_NOEU',
+                                  DDL_ACTIF = ('EPXX','EPYY',),
+                                 ),
+                             ),
+                  );
+
+    OBSMXT = OBSERVATION(
+                   RESULTAT = DYNAHARM,
+                   MODELE_1 = MODEL,
+                   MODELE_2 = MODEL,
+                   PROJECTION = 'NON',
+                   TOUT_ORDRE = 'OUI',
+                   MATR_RIGI=M_AS_RIG,
+                   MATR_MASS=M_AS_MAS,
+                   NOM_CHAM = ('EPSI_NOEU','DEPL','VITE'),
+                   FILTRE =(
+                              _F( GROUP_NO = 'P5',
+                                NOM_CHAM = ('EPSI_NOEU',),
+                                DDL_ACTIF = ('EPXX','EPZZ',),),
+                              _F( GROUP_NO = 'P5',
+                                NOM_CHAM = 'DEPL',
+                                DDL_ACTIF = ('DX','DZ',),),
+                              _F( GROUP_NO = 'P5',
+                                NOM_CHAM = 'VITE',
+                                DDL_ACTIF = ('DX','DZ',),),
+                              ),
+                  );
+
+#---------------------------------------------------------------------
+#                     VERIFICATION DES RESULTATS
+#---------------------------------------------------------------------
+#
+
+if dynaharmo:
+  omega = 2*NP.pi*freq
+  dl = force/(young/longueur - omega*omega*rho*longueur/3)
+  exx = ftrac*dl/longueur
+  eyy = -poisson*exx
+  ezz = -poisson*exx
+  deltal = exx*longueur
+  vitel = 1j*omega*deltal
+
+  TEST_RESU(RESU=(_F(GROUP_NO='P5',
+                     VALE_CALC_C= 4.78137604E-09+ 9.56275207E-09j,
+                     VALE_REFE_C=exx,
+                     REFERENCE='ANALYTIQUE',
+                     RESULTAT=OBSJAU,
+                     NOM_CHAM='EPSI_NOEU',
+                     NOM_CMP='EPXX',
+                     FREQ=freq,
+                     CRITERE='RELATIF',
+                     PRECISION=0.02,),
+                  _F(GROUP_NO='P5',
+                     VALE_CALC_C=-1.43393034E-09+-2.86786068E-09j,
+                     VALE_REFE_C=ezz,
+                     REFERENCE='ANALYTIQUE',
+                     RESULTAT=OBSJAU,
+                     NOM_CHAM='EPSI_NOEU',
+                     NOM_CMP='EPZZ',
+                     FREQ=freq,
+                     CRITERE='RELATIF',
+                     PRECISION=0.02,),
+# rotation 90 degres : EPXX <-> EPYY
+                  _F(GROUP_NO='P6',
+                     VALE_CALC_C= 4.77922233E-09+ 9.55844465E-09j,
+                     VALE_REFE_C=exx,
+                     REFERENCE='ANALYTIQUE',
+                     RESULTAT=OBSJAU,
+                     NOM_CHAM='EPSI_NOEU',
+                     NOM_CMP='EPYY',
+                     FREQ=freq,
+                     CRITERE='RELATIF',
+                     PRECISION=0.02,),
+                  _F(GROUP_NO='P6',
+                     VALE_CALC_C=-1.43391103E-09+-2.86782207E-09j,
+                     VALE_REFE_C=eyy,
+                     REFERENCE='ANALYTIQUE',
+                     RESULTAT=OBSJAU,
+                     NOM_CHAM='EPSI_NOEU',
+                     NOM_CMP='EPXX',
+                     FREQ=freq,
+                     CRITERE='RELATIF',
+                     PRECISION=0.02,),
+# observation mixte
+                  _F(GROUP_NO='P5',
+                     VALE_CALC_C= 4.77926965E-09+ 9.55853931E-09j,
+                     VALE_REFE_C=exx,
+                     REFERENCE='ANALYTIQUE',
+                     RESULTAT=OBSMXT,
+                     NOM_CHAM='EPSI_NOEU',
+                     NOM_CMP='EPXX',
+                     FREQ=freq,
+                     CRITERE='RELATIF',
+                     PRECISION=0.02,),
+                  _F(GROUP_NO='P5',
+                     VALE_CALC_C= 4.61884181E-09+ 9.23768363E-09j,
+                     VALE_REFE_C=deltal,
+                     REFERENCE='ANALYTIQUE',
+                     RESULTAT=OBSMXT,
+                     NOM_CHAM='DEPL',
+                     NOM_CMP='DX',
+                     FREQ=freq,
+                     CRITERE='RELATIF',
+                     PRECISION=0.050000000000000003,),
+                  _F(GROUP_NO='P5',
+                     VALE_CALC_C=-1.16084156E-05+ 5.80420780E-06j,
+                     VALE_REFE_C=vitel,
+                     REFERENCE='ANALYTIQUE',
+                     RESULTAT=OBSMXT,
+                     NOM_CHAM='VITE',
+                     NOM_CMP='DX',
+                     FREQ=freq,
+                     CRITERE='RELATIF',
+                     PRECISION=0.050000000000000003,),
+                  ),
+            )
+
+FIN();

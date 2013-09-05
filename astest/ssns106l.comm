@@ -1,0 +1,941 @@
+# person_in_charge: sebastien.fayolle at edf.fr
+# TITRE  : ENDOMMAGEMENT D UNE PLAQUE PLANE SOUS SOLLICITATIONS VARIEES
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#  DETAILS : MODELISATION : MULTI-COUCHES
+#                          (DKT- ENDO_ISOT_BETON+2*GRILLE ACIER)
+#                                           VS.
+#                           DKTG (GLRC_DM)
+#            MAILLAGE     : TRIA3
+#            CHARGEMENT   : CYCLIQUE DISTORSION ET CISAILLEMENT
+
+DEBUT(CODE=_F(NOM='SSNS106D',
+NIV_PUB_WEB='INTERNET',),DEBUG=_F(SDVERI='NON'))
+# SDVERI='NON' car la verification est trop couteuse en CPU
+EP = 0.1;
+
+D0 = 0.0033;
+
+t1 = 1.0;
+
+t2 = (3 * t1);
+
+t3 = (4 * t1);
+
+dt = 0.05;
+
+fx = 5000000.0;
+
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_NO=(_F(GROUP_MA='A1A2',),
+                               _F(GROUP_MA='A4A3',),
+                               _F(GROUP_MA='A2A4',),
+                               _F(GROUP_MA='A3A1',),
+                               _F(DIFFE=('BORDS','A1',),
+                                  NOM='CL_IMPOS',),),);
+
+MAIL=MODI_MAILLAGE(reuse =MAIL,
+                   MAILLAGE=MAIL,
+                   ORIE_NORM_COQUE=_F(GROUP_MA='DALLE',
+                                      VECT_NORM=(0.,0.,1.,),
+                                      GROUP_NO='A1',),);
+
+MA=CREA_MAILLAGE(MAILLAGE=MAIL,
+                 CREA_GROUP_MA=(
+                                _F(NOM='DALLE_G',
+                                   GROUP_MA='DALLE',
+                                   PREF_MAILLE='G',),),);
+
+MO_G=AFFE_MODELE(MAILLAGE=MA,
+                 INFO=1,
+                 AFFE=_F(GROUP_MA=('DALLE_G','A1A2','A4A3','A2A4','A3A1',),
+                         PHENOMENE='MECANIQUE',
+                         MODELISATION='DKTG',),);
+
+EB = 32308000000.0;
+
+EGM = 35625000000.0;
+
+EGF = 38660000000.0;
+
+MAT_G=DEFI_MATERIAU(ELAS=_F(E=EGM,
+                            NU=0.18,),
+                    GLRC_DM=_F(GAMMA_T=0.06,
+                               GAMMA_C=0.8,
+                               GAMMA_F=0.45,
+                               NYT=3.7E5,
+                               MYF=9.E3,
+                               EF=EGF,
+                               NUF=0.17,),);
+
+
+MAT_D=DEFI_MATERIAU(ELAS=_F(E=1.,
+                            NU=0.23,),
+                    DHRC_SEUILS=_F(
+                               SYD=1.7E6,
+                               SCRIT=.5E6,
+                               K0MICR=1.476E-11,
+                               A011=3.685E+09,
+                               A012=6.985E+08,
+                               A013=0.000E+00,
+                               A014=0.000E+00,
+                               A015=0.000E+00,
+                               A016=0.000E+00,
+                               A022=3.684E+09,
+                               A023=0.000E+00,
+                               A024=0.000E+00,
+                               A025=0.000E+00,
+                               A026=0.000E+00,
+                               A033=1.409E+09,
+                               A034=0.000E+00,
+                               A035=0.000E+00,
+                               A036=0.000E+00,
+                               A044=3.154E+06,
+                               A045=5.835E+05,
+                               A046=0.000E+00,
+                               A055=3.028E+06,
+                               A056=0.000E+00,
+                               A066=1.177E+06,
+                               ),
+                    DHRC=_F(
+                               AAC111=2.086E+00,
+                               AAC121=2.085E+00,
+                               AAC131=1.000E+00,
+                               AAC141=2.063E+00,
+                               AAC151=1.764E+00,
+                               AAC161=1.000E+00,
+                               AAC221=2.086E+00,
+                               AAC231=1.000E+00,
+                               AAC241=1.764E+00,
+                               AAC251=2.096E+00,
+                               AAC261=1.000E+00,
+                               AAC331=1.118E+00,
+                               AAC341=1.000E+00,
+                               AAC351=1.000E+00,
+                               AAC361=1.122E+00,
+                               AAC441=2.088E+00,
+                               AAC451=2.092E+00,
+                               AAC461=1.000E+00,
+                               AAC551=2.096E+00,
+                               AAC561=1.000E+00,
+                               AAC661=1.120E+00,
+                               AAC112=2.085E+00,
+                               AAC122=2.085E+00,
+                               AAC132=1.000E+00,
+                               AAC142=2.058E+00,
+                               AAC152=1.764E+00,
+                               AAC162=1.000E+00,
+                               AAC222=2.086E+00,
+                               AAC232=1.000E+00,
+                               AAC242=1.764E+00,
+                               AAC252=2.085E+00,
+                               AAC262=1.000E+00,
+                               AAC332=1.118E+00,
+                               AAC342=1.000E+00,
+                               AAC352=1.000E+00,
+                               AAC362=1.122E+00,
+                               AAC442=2.088E+00,
+                               AAC452=2.092E+00,
+                               AAC462=1.000E+00,
+                               AAC552=2.096E+00,
+                               AAC562=1.000E+00,
+                               AAC662=1.120E+00,
+                               AAT111=1.952E+00,
+                               AAT121=1.704E+00,
+                               AAT131=1.000E+00,
+                               AAT141=2.017E+00,
+                               AAT151=1.233E+00,
+                               AAT161=1.000E+00,
+                               AAT221=1.945E+00,
+                               AAT231=1.000E+00,
+                               AAT241=1.224E+00,
+                               AAT251=2.025E+00,
+                               AAT261=1.000E+00,
+                               AAT331=1.118E+00,
+                               AAT341=1.000E+00,
+                               AAT351=1.000E+00,
+                               AAT361=1.122E+00,
+                               AAT441=2.004E+00,
+                               AAT451=1.882E+00,
+                               AAT461=1.000E+00,
+                               AAT551=2.025E+00,
+                               AAT561=1.000E+00,
+                               AAT661=1.120E+00,
+                               AAT112=1.952E+00,
+                               AAT122=1.705E+00,
+                               AAT132=1.000E+00,
+                               AAT142=2.015E+00,
+                               AAT152=1.233E+00,
+                               AAT162=1.000E+00,
+                               AAT222=1.945E+00,
+                               AAT232=1.000E+00,
+                               AAT242=1.224E+00,
+                               AAT252=2.026E+00,
+                               AAT262=1.000E+00,
+                               AAT332=1.118E+00,
+                               AAT342=1.000E+00,
+                               AAT352=1.000E+00,
+                               AAT362=1.122E+00,
+                               AAT442=2.004E+00,
+                               AAT452=1.882E+00,
+                               AAT462=1.000E+00,
+                               AAT552=2.025E+00,
+                               AAT562=1.000E+00,
+                               AAT662=1.120E+00,
+                               GAC111=8.998E-01,
+                               GAC121=8.914E-01,
+                               GAC131=1.000E+00,
+                               GAC141=1.017E+01,
+                               GAC151=3.416E+00,
+                               GAC161=1.000E+00,
+                               GAC221=8.998E-01,
+                               GAC231=1.000E+00,
+                               GAC241=3.416E+00,
+                               GAC251=1.034E+01,
+                               GAC261=1.000E+00,
+                               GAC331=3.928E-01,
+                               GAC341=1.000E+00,
+                               GAC351=1.000E+00,
+                               GAC361=2.248E+01,
+                               GAC441=9.035E-01,
+                               GAC451=8.912E-01,
+                               GAC461=1.000E+00,
+                               GAC551=8.969E-01,
+                               GAC561=1.000E+00,
+                               GAC661=3.944E-01,
+                               GAC112=8.998E-01,
+                               GAC122=8.914E-01,
+                               GAC132=1.000E+00,
+                               GAC142=-8.195E+00,
+                               GAC152=-1.416E+00,
+                               GAC162=1.000E+00,
+                               GAC222=8.998E-01,
+                               GAC232=1.000E+00,
+                               GAC242=-1.416E+00,
+                               GAC252=-8.325E+00,
+                               GAC262=1.000E+00,
+                               GAC332=3.928E-01,
+                               GAC342=1.000E+00,
+                               GAC352=1.000E+00,
+                               GAC362=-2.048E+01,
+                               GAC442=9.035E-01,
+                               GAC452=8.912E-01,
+                               GAC462=1.000E+00,
+                               GAC552=8.970E-01,
+                               GAC562=1.000E+00,
+                               GAC662=3.943E-01,
+                               GAT111=1.007E-01,
+                               GAT121=2.211E-01,
+                               GAT131=1.000E+00,
+                               GAT141=8.651E+01,
+                               GAT151=1.590E+01,
+                               GAT161=1.000E+00,
+                               GAT221=9.489E-02,
+                               GAT231=1.000E+00,
+                               GAT241=1.549E+01,
+                               GAT251=8.919E+01,
+                               GAT261=1.000E+00,
+                               GAT331=3.928E-01,
+                               GAT341=1.000E+00,
+                               GAT351=1.000E+00,
+                               GAT361=2.248E+01,
+                               GAT441=1.112E-01,
+                               GAT451=1.883E-01,
+                               GAT461=1.000E+00,
+                               GAT551=2.908E-02,
+                               GAT561=1.000E+00,
+                               GAT661=3.944E-01,
+                               GAT112=1.005E-01,
+                               GAT122=2.210E-01,
+                               GAT132=1.000E+00,
+                               GAT142=-8.454E+01,
+                               GAT152=-1.390E+01,
+                               GAT162=1.000E+00,
+                               GAT222=9.489E-02,
+                               GAT232=1.000E+00,
+                               GAT242=-1.350E+01,
+                               GAT252=-8.718E+01,
+                               GAT262=1.000E+00,
+                               GAT332=3.928E-01,
+                               GAT342=1.000E+00,
+                               GAT352=1.000E+00,
+                               GAT362=-2.048E+01,
+                               GAT442=1.111E-01,
+                               GAT452=1.882E-01,
+                               GAT462=1.000E+00,
+                               GAT552=2.917E-02,
+                               GAT562=1.000E+00,
+                               GAT662=3.943E-01,
+                               AB111=1.219E+00,
+                               AB121=6.351E-01,
+                               AB211=6.895E-01,
+                               AB221=1.238E+00,
+                               AB311=1.000E+00,
+                               AB321=1.000E+00,
+                               AB411=1.191E+00,
+                               AB421=6.522E-01,
+                               AB511=6.234E-01,
+                               AB521=1.260E+00,
+                               AB611=1.000E+00,
+                               AB621=1.000E+00,
+                               AB112=1.227E+00,
+                               AB122=6.315E-01,
+                               AB212=6.950E-01,
+                               AB222=1.219E+00,
+                               AB312=1.000E+00,
+                               AB322=1.000E+00,
+                               AB412=1.199E+00,
+                               AB422=6.473E-01,
+                               AB512=6.287E-01,
+                               AB522=1.241E+00,
+                               AB612=1.000E+00,
+                               AB622=1.000E+00,
+                               GB111=-1.071E+02,
+                               GB121=-1.689E+01,
+                               GB211=-2.012E+01,
+                               GB221=-1.035E+02,
+                               GB311=0.000E+00,
+                               GB321=0.000E+00,
+                               GB411=3.474E+00,
+                               GB421=4.224E-01,
+                               GB511=6.100E-01,
+                               GB521=2.594E+00,
+                               GB611=0.000E+00,
+                               GB621=0.000E+00,
+                               GB112=-1.070E+02,
+                               GB122=-1.684E+01,
+                               GB212=-2.007E+01,
+                               GB222=-1.034E+02,
+                               GB312=0.000E+00,
+                               GB322=0.000E+00,
+                               GB412=-3.470E+00,
+                               GB422=-4.208E-01,
+                               GB512=-6.087E-01,
+                               GB522=-2.592E+00,
+                               GB612=0.000E+00,
+                               GB622=0.000E+00,
+                               C0111=5.756E+07,
+                               C0211=0.000E+00,
+                               C0121=0.000E+00,
+                               C0221=5.717E+07,
+                               C0112=5.753E+07,
+                               C0212=0.000E+00,
+                               C0122=0.000E+00,
+                               C0222=5.712E+07,
+                               AC111=1.865E+00,
+                               AC211=1.000E+00,
+                               AC121=1.000E+00,
+                               AC221=1.779E+00,
+                               AC112=1.872E+00,
+                               AC212=1.000E+00,
+                               AC122=1.000E+00,
+                               AC222=1.785E+00,
+                               GC111=2.310E-01,
+                               GC211=1.000E+00,
+                               GC121=1.000E+00,
+                               GC221=2.605E-01,
+                               GC112=2.327E-01,
+                               GC212=1.000E+00,
+                               GC122=1.000E+00,
+                               GC222=2.577E-01,
+                              ),
+                   );
+
+MATER_G=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=(_F(GROUP_MA='DALLE_G',
+                             MATER=MAT_G,),),);
+
+MATER_D=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=(_F(GROUP_MA='DALLE_G',
+                             MATER=MAT_D,),),);
+
+CAEL_G=AFFE_CARA_ELEM(MODELE=MO_G,
+                      COQUE=_F(GROUP_MA='DALLE_G',
+                               EPAIS=EP,
+                               ANGL_REP=(0.0,0.0,),
+                               INER_ROTA='OUI',),);
+
+UX_0 = FORMULE(VALE='D1',
+                   NOM_PARA='X',);
+
+UX_IMPOS = FORMULE(VALE='D0*Y',
+                   NOM_PARA='Y',);
+
+UY_IMPOS = FORMULE(VALE='D0*X',
+                   NOM_PARA='X',);
+
+COND_0=AFFE_CHAR_CINE(MODELE=MO_G,
+                      MECA_IMPO=_F(GROUP_NO='A1',
+                                  DX=0.0,
+                                  DY=0.0,
+                                  DZ=0.0,
+                                  DRX=0.0,
+                                  DRY=0.0,
+                                  DRZ=0.0,),);
+
+COND_1=AFFE_CHAR_CINE_F(MODELE=MO_G,
+                        MECA_IMPO=_F(GROUP_NO='CL_IMPOS',
+                                    DX=UX_IMPOS,
+                                    DY=UY_IMPOS,),);
+
+chf1=DEFI_FONCTION(NOM_PARA='INST',VALE=(0.,0.,
+                         t1,1.,
+                         t2,-1.,
+                         t3,0.,
+                         ),PROL_DROITE='CONSTANT',PROL_GAUCHE='CONSTANT',);
+
+inst1=DEFI_LIST_REEL(DEBUT=0.0,
+                     INTERVALLE=_F(JUSQU_A=t3,
+                                   PAS=dt,),);
+
+DEFLIST=DEFI_LIST_INST(DEFI_LIST=_F(METHODE='MANUEL',
+                                    LIST_INST=inst1,),
+                       ECHEC=_F(ACTION        = 'DECOUPE',
+                                SUBD_METHODE  = 'MANUEL',
+                                SUBD_PAS=4,
+                                SUBD_PAS_MINI=0.0001,),);
+
+inst1R=DEFI_LIST_REEL(DEBUT=0.0,
+                     INTERVALLE=_F(JUSQU_A=3.95,
+                                   PAS=dt,),);
+
+DEFLISTR=DEFI_LIST_INST(DEFI_LIST=_F(METHODE='MANUEL',
+                                    LIST_INST=inst1R,),
+                       ECHEC=_F(ACTION        = 'DECOUPE',
+                                SUBD_METHODE  = 'MANUEL',
+                                SUBD_PAS=4,
+                                SUBD_PAS_MINI=0.0001,),);
+
+RESU_G=STAT_NON_LINE(MODELE=MO_G,
+                     CHAM_MATER=MATER_G,
+                     CARA_ELEM=CAEL_G,
+                     EXCIT=(_F(CHARGE=COND_0,
+                               FONC_MULT=chf1,),
+                            _F(CHARGE=COND_1,
+                               FONC_MULT=chf1,),),
+                     COMP_INCR=_F(RELATION='GLRC_DM',),
+                     INCREMENT=_F(LIST_INST=DEFLIST,
+                                  PRECISION=0.1,),
+                     NEWTON=_F(REAC_ITER=1,),
+                     CONVERGENCE=_F(ITER_GLOB_MAXI=25,),);
+
+RESU_G=CALC_CHAMP(reuse =RESU_G,RESULTAT=RESU_G,PRECISION=1.E-3,
+             FORCE=('FORC_NODA',),
+             VARI_INTERNE=('VARI_ELNO','VARI_NOEU',),
+             )
+
+RESU_D=STAT_NON_LINE(MODELE=MO_G,
+                     CHAM_MATER=MATER_D,
+                     CARA_ELEM=CAEL_G,
+                     EXCIT=(_F(CHARGE=COND_0,
+                               FONC_MULT=chf1,),
+                            _F(CHARGE=COND_1,
+                               FONC_MULT=chf1,),),
+                     COMP_INCR=_F(RELATION='DHRC',),
+                     INCREMENT=_F(LIST_INST=DEFLIST,
+                                  PRECISION=0.1,),
+                     NEWTON=_F(REAC_ITER=1,),
+                     CONVERGENCE=_F(ITER_GLOB_MAXI=25,),);
+
+RESU_D=CALC_CHAMP(reuse =RESU_D,RESULTAT=RESU_D,PRECISION=1.E-3,
+             FORCE=('FORC_NODA',),
+             VARI_INTERNE=('VARI_ELNO','VARI_NOEU',),
+             )
+
+############### POST TRAITEMENT #################################
+
+FORM_A = FORMULE(VALE='abs(DX+DY)',
+                 NOM_PARA=('DX','DY',),);
+
+FORM_V = FORMULE(VALE='(DX*DX+DY*DY)**0.5*(DX+DY)/abs(DX+DY)',
+                 NOM_PARA=('DX','DY',),);
+
+DIF_REL = FORMULE(VALE='(VG-V)/V',
+                  NOM_PARA=('V','VG',),);
+
+DIF_RELD = FORMULE(VALE='(VG-VD)/VD',
+                  NOM_PARA=('VD','VG',),);
+
+######################################################################
+
+TFN_B_G=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                                INTITULE='B_FNG',
+                                RESULTAT=RESU_G,
+                                NOM_CHAM='FORC_NODA',
+                                GROUP_NO='B',
+                                NOM_CMP=('DX','DY',),),);
+
+TVAR_G=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                               INTITULE='D',
+                               RESULTAT=RESU_G,
+                               NOM_CHAM='VARI_NOEU',
+                               GROUP_NO='A4',
+                               TOUT_CMP='OUI',),);
+
+TFN_B_G=CALC_TABLE(reuse =TFN_B_G,
+                   TABLE=TFN_B_G,
+                   ACTION=_F(OPERATION='EXTR',
+                             NOM_PARA=('INST','DX','DY',),),);
+
+TFN_B_G=CALC_TABLE(reuse =TFN_B_G,
+                   TABLE=TFN_B_G,
+                   ACTION=_F(OPERATION='OPER',
+                             FORMULE=FORM_A,
+                             NOM_PARA='DI',),);
+
+TFN_B_G=CALC_TABLE(reuse =TFN_B_G,
+                   TABLE=TFN_B_G,
+                   ACTION=_F(OPERATION='FILTRE',
+                             NOM_PARA='DI',
+                             CRIT_COMP='NE',
+                             VALE=0.0,),);
+
+TFN_B_G=CALC_TABLE(reuse =TFN_B_G,
+                   TABLE=TFN_B_G,
+                   ACTION=_F(OPERATION='SUPPRIME',
+                             NOM_PARA='DI',),);
+
+TFN_B_G=CALC_TABLE(reuse =TFN_B_G,
+                   TABLE=TFN_B_G,
+                   ACTION=(_F(OPERATION='OPER',
+                              FORMULE=FORM_V,
+                              NOM_PARA='VG',),
+                           _F(OPERATION='RENOMME',
+                              NOM_PARA=('DX','FXG',),),
+                           _F(OPERATION='RENOMME',
+                              NOM_PARA=('DY','FYG',),),),);
+
+TVAR_G=CALC_TABLE(reuse =TVAR_G,
+                  TABLE=TVAR_G,
+                  ACTION=(_F(OPERATION='EXTR',
+                             NOM_PARA=('INST','V1','V2',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('V1','D1',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('V2','D2',),),),);
+
+#####################################################################
+
+TFN_B_D=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                                INTITULE='B_FND',
+                                RESULTAT=RESU_D,
+                                NOM_CHAM='FORC_NODA',
+                                GROUP_NO='B',
+                                NOM_CMP=('DX','DY',),),);
+
+TVAR_D=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                               INTITULE='VARI',
+                               RESULTAT=RESU_D,
+                               NOM_CHAM='VARI_NOEU',
+                               GROUP_NO='A4',
+                               TOUT_CMP='OUI',),);
+
+TFN_B_D=CALC_TABLE(reuse =TFN_B_D,
+                   TABLE=TFN_B_D,
+                   ACTION=_F(OPERATION='EXTR',
+                             NOM_PARA=('INST','DX','DY',),),);
+
+TFN_B_D=CALC_TABLE(reuse =TFN_B_D,
+                   TABLE=TFN_B_D,
+                   ACTION=_F(OPERATION='OPER',
+                             FORMULE=FORM_A,
+                             NOM_PARA='DI',),);
+
+TFN_B_D=CALC_TABLE(reuse =TFN_B_D,
+                   TABLE=TFN_B_D,
+                   ACTION=_F(OPERATION='FILTRE',
+                             NOM_PARA='DI',
+                             CRIT_COMP='NE',
+                             VALE=0.0,),);
+
+TFN_B_D=CALC_TABLE(reuse =TFN_B_D,
+                   TABLE=TFN_B_D,
+                   ACTION=_F(OPERATION='SUPPRIME',
+                             NOM_PARA='DI',),);
+
+TFN_B_D=CALC_TABLE(reuse =TFN_B_D,
+                   TABLE=TFN_B_D,
+                   ACTION=(_F(OPERATION='OPER',
+                              FORMULE=FORM_V,
+                              NOM_PARA='VD',),
+                           _F(OPERATION='RENOMME',
+                              NOM_PARA=('DX','FXD',),),
+                           _F(OPERATION='RENOMME',
+                              NOM_PARA=('DY','FYD',),),),);
+
+TVAR_D=CALC_TABLE(reuse =TVAR_D,
+                  TABLE=TVAR_D,
+                  ACTION=(_F(OPERATION='EXTR',
+                             NOM_PARA=('INST','V1','V2','V3','V4','V5','V6',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('V1','D1',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('V2','D2',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('V3','EX1',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('V4','EY1',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('V5','EX2',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('V6','EY2',),),),);
+
+####################################################################
+
+TFN_B=CALC_TABLE(TABLE=TFN_B_G,
+                 ACTION=(
+                         _F(OPERATION='COMB',
+                           TABLE=TFN_B_D,
+                           NOM_PARA='INST',),),);
+
+TFN_B=CALC_TABLE(reuse =TFN_B,
+                 TABLE=TFN_B,
+                 ACTION=(_F(OPERATION='OPER',
+                            FORMULE=DIF_RELD,
+                            NOM_PARA='VG_VD',),
+                         _F(OPERATION='COMB',
+                            TABLE=TVAR_G,
+                            NOM_PARA='INST',),
+                         _F(OPERATION='COMB',
+                            TABLE=TVAR_D,
+                            NOM_PARA='INST',),),);
+
+IMPR_TABLE(TABLE=TFN_B,);
+IMPR_TABLE(TABLE=TVAR_G,);
+
+#----- DISTORSION POSITIF - PHASE ELASTIQUE -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.4251941926421,
+           NOM_PARA='VG_VD',
+           TABLE=TFN_B,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.25,),
+           )
+
+#----- DISTORSION POSITIF - PHASE ENDOMMAGEMENT -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.5110550032202,
+           NOM_PARA='VG_VD',
+           TABLE=TFN_B,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=1.0,),
+           )
+
+#----- DISTORSION POSITIF - PHASE DECHARGEMENT -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.5110550032202,
+           NOM_PARA='VG_VD',
+           TABLE=TFN_B,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=1.5,),
+           )
+
+#----- DISTORSION NEGATIF - PHASE CHARGEMENT -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.5110550032202,
+           NOM_PARA='VG_VD',
+           TABLE=TFN_B,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=3.0,),
+           )
+
+#----- DISTORSION NEGATIF - PHASE DECHARGEMENT -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=0.5110550032202,
+           NOM_PARA='VG_VD',
+           TABLE=TFN_B,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=3.5,),
+           )
+#####################################################################
+#----- CISAILLEMENT
+
+COND_1G=AFFE_CHAR_MECA(MODELE=MO_G,
+                       FORCE_ARETE=(_F(GROUP_MA='A2A4',
+                                       FY=fx,),
+                                    _F(GROUP_MA='A4A3',
+                                       FX=fx,),
+                                    _F(GROUP_MA='A3A1',
+                                       FY=-(fx),),
+                                    _F(GROUP_MA='A1A2',
+                                       FX=-(fx),),),);
+
+COND_0G=AFFE_CHAR_MECA(MODELE=MO_G,
+                       DDL_IMPO=_F(GROUP_NO='A1',
+                                   DX=0.0,
+                                   DY=0.0,
+                                   DZ=0.0,
+                                   DRX=0.0,
+                                   DRY=0.0,),
+                       LIAISON_DDL=_F(GROUP_NO=('A4','A4',),
+                                      DDL=('DX','DY',),
+                                      COEF_MULT=(1.0,-1.0,),
+                                      COEF_IMPO=0.0,),);
+
+chf1c=DEFI_FONCTION(NOM_PARA='INST',VALE=(0.,0.,
+                         t3,1.,
+                         ),PROL_DROITE='CONSTANT',PROL_GAUCHE='CONSTANT',);
+
+inst1c=DEFI_LIST_REEL(DEBUT=0.0,
+                     INTERVALLE=_F(JUSQU_A=t3,
+                                   PAS=(dt * 2),),);
+
+DEFLISTC=DEFI_LIST_INST(DEFI_LIST=_F(METHODE='MANUEL',
+                                     LIST_INST=inst1c,),
+                        ECHEC=_F(ACTION        = 'DECOUPE',
+                                 SUBD_METHODE  = 'MANUEL',
+                                 SUBD_PAS=4,
+                                 SUBD_PAS_MINI=0.0001,),);
+
+RESU_GC=STAT_NON_LINE(MODELE=MO_G,
+                     CHAM_MATER=MATER_G,
+                     CARA_ELEM=CAEL_G,
+                     EXCIT=(_F(CHARGE=COND_0G,),
+                            _F(CHARGE=COND_1G,
+                               FONC_MULT=chf1,),),
+                     COMP_INCR=_F(RELATION='GLRC_DM',),
+                     INCREMENT=_F(LIST_INST=DEFLIST,
+                                  PRECISION=0.1,),
+                     NEWTON=_F(REAC_INCR=1,
+                               MATRICE='TANGENTE',
+                               PAS_MINI_ELAS=0.0,
+                               REAC_ITER=1,),
+                     CONVERGENCE=_F(ITER_GLOB_MAXI=25,),);
+
+
+RESU_GC=CALC_CHAMP(reuse =RESU_GC,RESULTAT=RESU_GC,PRECISION=1.E-3,
+             FORCE=('FORC_NODA',),
+             DEFORMATION=('DEGE_ELNO',),
+             VARI_INTERNE=('VARI_ELNO','VARI_NOEU',),
+             )
+
+RESU_DC=STAT_NON_LINE(MODELE=MO_G,
+                     CHAM_MATER=MATER_D,
+                     CARA_ELEM=CAEL_G,
+                     EXCIT=(_F(CHARGE=COND_0G,),
+                            _F(CHARGE=COND_1G,
+                               FONC_MULT=chf1,),),
+                     COMP_INCR=_F(RELATION='DHRC',),
+                     INCREMENT=_F(LIST_INST=DEFLIST,
+                                  PRECISION=0.1,),
+                     NEWTON=_F(REAC_INCR=1,
+                               MATRICE='TANGENTE',
+                               PAS_MINI_ELAS=0.0,
+                               REAC_ITER=1,),
+                     CONVERGENCE=_F(ITER_GLOB_MAXI=25,),);
+
+
+RESU_DC=CALC_CHAMP(reuse =RESU_DC,RESULTAT=RESU_DC,PRECISION=1.E-3,
+             FORCE=('FORC_NODA',),
+             DEFORMATION=('DEGE_ELNO',),
+             VARI_INTERNE=('VARI_ELNO','VARI_NOEU',),
+             )
+
+EPS_GC=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                             INTITULE='EPSG',
+                             RESULTAT=RESU_GC,
+                             NOM_CHAM='DEGE_ELNO',
+                             GROUP_NO='A4',
+                             TOUT_CMP='OUI',),);
+
+TFN_B_GC=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                               INTITULE='B_FNG',
+                               RESULTAT=RESU_GC,
+                               NOM_CHAM='FORC_NODA',
+                               GROUP_NO='B',
+                               NOM_CMP=('DX','DY',),),);
+
+TVAR_GC=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                              INTITULE='D',
+                              RESULTAT=RESU_GC,
+                              NOM_CHAM='VARI_NOEU',
+                              GROUP_NO='B',
+                              TOUT_CMP='OUI',),);
+
+EPS_GC=CALC_TABLE(reuse=EPS_GC,
+                TABLE=EPS_GC,
+                ACTION=(_F(OPERATION='EXTR',
+                           NOM_PARA=('INST','EXY',),),
+                        _F(OPERATION='RENOMME',
+                           NOM_PARA=('EXY','EXY_G',),),),);
+
+#IMPR_TABLE(TABLE=EPS_GC,);
+
+TFN_B_GC=CALC_TABLE(reuse =TFN_B_GC,
+                  TABLE=TFN_B_GC,
+                  ACTION=_F(OPERATION='EXTR',
+                            NOM_PARA=('INST','DX','DY',),),);
+
+TFN_B_GC=CALC_TABLE(reuse =TFN_B_GC,
+                  TABLE=TFN_B_GC,
+                  ACTION=_F(OPERATION='OPER',
+                            FORMULE=FORM_A,
+                            NOM_PARA='DI',),);
+
+TFN_B_GC=CALC_TABLE(reuse =TFN_B_GC,
+                  TABLE=TFN_B_GC,
+                  ACTION=_F(OPERATION='FILTRE',
+                            NOM_PARA='DI',
+                            CRIT_COMP='NE',
+                            VALE=0.0,),);
+
+TFN_B_GC=CALC_TABLE(reuse =TFN_B_GC,
+                  TABLE=TFN_B_GC,
+                  ACTION=_F(OPERATION='SUPPRIME',
+                            NOM_PARA='DI',),);
+
+TFN_B_GC=CALC_TABLE(reuse =TFN_B_GC,
+                  TABLE=TFN_B_GC,
+                  ACTION=(_F(OPERATION='OPER',
+                             FORMULE=FORM_V,
+                             NOM_PARA='VG',),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('DX','FXG',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('DY','FYG',),),),);
+
+TVAR_GC=CALC_TABLE(reuse =TVAR_GC,
+                 TABLE=TVAR_GC,
+                 ACTION=(_F(OPERATION='EXTR',
+                            NOM_PARA=('INST','V1',),),
+                         _F(OPERATION='RENOMME',
+                            NOM_PARA=('V1','D1',),),),);
+
+#IMPR_TABLE(TABLE=TFN_B_GC,);
+
+EPS_DC=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                             INTITULE='EPSD',
+                             RESULTAT=RESU_DC,
+                             NOM_CHAM='DEGE_ELNO',
+                             GROUP_NO='A4',
+                             TOUT_CMP='OUI',),);
+
+TFN_B_DC=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                               INTITULE='B_FND',
+                               RESULTAT=RESU_DC,
+                               NOM_CHAM='FORC_NODA',
+                               GROUP_NO='B',
+                               NOM_CMP=('DX','DY',),),);
+
+TVAR_DC=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+                              INTITULE='D',
+                              RESULTAT=RESU_DC,
+                              NOM_CHAM='VARI_NOEU',
+                              GROUP_NO='B',
+                              TOUT_CMP='OUI',),);
+
+EPS_DC=CALC_TABLE(reuse=EPS_DC,
+                TABLE=EPS_DC,
+                ACTION=(_F(OPERATION='EXTR',
+                           NOM_PARA=('INST','EXY',),),
+                        _F(OPERATION='RENOMME',
+                           NOM_PARA=('EXY','EXY_D',),),),);
+
+#IMPR_TABLE(TABLE=EPS_DC,);
+
+TFN_B_DC=CALC_TABLE(reuse =TFN_B_DC,
+                  TABLE=TFN_B_DC,
+                  ACTION=_F(OPERATION='EXTR',
+                            NOM_PARA=('INST','DX','DY',),),);
+
+TFN_B_DC=CALC_TABLE(reuse =TFN_B_DC,
+                  TABLE=TFN_B_DC,
+                  ACTION=_F(OPERATION='OPER',
+                            FORMULE=FORM_A,
+                            NOM_PARA='DI',),);
+
+TFN_B_DC=CALC_TABLE(reuse =TFN_B_DC,
+                  TABLE=TFN_B_DC,
+                  ACTION=_F(OPERATION='FILTRE',
+                            NOM_PARA='DI',
+                            CRIT_COMP='NE',
+                            VALE=0.0,),);
+
+TFN_B_DC=CALC_TABLE(reuse =TFN_B_DC,
+                  TABLE=TFN_B_DC,
+                  ACTION=_F(OPERATION='SUPPRIME',
+                            NOM_PARA='DI',),);
+
+TFN_B_DC=CALC_TABLE(reuse =TFN_B_DC,
+                  TABLE=TFN_B_DC,
+                  ACTION=(_F(OPERATION='OPER',
+                             FORMULE=FORM_V,
+                             NOM_PARA='VD',),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('DX','FXD',),),
+                          _F(OPERATION='RENOMME',
+                             NOM_PARA=('DY','FYD',),),),);
+
+TVAR_DC=CALC_TABLE(reuse =TVAR_DC,
+                 TABLE=TVAR_DC,
+                 ACTION=(_F(OPERATION='EXTR',
+                            NOM_PARA=('INST','V1',),),
+                         _F(OPERATION='RENOMME',
+                            NOM_PARA=('V1','D1',),),),);
+
+#IMPR_TABLE(TABLE=TFN_B_DC,);
+
+#----- CISAILLEMENT POSITIF - PHASE ELASTIQUE -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=4.7587148531429E-04,
+           NOM_PARA='EXY_G',
+           TABLE=EPS_GC,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.1,),
+           )
+
+##----- CISAILLEMENT POSITIF - PHASE ENDOMMAGEMENT -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=9.09169470373E-03,
+           NOM_PARA='EXY_G',
+           TABLE=EPS_GC,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.8,),
+           )
+
+#----- CISAILLEMENT POSITIF - PHASE ELASTIQUE -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=3.3629549440693E-04,
+           NOM_PARA='EXY_D',
+           TABLE=EPS_DC,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.1,),
+           )
+
+##----- CISAILLEMENT POSITIF - PHASE ENDOMMAGEMENT -----
+
+TEST_TABLE(CRITERE='ABSOLU',
+           VALE_CALC=3.4982497045534E-03,
+           NOM_PARA='EXY_D',
+           TABLE=EPS_DC,
+           FILTRE=_F(NOM_PARA='INST',
+                     VALE=0.8,),
+           )
+
+FIN();

@@ -1,0 +1,312 @@
+# TITRE DETECTION DES SINGULARITES DANS UNE PLAQUE FISSUREE (TRIA6)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# person_in_charge: josselin.delmas at edf.fr
+# TEST V6.03.130
+# CHARGEMENT EN PRESSION
+# MAILLAGE : TRIA6
+# COMPORTEMENT ELASTIQUE
+
+DEBUT(CODE=_F(NOM='SSNP130B',
+              NIV_PUB_WEB='INTERNET',),
+      DEBUG=_F(SDVERI='OUI',),);
+
+MA=LIRE_MAILLAGE(FORMAT='MED',);
+
+MA=DEFI_GROUP(reuse =MA,
+              MAILLAGE=MA,
+              CREA_GROUP_NO=_F(TOUT_GROUP_MA='OUI',),);
+
+# DEFINITION DU MATERIAU
+
+ACIER=DEFI_MATERIAU(ELAS=_F(E=200000.0,
+                            NU=0.3,),);
+
+# DEFINITION DES INSTANTS POUR STAT_NON_LINE
+
+L_INST=DEFI_LIST_REEL(DEBUT=0.0,
+                      INTERVALLE=_F(JUSQU_A=1.0,
+                                    NOMBRE=1,),);
+
+F_INST=DEFI_FONCTION(NOM_PARA='INST',VALE=(0.0,0.0,
+                           1.0,1.0,
+                           ),);
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='C_PLAN',),);
+
+MA=MODI_MAILLAGE(reuse =MA,
+                 MAILLAGE=MA,
+                 ORIE_PEAU_2D=_F(GROUP_MA='GMP34',),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=ACIER,),);
+
+CHP=AFFE_CHAR_MECA(MODELE=MO,
+                   PRES_REP=_F(GROUP_MA='GMP34',
+                               PRES=1.0,),);
+
+CHCL=AFFE_CHAR_MECA(MODELE=MO,
+                    DDL_IMPO=(_F(GROUP_MA='LIGA',
+                                 DY=0.0,),
+                              _F(GROUP_NO='GNP2',
+                                 DX=0.0,),),);
+
+DEPLA=STAT_NON_LINE(MODELE=MO,
+                    CHAM_MATER=CHMAT,
+                    EXCIT=(_F(CHARGE=CHP,
+                              FONC_MULT=F_INST,),
+                           _F(CHARGE=CHCL,),),
+                    COMP_INCR=_F(RELATION='ELAS',
+                                 TOUT='OUI',),
+                    INCREMENT=_F(LIST_INST=L_INST,),);
+
+DEPLA=CALC_CHAMP(reuse=DEPLA,RESULTAT=DEPLA,INST=1.,ENERGIE=('ETOT_ELEM'))
+
+
+DEPLA=CALC_ERREUR(reuse =DEPLA,
+                  RESULTAT=DEPLA,
+                  INST=1.,
+                  OPTION=('ERZ2_ELEM','SING_ELEM','SING_ELNO',),
+                  PREC_ERR=0.8,
+                  TYPE_ESTI='ERZ2_ELEM',);
+
+# TEST DE SING_ELEM VALEUR MAX ET MIN DES 2 COMPOSANTES
+
+TEST_RESU(RESU=(_F(INST=1.0,
+                   TYPE_TEST='MAX',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=2.0,
+                   VALE_REFE=2.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='RELATIF',
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MIN',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.5,
+                   VALE_REFE=0.5,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='RELATIF',
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MAX',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='RAPPORT',
+                   VALE_CALC=2.5344341195576,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=1.E-4,      #TODO variabilite
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MIN',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='RAPPORT',
+                   VALE_CALC=0.21015064582875,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=2.E-5,      #TODO variabilite
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MAX',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='TAILLE',
+                   VALE_CALC=4.2830020031884,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=2.E-5,      #TODO variabilite
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MIN',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='TAILLE',
+                   VALE_CALC=0.085700962979133,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=1.E-4,      #TODO variabilite
+                   ),
+                ),
+          )
+
+# TEST DE SING_ELEM VALEUR PARTICULIERE EN POINTE DE FISSURE
+# LES MAILLES CHOISIES SONT AU VOISINAGE DE LA FISSURE
+
+TEST_RESU(RESU=(_F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.751255739,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=3.E-3,      #TODO variabilite
+                   MAILLE='M142',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.5,
+                   VALE_REFE=0.5,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='RELATIF',
+                   MAILLE='M143',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.5,
+                   VALE_REFE=0.5,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='RELATIF',
+                   MAILLE='M144',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.5,
+                   VALE_REFE=0.5,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='RELATIF',
+                   MAILLE='M145',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.551140766,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=0.02,      #TODO variabilite
+                   MAILLE='M146',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.751255739,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=3.E-3,      #TODO variabilite
+                   MAILLE='M189',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.751255739,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=3.E-3,      #TODO variabilite
+                   MAILLE='M190',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.551140766,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=0.02,      #TODO variabilite
+                   MAILLE='M191',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.551140766,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=0.02,      #TODO variabilite
+                   MAILLE='M192',),
+                _F(INST=1.0,
+                   POINT=1,
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELEM',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.551140766,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=0.02,      #TODO variabilite
+                   MAILLE='M193',),
+                ),
+          )
+
+# TEST DE SING_ELNO
+
+TEST_RESU(RESU=(_F(INST=1.0,
+                   TYPE_TEST='MAX',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELNO',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=2.0,
+                   VALE_REFE=2.0,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='RELATIF',
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MIN',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELNO',
+                   NOM_CMP='DEGRE',
+                   VALE_CALC=0.5,
+                   VALE_REFE=0.5,
+                   REFERENCE='ANALYTIQUE',
+                   CRITERE='RELATIF',
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MAX',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELNO',
+                   NOM_CMP='RAPPORT',
+                   VALE_CALC=2.5344341195576,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=4.E-05,      #TODO variabilite
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MIN',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELNO',
+                   NOM_CMP='RAPPORT',
+                   VALE_CALC=0.21015064582875,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=2.E-5,      #TODO variabilite
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MAX',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELNO',
+                   NOM_CMP='TAILLE',
+                   VALE_CALC=4.2830020031884,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=2.E-05,      #TODO variabilite
+                   ),
+                _F(INST=1.0,
+                   TYPE_TEST='MIN',
+                   RESULTAT=DEPLA,
+                   NOM_CHAM='SING_ELNO',
+                   NOM_CMP='TAILLE',
+                   VALE_CALC=0.085700962979133,
+                   CRITERE='RELATIF',
+                   TOLE_MACHINE=4.E-05,      #TODO variabilite
+                   ),
+                ),
+          )
+
+FIN();

@@ -1,0 +1,370 @@
+# TITRE PLAQUE CARREE MINCE , LIBRE OU ENCASTREE SUR UN BORD (ROTATION)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#CAS_TEST__: SDLS01B
+# SDLS01/B                 COMMANDES                            22/04/91
+# PLAQUE CARREE MINCE  LIBRE OU ENCASTREE SUR UN BORD
+# DIMENSION: 1M*1M*0.01M
+# CAS 1: ENCASTREE    CAS 2: LIBRE                 REF: SFM.VPCS SDLS01
+# MODELISATION DKT:  ROTATION DE LA PLAQUE / MODELISATION A
+#                    COTE AB SUR LA DROITE 3Y=4X
+#======================================================================
+
+
+DEBUT(CODE=_F(NOM='SDLS01B',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE(FORMAT='MED', )
+
+MA=DEFI_GROUP( reuse=MA,   MAILLAGE=MA,
+  CREA_GROUP_MA=_F(  NOM = 'TOUT', TOUT = 'OUI'))
+
+MO=AFFE_MODELE(  MAILLAGE=MA,
+                  AFFE=_F(  TOUT = 'OUI',       PHENOMENE = 'MECANIQUE',
+                         MODELISATION = 'DKT') )
+
+CARELEM=AFFE_CARA_ELEM(   MODELE=MO,
+                            COQUE=_F(
+       GROUP_MA = 'TOUT',
+  EPAIS = 0.01) )
+
+MAT=DEFI_MATERIAU( ELAS=_F(  E = 2.1E+11,  NU = 0.3,  RHO = 7800.,
+                            AMOR_ALPHA = 0.1,  AMOR_BETA = 0.1) )
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MA,
+                       AFFE=_F(  TOUT = 'OUI',  MATER = MAT) )
+
+# =====================================================================
+#                       C H A R G E M E N T
+# =====================================================================
+# ---- CAS1: PLAQUE ENCASTREE SUR UN COTE
+
+CHCAS1=AFFE_CHAR_MECA(  MODELE=MO,
+           DDL_IMPO=_F(  GROUP_NO = 'GRNM11',  DX = 0.,  DY = 0., DZ = 0.,
+                                        DRX = 0., DRY = 0., DRZ = 0.) )
+
+# ---- CAS2: PLAQUE LIBRE-LIBRE   ==>   PAS DE CHCAS2
+
+
+# =====================================================================
+#               M A T R I C E     E L E M E N T A I R E
+# =====================================================================
+# ------ CAS1
+
+MELR1=CALC_MATR_ELEM(  MODELE=MO,           CARA_ELEM=CARELEM,
+                         CHARGE=CHCAS1,
+                         CHAM_MATER=CHMAT,   OPTION='RIGI_MECA' )
+
+MELM1=CALC_MATR_ELEM(  MODELE=MO,           CARA_ELEM=CARELEM,
+                         CHARGE=CHCAS1,
+                         CHAM_MATER=CHMAT,   OPTION='MASS_MECA' )
+
+NUM1=NUME_DDL(  MATR_RIGI=MELR1    )
+
+MATASSR1=ASSE_MATRICE( MATR_ELEM=MELR1, NUME_DDL=NUM1 )
+
+MATASSM1=ASSE_MATRICE( MATR_ELEM=MELM1, NUME_DDL=NUM1 )
+
+# ------ CAS2
+
+MELR2=CALC_MATR_ELEM(  MODELE=MO,           CARA_ELEM=CARELEM,
+                         CHAM_MATER=CHMAT,   OPTION='RIGI_MECA' )
+
+MELM2=CALC_MATR_ELEM(  MODELE=MO,           CARA_ELEM=CARELEM,
+                         CHAM_MATER=CHMAT,   OPTION='MASS_MECA' )
+
+NUM2=NUME_DDL(  MATR_RIGI=MELR2    )
+
+MATASSR2=ASSE_MATRICE(MATR_ELEM=MELR2,NUME_DDL=NUM2)
+
+MATASSM2=ASSE_MATRICE(MATR_ELEM=MELM2,NUME_DDL=NUM2)
+
+# =====================================================================
+#                      C A L C U L    M O D A L
+# =====================================================================
+#--------- CAS1
+
+MODE1=MODE_ITER_SIMULT(  MATR_RIGI=MATASSR1,      MATR_MASS=MATASSM1,
+              CALC_FREQ=_F(   FREQ = ( 8.,   140., ),
+                           OPTION = 'BANDE')  )
+
+
+#--------- CAS2
+
+MODE2=MODE_ITER_SIMULT(  MATR_RIGI=MATASSR2,      MATR_MASS=MATASSM2,
+              CALC_FREQ=_F(   FREQ = ( 32.,  90., ),
+                           OPTION = 'BANDE')  )
+
+
+# --------------------------------------------------------------------
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=8.671818403458,
+                   VALE_REFE=8.7265999999999995,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=21.290395205598,
+                   VALE_REFE=21.304200000000002,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=3,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=53.099219220758,
+                   VALE_REFE=53.554200000000002,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=4,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=67.926938212714,
+                   VALE_REFE=68.298400000000001,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=5,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=77.429391669553,
+                   VALE_REFE=77.744799999999998,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=6,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE1,
+                   VALE_CALC=135.7635427358,
+                   VALE_REFE=136.0471,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=33.68390563557,
+                   VALE_REFE=33.7119,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=48.936193145662,
+                   VALE_REFE=49.455800000000004,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(NUME_ORDRE=3,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=60.584921184506,
+                   VALE_REFE=61.051299999999998,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(NUME_ORDRE=4,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=87.099277858933,
+                   VALE_REFE=87.516000000000005,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                _F(NUME_ORDRE=5,
+                   PARA='FREQ',
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MODE2,
+                   VALE_CALC=87.099312657087,
+                   VALE_REFE=87.516000000000005,
+                   CRITERE='RELATIF',
+                   PRECISION=0.010999999999999999,),
+                ),
+          )
+
+# =====================================================================
+#                   C A L C U L    H A R M O N I Q U E
+# =====================================================================
+
+
+CHCAS3=AFFE_CHAR_MECA(  MODELE=MO,
+            FORCE_NODALE=_F(  NOEUD = 'N145',  FZ = -98100.),
+           DDL_IMPO=_F(  GROUP_NO = 'GRNM11',  DX = 0.,  DY = 0., DZ = 0.,
+                                        DRX = 0., DRY = 0., DRZ = 0.) )
+
+MELR3=CALC_MATR_ELEM(  MODELE=MO,           CARA_ELEM=CARELEM,
+                           CHARGE=CHCAS3,
+                           CHAM_MATER=CHMAT,    OPTION='RIGI_MECA' )
+
+MELM3=CALC_MATR_ELEM(  MODELE=MO,           CARA_ELEM=CARELEM,
+                           CHARGE=CHCAS3,
+                           CHAM_MATER=CHMAT,    OPTION='MASS_MECA' )
+
+MELC3=CALC_MATR_ELEM(  MODELE=MO,           CARA_ELEM=CARELEM,
+                           RIGI_MECA=MELR3,     MASS_MECA=MELM3,
+                           CHARGE=CHCAS3,
+                           CHAM_MATER=CHMAT,    OPTION='AMOR_MECA' )
+
+VEL3=CALC_VECT_ELEM(  CHARGE=CHCAS3,       OPTION='CHAR_MECA' )
+
+NUM3=NUME_DDL(  MATR_RIGI=MELR3    )
+
+MATASSR3=ASSE_MATRICE(  MATR_ELEM=MELR3,   NUME_DDL=NUM3  )
+
+MATASSM3=ASSE_MATRICE(  MATR_ELEM=MELM3,   NUME_DDL=NUM3  )
+
+MATASSC3=ASSE_MATRICE(  MATR_ELEM=MELC3,   NUME_DDL=NUM3  )
+
+VECTASS3=ASSE_VECTEUR(  VECT_ELEM=VEL3,    NUME_DDL=NUM3  )
+
+#
+# POUR TESTER COEF_MULT
+
+DYNHAR0=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                            MATR_MASS=MATASSM3,   MATR_RIGI=MATASSR3,
+                            MATR_AMOR=MATASSC3,     FREQ=50.,
+                            EXCIT=_F(  COEF_MULT = 3., VECT_ASSE = VECTASS3),
+                             TOUT_CHAM='OUI'     )
+
+DYNHARM=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='PHYS',
+                            MATR_MASS=MATASSM3,   MATR_RIGI=MATASSR3,
+                            MATR_AMOR=MATASSC3,     FREQ=50.,
+                            EXCIT=_F(  COEF_MULT = 1., VECT_ASSE = VECTASS3),
+                             TOUT_CHAM='OUI'     )
+
+DYNHARM=CALC_CHAMP(reuse=DYNHARM,RESULTAT=DYNHARM,CONTRAINTE=('SIEF_ELGA','SIGM_ELNO','EFGE_ELNO'))
+
+
+DHPOS=POST_CHAMP(RESULTAT=DYNHARM,
+                 EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                               NUME_COUCHE=1,
+                               NIVE_COUCHE='MOY',),);
+DYNHARM=CALC_CHAMP(reuse =DYNHARM,
+              RESULTAT=DYNHARM,
+              CONTRAINTE='EFGE_NOEU',);
+
+
+#X2=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_C', OPERATION='EXTR', RESULTAT=DYNHARM, INFO=2, FREQ=50., NOM_CHAM='DEPL')
+#X1=CREA_CHAMP(TYPE_CHAM='ELGA_SIEF_C', OPERATION='EXTR', RESULTAT=DYNHARM, INFO=2, FREQ=50., NOM_CHAM='SIEF_ELGA')
+
+TEST_RESU(RESU=(_F(VALE_CALC_C=0.029029001009317+0.052060571807290j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N145',
+                   NOM_CMP='DZ',
+                   FREQ=50.0,),
+                _F(VALE_CALC_C=0.025292033725121+0.094471693115719j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N145',
+                   NOM_CMP='DRX',
+                   FREQ=50.0,),
+                _F(VALE_CALC_C=-16.355310993147+9.1197296311921j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='VITE',
+                   NOEUD='N145',
+                   NOM_CMP='DZ',
+                   FREQ=50.0,),
+                _F(VALE_CALC_C=-29.679157706453+7.9457267345186j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='VITE',
+                   NOEUD='N145',
+                   NOM_CMP='DRX',
+                   FREQ=50.0,),
+                _F(VALE_CALC_C=-2865.0475612078-5138.1724863246j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N145',
+                   NOM_CMP='DZ',
+                   FREQ=50.0,),
+                _F(VALE_CALC_C=-2496.2236736596-9323.9823815326j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='ACCE',
+                   NOEUD='N145',
+                   NOM_CMP='DRX',
+                   FREQ=50.0,),
+                _F(VALE_CALC_C=11.405254199521+1455.3905720244j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N145',
+                   NOM_CMP='MXX',
+                   FREQ=50.0,
+                   MAILLE='M255',),
+                _F(VALE_CALC_C=11.02241581835-1314.4134952623j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N145',
+                   NOM_CMP='MYY',
+                   FREQ=50.0,
+                   MAILLE='M255',),
+                _F(VALE_CALC_C=10.314788368431+355.38162178485j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N145',
+                   NOM_CMP='MXY',
+                   FREQ=50.0,
+                   MAILLE='M255',),
+                _F(VALE_CALC_C=366.16322757046-3773.3111982662j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N145',
+                   NOM_CMP='QX',
+                   FREQ=50.0,
+                   MAILLE='M255',),
+                _F(VALE_CALC_C=-314.67581373078+2068.1258040745j,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='EFGE_ELNO',
+                   NOEUD='N145',
+                   NOM_CMP='QY',
+                   FREQ=50.0,
+                   MAILLE='M255',),
+                _F(VALE_CALC_C=54924.484135569-5.6599667973994E+05j,
+                   RESULTAT=DHPOS,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N145',
+                   NOM_CMP='SIXZ',
+                   FREQ=50.0,
+                   MAILLE='M255',),
+                _F(VALE_CALC_C=-47201.372059616+3.1021887061117E+05j,
+                   RESULTAT=DHPOS,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N145',
+                   NOM_CMP='SIYZ',
+                   FREQ=50.0,
+                   MAILLE='M255',),
+                _F(VALE_CALC_C=-3.5762351878663E+07+3.2473254466579E+07j,
+                   POINT=3,
+                   SOUS_POINT=3,
+                   RESULTAT=DYNHARM,
+                   NOM_CHAM='SIEF_ELGA',
+                   NOM_CMP='SIXX',
+                   FREQ=50.0,
+                   MAILLE='M2',),
+                ),
+          )
+
+FIN( )

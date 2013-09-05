@@ -1,0 +1,688 @@
+# TITRE ANALYSE AUX VALEURS PROPRES DANS DYNA_NON_LINE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+# ON VERIFIE AUSSI L'INTER-OPERABILITE DU CALCUL MODAL DE MODE_VIBR
+# AVEC LES TROIS SOLVEURS DIRECTS DISPONIBLES: LDLT, MULT_FRONT ET MUMPS
+
+# Pour des raisons de performances, on force SDVERI='NON'. 
+DEBUT(CODE=_F(  NOM = 'SDNV106A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='NON'));
+#
+MA=LIRE_MAILLAGE(FORMAT='MED',)
+#
+MA=DEFI_GROUP( reuse=MA,
+               MAILLAGE=MA,
+               CREA_GROUP_NO=_F(
+               TOUT_GROUP_MA = 'OUI'),);
+#
+MO=AFFE_MODELE( MAILLAGE=MA,
+                AFFE=_F(
+                GROUP_MA = ('BLOC', 'FIXE', 'TRAC',),
+                PHENOMENE = 'MECANIQUE',
+                MODELISATION = '3D'),);
+#
+#  Materiau "dur" dont le module elastique vaut 100 fois
+#  le module plastique
+#
+MATE_DUR=DEFI_MATERIAU(ELAS=_F(
+                E = 20000.,
+                RHO=7900.0,
+                NU = 0.49999),
+                ECRO_LINE=_F(SY = 0.1,D_SIGM_EPSI = 200.),);
+#
+#  Materiau "mou" dont le module elastique vaut le module plastique
+#  du materiau precedant MATE_DUR
+#
+MATE_MOU=DEFI_MATERIAU(ELAS=_F(
+                E = 200.,
+                RHO=7900.0,
+                NU = 0.49999),
+                ECRO_LINE=_F(SY = 0.1,D_SIGM_EPSI = 200.),);
+#
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,AFFE=
+                    _F(GROUP_MA = 'BLOC', MATER = MATE_DUR),);
+#
+CHMAT2=AFFE_MATERIAU(MAILLAGE=MA,AFFE=
+                    _F(GROUP_MA = 'BLOC',MATER = MATE_MOU),);
+#
+L_INST=DEFI_LIST_REEL(DEBUT=0.0,INTERVALLE=(
+                _F(  JUSQU_A = 1.,     NOMBRE = 10),
+                _F(  JUSQU_A = 2.,     NOMBRE = 1000),),);
+#
+L_ARCH=DEFI_LIST_REEL(DEBUT=0.0,INTERVALLE=(
+                _F(  JUSQU_A = 1.,     NOMBRE = 5),
+                _F(  JUSQU_A = 1.1,     NOMBRE = 100),
+                _F(  JUSQU_A = 2.,     NOMBRE = 90),),);
+#
+LIAISON=AFFE_CHAR_MECA(MODELE=MO,
+                       DDL_IMPO=(
+                _F( GROUP_NO = 'A',  DX=0., DY=0., DZ=0.),
+                _F( GROUP_NO = 'B',  DY=0., DZ=0.),
+                _F( GROUP_NO = 'D',  DX=0., DZ=0.),
+                _F( GROUP_NO = 'C',  DZ=0.),
+                _F( GROUP_NO = 'E',  DX=0., DY=0.,),
+                _F( GROUP_NO = 'F',  DY=0.,),
+                _F( GROUP_NO = 'H',  DX=0.,),
+                ),);
+#
+TRACTION=AFFE_CHAR_MECA(MODELE=MO,
+                        FORCE_FACE=_F( GROUP_MA = 'TRAC', FZ = 1.),);
+#
+RAMPE=DEFI_FONCTION(NOM_PARA='INST',
+                    VALE=(0., 0., 1., 7., 2., 14.,),);
+#
+#  Calcul des modes sur le modele rigide
+#
+ASSEMBLAGE ( MODELE = MO,
+                  CHAM_MATER=CHMAT,
+                  CHARGE     = (LIAISON,),
+                  NUME_DDL   = CO('NUMSTA'),
+                  SOLVEUR=_F(METHODE='MULT_FRONT',RENUM='METIS'),
+                  MATR_ASSE=(
+                   _F( MATRICE= CO('RIGSTA'), OPTION= 'RIGI_MECA'),
+                   _F( MATRICE= CO('MASSTA'), OPTION= 'MASS_MECA'),),);
+#
+MODED=MODE_ITER_SIMULT(MATR_RIGI=RIGSTA,
+                       MATR_MASS=MASSTA,
+                       CALC_FREQ=_F(OPTION='PLUS_PETITE',
+                                    NMAX_FREQ=95,),
+                       VERI_MODE=_F(STOP_ERREUR='NON',),);
+#
+# Calcul des modes sur le modele souple
+#
+ASSEMBLAGE ( MODELE = MO,
+                  CHAM_MATER=CHMAT2,
+                  CHARGE    = (LIAISON,),
+                  NUME_DDL  = CO('NUMST2'),
+                  SOLVEUR=_F(METHODE='MULT_FRONT',RENUM='METIS'),
+                  MATR_ASSE=(
+                   _F( MATRICE= CO('RIGST2'), OPTION= 'RIGI_MECA'),
+                   _F( MATRICE= CO('MASST2'), OPTION= 'MASS_MECA'),),);
+#
+MODE2=MODE_ITER_SIMULT(MATR_RIGI=RIGST2,
+                       MATR_MASS=MASST2,
+                       CALC_FREQ=_F(OPTION='PLUS_PETITE',
+                                    NMAX_FREQ=95,),
+                       VERI_MODE=_F(STOP_ERREUR='NON',));
+#
+# CALCUL AVEC SOLVEUR LINEAIRE MULT_FRONT
+REPONSE=STAT_NON_LINE(MODELE=MO,
+                 CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE)),
+                SOLVEUR=_F(METHODE='MULT_FRONT'),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,INST_FIN = 1.),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                               ITER_GLOB_MAXI = 50),
+                ARCHIVAGE = _F(LIST_INST=L_ARCH,),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5,
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),),
+             );
+#
+REPONSE=DYNA_NON_LINE( reuse=REPONSE,
+               SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                               FORMULATION='DEPLACEMENT',),
+                ETAT_INIT=_F(EVOL_NOLI = REPONSE),
+                SOLVEUR=_F(METHODE='MULT_FRONT'),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE)),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,INST_FIN = 1.5,),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                                ITER_GLOB_MAXI = 10),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5,
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),),
+                MODE_VIBR = _F(NB_FREQ=3,MATR_RIGI='TANGENTE',),
+                ARCHIVAGE = _F(LIST_INST=L_ARCH,),
+                RECH_LINEAIRE=_F(METHODE='MIXTE',),
+             );
+#
+REPONSE=DYNA_NON_LINE( reuse=REPONSE,
+                SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                                FORMULATION='DEPLACEMENT',),
+                ETAT_INIT=_F(EVOL_NOLI = REPONSE),
+                SOLVEUR=_F(METHODE='MULT_FRONT'),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE),),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                               ITER_GLOB_MAXI = 10),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5,
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),),
+                MODE_VIBR = _F(BANDE=(0.1,0.5),MATR_RIGI='ELASTIQUE',),
+                RECH_LINEAIRE=_F(METHODE='MIXTE',),
+             );
+
+
+# CALCUL AVEC SOLVEUR LINEAIRE LDLT
+REPONSEL=STAT_NON_LINE(MODELE=MO,
+                 CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE)),
+                SOLVEUR=_F(METHODE='LDLT'),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,INST_FIN = 1.),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                               ITER_GLOB_MAXI = 50),
+                ARCHIVAGE = _F(LIST_INST=L_ARCH,),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5, 
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),
+                               LIST_INST = L_INST),
+             );
+REPONSEL=DYNA_NON_LINE( reuse=REPONSEL,
+               SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                               FORMULATION='DEPLACEMENT',),
+                ETAT_INIT=_F(EVOL_NOLI = REPONSEL),
+                SOLVEUR=_F(METHODE='LDLT'),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE)),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,INST_FIN = 1.5,),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                                ITER_GLOB_MAXI = 10),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5,
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),),
+                MODE_VIBR = _F(NB_FREQ=3,MATR_RIGI='TANGENTE',),
+                ARCHIVAGE = _F(LIST_INST=L_ARCH,),
+                RECH_LINEAIRE=_F(METHODE='MIXTE',),
+             );
+#
+REPONSEL=DYNA_NON_LINE( reuse=REPONSEL,
+                SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                                FORMULATION='DEPLACEMENT',),
+                ETAT_INIT=_F(EVOL_NOLI = REPONSEL),
+                SOLVEUR=_F(METHODE='LDLT'),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE),),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                               ITER_GLOB_MAXI = 10),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5,
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),),
+                MODE_VIBR = _F(BANDE=(0.1,0.5),MATR_RIGI='ELASTIQUE',),
+                RECH_LINEAIRE=_F(METHODE='MIXTE',),
+             );
+
+# CALCUL AVEC SOLVEUR LINEAIRE MUMPS
+REPONSEM=STAT_NON_LINE(MODELE=MO,
+                 CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE)),
+                SOLVEUR=_F(METHODE='MUMPS',ELIM_LAGR2='NON',),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,INST_FIN = 1.),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                               ITER_GLOB_MAXI = 50),
+                ARCHIVAGE = _F(LIST_INST=L_ARCH,),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5,
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),
+                               LIST_INST = L_INST),
+             );
+REPONSEM=DYNA_NON_LINE(reuse=REPONSEM,
+               SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                               FORMULATION='DEPLACEMENT',),
+                ETAT_INIT=_F(EVOL_NOLI = REPONSEM),
+                SOLVEUR=_F(METHODE='MUMPS',ELIM_LAGR2='NON'),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE)),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,INST_FIN = 1.5,),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                                ITER_GLOB_MAXI = 10),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5,
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),),
+                MODE_VIBR = _F(NB_FREQ=3,MATR_RIGI='TANGENTE',),
+                ARCHIVAGE = _F(LIST_INST=L_ARCH,),
+                RECH_LINEAIRE=_F(METHODE='MIXTE',),
+             );
+#
+REPONSEM=DYNA_NON_LINE( reuse=REPONSEM,
+                SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                                FORMULATION='DEPLACEMENT',),
+                ETAT_INIT=_F(EVOL_NOLI = REPONSEM),
+                SOLVEUR=_F(METHODE='MUMPS',ELIM_LAGR2='NON'),
+                MODELE=MO,
+                CHAM_MATER=CHMAT,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTION, FONC_MULT = RAMPE),),
+                COMP_INCR=_F(RELATION = 'VMIS_ISOT_LINE'),
+                INCREMENT=_F(LIST_INST = L_INST,),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                               ITER_GLOB_MAXI = 10),
+                CRIT_STAB = _F(TYPE='FLAMBEMENT',
+                               COEF_DIM_ESPACE=5,
+                               NB_FREQ=1,CHAR_CRIT=(-100.0,100.),),
+                MODE_VIBR = _F(BANDE=(0.1,0.5),MATR_RIGI='ELASTIQUE',),
+                RECH_LINEAIRE=_F(METHODE='MIXTE',),
+             );
+#
+#  Frequence du premier mode pour le materiau elastique raide
+#  Valeur venant de MODE_ITER_SIMULT
+#
+freqel = 3.58128E-01
+#
+#  Frequence du premier mode pour le materiau elastique souple
+#  ou pour le module tangente plastique.
+#  Comme le rapport des modules vaut 100 (cf. MATE_DUR et MATE_MOU),
+#  le rapport des frequence sera de 10
+#
+freqpl = freqel / 10
+#
+#  Tests sur la premiere frequence propre sur materiau plastique
+#
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   INST=1.01,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.035812661355513,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.06,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.035812661354481,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.25,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.035812661354284,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.49,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.035812661351424,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   INST=1.01,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.035812661355725,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.06,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.035812661355725,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3,),
+                _F(PARA='FREQ',
+                   INST=1.25,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.035812661353558,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.49,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.035812661355277,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3,),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   INST=1.01,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.035812661355985,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.06,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.035812661356639,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.25,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.035812661355212,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.49,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.035812661354704,
+                   VALE_REFE=0.035812799999999999,
+                   PRECISION=1.E-3, ),
+                ),
+          )
+
+#
+#  Tests sur la premiere frequence propre sur materiau elastique
+#
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   INST=1.51,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.35812779545227,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.52,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.35812779545227,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.56,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.35812779545227,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.75,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.35812779545227,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.99,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE,
+                   VALE_CALC=0.35812779545227,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   INST=1.51,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.35812779545248,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.52,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.35812779545248,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.56,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.35812779545248,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.75,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.35812779545248,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.99,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEL,
+                   VALE_CALC=0.35812779545248,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   INST=1.51,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.35812779545206,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.52,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.35812779545206,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.56,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.35812779545206,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.75,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.35812779545206,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.99,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSEM,
+                   VALE_CALC=0.35812779545206,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                ),
+          )
+
+#
+#  Charge critique elastoplastique (venant du premier STAT_NON_LINE)
+#  On compare le resultat de STAT_NON_LINE a celui de DYNA_NON_LINE
+#
+chcrit1 = 2.85714E+01 / 1.001
+#
+TEST_RESU(RESU=_F(PARA='CHAR_CRIT',
+                  INST=1.001,
+                  REFERENCE='AUTRE_ASTER',
+                  RESULTAT=REPONSE,
+                  VALE_CALC=28.570189966498,
+                  VALE_REFE=28.542857142857148,
+                  PRECISION=1.E-3, ),
+          )
+
+TEST_RESU(RESU=_F(PARA='CHAR_CRIT',
+                  INST=1.001,
+                  REFERENCE='AUTRE_ASTER',
+                  RESULTAT=REPONSEL,
+                  VALE_CALC=28.57018996724,
+                  VALE_REFE=28.542857142857148,
+                  PRECISION=1.E-3, ),
+          )
+
+TEST_RESU(RESU=_F(PARA='CHAR_CRIT',
+                  INST=1.001,
+                  REFERENCE='AUTRE_ASTER',
+                  RESULTAT=REPONSEM,
+                  VALE_CALC=28.570189967975,
+                  VALE_REFE=28.542857142857148,
+                  PRECISION=1.E-3, ),
+          )
+
+#
+#
+#  Validation de l'option secante de MODE_VIBR :
+#  on definit un materiau endommageant.
+#  Pour le reste le calcul est tres proche de ce que l'on fait avant.
+#
+#
+MATE_BET=DEFI_MATERIAU(ELAS=_F(
+                E = 20000.,
+                RHO=7900.0,
+                NU = 0.49999),
+                BETON_ECRO_LINE=_F( SYT = 0.50E2,
+                                    D_SIGM_EPSI = -100.,
+                                    SYC = 11.225E2)
+                );
+#
+CHMAT4=AFFE_MATERIAU(MAILLAGE=MA,AFFE=
+                    _F(GROUP_MA = 'BLOC',MATER = MATE_BET),);
+#
+L_INST2=DEFI_LIST_REEL(DEBUT=0.0,INTERVALLE=(
+                _F(  JUSQU_A = 1.,     NOMBRE = 1000),
+                _F(  JUSQU_A = 2.,     NOMBRE = 1000),),);
+#
+L_ARCH2=DEFI_LIST_REEL(DEBUT=0.0,INTERVALLE=(
+                _F(  JUSQU_A = 1.,     NOMBRE = 10),
+                _F(  JUSQU_A = 2.,     NOMBRE = 20),),);
+#
+TRACTIO2=AFFE_CHAR_MECA(MODELE=MO,
+                        FORCE_FACE=_F( GROUP_MA = 'TRAC', FZ = 100.),);
+#
+RAMPE2=DEFI_FONCTION(NOM_PARA='INST',
+                    VALE=(0., 0., 1., 1., 2., 1.1,),);
+#
+REPONSE2=DYNA_NON_LINE(
+                MODELE=MO,
+               SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                               FORMULATION='DEPLACEMENT',),
+                CHAM_MATER=CHMAT4,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTIO2, FONC_MULT = RAMPE2)),
+                COMP_INCR=_F(RELATION = 'ENDO_ISOT_BETON'),
+                INCREMENT=_F(LIST_INST = L_INST2,INST_FIN = 1.),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-6,
+                                ITER_GLOB_MAXI = 10),
+                MODE_VIBR = _F(NB_FREQ=3,MATR_RIGI='SECANTE',),
+                ARCHIVAGE=_F(LIST_INST=L_ARCH2),
+             );
+REPONSE2=DYNA_NON_LINE( reuse=REPONSE2,
+                 ETAT_INIT=_F(EVOL_NOLI = REPONSE2),
+               SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                               FORMULATION='DEPLACEMENT',),
+                MODELE=MO,
+                CHAM_MATER=CHMAT4,EXCIT=(
+                    _F( CHARGE = LIAISON),
+                    _F( CHARGE = TRACTIO2, FONC_MULT = RAMPE2)),
+                COMP_INCR=_F(RELATION = 'ENDO_ISOT_BETON'),
+                INCREMENT=_F(LIST_INST = L_INST2,INST_FIN = 1.2),
+                NEWTON=_F(MATRICE = 'TANGENTE',REAC_ITER = 1),
+                CONVERGENCE=_F(RESI_GLOB_RELA = 1.E-5,
+                                ITER_GLOB_MAXI = 50),
+                MODE_VIBR = _F(NB_FREQ=3,MATR_RIGI='SECANTE',),
+                ARCHIVAGE=_F(LIST_INST=L_ARCH2,),
+             );
+
+# Test sur le champs 'DEPL_VIBR'
+TEST_RESU(RESU=(_F(GROUP_NO='A',
+                   INST=1.2,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=REPONSE2,
+                   NOM_CHAM='DEPL_VIBR',
+                   NOM_CMP='DX',
+                   VALE_CALC=0.0E+00,
+                   VALE_REFE=0.0,
+                   CRITERE='ABSOLU',),
+                _F(GROUP_NO='H',
+                   INST=1.2,
+                   RESULTAT=REPONSE2,
+                   NOM_CHAM='DEPL_VIBR',
+                   NOM_CMP='DY',
+                   VALE_CALC=-0.49999288483077,
+                   CRITERE='RELATIF',
+                   ),
+                ),
+          )
+
+#
+#  Tests avec option secante
+#
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   INST=0.1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE2,
+                   VALE_CALC=0.35812779545101,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=0.6,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE2,
+                   VALE_CALC=0.35812779545085,
+                   VALE_REFE=0.358128,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.1,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE2,
+                   VALE_CALC=0.30658613595603,
+                   VALE_REFE=0.30658613595650003,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.15,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE2,
+                   VALE_CALC=0.29774010650211,
+                   VALE_REFE=0.29774010650207,
+                   PRECISION=1.E-3, ),
+                _F(PARA='FREQ',
+                   INST=1.2,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=REPONSE2,
+                   VALE_CALC=0.29002142739603,
+                   VALE_REFE=0.29002142739605002,
+                   PRECISION=1.E-3, ),
+                ),
+          )
+
+#
+FIN();

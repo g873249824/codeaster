@@ -1,0 +1,264 @@
+# TITRE CROSSE SOUS CHARGEMENTS DIVERS (SANS SOUS-STRUCTURATION)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#  CALCUL NON LINEAIRE EN STATIQUE & DYNAMIQUE
+# ======================================================================
+#CAS_TEST__: SSLP100C
+# SSLP100/C
+# CROSSE CHARGEE EN SOUS-STRUCTURATION STATIQUE.
+# MODELISATION : SANS SOUS-STRUCTURES (MODELISATION DE REFERENCE).
+#======================================================================
+
+
+DEBUT(CODE=_F(  NOM = 'SSLP100C',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+ACIER=DEFI_MATERIAU( ELAS=_F(E = 1.5E11,  NU = 0.3, RHO=7800.) )
+
+ACIERNL=DEFI_MATERIAU(    ELAS=_F( E = 1.5E9,  NU = 0.3, RHO = 7800.,
+                                     ),
+                          ECRO_LINE=_F(  D_SIGM_EPSI = 1.E8,
+                                      SY = 1.5E6)
+                      )
+
+MA=LIRE_MAILLAGE(FORMAT='MED',)
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MA,
+         AFFE=(_F( TOUT = 'OUI', MATER = ACIER),
+               _F( GROUP_MA = 'GRSD1', MATER = ACIERNL),
+               ),
+                    )
+
+MO=AFFE_MODELE(  MAILLAGE=MA,     AFFE=_F( TOUT = 'OUI',
+                MODELISATION = 'D_PLAN', PHENOMENE = 'MECANIQUE'))
+
+CHCI=AFFE_CHAR_CINE(MODELE=MO, MECA_IMPO=(
+_F( NOEUD = 'N35', DX = 2.0E-2),
+ _F( NOEUD = ('N8','N17','N25',), DX = 0.0, DY = 0.0),
+ ),
+)
+CHBL=AFFE_CHAR_MECA(MODELE=MO,
+  LIAISON_DDL=(
+#           GH :
+  _F( NOEUD = ('N22','N22',),DDL = ('DY','DX',), COEF_MULT = (1.0,1.0,), COEF_IMPO = 0.0),
+  _F( NOEUD = ('N24','N24',),DDL = ('DY','DX',), COEF_MULT = (1.0,1.0,), COEF_IMPO = 0.0),
+  _F( NOEUD = ('N26','N26',),DDL = ('DY','DX',), COEF_MULT = (1.0,1.0,), COEF_IMPO = 0.0),
+  _F( NOEUD = ('N28','N28',),DDL = ('DY','DX',), COEF_MULT = (1.0,1.0,), COEF_IMPO = 0.0))
+            )
+
+CHF1=AFFE_CHAR_MECA(MODELE=MO,
+#           SUIVEUR:
+           PRES_REP=_F( GROUP_MA = ('GRMA14','GRMA17','GRMA20',), PRES =
+           10000.0)
+                       )
+
+CHF2=AFFE_CHAR_MECA(MODELE=MO,
+#       NON-SUIVEUR:
+         FORCE_NODALE=_F( NOEUD = ('N11','N19','N27','N33','N31',), FY = -20.0)
+                       );
+
+CHF3=AFFE_CHAR_MECA(MODELE=MO,
+                    PESANTEUR=_F(GRAVITE=-9.81,
+                                 DIRECTION=(1.0,0.0,0.0,),),);
+
+LISTIN1=DEFI_LIST_REEL(DEBUT=0.,
+              INTERVALLE=_F( JUSQU_A = .1,NOMBRE = 3))
+
+LISTIN2=DEFI_LIST_REEL(DEBUT=.1,
+              INTERVALLE=_F( JUSQU_A = .2,NOMBRE = 2))
+
+
+U=STAT_NON_LINE(
+            MODELE=MO,
+            CHAM_MATER=CHMAT,
+            EXCIT=(_F(  CHARGE = CHBL),
+                   _F(  CHARGE = CHCI),
+                   _F(  CHARGE = CHF1),
+                   _F(  CHARGE = CHF2),
+                   _F(  CHARGE = CHF3),
+                   ),
+            COMP_INCR=(_F( RELATION='ELAS', TOUT='OUI'),
+                       _F( RELATION='VMIS_ISOT_LINE', GROUP_MA='GRSD1'),
+                        ),
+            INCREMENT=_F( LIST_INST = LISTIN1),
+            NEWTON=_F(  MATRICE = 'TANGENTE',
+                        REAC_ITER=1
+                        ),
+            CONVERGENCE=_F(
+        #    RESI_GLOB_MAXI = 1E-8,
+                         ITER_GLOB_MAXI = 10,
+                         ),
+               SOLVEUR=_F( METHODE = 'MULT_FRONT', STOP_SINGULIER='NON',)
+                   )
+
+
+U1=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+              OPERATION='EXTR',
+              RESULTAT=U,
+              NOM_CHAM='DEPL',
+              NUME_ORDRE=3,);
+
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N31',
+                      NOM_CMP='DX',
+                      CHAM_GD=U1,
+                      VALE_CALC=0.015366519405176,
+                      VALE_REFE=0.015366519405176001,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N31',
+                      NOM_CMP='DY',
+                      CHAM_GD=U1,
+                      VALE_CALC=-1.2161203814809E-03,
+                      VALE_REFE=-1.2161203814809E-3,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N28',
+                      NOM_CMP='DX',
+                      CHAM_GD=U1,
+                      VALE_CALC=1.0406892549362E-06,
+                      VALE_REFE=1.0406892549361999E-06,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N28',
+                      NOM_CMP='DY',
+                      CHAM_GD=U1,
+                      VALE_CALC=-1.0406892549362E-06,
+                      VALE_REFE=-1.0406892549361999E-06,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N13',
+                      NOM_CMP='DX',
+                      CHAM_GD=U1,
+                      VALE_CALC=8.0910521044671E-06,
+                      VALE_REFE=8.0910521044671008E-06,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N13',
+                      NOM_CMP='DY',
+                      CHAM_GD=U1,
+                      VALE_CALC=-1.5110509100169E-05,
+                      VALE_REFE=-1.5110509100169E-05,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N10',
+                      NOM_CMP='DX',
+                      CHAM_GD=U1,
+                      VALE_CALC=6.8940445817137E-05,
+                      VALE_REFE=6.8940445817137005E-05,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N10',
+                      NOM_CMP='DY',
+                      CHAM_GD=U1,
+                      VALE_CALC=9.2096201614429E-05,
+                      VALE_REFE=9.2096201614429003E-05,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   ),
+          )
+
+U=DYNA_NON_LINE(reuse=U,
+            MODELE=MO,
+            CHAM_MATER=CHMAT,
+            EXCIT=(_F(  CHARGE = CHBL),
+                   _F(  CHARGE = CHCI),
+                   _F(  CHARGE = CHF1),
+                   _F(  CHARGE = CHF2),
+                   _F(  CHARGE = CHF3),
+                   ),
+            ETAT_INIT= _F(EVOL_NOLI=U),
+            COMP_INCR=(_F( RELATION='ELAS', TOUT='OUI'),
+                       _F( RELATION='VMIS_ISOT_LINE', GROUP_MA='GRSD1'),
+                        ),
+            INCREMENT=_F( LIST_INST = LISTIN2),
+            SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',
+                            FORMULATION='DEPLACEMENT',),
+            NEWTON=_F(  MATRICE = 'TANGENTE',
+                        REAC_ITER=1
+                        ),
+            CONVERGENCE=_F( RESI_GLOB_RELA = 1.0E-8,
+                         ITER_GLOB_MAXI = 10,),
+               SOLVEUR=_F( METHODE = 'MULT_FRONT', STOP_SINGULIER='NON',)
+                   )
+
+U2=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+              OPERATION='EXTR',
+              RESULTAT=U,
+              NOM_CHAM='DEPL',
+              NUME_ORDRE=5,);
+
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N31',
+                      NOM_CMP='DX',
+                      CHAM_GD=U2,
+                      VALE_CALC=0.015366519405369,
+                      VALE_REFE=0.015366519405368999,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N31',
+                      NOM_CMP='DY',
+                      CHAM_GD=U2,
+                      VALE_CALC=-1.2161203823997E-03,
+                      VALE_REFE=-1.2161203823997E-3,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N28',
+                      NOM_CMP='DX',
+                      CHAM_GD=U2,
+                      VALE_CALC=1.0406892551514E-06,
+                      VALE_REFE=1.0406892551514001E-06,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N28',
+                      NOM_CMP='DY',
+                      CHAM_GD=U2,
+                      VALE_CALC=-1.0406892551514E-06,
+                      VALE_REFE=-1.0406892551514001E-06,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N13',
+                      NOM_CMP='DX',
+                      CHAM_GD=U2,
+                      VALE_CALC=8.0910521055951E-06,
+                      VALE_REFE=8.0910521055950997E-06,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N13',
+                      NOM_CMP='DY',
+                      CHAM_GD=U2,
+                      VALE_CALC=-1.5110509102094E-05,
+                      VALE_REFE=-1.5110509102093999E-05,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N10',
+                      NOM_CMP='DX',
+                      CHAM_GD=U2,
+                      VALE_CALC=6.8940445827615E-05,
+                      VALE_REFE=6.8940445827615006E-05,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   _F(NOEUD='N10',
+                      NOM_CMP='DY',
+                      CHAM_GD=U2,
+                      VALE_CALC=9.2096201627557E-05,
+                      VALE_REFE=9.2096201627558E-05,
+                      REFERENCE = 'AUTRE_ASTER',
+                      PRECISION=1.0000000000000001E-05,),
+                   ),
+          )
+
+FIN();

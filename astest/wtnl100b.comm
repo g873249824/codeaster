@@ -1,0 +1,343 @@
+
+# TITRE  - CONSOLIDATION DE TERZAGHI  CAS 3D
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+#
+#
+# ======================================================================
+#
+#
+
+
+DEBUT(CODE=_F(NOM='WTNL100B',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+
+MODELE=AFFE_MODELE(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='3D_HMD',),);
+
+
+MAIL= MODI_MAILLAGE( reuse        = MAIL,
+                          MAILLAGE     = MAIL,
+                          ORIE_PEAU_3D = _F( GROUP_MA ='FACESUP'));
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_NO=_F(NOM='HAUTS',
+                                  CRIT_NOEUD='SOMMET',
+                                  GROUP_MA='FACESUP',),);
+#  LISTE DES INSTANTS DE CALCUL
+#
+
+LI=DEFI_LIST_REEL(DEBUT=0.0,
+                  INTERVALLE=_F(JUSQU_A=1.E-4,
+                                NOMBRE=1,),);
+
+UN=DEFI_CONSTANTE(VALE=1.0,);
+
+ZERO=DEFI_CONSTANTE(VALE=0.0,);
+
+BIDON=DEFI_CONSTANTE(VALE=0.0,);
+#
+#
+#K=k*mu/(rhow*g)
+#
+#
+
+KINT=DEFI_CONSTANTE(VALE=1.E-08,);
+
+MATERIAU=DEFI_MATERIAU(ELAS=_F(E=1.E7,
+                               NU=0.0,
+                               RHO=2800.0,
+                               ALPHA=1.0000000000000001E-05,),
+                       COMP_THM = 'LIQU_SATU',
+                       THM_LIQU=_F(RHO=1000.0,
+                                   UN_SUR_K=0.0,
+                                   ALPHA=1.E-4,
+                                   CP=4180.0,
+                                   VISC=UN,
+                                   D_VISC_TEMP=ZERO,),
+                       THM_GAZ=_F(MASS_MOL=0.02896,
+                                  CP=1000.0,
+                                  VISC=BIDON,
+                                  D_VISC_TEMP=BIDON,),
+                       THM_VAPE_GAZ=_F(MASS_MOL=0.017999999999999999,
+                                       CP=1870.0,),
+                       THM_INIT=_F(TEMP=293.0,
+                                   PRE1=1.E6,
+                                   PRE2=1.E5,
+                                   PORO=0.5,
+                                   PRES_VAPE=2320.0,),
+                       THM_DIFFU=_F(R_GAZ=8.3149999999999995,
+                                    RHO=2800.0,
+                                    CP=660.0,
+                                    BIOT_COEF=1.0,
+                                    SATU_PRES=UN,
+                                    D_SATU_PRES=ZERO,
+                                    PESA_X=0.0,
+                                    PESA_Y=0.0,
+                                    PESA_Z=0.0,
+                                    PERM_IN=KINT,
+                                    PERM_LIQU=UN,
+                                    D_PERM_LIQU_SATU=ZERO,
+                                    PERM_GAZ=BIDON,
+                                    D_PERM_SATU_GAZ=BIDON,
+                                    D_PERM_PRES_GAZ=BIDON,),);
+
+CHMAT0=AFFE_MATERIAU(MAILLAGE=MAIL,
+                     AFFE=_F(TOUT='OUI',
+                             MATER=MATERIAU,),);
+
+CHAR=AFFE_CHAR_MECA(MODELE=MODELE,
+                    DDL_IMPO=(_F(NOEUD=('NO33','NO83','NO200','NO150',),
+#                    DDL_IMPO=(_F(GROUP_NO='HAUTS',
+                                 PRE1=0.0,),
+                              _F(GROUP_NO='BAS',
+                                 DY=0.0,),
+                              _F(GROUP_NO=('GAUCHE','DROITE'),
+                                 DX=0.0,),
+                              _F(GROUP_NO=('DEVANT','DERRIERE'),
+                                 DZ=0.0,),),
+                    PRES_REP=_F(GROUP_MA='FACESUP',
+                                PRES=1.0,),);
+
+RESU1=STAT_NON_LINE(MODELE=MODELE,
+                    CHAM_MATER=CHMAT0,
+                    EXCIT=_F(CHARGE=CHAR,),
+                    COMP_INCR=_F(RELATION='KIT_HM',PARM_THETA=0.56999999999999995,
+                                 RELATION_KIT=('ELAS','LIQU_SATU','HYDR_UTIL'),),
+                    INCREMENT=_F(LIST_INST=LI,),
+                    NEWTON=_F(MATRICE='TANGENTE',
+                              REAC_ITER=10,),
+                    CONVERGENCE=_F(ITER_GLOB_MAXI=10,),
+                    SOLVEUR=_F(METHODE='LDLT',),);
+
+RESU1=CALC_CHAMP(reuse=RESU1,CRITERES=('SIEQ_ELNO'),CONTRAINTE=('SIGM_ELNO'),RESULTAT=RESU1)
+
+
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO168',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO170',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO172',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO174',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO176',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO178',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO180',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO182',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO184',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO186',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO188',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO190',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO192',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO194',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO196',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=1.000000000,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO198',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=0.999985408,
+                   VALE_REFE=1.0,
+                   PRECISION=1.E-3,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=RESU1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='NO200',
+                   NOM_CMP='PRE1',
+                   VALE_CALC=-5.04870979E-29,
+                   VALE_REFE=0.0,
+                   CRITERE='ABSOLU',
+                   PRECISION=1.E-3,),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   RESULTAT=RESU1,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO83',
+                   NOM_CMP='VMIS',
+                   VALE_CALC=1.6451950200000001,
+                   MAILLE='MA16',
+                   ),
+                _F(NUME_ORDRE=1,
+                   RESULTAT=RESU1,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO83',
+                   NOM_CMP='TRESCA',
+                   VALE_CALC=1.8098495947,
+                   MAILLE='MA16',
+                   ),
+                _F(NUME_ORDRE=1,
+                   RESULTAT=RESU1,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO83',
+                   NOM_CMP='PRIN_1',
+                   VALE_CALC=-1.4049247970000001,
+                   MAILLE='MA16',
+                   ),
+                _F(NUME_ORDRE=1,
+                   RESULTAT=RESU1,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO83',
+                   NOM_CMP='PRIN_2',
+                   VALE_CALC=0.0,
+                   CRITERE='ABSOLU',
+                   MAILLE='MA16',
+                   ),
+                _F(NUME_ORDRE=1,
+                   RESULTAT=RESU1,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO83',
+                   NOM_CMP='PRIN_3',
+                   VALE_CALC=0.40492479729999997,
+                   MAILLE='MA16',
+                   ),
+                _F(NUME_ORDRE=1,
+                   RESULTAT=RESU1,
+                   NOM_CHAM='SIEQ_ELNO',
+                   NOEUD='NO83',
+                   NOM_CMP='VMIS_SG',
+                   VALE_CALC=-1.6451950200000001,
+                   MAILLE='MA16',
+                   ),
+                ),
+          )
+
+FIN();

@@ -1,0 +1,413 @@
+# person_in_charge: jean-michel.proix at edf.fr
+# TITRE STRUCTURE SYMETRIQUE DE POUTRES AVEC UN COUDE (POUTRE COURBE)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#CAS_TEST__: SSLL100B
+# SSLL100 B                COMMANDES                            10/06/91
+# STRUCTURE SYMETRIQUE AVEC UN COUDE
+# ORIENTATION EN REPERE OBLIQUE
+# ETUDES: 1)CHARGE_NODALE   2)DEPL_IMPO   3)TEMPERATURE  4)POIDS PROPRE
+# COUDE = POLYGONE
+#                                              REF: POUX.STA.MPACOB
+# MODELISATION POU_D_T  DIS_T  --
+#=======================================================================
+
+
+DEBUT(CODE=_F(NOM='SSLL100B',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE(FORMAT='MED', )
+
+MAT=DEFI_MATERIAU( ELAS=_F(  E = 2.1E+11,  NU = 0.3,  RHO = 7800.,
+                            ALPHA = 1.E-6) )
+
+CHTEMP=CREA_CHAMP(OPERATION='AFFE', TYPE_CHAM='NOEU_TEMP_R', MAILLAGE=MA,
+             AFFE=_F(  TOUT = 'OUI', NOM_CMP = 'TEMP',  VALE = 100.) )
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MA,
+          AFFE=_F(  GROUP_MA = 'MPOUTRE',     MATER = MAT),
+          AFFE_VARC =_F(TOUT='OUI', VALE_REF=0.,CHAM_GD=CHTEMP, NOM_VARC='TEMP',),
+          )
+CHMATST=AFFE_MATERIAU(  MAILLAGE=MA,
+          AFFE=_F(  GROUP_MA = 'MPOUTRE',     MATER = MAT),
+          )
+
+MOD=AFFE_MODELE(  MAILLAGE=MA,AFFE=(
+          _F(  PHENOMENE = 'MECANIQUE',
+                 GROUP_MA = 'MPOUTRE',  MODELISATION = 'POU_D_T'),
+               _F(  MAILLE = ('AB','FG',),    MODELISATION = 'DIS_T',
+               PHENOMENE = 'MECANIQUE')) )
+
+CARLEM=AFFE_CARA_ELEM(   MODELE=MOD,
+            #------ POUTRE
+            POUTRE=_F(  GROUP_MA = 'MPOUTRE',        SECTION = 'GENERALE',
+  CARA = (  'A',   'IY',    'IZ',    'AY',    'AZ',    'JX',   ),
+  VALE = ( 0.11780973E-2, 0.125172834E-6, 0.125172834E-6, 1.3096094, 1.3096094,
+        0.250345668E-6, )),
+
+           ORIENTATION=_F(  CARA = 'VECT_Y',
+                            VALE = ( -1.,   0.,  0., ),   MAILLE = ('AB','FG',)),
+
+            #------ RESSORTS         RAIDEUR KX KZ REPERE LOCAL
+            DISCRET=(_F(  MAILLE = ('AB','FG',), REPERE = 'LOCAL',
+                      CARA = 'K_T_D_L',
+                      #         KX     KY     KZ
+                      VALE = ( 1.E5,   0.,    1.E5,    ),  ),
+                      _F(  MAILLE = ('AB','FG',), REPERE = 'LOCAL',
+                      CARA = 'M_T_L',
+                      #         KX     KY     KZ
+                      VALE = ( 0.,0.,0.,0.,0.,0.,0.,0.,0.,
+                      0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,),  ), ) )
+
+# CONDITIONS LIMITES COMMUNES AUX 3 CAS DE CHARGEMENT 1,3,4
+COND_LIM=AFFE_CHAR_MECA(  MODELE=MOD,DDL_IMPO=(
+            _F(  GROUP_NO = 'NPOUTRE',   DX = 0., DRY = 0., DRZ = 0.),
+                     _F(  NOEUD = ('A','G',),        DX = 0., DY = 0.,  DZ = 0.)))
+
+#-----------------------------------------------------------------------
+MELR=CALC_MATR_ELEM(  MODELE=MOD,          CHARGE=COND_LIM,
+                           OPTION='RIGI_MECA',   CHAM_MATER=CHMAT,
+                            CARA_ELEM=CARLEM   )
+
+NUM=NUME_DDL(  MATR_RIGI=MELR  )
+
+MATASSR=ASSE_MATRICE(  MATR_ELEM=MELR,        NUME_DDL=NUM   )
+
+MATASSR=FACTORISER(reuse=MATASSR,  MATR_ASSE=MATASSR )
+
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+# CAS 1:         FORCES EN C ET E
+#-----------------------------------------------------------------------
+
+CH1=AFFE_CHAR_MECA(  MODELE=MOD,
+                       FORCE_NODALE=_F(  NOEUD = ('C','E',),   FZ = -1000.) )
+
+VEL1=CALC_VECT_ELEM(  CHARGE=( COND_LIM,  CH1, ),
+                       OPTION='CHAR_MECA'         )
+
+FORCE_PO=ASSE_VECTEUR(  VECT_ELEM=VEL1,    NUME_DDL=NUM     )
+
+FORCE_PO=RESOUDRE(reuse=FORCE_PO,  MATR=MATASSR,    CHAM_NO=FORCE_PO )
+
+########################################################################
+
+########################################################################
+#----------------------------------------------------------------------
+# CAS 2:         DEPLACEMENTS IMPOSES EN A ET G
+#----------------------------------------------------------------------
+#
+
+CH2=AFFE_CHAR_MECA(  MODELE=MOD,DDL_IMPO=(
+               _F(  GROUP_NO = 'NPOUTRE',   DX = 0., DRY = 0., DRZ = 0.),
+                        _F(  NOEUD = 'A',           DX = 0., DY = 1., DZ = 1.),
+                        _F(  NOEUD = 'G',           DX = 0., DY = -1., DZ = 1.)))
+
+VEL2=CALC_VECT_ELEM(  CHARGE=CH2,    OPTION='CHAR_MECA'  )
+
+MELR2=CALC_MATR_ELEM(  MODELE=MOD,           CHARGE=CH2,
+                          OPTION='RIGI_MECA',    CHAM_MATER=CHMAT,
+                            CARA_ELEM=CARLEM   )
+
+NUM2=NUME_DDL(  MATR_RIGI=MELR2 )
+
+MATASS2=ASSE_MATRICE(  MATR_ELEM=MELR2,       NUME_DDL=NUM2  )
+
+MATASS2=FACTORISER(reuse=MATASS2,  MATR_ASSE=MATASS2 )
+
+DDL_IMPO=ASSE_VECTEUR(  VECT_ELEM=VEL2,     NUME_DDL=NUM2 )
+
+DDL_IMPO=RESOUDRE(reuse=DDL_IMPO,  MATR=MATASS2,     CHAM_NO=DDL_IMPO )
+
+########################################################################
+
+########################################################################
+#----------------------------------------------------------------------
+# CAS 3:         DILATATION THERMIQUE A 100
+#----------------------------------------------------------------------
+
+VEL3=CALC_VECT_ELEM( CHARGE=( COND_LIM,),   OPTION='CHAR_MECA',
+                        CHAM_MATER=CHMAT,   CARA_ELEM=CARLEM )
+
+DILA_THE=ASSE_VECTEUR(  VECT_ELEM=VEL3,    NUME_DDL=NUM     )
+
+DILA_THE=RESOUDRE(reuse=DILA_THE,  MATR=MATASSR,    CHAM_NO=DILA_THE )
+
+########################################################################
+
+########################################################################
+#-----------------------------------------------------------------------
+# CAS 4:         EFFET DE LA PESANTEUR
+#-----------------------------------------------------------------------
+
+CH4=AFFE_CHAR_MECA(  MODELE=MOD, PESANTEUR=_F(GRAVITE=9.81,
+                                              DIRECTION=(0.,  0.,  -1.,  ), ),)
+
+VEL4=CALC_VECT_ELEM(  CHARGE=( COND_LIM,  CH4, ),    CARA_ELEM=CARLEM,
+                         CHAM_MATER=CHMATST,     OPTION='CHAR_MECA' )
+
+POIDS_PR=ASSE_VECTEUR(  VECT_ELEM=VEL4,    NUME_DDL=NUM     )
+
+POIDS_PR=RESOUDRE(reuse=POIDS_PR,  MATR=MATASSR,    CHAM_NO=POIDS_PR )
+
+#--------------------------------------------------------------------
+TEST_RESU(CHAM_NO=(_F(NOEUD='B',
+                      NOM_CMP='DY',
+                      CHAM_GD=FORCE_PO,
+                      VALE_CALC=-8.1209431296278E-03,
+                      VALE_REFE=-8.1200000000000005E-3,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='B',
+                      NOM_CMP='DZ',
+                      CHAM_GD=FORCE_PO,
+                      VALE_CALC=-9.9999999999261E-03,
+                      VALE_REFE=-1.E-2,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='C',
+                      NOM_CMP='DY',
+                      CHAM_GD=FORCE_PO,
+                      VALE_CALC=7.3863101419738E-03,
+                      VALE_REFE=7.3889999999999997E-3,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='C',
+                      NOM_CMP='DZ',
+                      CHAM_GD=FORCE_PO,
+                      VALE_CALC=-0.025527970198516,
+                      VALE_REFE=-0.025530000000000001,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='E',
+                      NOM_CMP='DY',
+                      CHAM_GD=FORCE_PO,
+                      VALE_CALC=-7.3863101594867E-03,
+                      VALE_REFE=-7.3889999999999997E-3,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='E',
+                      NOM_CMP='DZ',
+                      CHAM_GD=FORCE_PO,
+                      VALE_CALC=-0.025527970216082,
+                      VALE_REFE=-0.025530000000000001,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='F',
+                      NOM_CMP='DY',
+                      CHAM_GD=FORCE_PO,
+                      VALE_CALC=8.1209431296163E-03,
+                      VALE_REFE=8.1200000000000005E-3,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='F',
+                      NOM_CMP='DZ',
+                      CHAM_GD=FORCE_PO,
+                      VALE_CALC=-9.9999999999904E-03,
+                      VALE_REFE=-1.E-2,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   ),
+          )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='B',
+                      NOM_CMP='DY',
+                      CHAM_GD=DDL_IMPO,
+                      VALE_CALC=0.98584710908609,
+                      VALE_REFE=0.98580000000000001,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='B',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DDL_IMPO,
+                      VALE_CALC=0.99999999999259,
+                      VALE_REFE=1.0,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='C',
+                      NOM_CMP='DY',
+                      CHAM_GD=DDL_IMPO,
+                      VALE_CALC=0.17373661571033,
+                      VALE_REFE=0.17380000000000001,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='C',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DDL_IMPO,
+                      VALE_CALC=1.8120943129518,
+                      VALE_REFE=1.8120000000000001,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='E',
+                      NOM_CMP='DY',
+                      CHAM_GD=DDL_IMPO,
+                      VALE_CALC=-0.17373661569736,
+                      VALE_REFE=-0.17380000000000001,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='E',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DDL_IMPO,
+                      VALE_CALC=1.8120943129642,
+                      VALE_REFE=1.8120000000000001,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='F',
+                      NOM_CMP='DY',
+                      CHAM_GD=DDL_IMPO,
+                      VALE_CALC=-0.98584710908273,
+                      VALE_REFE=-0.98580000000000001,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='F',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DDL_IMPO,
+                      VALE_CALC=0.99999999999541,
+                      VALE_REFE=1.0,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   ),
+          )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='B',
+                      NOM_CMP='DY',
+                      CHAM_GD=DILA_THE,
+                      VALE_CALC=-5.6611563663398E-06,
+                      VALE_REFE=-5.66E-06,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='B',
+                      CRITERE='ABSOLU',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DILA_THE,
+                      VALE_CALC=-2.9704157970128E-15,
+                      VALE_REFE=0.0,
+                      REFERENCE = 'SOURCE_EXTERNE',),
+                   _F(NOEUD='C',
+                      NOM_CMP='DY',
+                      CHAM_GD=DILA_THE,
+                      VALE_CALC=-1.3050535372887E-04,
+                      VALE_REFE=-1.305E-4,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='C',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DILA_THE,
+                      VALE_CALC=5.2483772519294E-04,
+                      VALE_REFE=5.2479999999999996E-4,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='E',
+                      NOM_CMP='DY',
+                      CHAM_GD=DILA_THE,
+                      VALE_CALC=1.3050535370821E-04,
+                      VALE_REFE=1.305E-4,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='E',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DILA_THE,
+                      VALE_CALC=5.2483772517736E-04,
+                      VALE_REFE=5.2479999999999996E-4,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='F',
+                      NOM_CMP='DY',
+                      CHAM_GD=DILA_THE,
+                      VALE_CALC=5.6611563642916E-06,
+                      VALE_REFE=5.66E-06,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='F',
+                      CRITERE='ABSOLU',
+                      NOM_CMP='DZ',
+                      CHAM_GD=DILA_THE,
+                      VALE_CALC=6.0552691333315E-17,
+                      VALE_REFE=0.0,
+                      REFERENCE = 'SOURCE_EXTERNE',),
+                   ),
+          )
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='B',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DY',
+                      PRECISION=5.0000000000000001E-3,
+                      CHAM_GD=POIDS_PR,
+                      VALE_CALC=-3.11448681E-03,
+                      VALE_REFE=-3.1110000000000001E-3,
+                      REFERENCE='SOURCE_EXTERNE',),
+                   _F(NOEUD='B',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DZ',
+                      PRECISION=5.0000000000000001E-3,
+                      CHAM_GD=POIDS_PR,
+                      VALE_CALC=-4.55210405E-03,
+                      VALE_REFE=-4.5519999999999996E-3,
+                      REFERENCE='SOURCE_EXTERNE',),
+                   _F(NOEUD='C',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DY',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=POIDS_PR,
+                      VALE_CALC= 1.14092460E-03,
+                      VALE_REFE=1.1800000000000001E-3,
+                      REFERENCE='SOURCE_EXTERNE',),
+                   _F(NOEUD='C',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DZ',
+                      PRECISION=5.0000000000000001E-3,
+                      CHAM_GD=POIDS_PR,
+                      VALE_CALC=-8.81482287E-03,
+                      VALE_REFE=-8.8500000000000002E-3,
+                      REFERENCE='SOURCE_EXTERNE',),
+                   _F(NOEUD='E',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DY',
+                      PRECISION=0.050000000000000003,
+                      CHAM_GD=POIDS_PR,
+                      VALE_CALC=-1.14092460E-03,
+                      VALE_REFE=-1.1800000000000001E-3,
+                      REFERENCE='SOURCE_EXTERNE',),
+                   _F(NOEUD='E',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DZ',
+                      PRECISION=5.0000000000000001E-3,
+                      CHAM_GD=POIDS_PR,
+                      VALE_CALC=-8.81482287E-03,
+                      VALE_REFE=-8.8500000000000002E-3,
+                      REFERENCE='SOURCE_EXTERNE',),
+                   _F(NOEUD='F',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DY',
+                      PRECISION=5.0000000000000001E-3,
+                      CHAM_GD=POIDS_PR,
+                      VALE_CALC= 3.11448681E-03,
+                      VALE_REFE=3.1110000000000001E-3,
+                      REFERENCE='SOURCE_EXTERNE',),
+                   _F(NOEUD='F',
+                      CRITERE='RELATIF',
+                      NOM_CMP='DZ',
+                      PRECISION=5.0000000000000001E-3,
+                      CHAM_GD=POIDS_PR,
+                      VALE_CALC=-4.55210405E-03,
+                      VALE_REFE=-4.5519999999999996E-3,
+                      REFERENCE='SOURCE_EXTERNE',),
+                   ),
+          )
+#----------------------------------------------------------------------
+
+FIN()
+#

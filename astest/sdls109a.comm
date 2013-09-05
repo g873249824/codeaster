@@ -1,0 +1,141 @@
+# TITRE FREQUENCES PROPRES D'UN ANNEAU CYLINDRIQUE EPAIS
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+DEBUT(CODE=_F(NOM='SDLS109A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+MOD_DKQ=AFFE_MODELE(AFFE=_F(GROUP_MA='SURF_S',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='DKT',),
+                   MAILLAGE=MAIL,);
+MOD_DSQ=AFFE_MODELE(AFFE=_F(GROUP_MA='SURF_S',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='DST',),
+                   MAILLAGE=MAIL,);
+M_S=DEFI_MATERIAU(ELAS=_F(NU=0.29999999999999999,
+                          RHO=7800.0,
+                          E=1.85000000000E11,),);
+CHAM_MAT=AFFE_MATERIAU(AFFE=_F(MATER=M_S,
+                               GROUP_MA='SURF_S',),
+                       MAILLAGE=MAIL,);
+CARA_DKQ=AFFE_CARA_ELEM(MODELE=MOD_DKQ,
+                       COQUE=_F(ANGL_REP=(45.0,-45.0),
+                                GROUP_MA='SURF_S',
+                                A_CIS=0.83333333300000001,
+                                EPAIS=0.048000000000000001,),);
+CARA_DSQ=AFFE_CARA_ELEM(MODELE=MOD_DSQ,
+                       COQUE=_F(ANGL_REP=(45.0,-45.0),
+                                GROUP_MA='SURF_S',
+                                A_CIS=0.83333333300000001,
+                                EPAIS=0.048000000000000001,),);
+MK_DKQ=CALC_MATR_ELEM(OPTION='RIGI_MECA',
+                     MODELE=MOD_DKQ,
+                     CHAM_MATER=CHAM_MAT,
+                     CARA_ELEM=CARA_DKQ,);
+MM_DKQ=CALC_MATR_ELEM(OPTION='MASS_MECA',
+                     MODELE=MOD_DKQ,
+                     CHAM_MATER=CHAM_MAT,
+                     CARA_ELEM=CARA_DKQ,);
+NUM_DKQ=NUME_DDL(MATR_RIGI=MK_DKQ,);
+MASK_DKQ=ASSE_MATRICE(MATR_ELEM=MK_DKQ,
+                      NUME_DDL=NUM_DKQ,);
+MASM_DKQ=ASSE_MATRICE(MATR_ELEM=MM_DKQ,
+                      NUME_DDL=NUM_DKQ,);
+MODE_DKQ=MODE_ITER_SIMULT(OPTION='SANS',
+                       MATR_RIGI=MASK_DKQ,
+                       MATR_MASS=MASM_DKQ,
+                       CALC_FREQ=_F(OPTION='BANDE',
+                                    FREQ=(200.,800.0),),);
+
+MK_DSQ=CALC_MATR_ELEM(OPTION='RIGI_MECA',
+                     MODELE=MOD_DSQ,
+                     CHAM_MATER=CHAM_MAT,
+                     CARA_ELEM=CARA_DSQ,);
+MM_DSQ=CALC_MATR_ELEM(OPTION='MASS_MECA',
+                     MODELE=MOD_DSQ,
+                     CHAM_MATER=CHAM_MAT,
+                     CARA_ELEM=CARA_DSQ,);
+NUM_DSQ=NUME_DDL(MATR_RIGI=MK_DSQ,);
+MASK_DSQ=ASSE_MATRICE(MATR_ELEM=MK_DSQ,
+                      NUME_DDL=NUM_DSQ,);
+MASM_DSQ=ASSE_MATRICE(MATR_ELEM=MM_DSQ,
+                      NUME_DDL=NUM_DSQ,);
+MODE_DSQ=MODE_ITER_SIMULT(OPTION='SANS',
+                       MATR_RIGI=MASK_DSQ,
+                       MATR_MASS=MASM_DSQ,
+                       CALC_FREQ=_F(OPTION='BANDE',
+                                    FREQ=(200.,800.0),),);
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODE_DKQ,
+                   VALE_CALC=211.477554916,
+                   VALE_REFE=210.55000000000001,
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODE_DKQ,
+                   VALE_CALC=211.477554934,
+                   VALE_REFE=210.55000000000001,
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=5,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODE_DKQ,
+                   VALE_CALC=598.225780530,
+                   VALE_REFE=587.91999999999996,
+                   PRECISION=0.029999999999999999,),
+                _F(NUME_ORDRE=6,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODE_DKQ,
+                   VALE_CALC=598.225780584,
+                   VALE_REFE=587.91999999999996,
+                   PRECISION=0.029999999999999999,),
+                _F(NUME_ORDRE=1,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODE_DSQ,
+                   VALE_CALC=209.573849226,
+                   VALE_REFE=210.55000000000001,
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=2,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODE_DSQ,
+                   VALE_CALC=209.573849242,
+                   VALE_REFE=210.55000000000001,
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=5,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODE_DSQ,
+                   VALE_CALC=586.296793774,
+                   VALE_REFE=587.91999999999996,
+                   PRECISION=1.E-2,),
+                _F(NUME_ORDRE=6,
+                   PARA='FREQ',
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=MODE_DSQ,
+                   VALE_CALC=586.296793830,
+                   VALE_REFE=587.91999999999996,
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+FIN();

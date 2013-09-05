@@ -1,0 +1,273 @@
+# person_in_charge: xavier.desroches at edf.fr
+# TITRE CYLINDRE SOUS CHARGEMENT THERMIQUE (AXIS_FOURIER)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+DEBUT(CODE=_F(NOM='HSLV304A', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED', )
+
+#
+# DEFINITION DES GROUPES DE NOEUDS
+MAIL=DEFI_GROUP( reuse=MAIL,   MAILLAGE=MAIL,CREA_GROUP_NO=(
+                       _F(  GROUP_MA = 'ENCAST'),
+                       _F(  GROUP_MA = ( 'E', 'F', 'G', )))
+                   )
+
+#
+# DEFINITION DU MODELE
+MODELE=AFFE_MODELE(    MAILLAGE=MAIL,
+                         AFFE=_F(  TOUT = 'OUI',
+                       PHENOMENE = 'MECANIQUE',
+                       MODELISATION = 'AXIS_FOURIER')  )
+
+#
+# DEFINITION DU MATERIAU
+ACIER=DEFI_MATERIAU(    ELAS=_F(  E = 2.1E11,  NU = 0.3,
+                                 ALPHA = 0.12E-4,  RHO = 7800.)
+                      )
+
+
+#
+# DEFINITION DES CONDITIONS AUX LIMITES
+CLIM=AFFE_CHAR_MECA(    MODELE=MODELE,
+                           DDL_IMPO=_F(  GROUP_NO = 'ENCAST',
+                                      DX = 0.,  DY = 0.,  DZ = 0.)
+                        )
+
+#
+# DEFINITION DU CHARGEMENT THERMIQUE :
+CHAR_NO=CREA_CHAMP(  OPERATION='AFFE', TYPE_CHAM='NOEU_TEMP_R',
+                         MAILLAGE=MAIL,
+                         AFFE=_F( TOUT = 'OUI',
+                                  NOM_CMP = 'TEMP',
+                                  VALE = 1.)
+                         )
+
+#
+# ATTRIBUTION DU MATERIAU
+
+# Materiau avec prise en compte de la temperature :
+CHMAT=AFFE_MATERIAU( MAILLAGE=MAIL,
+                  AFFE=_F(  TOUT = 'OUI', MATER = ACIER),
+                  AFFE_VARC =_F(TOUT='OUI', CHAM_GD=CHAR_NO, NOM_VARC='TEMP',VALE_REF=0.),
+                          )
+
+# RESOLUTION
+
+CHNUL=AFFE_CHAR_MECA(MODELE=MODELE,  FORCE_NODALE=_F(GROUP_NO = 'ENCAST', FX = 0.) )
+DEF=MACRO_ELAS_MULT( MODELE=MODELE, CHAM_MATER=CHMAT, CHAR_MECA_GLOBAL=CLIM,
+                     CAS_CHARGE=( _F( MODE_FOURIER = 1, TYPE_MODE = 'SYME', CHAR_MECA=CHNUL ),
+                                  _F( MODE_FOURIER = 2, TYPE_MODE = 'ANTI', CHAR_MECA=CHNUL ),
+                              )
+                           )
+IMPR_RESU(RESU=_F(RESULTAT=DEF,NUME_ORDRE=1, NOM_CHAM='DEPL' ),)
+IMPR_RESU(FORMAT='MED',RESU=_F(RESULTAT=DEF,NUME_ORDRE=1, NOM_CHAM='DEPL' ),)
+
+# RECUPERATION DU CHAMP DE DEPLACEMENTS
+
+U0_C=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+                      RESULTAT=DEF,
+                      NUME_ORDRE=1,
+                      NOM_CHAM='DEPL' )
+
+U0_S=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',
+                      RESULTAT=DEF,
+                      NUME_ORDRE=2,
+                      NOM_CHAM='DEPL' )
+
+
+# CALCUL DES CONTRAINTES
+
+DEF=CALC_CHAMP(reuse=DEF,RESULTAT=DEF,CONTRAINTE=('SIGM_ELNO'))
+
+SIG0_C=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+RESULTAT=DEF, NUME_ORDRE=1,
+                         NOM_CHAM='SIGM_ELNO' )
+
+SIG0_S=CREA_CHAMP( OPERATION='EXTR', TYPE_CHAM='ELNO_SIEF_R',
+RESULTAT=DEF, NUME_ORDRE=2,
+                         NOM_CHAM='SIGM_ELNO' )
+
+# RECOMBINAISONS DE FOURIER EN DEPLACEMENTS ET CONTRAINTES
+# POUR TETA = 45 DEG.
+
+
+RESU0_C=CREA_RESU(OPERATION='AFFE',TYPE_RESU='FOURIER_ELAS',NOM_CHAM='DEPL',
+           AFFE=_F( CHAM_GD=U0_C,NUME_MODE=1,TYPE_MODE='SYME'),)
+
+RESU0_S=CREA_RESU(OPERATION='AFFE',TYPE_RESU='FOURIER_ELAS',NOM_CHAM='DEPL',
+           AFFE=_F( CHAM_GD=U0_S,NUME_MODE=2,TYPE_MODE='ANTI'),)
+
+
+CO_FOUR1=COMB_FOURIER(   RESULTAT=RESU0_C,
+                         NOM_CHAM=( 'DEPL',),
+                         ANGLE=( 45., ),
+                        )
+
+CO_FOUR2=COMB_FOURIER(   RESULTAT=RESU0_S,
+                         NOM_CHAM=( 'DEPL',),
+                         ANGLE=( 45., ),
+                        )
+
+CO_FOUR3=COMB_FOURIER(   RESULTAT=DEF,
+                         NOM_CHAM=( 'DEPL', 'SIGM_ELNO',),
+                         ANGLE=( 45., ),
+                        )
+
+IMPR_RESU(RESU=_F( RESULTAT=CO_FOUR1,NOM_CHAM='DEPL'),)
+IMPR_RESU(FORMAT='MED',RESU=_F( RESULTAT=CO_FOUR1,NOM_CHAM='DEPL'),)
+
+U1=CREA_CHAMP(OPERATION='EXTR',TYPE_CHAM='NOEU_DEPL_R',
+             RESULTAT=CO_FOUR1,ANGLE=45.,NOM_CHAM='DEPL')
+
+
+U2=CREA_CHAMP(OPERATION='EXTR',TYPE_CHAM='NOEU_DEPL_R',
+             RESULTAT=CO_FOUR2,ANGLE=45.,NOM_CHAM='DEPL')
+
+
+U=CREA_CHAMP(OPERATION='EXTR',TYPE_CHAM='NOEU_DEPL_R',
+             RESULTAT=CO_FOUR3,ANGLE=45.,NOM_CHAM='DEPL')
+
+
+SIG=CREA_CHAMP(OPERATION='EXTR',TYPE_CHAM='ELNO_SIEF_R',
+             RESULTAT=CO_FOUR3,ANGLE=45.,NOM_CHAM='SIGM_ELNO',)
+
+#
+# TEST_RESU DES DEPLACEMENTS
+#
+TEST_RESU(CHAM_NO=(_F(NOEUD='N371',
+                      NOM_CMP='DX',
+                      CHAM_GD=U1,
+                      VALE_CALC=9.6305711722301E-06,
+                      VALE_REFE=9.6E-06,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=5.E-3,),
+                   _F(NOEUD='N371',
+                      NOM_CMP='DZ',
+                      CHAM_GD=U1,
+                      VALE_CALC=1.524119676005E-06,
+                      VALE_REFE=1.5E-06,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=2.E-2,),
+                   ),
+          )
+
+# U2
+TEST_RESU(CHAM_NO=_F(NOEUD='N371',
+                     NOM_CMP='DX',
+                     CHAM_GD=U2,
+                     VALE_CALC=5.4442614068292E-06,
+                     VALE_REFE=5.44426E-06,
+                     REFERENCE = 'SOURCE_EXTERNE',
+                     PRECISION=1.E-3,),
+          )
+
+# U
+TEST_RESU(CHAM_NO=(_F(NOEUD='N371',
+                      NOM_CMP='DX',
+                      CHAM_GD=U,
+                      VALE_CALC=1.5074832579059E-05,
+                      VALE_REFE=1.50748E-05,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   _F(NOEUD='N371',
+                      NOM_CMP='DZ',
+                      CHAM_GD=U,
+                      VALE_CALC=1.524119676005E-06,
+                      VALE_REFE=1.52412E-06,
+                      REFERENCE = 'SOURCE_EXTERNE',
+                      PRECISION=1.E-3,),
+                   ),
+          )
+
+#
+T1=POST_RELEVE_T(    ACTION=_F(
+                        INTITULE = 'SIG',
+                        GROUP_NO = 'ENCAST',
+                        CHAM_GD = SIG,
+                        NOM_CMP = ('SIXX', 'SIYY', 'SIZZ', 'SIXY',),
+                        OPERATION = 'EXTRACTION')
+            )
+
+#
+# E1
+TEST_TABLE(
+           VALE_CALC=-4.9981316624925E+06,
+           NOM_PARA='SIXX',
+           TABLE=T1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N1',),
+           )
+
+TEST_TABLE(
+           VALE_CALC=5.7570926620307E+05,
+           NOM_PARA='SIYY',
+           TABLE=T1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N1',),
+           )
+
+TEST_TABLE(
+           VALE_CALC=-5.6946542347666E+06,
+           NOM_PARA='SIZZ',
+           TABLE=T1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N1',),
+           )
+
+TEST_TABLE(
+           VALE_CALC=-3.7539887511992E+06,
+           NOM_PARA='SIXY',
+           TABLE=T1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N1',),
+           )
+
+TEST_TABLE(
+           VALE_CALC=-5.4649031185508E+06,
+           NOM_PARA='SIXX',
+           TABLE=T1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N172',),
+           )
+
+TEST_TABLE(
+           VALE_CALC=-5.3023593071806E+05,
+           NOM_PARA='SIYY',
+           TABLE=T1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N172',),
+           )
+
+TEST_TABLE(
+           VALE_CALC=-6.1446033365353E+06,
+           NOM_PARA='SIZZ',
+           TABLE=T1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N172',),
+           )
+
+TEST_TABLE(
+           VALE_CALC=1.5100760079765E+06,
+           NOM_PARA='SIXY',
+           TABLE=T1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N172',),
+           )
+
+FIN()
+#

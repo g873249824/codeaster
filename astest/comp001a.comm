@@ -1,0 +1,67 @@
+# TITRE TEST COMPORTEMENT VMIS_ISOT_LINE 3D 
+#......................................................................
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
+# (AT YOUR OPTION) ANY LATER VERSION.                                                    
+#                                                                       
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
+#                                                                       
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# ======================================================================
+
+
+
+DEBUT(CODE=_F(NOM='COMP001A',NIV_PUB_WEB='INTERNET',VISU_EFICAS='NON'),IMPR_MACRO='OUI');
+
+# donnee materiau et fonction
+
+
+#parametres elastiques
+YOUNG = 200000.0;
+POISSON = 0.3;
+
+#parametres loi ISOT_LINE 
+SY = 437.0;
+pente = 2024.74690664;
+# def des materiaux
+ACIER = [None]*2
+#unite en Pa
+C_Pa = 1.e+6
+#C_Pa = 1.
+YOUNG_Pa = YOUNG * C_Pa
+pente_Pa = pente * C_Pa
+SY_Pa = SY * C_Pa;
+
+ACIER[0]=DEFI_MATERIAU(ELAS=_F(E=YOUNG_Pa,
+                               NU=POISSON,
+                               ALPHA=11.8e-6),
+                    ECRO_LINE=_F(D_SIGM_EPSI=pente_Pa,
+                                 SY=SY_Pa,),);
+#unite en MPa
+ACIER[1]=DEFI_MATERIAU(ELAS=_F(E=YOUNG,
+                               NU=POISSON,
+                               ALPHA=11.8e-6),
+                    ECRO_LINE=_F(D_SIGM_EPSI=pente,
+                                 SY=SY,),)
+                                 
+compor='VMIS_ISOT_LINE'
+
+tabresu=TEST_COMPOR(OPTION='MECA',
+
+              COMP_INCR=_F(RELATION=compor,),
+              NEWTON=_F(REAC_ITER=1),
+              LIST_MATER=ACIER,
+              VARI_TEST=('V1','VMIS','TRACE'),
+              YOUNG=YOUNG,POISSON=POISSON,
+              )
+
+
+FIN();

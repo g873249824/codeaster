@@ -1,0 +1,544 @@
+# TITRE FONCTIONNALITES PYTHON SUR GRANDEUR GENERALISEES : POUTRE 3D ENCASTREE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# OBJECTIF POUR LA BASE DE CAS-TESTS ASTER: MODAL GENERALISE COMPLEXE.
+# INTERCOMPARAISON DES METHODES DE SOUS-ESPACES (SORENSEN, QZ, PYTHON).
+
+# CAS_TEST__: ZZZZ208A
+#             VALIDATION FONCTIONNALITES PYTHON SUR GRANDEURS GENERALISEES
+
+import numpy as NP
+import numpy.linalg as LA
+
+DEBUT(CODE=_F(NOM='ZZZZ208A', NIV_PUB_WEB='INTERNET',VISU_EFICAS='NON'), PAR_LOT='NON', DEBUG=_F(SDVERI='OUI'))
+#******************************
+# DEBUT CLASSIQUE D'UNE ETUDE *
+#******************************
+
+# lecture du maillage
+MAYA=LIRE_MAILLAGE(FORMAT='MED',);
+
+# affectation du modele mecanique 3D
+MODEL=AFFE_MODELE(MAILLAGE=MAYA,
+                  AFFE=_F(TOUT='OUI',
+                          PHENOMENE='MECANIQUE',
+                          MODELISATION='3D',),);
+
+# Definition du materiau
+ACIER=DEFI_MATERIAU(ELAS=_F(E=210000000000.0,
+                            NU=0.3,
+                            RHO=7800.0,
+                            AMOR_HYST=0.01,),);
+
+# Affectation du materiau
+CHMAT=AFFE_MATERIAU(MAILLAGE=MAYA,
+                    AFFE=_F(GROUP_MA=('GM1',),
+                            MATER=ACIER,),);
+
+# Affectation des conditions aux limites cinematiques : encastrement
+CHARCINE=AFFE_CHAR_CINE(MODELE=MODEL,
+                        MECA_IMPO=_F(GROUP_MA='GM2',
+                                     DX=0.0,
+                                     DY=0.0,
+                                     DZ=0.0,),);
+
+# Affectation du chargement : force ponctuelle sur un noeud
+FORCE=AFFE_CHAR_MECA(MODELE=MODEL,
+                     FORCE_NODALE=_F(NOEUD='N107',
+                                     FZ=1.0,),);
+
+# Calcul des matrices & vecteurs elementaires
+KELEM=CALC_MATR_ELEM(OPTION='RIGI_MECA',
+                     MODELE=MODEL,
+                     CHAM_MATER=CHMAT,);
+
+KELEMC=CALC_MATR_ELEM(OPTION='RIGI_MECA_HYST',
+                     MODELE=MODEL,
+                     CHAM_MATER=CHMAT,
+                     RIGI_MECA=KELEM,);
+
+MELEM=CALC_MATR_ELEM(OPTION='MASS_MECA',
+                     MODELE=MODEL,
+                     CHAM_MATER=CHMAT,);
+
+FELEM=CALC_VECT_ELEM(OPTION='CHAR_MECA',
+                     CHARGE=FORCE,);
+
+# Numerotation et assemblage
+NUME=NUME_DDL(MATR_RIGI=KELEM,
+              METHODE='MULT_FRONT',
+              RENUM='METIS',);
+
+KASS=ASSE_MATRICE(MATR_ELEM=KELEM,
+                  NUME_DDL=NUME,
+                  CHAR_CINE=CHARCINE,);
+
+KASC=ASSE_MATRICE(MATR_ELEM=KELEMC,
+                  NUME_DDL=NUME,
+                  CHAR_CINE=CHARCINE,);
+
+MASS=ASSE_MATRICE(MATR_ELEM=MELEM,
+                  NUME_DDL=NUME,
+                  CHAR_CINE=CHARCINE,);
+
+MASSC=COMB_MATR_ASSE(COMB_C=_F(MATR_ASSE=MASS,COEF_C=('RI',0.,1.),),)
+
+FASS=ASSE_VECTEUR(VECT_ELEM=FELEM,
+                  NUME_DDL=NUME,);
+
+FASC2=CREA_CHAMP(OPERATION='R2C',TYPE_CHAM='NOEU_DEPL_C',
+                    CHAM_GD=FASS)
+
+FASC =CREA_CHAMP(OPERATION='ASSE',MODELE=MODEL,TYPE_CHAM='NOEU_DEPL_C',
+                 NUME_DDL=NUME,
+                 ASSE=_F(CHAM_GD=FASC2,TOUT='OUI',CUMUL='NON',
+                          COEF_C=('RI',1.0,0.5,),),);
+
+
+# calcul des modes propres de la structure
+MODES=MODE_ITER_SIMULT(MATR_RIGI=KASS,
+                       MATR_MASS=MASS,
+                       CALC_FREQ=_F(
+                       NMAX_FREQ=10,),
+                       VERI_MODE=_F(STOP_ERREUR='NON',
+                                    STURM='NON',),);
+
+
+
+#######################################################
+# TESTS SUR NUMEROTATION DIAGONALE
+#######################################################
+
+# Projection des matrices & vecteurs sur la base des modes calcules
+NUMDIAG=NUME_DDL_GENE(BASE=MODES,
+                      STOCKAGE='DIAG',);
+
+KDIAG=PROJ_MATR_BASE(BASE=MODES,
+                     NUME_DDL_GENE=NUMDIAG,
+                     MATR_ASSE=KASS,);
+
+KDIAGC=PROJ_MATR_BASE(BASE=MODES,
+                     NUME_DDL_GENE=NUMDIAG,
+                     MATR_ASSE=KASC,);
+
+MDIAG=PROJ_MATR_BASE(BASE=MODES,
+                     NUME_DDL_GENE=NUMDIAG,
+                     MATR_ASSE=MASS,);
+
+FDIAG=PROJ_VECT_BASE(BASE=MODES,
+                    NUME_DDL_GENE=NUMDIAG,
+                    VECT_ASSE=FASS,);
+
+FDIAGC=PROJ_VECT_BASE(BASE=MODES,
+                    NUME_DDL_GENE=NUMDIAG,
+                    VECT_ASSE=FASC,);
+
+# EXTRACTION DES MATRICES & VECTEURS GENERALISES VERS PYTHON
+#-----------------------------------------------------------
+KPYD=KDIAG.EXTR_MATR_GENE()
+KPYDC=KDIAGC.EXTR_MATR_GENE()
+MPYD=MDIAG.EXTR_MATR_GENE()
+FPYD=FDIAG.EXTR_VECT_GENE_R()
+FPYDC=FDIAGC.EXTR_VECT_GENE_C()
+
+# MODIFICATION DES MATRICES & VECTEURS GENERALISES DANS PYTHON
+#-------------------------------------------------------------
+KPYD2=KPYD*2
+KPYDC2=KPYDC*2
+FPYDC2=FPYDC*0.5
+
+# RECUPERATION DES MATRICES & VECTEURS GENERALISES MODIFIES DANS ASTER
+#---------------------------------------------------------------------
+# On ecrase donc les anciennes valeurs !!
+KDIAG.RECU_MATR_GENE(KPYD2)
+KDIAGC.RECU_MATR_GENE(KPYDC2)
+FDIAGC.RECU_VECT_GENE_C(FPYDC2)
+
+# CALCULS ASTER SUR MATRICES & VECTEURS MODIFIES DANS PYTHON
+#-----------------------------------------------------------
+# calcul des modes propres generalises(MATR_A= matrice generalisee reelle)
+MODEGD=MODE_ITER_SIMULT(MATR_RIGI=KDIAG,
+                       MATR_MASS=MDIAG,
+                       CALC_FREQ=_F(
+                       NMAX_FREQ=5,),
+                       VERI_MODE=_F(STOP_ERREUR='NON',
+                                    STURM='NON',),);
+
+
+# calcul des modes propres generalises (MATR_A= matrice generalisee complexe)
+# Avec Sorensen
+MODCGD=MODE_ITER_SIMULT(MATR_RIGI=KDIAGC,
+                       MATR_MASS=MDIAG,
+                       CALC_FREQ=_F(OPTION='CENTRE',
+                                    FREQ=500.,
+                                    NMAX_FREQ=5,),
+                       VERI_MODE=_F(STOP_ERREUR='NON',
+                                    STURM='NON',),
+                                    );
+
+
+# Avec QZ
+MODCQZ=MODE_ITER_SIMULT(MATR_RIGI=KDIAGC,
+                       MATR_MASS=MDIAG,
+                       METHODE='QZ',
+                       CALC_FREQ=_F(OPTION='CENTRE',
+                                    FREQ=500.,
+                                    NMAX_FREQ=5,),
+                       VERI_MODE=_F(STOP_ERREUR='NON',
+                                    STURM='NON',),
+                                    );
+
+# calcul de la reponse harmonique generalisee
+DYNDIAG=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='GENE',
+                    MATR_MASS=MDIAG,
+                    MATR_RIGI=KDIAGC,
+                    SOLVEUR=_F( METHODE='LDLT', ),
+                    FREQ=500.,
+                    EXCIT=_F(VECT_ASSE_GENE=FDIAGC,
+                             COEF_MULT=1.0,),);
+
+# CALCUL PAR NUMPY
+#-----------------
+# inversion de la matrice de masse
+MPYDI=LA.inv(MPYD)
+
+# calcul des valeurs propres generalises par numpy sur K*inv(M)
+frequence=LA.eigvals(NP.dot(KPYD2,MPYDI))
+frequencc=LA.eigvals(NP.dot(KPYDC2,MPYDI))
+
+# tri des valeurs propres
+frequence=NP.sort(NP.sqrt(frequence)/2/NP.pi)
+frequencc=NP.sort(NP.sqrt(frequencc.real)/2/NP.pi)
+
+# resolution du systeme lineaire par numpy
+DYNPYD=LA.solve(KPYDC2-((2*NP.pi*500.)**2)*MPYD, FPYDC2)
+# calcul de la somme des composantes generalisees
+VALDYND=(NP.sum(DYNPYD).real)+(NP.sum(DYNPYD).imag)
+
+# TEST DE COHERENCE ENTRE ASTER ET NUMPY
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   NUME_MODE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGD,
+                   VALE_CALC=593.735241081,
+                   VALE_REFE=593.73524108140236,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=2,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGD,
+                   VALE_CALC=945.512156750,
+                   VALE_REFE=945.51215674997491,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=3,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGD,
+                   VALE_CALC= 3.51464295E+03,
+                   VALE_REFE=3514.6429519264011,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=4,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGD,
+                   VALE_CALC= 3.88331668E+03,
+                   VALE_REFE=3883.3166755063507,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=5,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGD,
+                   VALE_CALC= 5.12909155E+03,
+                   VALE_REFE=5129.0915520443705,
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   NUME_MODE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCGD,
+                   VALE_CALC=593.735241081,
+                   VALE_REFE=593.73524108140202,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=2,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCGD,
+                   VALE_CALC=945.512156750,
+                   VALE_REFE=945.51215674997559,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=3,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCGD,
+                   VALE_CALC= 3.51464295E+03,
+                   VALE_REFE=3514.6429519264034,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=4,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCGD,
+                   VALE_CALC= 3.88331668E+03,
+                   VALE_REFE=3883.3166755063498,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=5,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCGD,
+                   VALE_CALC= 5.12909155E+03,
+                   VALE_REFE=5129.0915520443677,
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   NUME_MODE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCQZ,
+                   VALE_CALC=593.735241081,
+                   VALE_REFE=593.73524108140202,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=2,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCQZ,
+                   VALE_CALC=945.512156750,
+                   VALE_REFE=945.51215674997559,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=3,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCQZ,
+                   VALE_CALC= 3.51464295E+03,
+                   VALE_REFE=3514.6429519264034,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=4,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCQZ,
+                   VALE_CALC= 3.88331668E+03,
+                   VALE_REFE=3883.3166755063498,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=5,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODCQZ,
+                   VALE_CALC= 5.12909155E+03,
+                   VALE_REFE=5129.0915520443677,
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+TEST_RESU(OBJET=_F(VALE_CALC= 6.72279425E-08,
+                   VALE_REFE=6.7227942546217507E-08,
+                   REFERENCE='SOURCE_EXTERNE',      # n'est-ce pas plutot NON_REGRESSION ?
+                   NOM='DYNDIAG            .DEPL',
+                   TOLE_MACHINE=5.E-2,             #TODO variabilite
+                   PRECISION=5.E-2,),
+          )
+
+#######################################################
+# TEST SUR NUMEROTATION PLEINE
+#######################################################
+
+# MEME CHOSE QUE PRECEDEMMENT AVEC NUMEROTATION PLEINE
+
+NUMPLEIN=NUME_DDL_GENE(BASE=MODES,
+                      STOCKAGE='PLEIN',);
+
+KPLEIN=PROJ_MATR_BASE(BASE=MODES,
+                     NUME_DDL_GENE=NUMPLEIN,
+                     MATR_ASSE=KASS,);
+
+KPLEINC=PROJ_MATR_BASE(BASE=MODES,
+                     NUME_DDL_GENE=NUMPLEIN,
+                     MATR_ASSE=KASC,);
+
+MPLEIN=PROJ_MATR_BASE(BASE=MODES,
+                     NUME_DDL_GENE=NUMPLEIN,
+                     MATR_ASSE=MASS,);
+
+FPLEIN=PROJ_VECT_BASE(BASE=MODES,
+                    NUME_DDL_GENE=NUMPLEIN,
+                    VECT_ASSE=FASS,);
+
+FPLEINC=PROJ_VECT_BASE(BASE=MODES,
+                    NUME_DDL_GENE=NUMPLEIN,
+                    VECT_ASSE=FASC,);
+
+MODEGP=MODE_ITER_SIMULT(MATR_RIGI=KPLEIN,
+                       MATR_MASS=MPLEIN,
+                       CALC_FREQ=_F(
+                       NMAX_FREQ=5,),
+                       VERI_MODE=_F(STOP_ERREUR='NON',
+                                    STURM='NON',),);
+
+
+DYNPLEIN=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='GENE',
+                    MATR_MASS=MPLEIN,
+                    MATR_RIGI=KPLEINC,
+                    SOLVEUR=_F( METHODE='LDLT', ),
+                    FREQ=500.,
+                    EXCIT=_F(VECT_ASSE_GENE=FPLEINC,
+                             COEF_MULT=1.0,),);
+
+# EXTRACTION DES MATRICES & VECTEURS GENERALISES VERS PYTHON
+#-----------------------------------------------------------
+KPYP=KPLEIN.EXTR_MATR_GENE()
+KPYPC=KPLEINC.EXTR_MATR_GENE()
+MPYP=MPLEIN.EXTR_MATR_GENE()
+FPYP=FPLEIN.EXTR_VECT_GENE_R()
+FPYPC=FPLEINC.EXTR_VECT_GENE_C()
+
+# MODIFICATION DES MATRICES & VECTEURS GENERALISES DANS PYTHON
+#-------------------------------------------------------------
+KPYP2=KPYP*2
+KPYPC2=KPYPC*2
+FPYPC2=FPYPC*0.5
+
+# RECUPERATION DES MATRICES & VECTEURS GENERALISES MODIFIES DANS ASTER
+#---------------------------------------------------------------------
+# On ecrase donc les anciennes valeurs !!
+KPLEIN.RECU_MATR_GENE(KPYP2)
+KPLEINC.RECU_MATR_GENE(KPYPC2)
+FPLEINC.RECU_VECT_GENE_C(FPYPC2)
+
+# CALCULS ASTER SUR MATRICES & VECTEURS MODIFIES DANS PYTHON
+#-----------------------------------------------------------
+MODEGP2=MODE_ITER_SIMULT(MATR_RIGI=KPLEIN,
+                       MATR_MASS=MPLEIN,
+                       CALC_FREQ=_F(
+                       NMAX_FREQ=5,),
+                       VERI_MODE=_F(STOP_ERREUR='NON',
+                                    STURM='NON',),);
+
+
+DYNPLEI2=DYNA_VIBRA(TYPE_CALCUL='HARM',BASE_CALCUL='GENE',
+                    MATR_MASS=MPLEIN,
+                    MATR_RIGI=KPLEINC,
+                    SOLVEUR=_F( METHODE='LDLT', ),
+                    FREQ=500.,
+                    EXCIT=_F(VECT_ASSE_GENE=FPLEINC,
+                             COEF_MULT=1.0,),);
+
+# MEME CALCUL PAR NUMPY
+#----------------------
+MPYPI=LA.inv(MPYP)
+frequence=LA.eigvals(NP.dot(KPYP,MPYPI))
+frequence=NP.sort(NP.sqrt(frequence)/2/NP.pi)
+frequence2=LA.eigvals(NP.dot(KPYP2,MPYPI))
+frequence2=NP.sort(NP.sqrt(frequence2)/2/NP.pi)
+
+DYNPYP=LA.solve(KPYPC-((2*NP.pi*500.)**2)*MPYP, FPYPC)
+VALDYNP=(NP.sum(DYNPYP).real)+(NP.sum(DYNPYP).imag)
+
+DYNPYP2=LA.solve(KPYPC2-((2*NP.pi*500.)**2)*MPYP, FPYPC2)
+VALDYNP2=(NP.sum(DYNPYP2).real)+(NP.sum(DYNPYP2).imag)
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   NUME_MODE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP,
+                   VALE_CALC=419.834215198,
+                   VALE_REFE=419.83421519809013,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=2,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP,
+                   VALE_CALC=668.578057732,
+                   VALE_REFE=668.57805773222026,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=3,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP,
+                   VALE_CALC= 2.48522786E+03,
+                   VALE_REFE=2485.2278647566641,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=4,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP,
+                   VALE_CALC= 2.74591955E+03,
+                   VALE_REFE=2745.9195547453382,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=5,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP,
+                   VALE_CALC= 3.62681542E+03,
+                   VALE_REFE=3626.8154177772071,
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+TEST_RESU(RESU=(_F(PARA='FREQ',
+                   NUME_MODE=1,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP2,
+                   VALE_CALC=593.735241081,
+                   VALE_REFE=593.73524108140361,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=2,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP2,
+                   VALE_CALC=945.512156750,
+                   VALE_REFE=945.51215674996809,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=3,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP2,
+                   VALE_CALC= 3.51464295E+03,
+                   VALE_REFE=3514.6429519264025,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=4,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP2,
+                   VALE_CALC= 3.88331668E+03,
+                   VALE_REFE=3883.316675506348,
+                   PRECISION=1.E-2,),
+                _F(PARA='FREQ',
+                   NUME_MODE=5,
+                   REFERENCE='SOURCE_EXTERNE',
+                   RESULTAT=MODEGP2,
+                   VALE_CALC= 5.12909155E+03,
+                   VALE_REFE=5129.0915520443696,
+                   PRECISION=1.E-2,),
+                ),
+          )
+
+TEST_RESU(OBJET=(_F(VALE_CALC=-2.11042621E-07,
+                    VALE_REFE=-2.1104262094838747E-07,
+                    REFERENCE='SOURCE_EXTERNE',     # n'est-ce pas plutot NON_REGRESSION ?
+                    NOM='DYNPLEIN           .DEPL',
+                    TOLE_MACHINE=5.E-2,             #TODO variabilite
+                    PRECISION=5.E-2,),
+                 _F(VALE_CALC= 6.72279425E-08,
+                    VALE_REFE=6.7227942546231073E-08,
+                    REFERENCE='SOURCE_EXTERNE',     # n'est-ce pas plutot NON_REGRESSION ?
+                    NOM='DYNPLEI2           .DEPL',
+                    TOLE_MACHINE=5.E-2,             #TODO variabilite
+                    PRECISION=5.E-2,),
+                 ),
+          )
+
+FIN();

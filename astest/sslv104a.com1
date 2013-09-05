@@ -1,0 +1,314 @@
+
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                WWW.CODE-ASTER.ORG
+#
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+# 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+import numpy as NP
+
+POURSUITE(CODE=_F(NOM='SSLV104A'),
+          DEBUG=_F(SDVERI='OUI',),
+)
+
+RES = CREA_RESU(
+    TYPE_RESU="EVOL_ELAS",
+    OPERATION='AFFE',
+    NOM_CHAM='DEPL',
+    AFFE=_F(
+        CHAM_GD=DEP1,
+        MODELE=MODELE,
+        CHAM_MATER=CHAMPMAT,
+        INST=0.,
+    ),
+)
+
+# comparaison SIEQ_ELGA vs VMIS(SIGM_ELGA)
+res = CALC_CHAMP(
+    RESULTAT=RES,
+    CONTRAINTE='SIGM_ELGA',
+    CRITERES='SIEQ_ELGA',
+)
+
+res2 = CALC_CHAMP(
+    RESULTAT=RES,
+    CHAM_UTIL=_F(
+        NOM_CHAM='SIGM_ELGA',
+        CRITERE='VMIS',
+        NUME_CHAM_RESU=1,
+    ),
+)
+
+vm_elga = 1.8939143292115E+13
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=res,
+                   NOM_CHAM='SIEQ_ELGA',
+                   NOM_CMP='VMIS',
+                   VALE_CALC=1.8939143292115E13,
+                   
+                   ),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=res2,
+                   NOM_CHAM='UT01_ELGA',
+                   NOM_CMP='X1',
+                   VALE_CALC= 1.89391433E+13,
+                   VALE_REFE=1.8939143292115E13,
+                   PRECISION=9.9999999999999995E-07,),
+                ),
+          )
+
+# comparaison EPEQ_ELNO vs INVA_2(EPSI_ELNO)
+RES = CALC_CHAMP(
+    reuse=RES,
+    RESULTAT=RES,
+    DEFORMATION='EPSI_ELNO',
+    CRITERES='EPEQ_ELNO',
+)
+
+RES = CALC_CHAMP(
+    reuse=RES,
+    RESULTAT=RES,
+    CHAM_UTIL=_F(
+        NOM_CHAM='EPSI_ELNO',
+        CRITERE='INVA_2',
+        NUME_CHAM_RESU=2,
+    ),
+)
+
+i2_elno = 46.764585786415
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='EPEQ_ELNO',
+                   NOM_CMP='INVA_2',
+                   VALE_CALC=46.764585786,
+                   VALE_REFE=46.764585786414997,
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='UT02_ELNO',
+                   NOM_CMP='X1',
+                   VALE_CALC=46.764585786,
+                   VALE_REFE=46.764585786414997,
+                   PRECISION=9.9999999999999995E-07,),
+                ),
+          )
+
+# comparaison EPEQ_NOEU vs INVA_2(EPSI_NOEU)
+RES = CALC_CHAMP(
+    reuse=RES,
+    RESULTAT=RES,
+    CRITERES='EPEQ_NOEU',
+)
+
+RES = CALC_CHAMP(
+    reuse=RES,
+    RESULTAT=RES,
+    CHAM_UTIL=_F(
+        NOM_CHAM='EPSI_NOEU',
+        CRITERE='INVA_2',
+        NUME_CHAM_RESU=2,
+    ),
+)
+
+i2_noeu = 17.846678284006
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='EPEQ_NOEU',
+                   NOM_CMP='INVA_2',
+                   VALE_CALC=17.846678284,
+                   VALE_REFE=17.846678284006,
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='UT02_NOEU',
+                   NOM_CMP='X1',
+                   VALE_CALC=17.846676374,
+                   VALE_REFE=17.846678284006,
+                   PRECISION=9.9999999999999995E-07,),
+                ),
+          )
+
+# comparaison SIEQ_ELGA vs TRACE(SIGM_ELGA) et VMIS(SIGM_ELGA)
+fTrace = FORMULE(NOM_PARA=('SIXX', 'SIYY', 'SIZZ'),
+                 VALE="""SIXX+SIYY+SIZZ""")
+
+fVonMis = FORMULE(NOM_PARA=('SIXY', 'SIXZ', 'SIYZ', 'SIXX', 'SIYY', 'SIZZ'),
+        VALE="""sqrt(
+            3./2. * (SIXX**2 + SIYY**2 + SIZZ**2 + 2*SIXY**2 + 2*SIXZ**2 + 2*SIYZ**2 )
+          - 1./2. * fTrace(SIXX, SIYY, SIZZ)**2
+            )""")
+
+RES = CALC_CHAMP(
+    reuse=RES,
+    RESULTAT=RES,
+    CHAM_UTIL=_F(
+        NOM_CHAM='SIGM_ELGA',
+        FORMULE=(fTrace, fVonMis),
+        NUME_CHAM_RESU=2,
+    ),
+)
+
+RES = CALC_CHAMP(
+    reuse=RES,
+    RESULTAT=RES,
+    CHAM_UTIL=_F(
+        NOM_CHAM='SIGM_ELGA',
+        CRITERE='TRACE',
+        NUME_CHAM_RESU=3,
+    ),
+)
+
+tr_elga = 1.8983850242787E+13
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=res,
+                   NOM_CHAM='SIEQ_ELGA',
+                   NOM_CMP='TRSIG',
+                   VALE_CALC= 1.89838502E+13,
+                   VALE_REFE=1.8983850242787E13,
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='UT03_ELGA',
+                   NOM_CMP='X1',
+                   VALE_CALC= 1.89838502E+13,
+                   VALE_REFE=1.8983850242787E13,
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='UT02_ELGA',
+                   NOM_CMP='X1',
+                   VALE_CALC= 1.89838502E+13,
+                   VALE_REFE=1.8983850242787E13,
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='UT02_ELGA',
+                   NOM_CMP='X2',
+                   VALE_CALC= 1.89391433E+13,
+                   VALE_REFE=1.8939143292115E13,
+                   PRECISION=9.9999999999999995E-07,),
+                ),
+          )
+
+# comparaison EPEQ_ELNO vs INVA_2(EPSI_ELNO)
+# plusieurs variantes à titre d'exemple
+fEpsEq0 = FORMULE(
+    NOM_PARA=('EPXX', 'EPYY', 'EPZZ', 'EPXY', 'EPXZ', 'EPYZ'),
+    VALE="""sqrt(2./3. * (
+                (EPXX**2 + EPYY**2 + EPZZ**2 + 2*EPXY**2 + 2*EPXZ**2 + 2*EPYZ**2 )
+      - 1./3. * (EPXX + EPYY + EPZZ)**2 ))""")
+
+fEpsEq1 = FORMULE(
+    NOM_PARA=('EPXX', 'EPYY', 'EPZZ', 'EPXY', 'EPXZ', 'EPYZ'),
+    VALE="""form(EPXX, EPYY, EPZZ, EPXY, EPXZ, EPYZ)""")
+
+def form(*veps):
+    e11, e22, e33, e12, e13, e23 = veps
+    trace = e11 + e22 + e33
+    t1 = e11**2 + e22**2 + e33**2 + 2*e12**2 + 2*e13**2 + 2*e23**2
+    res = sqrt(2./3. * (t1 - 1./3. * trace**2))
+    return res
+
+def vec2mat(veps):
+    epsi = NP.zeros((3, 3))
+    epsi[0,0] = veps[0]
+    epsi[1,1] = veps[1]
+    epsi[2,2] = veps[2]
+    epsi[0,1] = epsi[1,0] = veps[3]
+    epsi[0,2] = epsi[2,0] = veps[4]
+    epsi[1,2] = epsi[2,1] = veps[5]
+    return epsi
+
+def dev(mat):
+    trace = mat.diagonal().sum()
+    sph = NP.identity(3)
+    res = mat - 1./3. * trace * sph
+    return res
+
+def inva2(mat):
+    dm = dev(mat)
+    prod = dm * NP.transpose(dm)
+    return sqrt(2./3.*prod.sum())
+
+fEpsEq = FORMULE(NOM_PARA=('EPXX', 'EPYY', 'EPZZ', 'EPXY', 'EPXZ', 'EPYZ'),
+        VALE="""inva2(vec2mat([EPXX, EPYY, EPZZ, EPXY, EPXZ, EPYZ]))""")
+
+
+RES = CALC_CHAMP(
+    reuse=RES,
+    RESULTAT=RES,
+    CHAM_UTIL=_F(
+        NOM_CHAM='EPSI_ELNO',
+        FORMULE=(fEpsEq, fEpsEq0, fEpsEq1),
+        NUME_CHAM_RESU=3,
+    ),
+)
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='EPEQ_ELNO',
+                   NOM_CMP='INVA_2',
+                   VALE_CALC=46.764585786,
+                   VALE_REFE=46.764585786414997,
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='UT03_ELNO',
+                   NOM_CMP='X1',
+                   VALE_CALC=46.764585786,
+                   VALE_REFE=46.764585786414997,
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='UT03_ELNO',
+                   NOM_CMP='X2',
+                   VALE_CALC=46.764585786,
+                   VALE_REFE=46.764585786414997,
+                   PRECISION=9.9999999999999995E-07,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='AUTRE_ASTER',
+                   TYPE_TEST='SOMM_ABS',
+                   RESULTAT=RES,
+                   NOM_CHAM='UT03_ELNO',
+                   NOM_CMP='X3',
+                   VALE_CALC=46.764585786,
+                   VALE_REFE=46.764585786414997,
+                   PRECISION=9.9999999999999995E-07,),
+                ),
+          )
+
+FIN()

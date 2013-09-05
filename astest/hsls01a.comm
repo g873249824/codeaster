@@ -1,0 +1,288 @@
+# TITRE PLAQUE  MINCE ENCASTREE SOUMISE A UN GRADIENT THERMIQUE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# PLAQUE RECTANGULAIRE MINCE ENCASTREE SOUMISE
+# A UN GRADIENT THERMIQUE DANS L'EPAISSEUR
+# ET MODELISEE EN DKT- DKQ - DST - DSQ - Q4G
+#====================================================================
+
+DEBUT(CODE=_F(NOM='HSLS01A', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE(FORMAT='MED', )
+
+#====================================================================
+MAT=DEFI_MATERIAU( ELAS=_F(  E = 2.E+11,  NU = 0.3,  ALPHA = 1.E-5) )
+
+
+#====================================================================
+
+MOD=AFFE_MODELE(  MAILLAGE=MA,
+                  AFFE=(_F(  GROUP_MA = ('STRIA1','SQUA11'),  PHENOMENE = 'MECANIQUE',
+                             MODELISATION = 'DST'),
+                        _F(  GROUP_MA = ('STRIA2','SQUA12'),  PHENOMENE = 'MECANIQUE',
+                             MODELISATION = 'DKT'),
+                        _F(  GROUP_MA = ('SQUA2' ,'STRIA3'),  PHENOMENE = 'MECANIQUE',
+                             MODELISATION = 'Q4G'))
+                 )
+
+CARA=AFFE_CARA_ELEM(  MODELE=MOD,
+                      COQUE=_F(  GROUP_MA = ('STRIA1','SQUA11','STRIA2','SQUA12','SQUA2','STRIA3'),
+                                 EPAIS = 0.01)
+                   )
+
+TEMP=CREA_CHAMP(  OPERATION='AFFE', TYPE_CHAM='NOEU_TEMP_R', MAILLAGE=MA,
+                  AFFE=_F( TOUT = 'OUI',
+                           NOM_CMP = ('TEMP_MIL', 'TEMP_INF', 'TEMP_SUP',),
+                           VALE =    ( 50.,       0.    ,   100.    ,),))
+
+TEMPLIN=CREA_RESU(OPERATION='AFFE', TYPE_RESU='EVOL_THER',
+                      NOM_CHAM='TEMP',
+                       AFFE=_F(  CHAM_GD = TEMP,
+                                 INST = -1.)
+                                 )
+TEMPER=CREA_RESU(  OPERATION='PREP_VRC2', TYPE_RESU='EVOL_THER',
+    PREP_VRC2= _F(  MODELE=MOD, CARA_ELEM=CARA, EVOL_THER = TEMPLIN, ),)
+
+CHMAT=AFFE_MATERIAU(  MAILLAGE=MA,
+                      AFFE=_F(  TOUT='OUI',
+                                MATER = MAT),
+                      AFFE_VARC=  _F(TOUT='OUI',EVOL=TEMPER,NOM_VARC='TEMP',
+                                     NOM_CHAM='TEMP',VALE_REF=0.0),)
+CH1=AFFE_CHAR_MECA(  MODELE=MOD,
+                     DDL_IMPO=_F( GROUP_NO = ('AB', 'BC', 'CD', 'DA',),
+                                   DX = 0.,  DY = 0.,  DZ = 0.,
+                                  DRX = 0., DRY = 0., DRZ = 0.)
+                    )
+
+MESTAT=MECA_STATIQUE(      MODELE=MOD,
+                            EXCIT=_F( CHARGE = CH1),
+                      CHAM_MATER=CHMAT,
+                       CARA_ELEM=CARA,
+                          )
+
+MESTAT=CALC_CHAMP( reuse=MESTAT, RESULTAT=MESTAT,
+                FORCE='FORC_NODA'
+                   )
+
+MESTAT=CALC_CHAMP(reuse=MESTAT,RESULTAT=MESTAT,CONTRAINTE=('SIGM_ELNO'))
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N104',
+                   NOM_CMP='DRX',
+                   VALE_CALC=-95.238097215,
+                   VALE_REFE=-95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N104',
+                   NOM_CMP='DRY',
+                   VALE_CALC=71.428576185,
+                   VALE_REFE=71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N260',
+                   NOM_CMP='DRX',
+                   VALE_CALC=-95.238097924,
+                   VALE_REFE=-95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N260',
+                   NOM_CMP='DRY',
+                   VALE_CALC=71.428576717,
+                   VALE_REFE=71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N270',
+                   NOM_CMP='DRX',
+                   VALE_CALC=-95.238096505,
+                   VALE_REFE=-95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N270',
+                   NOM_CMP='DRY',
+                   VALE_CALC=71.428575652,
+                   VALE_REFE=71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N8',
+                   NOM_CMP='DRX',
+                   VALE_CALC=-71.428575652,
+                   VALE_REFE=-71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N8',
+                   NOM_CMP='DRY',
+                   VALE_CALC=-95.238096505,
+                   VALE_REFE=-95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N21',
+                   NOM_CMP='DRX',
+                   VALE_CALC=-71.428575652,
+                   VALE_REFE=-71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N21',
+                   NOM_CMP='DRY',
+                   VALE_CALC=-95.238096505,
+                   VALE_REFE=-95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N102',
+                   NOM_CMP='DRX',
+                   VALE_CALC=95.238097215,
+                   VALE_REFE=95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N102',
+                   NOM_CMP='DRY',
+                   VALE_CALC=-71.428576185,
+                   VALE_REFE=-71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N466',
+                   NOM_CMP='DRX',
+                   VALE_CALC=95.238097924,
+                   VALE_REFE=95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N466',
+                   NOM_CMP='DRY',
+                   VALE_CALC=-71.428576717,
+                   VALE_REFE=-71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N544',
+                   NOM_CMP='DRX',
+                   VALE_CALC=95.238096505,
+                   VALE_REFE=95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N544',
+                   NOM_CMP='DRY',
+                   VALE_CALC=-71.428575652,
+                   VALE_REFE=-71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N477',
+                   NOM_CMP='DRX',
+                   VALE_CALC=71.428575652,
+                   VALE_REFE=71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N477',
+                   NOM_CMP='DRY',
+                   VALE_CALC=95.238096505,
+                   VALE_REFE=95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N666',
+                   NOM_CMP='DRX',
+                   VALE_CALC=71.428575652,
+                   VALE_REFE=71.428600000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                _F(NUME_ORDRE=1,
+                   REFERENCE='ANALYTIQUE',
+                   RESULTAT=MESTAT,
+                   NOM_CHAM='FORC_NODA',
+                   NOEUD='N666',
+                   NOM_CMP='DRY',
+                   VALE_CALC=95.238096505,
+                   VALE_REFE=95.238100000000003,
+                   CRITERE='ABSOLU',
+                   PRECISION=3.0000000000000001E-05,),
+                ),
+          )
+
+FIN()
+#

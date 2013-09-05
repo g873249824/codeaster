@@ -1,0 +1,483 @@
+# TITRE SYSTEME MAS RES A 8 DDL (AMORTISSEMENT VISQ. PROPORTION.)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#       DYNAMIQUE TRANSITOIRE BASE MODALE AVEC SYSTEME MASSE ET RESSORT
+#
+
+DEBUT( CODE=_F(  NOM = 'SDLD22A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+#
+
+RESSORT=LIRE_MAILLAGE( )
+
+#
+
+MODELE=AFFE_MODELE(   MAILLAGE=RESSORT,
+                        AFFE=_F(  TOUT = 'OUI',   PHENOMENE = 'MECANIQUE',
+                               MODELISATION = 'DIS_T',    ) )
+
+#
+CHAMPCAR=AFFE_CARA_ELEM(  MODELE=MODELE,DISCRET=(
+
+                _F(  MAILLE = ('E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', ),
+                          CARA = 'K_T_D_L',    VALE = (1.E5, 0., 0.,),),
+
+                _F(  MAILLE = ('E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', ),
+                          CARA = 'M_T_L',
+                          VALE = (0., 0., 0.,0., 0., 0.,0., 0., 0.,0.,
+                                  0., 0., 0.,0., 0., 0.,0., 0., 0.,0.,0.),),
+
+                _F(  MAILLE = ('E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', ),
+                          CARA = 'A_T_L',
+                          VALE = (0., 0., 0.,0., 0., 0.,0., 0., 0.,0.,
+                                  0., 0., 0.,0., 0., 0.,0., 0., 0.,0.,0.),),
+
+                _F(  MAILLE = ('E9', ),
+                          CARA = 'K_T_L',
+                          VALE = (1.E5, 0., 0., 0., 0., 0., -1.E5, 0., 0., 1.E5,
+                                0.,   0., 0., 0., 0., 0., 0.,    0., 0., 0.,
+                                0.,), ),
+                _F(  GROUP_MA = 'AMOR_L',
+                          CARA = 'A_T_D_L',    VALE = (50., 0., 0.,),),
+
+                _F(  MAILLE = 'E8',
+                          CARA = 'A_T_L',
+                          VALE = ( 50., 0., 0., 0., 0., 0., -50., 0., 0., 50.,
+                                 0.,  0., 0., 0., 0., 0., 0.,   0., 0., 0.,
+                                 0.,), ),
+
+                _F(  MAILLE = 'P1',
+                          CARA = 'A_T_D_N',    VALE = (50., 0., 0.,),),
+
+                _F(  MAILLE = 'P8',
+                          CARA = 'A_T_N',
+                          VALE = (50., 0., 0., 0., 0., 0., ),),
+
+                _F(  GROUP_MA = 'P',
+                          CARA = 'M_T_D_N',    VALE = (10.,),),
+
+                _F(  MAILLE = ( 'E9', ),
+                          CARA = 'M_T_L',
+                          VALE = (10., 0., 10., 0., 0.,  10., 0., 0., 0., 10.,
+                                0.,  0.,  0., 0., 10., 0.,  0., 0., 0., 0.,
+                                10., ),))
+                        )
+
+CHARGE=AFFE_CHAR_MECA(  MODELE=MODELE,DDL_IMPO=(
+                         _F(  TOUT = 'OUI',   DY = 0.,   DZ = 0.,  ),
+                                  _F(  NOEUD = ('N1','N10',),   DX = 0.,   ))   )
+
+EFFORT=AFFE_CHAR_MECA(  MODELE=MODELE,
+                          FORCE_NODALE=_F( NOEUD = 'N5',  FX = 1.,  ) )
+
+RIGIELEM=CALC_MATR_ELEM(  MODELE=MODELE,       OPTION='RIGI_MECA',
+                            CARA_ELEM=CHAMPCAR,  CHARGE=CHARGE     )
+
+MASSELEM=CALC_MATR_ELEM(  MODELE=MODELE,       OPTION='MASS_MECA',
+                            CARA_ELEM=CHAMPCAR,  CHARGE=CHARGE     )
+
+AMORELEM=CALC_MATR_ELEM(  MODELE=MODELE,       OPTION='AMOR_MECA',
+                            CARA_ELEM=CHAMPCAR,  CHARGE=CHARGE     )
+
+EFFOELEM=CALC_VECT_ELEM(  OPTION='CHAR_MECA',
+                            CARA_ELEM=CHAMPCAR,  CHARGE=EFFORT     )
+
+NUMEROTA=NUME_DDL(  MATR_RIGI=RIGIELEM)
+
+MATRRIGI=ASSE_MATRICE(  MATR_ELEM=RIGIELEM,  NUME_DDL=NUMEROTA )
+
+MATRMASS=ASSE_MATRICE(  MATR_ELEM=MASSELEM,  NUME_DDL=NUMEROTA )
+
+MATRAMOR=ASSE_MATRICE(  MATR_ELEM=AMORELEM,  NUME_DDL=NUMEROTA )
+
+VECTASS=ASSE_VECTEUR(  VECT_ELEM=EFFOELEM,  NUME_DDL=NUMEROTA )
+
+MODES=MODE_ITER_INV(   MATR_RIGI=MATRRIGI,  MATR_MASS=MATRMASS,
+                         CALC_FREQ=_F( OPTION = 'AJUSTE',
+                        FREQ = (5.,10.,15.,20.,24.,27.,30.,32.,),   )  )
+
+
+FONCTIO1=DEFI_FONCTION(  NOM_PARA='INST',  NOM_RESU='ALPHA',
+                          VALE=( 0., 1.,  1., 1.,  1.0000001, 0., ),
+                          PROL_DROITE='CONSTANT'               )
+
+PROJ_BASE(  BASE=MODES,
+            STOCKAGE = 'PLEIN',
+            MATR_ASSE_GENE=(
+             _F(
+                             MATRICE = CO("MASSEGEN"),
+                             MATR_ASSE = MATRMASS),
+             _F(
+                             MATRICE = CO("RIGIDGEN"),
+                             MATR_ASSE = MATRRIGI),
+             _F(
+                             MATRICE = CO("AMORTGEN"),
+                             MATR_ASSE = MATRAMOR,)),
+             VECT_ASSE_GENE=_F(
+                             VECTEUR = CO("EFFOGENE"),
+                             VECT_ASSE = VECTASS) )
+
+DYNAMODA=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                             MATR_MASS=MASSEGEN,
+                             MATR_RIGI=RIGIDGEN,
+                             MATR_AMOR=AMORTGEN,
+                           SCHEMA_TEMPS=_F(SCHEMA='EULER',),
+                            EXCIT=_F( VECT_ASSE_GENE = EFFOGENE,
+                                    FONC_MULT = FONCTIO1,   ),
+                             INCREMENT=_F( INST_INIT = 0.,
+                                        INST_FIN = 1.5,    PAS = 0.001,  )
+                           )
+
+RECUP1=RECU_GENE(   RESU_GENE=DYNAMODA,
+                      INST=0.455,
+                      NOM_CHAM='DEPL'
+                   )
+
+RECUP2=RECU_GENE(   RESU_GENE=DYNAMODA,
+                      INST=0.455,
+                      NOM_CHAM='VITE'
+                   )
+
+TEST_RESU(GENE=(_F(RESU_GENE=RECUP2,
+                   VALE_CALC=6.2320400000000003E-07,
+                   VALE_ABS='OUI',
+                   NUME_CMP_GENE=7,),
+                _F(RESU_GENE=RECUP2,
+                   VALE_CALC=5.3432800000000001E-05,
+                   VALE_ABS='OUI',
+                   NUME_CMP_GENE=3,),
+                ),
+          )
+
+TEST_RESU(GENE=(_F(RESU_GENE=DYNAMODA,
+                   VALE_CALC=6.2320400000000003E-07,
+                   VALE_ABS='OUI',
+                   NUME_CMP_GENE=7,
+                   INST=0.45500000000000002,
+                   NOM_CHAM='VITE',),
+                _F(RESU_GENE=DYNAMODA,
+                   VALE_CALC=5.3432800000000001E-05,
+                   VALE_ABS='OUI',
+                   NUME_CMP_GENE=3,
+                   NUME_ORDRE=456,
+                   NOM_CHAM='VITE',),
+                ),
+          )
+
+FONCTIO2=DEFI_FONCTION(  NOM_PARA='INST',  NOM_RESU='ALPHA',
+                          VALE=( 0.455, 1.,  1., 1.,  1.0000001, 0., ),
+                          PROL_DROITE='CONSTANT'               )
+
+DYNAMOD2=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                             MATR_MASS=MASSEGEN,
+                             MATR_RIGI=RIGIDGEN,
+                             MATR_AMOR=AMORTGEN,
+                            SCHEMA_TEMPS=_F(SCHEMA='EULER',),
+                            ETAT_INIT=_F( DEPL = RECUP1,
+                                       VITE = RECUP2,  ),
+                            EXCIT=_F( VECT_ASSE_GENE = EFFOGENE,
+                                    FONC_MULT = FONCTIO2,   ),
+                            INCREMENT=_F( INST_INIT = 0.455,
+                                       INST_FIN = 1.5,
+                                       PAS = 0.001,         )
+                          )
+
+# DEFINITION DES INSTANTS DE CALCUL DE LA SOLUTION
+#-------------------------------------------------
+L_INST=( 0.090,  0.184,  0.272,  0.365,  0.455,  0.544,  0.633,  0.724,
+           0.812,  0.904,  0.993,  1.089,  1.182,  1.271,  1.362,  1.452, )
+
+LISTR8=DEFI_LIST_REEL(  VALE=L_INST )
+
+DEPLTRAN=REST_GENE_PHYS(  RESU_GENE=DYNAMODA,  NOM_CHAM=('DEPL', 'VITE','ACCE'),
+                            LIST_INST=LISTR8,    INTERPOL='LIN'  )
+
+
+lnuor=DEFI_LIST_ENTI( OPERATION='NUME_ORDRE', RESULTAT=DEPLTRAN, PARAMETRE='INST', INTERV_R= (1.36,  1.46, ),)
+
+DEPLTRA1=EXTR_RESU( RESULTAT=DEPLTRAN, ARCHIVAGE=_F(LIST_ORDRE = lnuor, CHAM_EXCLU = ('ACCE') ) )
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 4.02212363E-05,
+                   VALE_REFE=4.0200000000000001E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.97297213E-06,
+                   VALE_REFE=4.2200000000000003E-06,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=0.059999999999999998,),
+                _F(NUME_ORDRE=3,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.90264683E-05,
+                   VALE_REFE=3.8899999999999997E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=4,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 5.75075442E-06,
+                   VALE_REFE=5.9800000000000003E-06,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=0.040000000000000001,),
+                _F(NUME_ORDRE=5,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.74603643E-05,
+                   VALE_REFE=3.7299999999999999E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=6,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 6.97727978E-06,
+                   VALE_REFE=7.1400000000000002E-06,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=0.029999999999999999,),
+                _F(NUME_ORDRE=7,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.64597179E-05,
+                   VALE_REFE=3.6399999999999997E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=8,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 7.92380869E-06,
+                   VALE_REFE=8.0700000000000007E-06,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=0.02,),
+                _F(NUME_ORDRE=9,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.58643789E-05,
+                   VALE_REFE=3.5800000000000003E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=10,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 8.66134453E-06,
+                   VALE_REFE=8.7600000000000008E-06,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=0.02,),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.53114811E-05,
+                   VALE_REFE=3.5200000000000002E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=12,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC=-3.07283408E-05,
+                   VALE_REFE=-3.0800000000000003E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=13,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.01460539E-05,
+                   VALE_REFE=3.0199999999999999E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=14,
+                   RESULTAT=DEPLTRAN,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC=-2.87835984E-05,
+                   VALE_REFE=-2.8799999999999999E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=15,
+                   RESULTAT=DEPLTRA1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 2.79121599E-05,
+                   VALE_REFE=2.8E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=16,
+                   RESULTAT=DEPLTRA1,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC=-2.65240299E-05,
+                   VALE_REFE=-2.65E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                ),
+          )
+
+L_INST2=( 0.544,  0.633,  0.724,
+            0.812,  0.904,  0.993,  1.089,  1.182,  1.271,  1.362,  1.452, )
+
+L_INST3=( 1.362,  1.452, )
+
+
+LISTR2=DEFI_LIST_REEL(  VALE=L_INST2 )
+
+LISTR3=DEFI_LIST_REEL(  VALE=L_INST3 )
+
+DEPLTRA2=REST_GENE_PHYS(  RESU_GENE=DYNAMOD2,  NOM_CHAM=('DEPL','VITE','ACCE'),
+                            LIST_INST=LISTR2,    INTERPOL='LIN'  )
+
+DEPLTRA3=EXTR_RESU(     RESULTAT=DEPLTRA2,
+                         ARCHIVAGE=_F(
+                         LIST_INST = LISTR3,
+                         NOM_CHAM = ('VITE','DEPL')
+                         )
+                     )
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=1,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 6.97727978E-06,
+                   VALE_REFE=7.1400000000000002E-06,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=0.029999999999999999,),
+                _F(NUME_ORDRE=2,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.64597179E-05,
+                   VALE_REFE=3.6399999999999997E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=3,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 7.92380869E-06,
+                   VALE_REFE=8.0700000000000007E-06,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=0.02,),
+                _F(NUME_ORDRE=4,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.58643789E-05,
+                   VALE_REFE=3.5800000000000003E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=5,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 8.66134453E-06,
+                   VALE_REFE=8.7600000000000008E-06,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=0.02,),
+                _F(NUME_ORDRE=6,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.53114811E-05,
+                   VALE_REFE=3.5200000000000002E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=7,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC=-3.07283408E-05,
+                   VALE_REFE=-3.0800000000000003E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=8,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 3.01460539E-05,
+                   VALE_REFE=3.0199999999999999E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=9,
+                   RESULTAT=DEPLTRA2,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC=-2.87835984E-05,
+                   VALE_REFE=-2.8799999999999999E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=10,
+                   RESULTAT=DEPLTRA3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC= 2.79121599E-05,
+                   VALE_REFE=2.8E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=DEPLTRA3,
+                   NOM_CHAM='DEPL',
+                   NOEUD='N5',
+                   NOM_CMP='DX',
+                   VALE_CALC=-2.65240299E-05,
+                   VALE_REFE=-2.65E-05,
+                   REFERENCE='NON_DEFINI',
+                   PRECISION=5.0000000000000001E-3,),
+                ),
+          )
+
+FIN( )

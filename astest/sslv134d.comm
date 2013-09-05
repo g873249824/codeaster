@@ -1,0 +1,635 @@
+# TITRE CALCUL 3D DE G FISSURE CIRCULAIRE EN MILIEU INFINI
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# QUART DE FISSURE. TEST DE POST_K1_K2_K3. MAILLAGE BARSOUM
+# TORSION
+
+DEBUT(CODE=_F(NOM='SSLV134D',
+NIV_PUB_WEB='INTERNET',),DEBUG=_F(SDVERI='OUI'))
+
+MA=LIRE_MAILLAGE(FORMAT='MED',VERI_MAIL=_F(VERIF='OUI',),);
+
+MA=DEFI_GROUP(reuse =MA,
+              MAILLAGE=MA,
+              CREA_GROUP_NO=_F(GROUP_MA='LFF1',
+                               NOM='LFF1',),);
+
+MA=MODI_MAILLAGE(reuse =MA,
+                 MAILLAGE=MA,
+                 MODI_MAILLE=_F(OPTION='NOEUD_QUART',
+                                GROUP_NO_FOND='LFF1',),);
+
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(GROUP_MA=('MA1','SINF_S','SINF_1','SLAT_I','SAR_I','LEVINF1','LEVINFS',),
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='3D',),);
+
+MA=MODI_MAILLAGE(reuse =MA,
+                   MAILLAGE=MA,
+                   ORIE_PEAU_3D=_F(GROUP_MA=('SAR_I','SLAT_I','SINF_1','SINF_S',
+                                             'SAV_I','SAV_S','SLA2_I','SLA2_S',),),
+                   INFO=2,);
+
+E = 200000000000.0;
+
+NU = 0.3;
+
+MAT=DEFI_MATERIAU(ELAS=_F(E=E,
+                          NU=NU,
+                          ALPHA=0.,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=MAT,),);
+
+FISS=DEFI_FOND_FISS(MAILLAGE=MA,
+                    FOND_FISS=_F(GROUP_MA='LFF1',
+                                 GROUP_NO_ORIG='NFF1',
+                                 GROUP_NO_EXTR='NFF2',),
+                    LEVRE_SUP=_F(GROUP_MA='LEVINFS',),
+                    LEVRE_INF=_F(GROUP_MA='LEVINF1',),
+                   );
+
+RSUP = 0.5;
+
+RINF = 0.2;
+
+RAY_INF1=DEFI_CONSTANTE(VALE=RINF,);
+
+RAY_SUP1=DEFI_CONSTANTE(VALE=RSUP,);
+
+MOD_T1=DEFI_CONSTANTE(VALE=1.,);
+
+THETA1=CALC_THETA(MODELE=MO,
+                  THETA_3D=_F(TOUT='OUI',
+                              MODULE_FO=MOD_T1,
+                              R_INF_FO=RAY_INF1,
+                              R_SUP_FO=RAY_SUP1,),
+                  FOND_FISS=FISS,);
+
+# CAS DE CHARGE : TRACTION => MODE 1
+
+SYMETRIE=AFFE_CHAR_MECA(MODELE=MO,
+                        DDL_IMPO=(_F(GROUP_NO='D',
+                                     DZ=0.,),
+                                  _F(GROUP_MA=('SLA2_I','SLA2_S',),
+                                     DX=0.,),
+                                  _F(GROUP_MA=('SAV_I','SAV_S',),
+                                     DY=0.,),),);
+
+PRESSION=AFFE_CHAR_MECA(MODELE=MO,
+                        FORCE_FACE=(_F(GROUP_MA='SINF_S',
+                                       FZ=1.E6,),
+                                    _F(GROUP_MA='SINF_1',
+                                       FZ=-1.E6,),),);
+LIBRE=AFFE_CHAR_MECA(MODELE=MO,
+                     PRES_REP=(_F(GROUP_MA='SLAT_I',PRES=0.,),
+                               _F(GROUP_MA='SAR_I',PRES=0.,),),)
+
+RESU1=MECA_STATIQUE(MODELE=MO,
+                    CHAM_MATER=CHMAT,
+                    EXCIT=(_F(CHARGE=PRESSION,),
+                           _F(CHARGE=SYMETRIE,),
+                           _F(CHARGE=LIBRE,),),);
+
+# REMARQUE : STRICTO SENSU, LE CALCUL DE ERME_ELEM EST FAUX CAR
+#            DES BORDS A CONTRAINTE NULLE N'ONT PAS ETE DEFINIS DANS LE
+#            MAILLAGE ET A FORTIORI DANS LE CHARGEMENT
+#            IL FAUDRA COMPLETER LE MAILLAGE UN JOUR. G. NICOLAS.
+
+RESU1=CALC_ERREUR(reuse =RESU1,
+               RESULTAT=RESU1,
+               OPTION=('ERME_ELEM',),);
+
+#IMPR_RESU(UNITE=13,
+#          RESU=_F(RESULTAT=RESU1,
+#                  NOM_CHAM='SIGM_ELNO',
+#                  TOUT_CMP='OUI',),);
+
+DEP1=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+                OPERATION='EXTR',
+                RESULTAT=RESU1,
+                NOM_CHAM='DEPL',
+                NUME_ORDRE=1,);
+
+# VALEUR DE REFERENCE MILIEU INFINI :
+Gref1  = 11.58648
+K1ref =  1.595769E6
+
+
+GLOC1=CALC_G(THETA=_F(FOND_FISS=FISS,
+                      R_INF=RINF,
+                      R_SUP=RSUP,),
+             RESULTAT=RESU1,
+             OPTION='CALC_G',);
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC= 11.766130794071,
+           VALE_REFE=11.58648,
+           NOM_PARA='G',
+           TABLE=GLOC1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N49',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC= 11.758520845788,
+           VALE_REFE=11.58648,
+           NOM_PARA='G',
+           TABLE=GLOC1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N1710',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC= 11.729577577092,
+           VALE_REFE=11.58648,
+           NOM_PARA='G',
+           TABLE=GLOC1,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N77',),
+           )
+
+GGLOB1=CALC_G(THETA=_F(THETA=THETA1,),
+              RESULTAT=RESU1,
+              OPTION='CALC_G_GLOB',);
+
+# VALEUR DE REFERENCE MILIEU INFINI : G=145.6
+# POUR UN QUART DE FISSURE G=36.4
+
+TEST_TABLE(PRECISION=0.012,
+           VALE_CALC=36.822441892,
+           VALE_REFE=36.399999999999999,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GGLOB1,)
+
+TABK1A=POST_K1_K2_K3(MODELISATION='3D',
+                      MATER=MAT,
+                      RESULTAT=RESU1,
+                      FOND_FISS=FISS,);
+
+
+# ---------------
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC= 1.60701155E+06,
+           VALE_REFE=1.595769E6,
+           NOM_PARA='K1',
+           TABLE=TABK1A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N49',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=11.750311869,
+           VALE_REFE=11.58648,
+           NOM_PARA='G',
+           TABLE=TABK1A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N49',),
+           )
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC= 1.60693995E+06,
+           VALE_REFE=1.595769E6,
+           NOM_PARA='K1',
+           TABLE=TABK1A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N1710',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=11.749264848,
+           VALE_REFE=11.58648,
+           NOM_PARA='G',
+           TABLE=TABK1A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N1710',),
+           )
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC= 1.60621137E+06,
+           VALE_REFE=1.595769E6,
+           NOM_PARA='K1',
+           TABLE=TABK1A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N77',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.050000000000000003,
+           VALE_CALC=11.738613071,
+           VALE_REFE=11.58648,
+           NOM_PARA='G',
+           TABLE=TABK1A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N77',),
+           )
+
+# EMPLOI DE FORMULE POUR DEFINIR LA TORSION
+
+TAU = 1000000.0;
+
+A = 2.0;
+
+
+TX = FORMULE(VALE='-TAU*Y/A',
+             NOM_PARA=('X','Y',),);
+
+TY = FORMULE(VALE=' TAU*X/A',
+             NOM_PARA=('X','Y',),);
+
+MTX = FORMULE(VALE=' TAU*Y/A',
+              NOM_PARA=('X','Y',),);
+
+MTY = FORMULE(VALE='-TAU*X/A',
+              NOM_PARA=('X','Y',),);
+
+TORSION=AFFE_CHAR_MECA_F(MODELE=MO,
+                         FORCE_FACE=(_F(GROUP_MA='LEVINF1',
+                                        FX=TX,
+                                        FY=TY,),
+                                     _F(GROUP_MA='LEVINFS',
+                                        FX=MTX,
+                                        FY=MTY,),),);
+
+ANTISYM=AFFE_CHAR_MECA(MODELE=MO,
+                       DDL_IMPO=(_F(GROUP_MA='SSUP_1',
+                                    DX=0.,
+                                    DY=0.,),
+                                 _F(GROUP_MA=('SLA2_I','SLA2_S',),
+                                    DY=0.,
+                                    DZ=0.,),
+                                 _F(GROUP_MA=('SAV_I','SAV_S',),
+                                    DX=0.,
+                                    DZ=0.,),),);
+
+RESU3=MECA_STATIQUE(MODELE=MO,
+                    CHAM_MATER=CHMAT,
+                    EXCIT=(_F(CHARGE=TORSION,),
+                           _F(CHARGE=ANTISYM,),),);
+
+DEP3=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+                OPERATION='EXTR',
+                RESULTAT=RESU3,
+                NOM_CHAM='DEPL',
+                NUME_ORDRE=1,);
+
+# VALEUR DE REFERENCE MILIEU INFINI :
+Gref3 = 7.356495;
+K3ref = -1063846.0;
+
+
+GLOC3=CALC_G(THETA=_F(FOND_FISS=FISS,
+                      R_INF=RINF,
+                      R_SUP=RSUP,),
+             RESULTAT=RESU3,
+             OPTION='CALC_G',);
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=7.3293015209203,
+           VALE_REFE=7.3564949999999998,
+           NOM_PARA='G',
+           TABLE=GLOC3,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N49',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=7.3224920340013,
+           VALE_REFE=7.3564949999999998,
+           NOM_PARA='G',
+           TABLE=GLOC3,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N1710',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=7.3463169759279,
+           VALE_REFE=7.3564949999999998,
+           NOM_PARA='G',
+           TABLE=GLOC3,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N77',),
+           )
+
+GGLOB3=CALC_G(THETA=_F(THETA=THETA1,),
+              RESULTAT=RESU3,
+              OPTION='CALC_G_GLOB',);
+
+# VALEUR DE REFERENCE MILIEU INFINI :
+# POUR UN QUART DE FISSURE G=23.11
+
+TEST_TABLE(PRECISION=0.012,
+           VALE_CALC=23.026235055,
+           VALE_REFE=23.109999999999999,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GGLOB3,)
+
+# POST_K1_K2_K3
+
+TABK3A=POST_K1_K2_K3(MODELISATION='3D',
+                      MATER=MAT,
+                      RESULTAT=RESU3,
+                      FOND_FISS=FISS,);
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=-1.05875701E+06,
+           VALE_REFE=-1.063846E6,
+           NOM_PARA='K3',
+           TABLE=TABK3A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N49',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=7.286281613,
+           VALE_REFE=7.3564949999999998,
+           NOM_PARA='G',
+           TABLE=TABK3A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N49',),
+           )
+
+# ---------------
+
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=-1.05875692E+06,
+           VALE_REFE=-1.063846E6,
+           NOM_PARA='K3',
+           TABLE=TABK3A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N1710',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=7.286280433,
+           VALE_REFE=7.3564949999999998,
+           NOM_PARA='G',
+           TABLE=TABK3A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N1710',),
+           )
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=-1.05871112E+06,
+           VALE_REFE=-1.063846E6,
+           NOM_PARA='K3',
+           TABLE=TABK3A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N77',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=7.285649997,
+           VALE_REFE=7.3564949999999998,
+           NOM_PARA='G',
+           TABLE=TABK3A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N77',),
+           )
+
+DEP13=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+                 OPTION='DEPL',
+                 OPERATION='ASSE',
+                 MODELE=MO,
+                 ASSE=(
+                 _F(TOUT='OUI',
+                    CHAM_GD=DEP1,
+                    CUMUL='OUI',
+                    COEF_R=1.,),
+                 _F(TOUT='OUI',
+                    CHAM_GD=DEP3,
+                    CUMUL='OUI',
+                    COEF_R=1.,),),);
+
+RESU13=CREA_RESU(OPERATION='AFFE',
+                 TYPE_RESU='EVOL_ELAS',
+                 NOM_CHAM='DEPL',
+                 AFFE=_F(CHAM_GD=DEP13,
+                         MODELE=MO,
+                         CHAM_MATER=CHMAT,
+                         INST=0.,),);
+
+# VALEUR DE REFERENCE MILIEU INFINI MODES 1 ET 3 :
+
+Gref13=(1.-NU*NU)*K1ref*K1ref/E + (1.+NU)*K3ref*K3ref/E
+
+GLOC13=CALC_G(THETA=_F(FOND_FISS=FISS,
+                       R_INF=RINF,
+                       R_SUP=RSUP,),
+              RESULTAT=RESU13,
+              EXCIT=_F(CHARGE=TORSION,),
+              OPTION='CALC_G',);
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=19.095432314991,
+           VALE_REFE=18.942972117346553,
+           NOM_PARA='G',
+           TABLE=GLOC13,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N49',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=19.08101287979,
+           VALE_REFE=18.942972117346553,
+           NOM_PARA='G',
+           TABLE=GLOC13,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N1710',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           VALE_CALC=19.07589455302,
+           VALE_REFE=18.942972117346553,
+           NOM_PARA='G',
+           TABLE=GLOC13,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N77',),
+           )
+
+GGLOB13=CALC_G(THETA=_F(THETA=THETA1,),
+               RESULTAT=RESU13,
+               EXCIT=_F(CHARGE=TORSION,),
+               OPTION='CALC_G_GLOB',);
+
+GGref13=Gref13*pi*A/2.
+
+TEST_TABLE(PRECISION=0.012,
+           VALE_CALC=59.848676947,
+           VALE_REFE=59.511102041012222,
+           REFERENCE='NON_DEFINI',
+           NOM_PARA='G',
+           TABLE=GGLOB13,)
+
+# POST_K1_K2_K3
+
+TABK13A=POST_K1_K2_K3(MODELISATION='3D',
+                       MATER=MAT,
+                       RESULTAT=RESU13,
+                       FOND_FISS=FISS,);
+
+# TEST DE K1
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC= 1.60701155E+06,
+           VALE_REFE=1.595769E6,
+           NOM_PARA='K1',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N49',),
+           )
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC= 1.60693995E+06,
+           VALE_REFE=1.595769E6,
+           NOM_PARA='K1',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N1710',),
+           )
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC= 1.60621137E+06,
+           VALE_REFE=1.595769E6,
+           NOM_PARA='K1',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N77',),
+           )
+
+# TEST DE K3 ET G
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=-1.05875701E+06,
+           VALE_REFE=-1.063846E6,
+           NOM_PARA='K3',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N49',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=18.888568993,
+           VALE_REFE=18.942972117346553,
+           NOM_PARA='G',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N49',),
+           )
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=-1.05875692E+06,
+           VALE_REFE=-1.063846E6,
+           NOM_PARA='K3',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N1710',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=18.891688925,
+           VALE_REFE=18.942972117346553,
+           NOM_PARA='G',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N1710',),
+           )
+
+# ---------------
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-2,
+           VALE_CALC=-1.05871112E+06,
+           VALE_REFE=-1.063846E6,
+           NOM_PARA='K3',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N77',),
+           )
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.02,
+           VALE_CALC=18.880021632,
+           VALE_REFE=18.942972117346553,
+           NOM_PARA='G',
+           TABLE=TABK13A,
+           FILTRE=_F(NOM_PARA='NOEUD_FOND',
+                     VALE_K='N77',),
+           )
+
+### TEST VALEUR ESTIMATEUR D'ERREUR EN RESIDU
+## VALIDATION ELEMENTS DE BARSOUM
+# NON REGRESSION
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  PARA='ERREUR_ERRE',
+                  RESULTAT=RESU1,
+                  VALE_CALC=3.1671389346143999E6,
+                  ),
+          )
+
+#
+FIN();
+#

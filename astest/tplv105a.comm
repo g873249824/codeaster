@@ -1,0 +1,252 @@
+# TITRE PB 2D STATIONNAIRE DE CONVECTION-DIFFUSION - QUAD8
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#             TEST PERMETTANT LA POURSUITE D'UN CALCUL
+
+DEBUT(CODE=_F(NOM='TPLV105A',
+              NIV_PUB_WEB='INTERNET',),
+      DEBUG=_F(SDVERI='OUI',),);
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_NO=(_F(GROUP_MA='LSUP',),
+                               _F(GROUP_MA='LINF',),
+                               _F(GROUP_MA='LZA',),
+                               _F(GROUP_MA='DC1',),
+                               _F(GROUP_MA='DC2',),),);
+
+ENTHAL=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(0.000,0.000,
+                           7.00E+2,2.979,
+                           1.37E+3,6.232,
+                           1.40E+3,8.184,
+                           1.45E+3,8.444,
+                           ),PROL_DROITE='LINEAIRE',PROL_GAUCHE='LINEAIRE',);
+
+CONDUC=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(20.0,14.0E-3,
+                           50.0,14.4E-3,
+                           100.0,15.2E-3,
+                           150.0,15.8E-3,
+                           200.0,16.6E-3,
+                           250.0,17.3E-3,
+                           300.0,17.9E-3,
+                           350.0,18.6E-3,
+                           400.0,19.2E-3,
+                           450.0,19.9E-3,
+                           500.0,20.6E-3,
+                           550.0,21.2E-3,
+                           600.0,21.8E-3,
+                           650.0,22.4E-3,
+                           700.0,23.1E-3,
+                           750.0,23.7E-3,
+                           800.0,24.3E-3,
+                           900.0,26.0E-3,
+                           1000.0,27.3E-3,
+                           1200.0,29.9E-3,
+                           1370.0,32.2E-3,
+                           1400.0,48.9E-3,
+                           ),PROL_DROITE='CONSTANT',PROL_GAUCHE='CONSTANT',);
+
+QINOX=DEFI_FONCTION(NOM_PARA='TEMP',VALE=(20.0,-0.00E-3,
+                          100.0,-1.76E-3,
+                          200.0,-5.04E-3,
+                          300.0,-9.80E-3,
+                          400.0,-16.34E-3,
+                          500.0,-25.92E-3,
+                          600.0,-38.86E-3,
+                          700.0,-56.44E-3,
+                          800.0,-79.56E-3,
+                          900.0,-10.82E-2,
+                          1000.0,-14.60E-2,
+                          1100.0,-19.22E-2,
+                          1200.0,-24.78E-2,
+                          1300.0,-31.74E-2,
+                          1400.0,-39.88E-2,
+                          1500.0,-49.73E-2,
+                          ),PROL_DROITE='LINEAIRE',PROL_GAUCHE='LINEAIRE',);
+
+Q1=DEFI_CONSTANTE(VALE=4.,);
+
+Q0=DEFI_CONSTANTE(VALE=15.62,);
+
+TIMPO=DEFI_CONSTANTE(VALE=20.0,);
+
+HECHA=DEFI_CONSTANTE(VALE=15.E-6,);
+
+INOX=DEFI_MATERIAU(THER_NL=_F(LAMBDA=CONDUC,
+                              BETA=ENTHAL,),);
+
+IMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                           MATER=INOX,),);
+
+MOTH=AFFE_MODELE(MAILLAGE=MAIL,
+                 AFFE=_F(TOUT='OUI',
+                         PHENOMENE='THERMIQUE',
+                         MODELISATION='PLAN',),);
+
+VITESS=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',
+                  OPERATION='AFFE',
+                  MAILLAGE=MAIL,
+                  AFFE=_F(TOUT='OUI',
+                          NOM_CMP=('DX','DY',),
+                          VALE=(-2.33,0.,),),);
+
+CHTHF1=AFFE_CHAR_THER_F(MODELE=MOTH,
+                        TEMP_IMPO=_F(GROUP_NO='DC2',
+                                     TEMP=TIMPO,),
+                        FLUX_REP=_F(GROUP_MA='LZA',
+                                    FLUN=Q1,),
+                        FLUX_NL=(_F(GROUP_MA='LSUP',
+                                    FLUN=QINOX,),
+                                 _F(GROUP_MA='LINF',
+                                    FLUN=QINOX,),),
+                        CONVECTION=_F(VITESSE=VITESS,),);
+
+CHTHF2=AFFE_CHAR_THER(  MODELE=MOTH,
+                        ECHANGE=(_F(GROUP_MA='LSUP',
+                                    COEF_H=15.E-6,
+                                    TEMP_EXT=20.0,),
+                                 _F(GROUP_MA='LINF',
+                                    COEF_H=15.E-6,
+                                    TEMP_EXT=20.0,),),);
+
+CHTHF=AFFE_CHAR_THER_F(MODELE=MOTH,
+                       TEMP_IMPO=_F(GROUP_NO='DC2',
+                                    TEMP=TIMPO,),
+                       FLUX_REP=_F(GROUP_MA='LZA',
+                                   FLUN=Q0,),
+                       FLUX_NL=(_F(GROUP_MA='LSUP',
+                                   FLUN=QINOX,),
+                                _F(GROUP_MA='LINF',
+                                   FLUN=QINOX,),),
+                       ECHANGE=(_F(GROUP_MA='LSUP',
+                                   COEF_H=HECHA,
+                                   TEMP_EXT=TIMPO,),
+                                _F(GROUP_MA='LINF',
+                                   COEF_H=HECHA,
+                                   TEMP_EXT=TIMPO,),),
+                       CONVECTION=_F(VITESSE=VITESS,),);
+
+TEMPE=THER_NON_LINE_MO(MODELE=MOTH,
+                       CHAM_MATER=IMAT,
+                       EXCIT=(_F(CHARGE=CHTHF1,),
+                              _F(CHARGE=CHTHF2,),),
+                       CONVERGENCE=_F(CRIT_TEMP_RELA=1.E-4,
+                                      CRIT_ENTH_RELA=1.E-3,
+                                      ITER_GLOB_MAXI=30,),);
+
+TEMPE2=THER_NON_LINE_MO(MODELE=MOTH,
+                        CHAM_MATER=IMAT,
+                        EXCIT=_F(CHARGE=CHTHF,),
+                        ETAT_INIT=_F(EVOL_THER=TEMPE,),
+                        CONVERGENCE=_F(CRIT_TEMP_RELA=1.E-4,
+                                       CRIT_ENTH_RELA=1.E-3,
+                                       ITER_GLOB_MAXI=30,),);
+
+# VALEURS DE REFERENCE:
+
+T_0=CREA_CHAMP(TYPE_CHAM='NOEU_TEMP_R',
+               OPERATION='EXTR',
+               RESULTAT=TEMPE2,
+               NOM_CHAM='TEMP',
+               NUME_ORDRE=0,);
+
+TEST_RESU(CHAM_NO=(_F(NOEUD='N1',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.75611100E+03,
+                      VALE_REFE=1755.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N2',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.91929487E+03,
+                      VALE_REFE=1920.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N3',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.90862643E+03,
+                      VALE_REFE=1910.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N7',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.49345891E+03,
+                      VALE_REFE=1494.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N8',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.29751414E+03,
+                      VALE_REFE=1300.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N173',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.15576187E+03,
+                      VALE_REFE=1160.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N174',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.21331536E+03,
+                      VALE_REFE=1215.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N175',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.29185781E+03,
+                      VALE_REFE=1295.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N478',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC= 1.00109200E+03,
+                      VALE_REFE=1007.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N522',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC=982.393492108,
+                      VALE_REFE=989.0,
+                      REFERENCE='NON_DEFINI',),
+                   _F(NOEUD='N559',
+                      NOM_CMP='TEMP',
+                      PRECISION=1.E-2,
+                      CHAM_GD=T_0,
+                      VALE_CALC=973.916466590,
+                      VALE_REFE=980.0,
+                      REFERENCE='NON_DEFINI',),
+                   ),
+          )
+
+FIN();
+
+#

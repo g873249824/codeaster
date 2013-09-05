@@ -1,0 +1,189 @@
+
+# TITRE COMPORTEMENTS ELASTOVISCOPLASTIQUES MONOCRISTALLINS 2D
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# person_in_charge: jean-michel.proix at edf.fr
+
+DEBUT(CODE=_F(NOM='SSNV172B',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+MAIL2D=LIRE_MAILLAGE();
+
+
+MODEL2D=AFFE_MODELE(MAILLAGE=MAIL2D,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='C_PLAN',),);
+TFIN=3.
+
+NPAS = 20;
+
+
+
+LINST=DEFI_LIST_REEL(DEBUT=0.0,
+                     INTERVALLE=(_F(JUSQU_A=0.52,
+                                    NOMBRE=1,),
+                                 _F(JUSQU_A=TFIN,
+                                    NOMBRE=NPAS,),),);
+
+
+COEF=DEFI_FONCTION(NOM_PARA='INST',
+                   VALE=(0.0,0.0,1.0,1.0,),
+                   PROL_DROITE='LINEAIRE',
+                   PROL_GAUCHE='LINEAIRE',);
+
+
+TRAC=AFFE_CHAR_MECA(MODELE=MODEL2D,
+                    DDL_IMPO=(_F(GROUP_NO='BAS',
+                                 DY=0.0,),
+                              _F(GROUP_NO='GAUCHE',
+                                 DX=0.0,),
+                              _F(GROUP_NO='DROIT',
+                                 DX=0.001,),
+                                 ),);
+
+
+# MATERIAU DE TYPE CHABOCHE, SOIT MACRO, SOIT MONOCRISTAL
+ACIER=DEFI_MATERIAU(ELAS=_F(E=145200.0,
+                            NU=0.0,),
+                    CIN1_CHAB=_F(R_0=75.5,
+                                 R_I=85.27,
+                                 B=19.34,
+                                 C_I=10.0,
+                                 K=1.0,
+                                 W=0.0,
+                                 G_0=36.68,
+                                 A_I=1.0,),
+                    LEMAITRE=_F(N=10.0,
+                                UN_SUR_K=0.025,
+                                UN_SUR_M=0.0,),
+                    MONO_VISC1=_F(N=10.0,
+                                  K=40.0,
+                                  C=10.0,),
+                    MONO_ISOT1=_F(R_0=75.5,
+                                  Q=9.77,
+                                  B=19.34,
+                                  H=0.0,),
+                    MONO_CINE1=_F(D=36.68,),
+                                  );
+
+
+MAT=AFFE_MATERIAU(MAILLAGE=MAIL2D,
+                  AFFE=_F(TOUT='OUI',
+                          MATER=ACIER,),);
+
+
+
+# SOLUTION DE REFERENCE
+
+SOLCHAB=STAT_NON_LINE(MODELE=MODEL2D,
+                      CHAM_MATER=MAT,
+                      EXCIT=(_F(CHARGE=TRAC,
+                                FONC_MULT=COEF,
+                                TYPE_CHARGE='FIXE_CSTE',),),
+                      COMP_INCR=(_F(RELATION='VISC_CIN1_CHAB',
+                                    DEFORMATION='PETIT',
+                                    ITER_INTE_MAXI=100,
+                                    TOUT='OUI',),),
+                      INCREMENT=(_F(LIST_INST=LINST,),),
+                      NEWTON=(_F(REAC_ITER=1,),),
+                      ARCHIVAGE=_F(LIST_INST=LINST,),);
+
+
+TEST_RESU(RESU=_F(INST=3.0,
+                  POINT=1,
+                  RESULTAT=SOLCHAB,
+                  NOM_CHAM='SIEF_ELGA',
+                  NOM_CMP='SIXX',
+                  VALE_CALC=95.999315999999993,
+                  MAILLE='MA1',),
+          )
+
+COMPOR1=DEFI_COMPOR(MONOCRISTAL=(_F(MATER=ACIER,
+                                    ECOULEMENT='MONO_VISC1',
+                                    ECRO_ISOT='MONO_ISOT1',
+                                    ECRO_CINE='MONO_CINE1',
+                                    ELAS='ELAS',
+                                    FAMI_SYST_GLIS='UNIAXIAL',),),);
+
+
+ORIEN=AFFE_CARA_ELEM(MODELE=MODEL2D,
+                     MASSIF=_F(GROUP_MA='TOUT',
+                               ANGL_REP=(180.0,180.0,0.0,),),);
+
+# IMPLICITE : TEST DE MONO_VISC1, MONO_LINE1, MONO_CINE1
+
+IMPL1=STAT_NON_LINE(MODELE=MODEL2D,INFO=1,
+                     CHAM_MATER=MAT,
+                     CARA_ELEM=ORIEN,
+                     EXCIT=(_F(CHARGE=TRAC,
+                               FONC_MULT=COEF,
+                               TYPE_CHARGE='FIXE_CSTE',),),
+                     COMP_INCR=(_F(RELATION='MONOCRISTAL',
+                                   COMPOR=COMPOR1,
+                                   DEFORMATION='PETIT',
+                                   ITER_INTE_MAXI=100,
+                                   RESI_INTE_RELA=1.E-9,
+                                   TOUT='OUI',),),
+                     INCREMENT=(_F(LIST_INST=LINST,),),
+                     NEWTON=(_F(REAC_ITER=1),),
+                     ARCHIVAGE=_F(LIST_INST=LINST,),
+                                     );
+
+TEST_RESU(RESU=_F(INST=3.0,
+                  REFERENCE='AUTRE_ASTER',
+                  POINT=1,
+                  RESULTAT=IMPL1,
+                  NOM_CHAM='SIEF_ELGA',
+                  NOM_CMP='SIXX',
+                  VALE_CALC=95.999316284,
+                  VALE_REFE=95.999315999999993,
+                  MAILLE='MA1',),
+          )
+
+# EXPLICITE RUNGE_KUTTA : TEST DE MONO_VISC1, MONO_LINE1, MONO_CINE1
+
+
+EXPL1=STAT_NON_LINE(MODELE=MODEL2D,
+                    CHAM_MATER=MAT,
+                    CARA_ELEM=ORIEN,
+                    EXCIT=(_F(CHARGE=TRAC,
+                              FONC_MULT=COEF,
+                              TYPE_CHARGE='FIXE_CSTE',),),
+                    COMP_INCR=(_F(RELATION='MONOCRISTAL',
+                                  COMPOR=COMPOR1,
+                                  DEFORMATION='PETIT',
+                                  ALGO_INTE='RUNGE_KUTTA',
+                                  TOUT='OUI',),),
+                     NEWTON=(_F(PREDICTION='EXTRAPOLE',
+                                MATRICE='ELASTIQUE',
+                                REAC_ITER=0,),),
+                    INCREMENT=(_F(LIST_INST=LINST,),),
+                    );
+
+
+TEST_RESU(RESU=_F(INST=3.0,
+                  REFERENCE='AUTRE_ASTER',
+                  POINT=1,
+                  RESULTAT=EXPL1,
+                  NOM_CHAM='SIEF_ELGA',
+                  NOM_CMP='SIXX',
+                  VALE_CALC=95.999367039,
+                  VALE_REFE=95.999315999999993,
+                  MAILLE='MA1',),
+          )
+
+FIN();

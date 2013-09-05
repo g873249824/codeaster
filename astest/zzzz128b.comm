@@ -1,0 +1,109 @@
+# TITRE VALIDATION DE LIRE_TABLE / IMPR_TABLE / EXTR_TABLE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+
+DEBUT(CODE=_F(NOM='ZZZZ128B', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+# ----------------------------------------------------------------------------
+# On lit une table connue sur le fichier 38
+# On l'ecrit sur le fichier 39
+# On la relit sur le fichier 39 et on verifie qu'elle a encore le meme contenu
+# ----------------------------------------------------------------------------
+#
+T1=LIRE_TABLE(     UNITE=38, FORMAT='ASTER',  NUME_TABLE=2,
+                   SEPARATEUR='%', TITRE='titre 1',)
+
+IMPR_TABLE (TABLE = T1,   FORMAT='ASTER', UNITE=39)
+
+DEFI_FICHIER(ACTION='LIBERER',UNITE=39)
+
+T2=LIRE_TABLE(     UNITE=39, FORMAT='ASTER',  NUME_TABLE=1,
+                   SEPARATEUR=' ', TITRE='titre 2',)
+
+IMPR_TABLE(TABLE=T2,
+           TRI=_F(NOM_PARA=('NOEUD'),ORDRE='DECROISSANT'),)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=1.E-10,
+           VALE_CALC=21.0,
+           VALE_REFE=21.0,
+           NOM_PARA='VALEUR',
+           TABLE=T2,
+           FILTRE=_F(NOM_PARA='NOEUD',
+                     VALE_K='N2',),
+           )
+
+# PARTIE POUR VALIDATION IMPR_TABLE
+fr1 = DEFI_FONCTION(NOM_PARA='INST',
+                    NOM_RESU='QTE',
+                    VALE=(0., 9.,
+                          1., 4.,
+                          5., 6.,),)
+
+fc1 = DEFI_FONCTION(NOM_PARA='INST',
+                    NOM_RESU='QTEC',
+                    VALE_C=(0., 1., 2.,
+                            1., 3., 4.,
+                            5., 2., 2.,),)
+
+tabf = CREA_TABLE(
+        LISTE=(
+            _F(PARA='NUME_ORDRE', LISTE_I=1),
+            _F(PARA='FONCTION',   LISTE_K='fr1'),
+            _F(PARA='FONCTION_C', LISTE_K='fc1'),
+        ),
+        TYPE_TABLE='TABLE_FONCTION',
+)
+
+IMPR_TABLE(TABLE=tabf,
+           IMPR_FONCTION='OUI')
+
+# PARTIE POUR VALIDATION EXTR_TABLE
+# type ENTIER
+ival = EXTR_TABLE(
+        TYPE_RESU='ENTIER',
+        TABLE=tabf,
+        NOM_PARA='NUME_ORDRE',)
+
+ttesti = CREA_TABLE(LISTE=_F(PARA='CHECK',
+                             LISTE_I=ival,),)
+
+TEST_TABLE(TABLE=ttesti,
+           NOM_PARA='CHECK',
+           REFERENCE='ANALYTIQUE',
+           VALE_REFE_I=1,
+           VALE_CALC_I=1,)
+
+# type REEL
+rval = EXTR_TABLE(
+        TYPE_RESU='REEL',
+        TABLE=T2,
+        NOM_PARA='VALEUR',
+        FILTRE=_F(NOM_PARA='NOEUD',
+                  VALE_K='N2',),)
+
+ttestr = CREA_TABLE(LISTE=_F(PARA='CHECK',
+                             LISTE_R=rval,),)
+
+TEST_TABLE(TABLE=ttestr,
+           NOM_PARA='CHECK',
+           REFERENCE='ANALYTIQUE',
+           VALE_REFE=21.0,
+           VALE_CALC=21.0,)
+
+
+FIN()

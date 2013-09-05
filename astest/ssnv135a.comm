@@ -1,0 +1,1719 @@
+# TITRE ETUDE  : ESSAI TRIAXIAL DRAINE
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+DEBUT(CODE=_F(NOM='SSNV135A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='NON'))
+# SDVERI='NON' car la verification est trop couteuse en CPU
+
+#------------------------------------
+# NIVEAU / CJS1 /
+# SIG_33 = -100 KPA
+# SIG_33 = -200 KPA
+# SIG_33 = -400 KPA
+#------------------------------------
+#
+#
+
+
+#***********************************************************************
+#    MAILLAGE + MODELE
+#***********************************************************************
+
+MAILLAGE=LIRE_MAILLAGE(FORMAT='MED', )
+
+MODELE=AFFE_MODELE(     MAILLAGE=MAILLAGE,
+                             AFFE=_F(  TOUT = 'OUI',
+                                    PHENOMENE = 'MECANIQUE',
+                                    MODELISATION = '3D')
+                           )
+
+#***********************************************************************
+#    INCREMENTS DE TEMPS
+#***********************************************************************
+
+TEMPS1=DEFI_LIST_REEL(   DEBUT=0.,
+                            INTERVALLE=_F(  JUSQU_A = 1.,   NOMBRE = 10)
+                         )
+
+TEMPS2=DEFI_LIST_REEL(   DEBUT=1.,INTERVALLE=(
+                            _F(  JUSQU_A = 1.2,  NOMBRE = 50),
+                            _F(  JUSQU_A = 2.,   NOMBRE = 50))
+                         )
+
+#***********************************************************************
+#    MATERIAU : SOL
+#***********************************************************************
+
+SOL=DEFI_MATERIAU(    ELAS=_F(  E = 22.4E3,  NU = 0.3),
+                               CJS=_F(  BETA_CJS = -0.03,
+                                     GAMMA_CJS = 0.82,
+                                     RM = 0.289,
+                                     PA = -100.0)
+                           )
+
+CHMAT=AFFE_MATERIAU(    MAILLAGE=MAILLAGE,
+                             AFFE=_F(  TOUT = 'OUI',  MATER = SOL)
+                          )
+
+#***********************************************************************
+#----------------------------------------------------------------------*
+#    CALCUL DE U : PRESSION DE CONFINEMENT SIG_33 = -100 KPA           *
+#----------------------------------------------------------------------*
+#***********************************************************************
+
+
+
+
+
+#***********************************************************************
+#    CHARGEMENT MECANIQUE : FORCE DE COMPRESSION + DDL IMPOSES
+#***********************************************************************
+
+CHAR_U1=AFFE_CHAR_MECA(    MODELE=MODELE,
+                              PRES_REP=_F(   MAILLE = ( 'M21','M22','M29','M30',
+                                                     'M19','M20','M27','M28', ),
+                                          PRES = 1.)
+                       )
+
+CHAR_U2=AFFE_CHAR_MECA(    MODELE=MODELE,
+                             PRES_REP=_F(   MAILLE = ( 'M13','M14','M15','M16', ),
+                                         PRES = 1.)
+                        )
+
+DEPL_1=AFFE_CHAR_MECA(    MODELE=MODELE,FACE_IMPO=(
+                              _F(  MAILLE = ( 'M9','M10','M11','M12',),
+                                          DZ = 0.),
+                              _F(  MAILLE = ( 'M17','M18','M25','M26',),
+                                          DX = 0.),
+                              _F(  MAILLE = ( 'M23','M24','M31','M32',),
+                                          DY = 0.))
+                           )
+
+COEF1=DEFI_FONCTION(      NOM_PARA='INST',
+                           PROL_DROITE='CONSTANT',
+                         VALE=( 0.0,  0.0,
+                                1.0,  100.,)
+                       )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION INITIALE
+#***********************************************************************
+
+
+U1=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF1), _F(
+                CHARGE = CHAR_U2,
+                FONC_MULT = COEF1), _F(
+                CHARGE = DEPL_1)),
+                         COMP_INCR=_F(
+                RELATION = 'CJS',),
+                         INCREMENT=_F(
+                LIST_INST = TEMPS1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+U1=CALC_CHAMP(reuse=U1,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=U1)
+
+
+#***********************************************************************
+#    NOUVEAU CHARGEMENT MECANIQUE : DEPLACEMENT UNIAXIALE UNITAIRE
+#***********************************************************************
+
+
+
+SIG_IN1=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',
+NOM_CHAM='SIEF_ELGA', RESULTAT=U1,
+                        INST=1.
+                      )
+
+VAR_IN1=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELGA_VARI_R',
+NOM_CHAM='VARI_ELGA', RESULTAT=U1,
+                        INST=1.
+                      )
+
+DEPL_2=AFFE_CHAR_MECA(    MODELE=MODELE,
+                              FACE_IMPO=_F(  MAILLE = ( 'M13','M14','M15','M16', ),
+                                          DZ = 1.)
+                           )
+
+COEF2=DEFI_FONCTION(      NOM_PARA='INST',
+                           PROL_DROITE='LINEAIRE',
+                          PROL_GAUCHE='CONSTANT',
+                         VALE=( 1.0,  0.0,
+                                2.0,  -0.2, )
+                       )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION FINALE
+#***********************************************************************
+
+
+U2=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF1), _F(
+                CHARGE = DEPL_1), _F(
+                CHARGE = DEPL_2,
+                FONC_MULT = COEF2)),
+                         COMP_INCR=_F(
+                RELATION = 'CJS',),
+                         ETAT_INIT=_F(
+                SIGM = SIG_IN1,
+                VARI = VAR_IN1),
+                         INCREMENT=_F(
+                LIST_INST = TEMPS2),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE'),
+                       CONVERGENCE=_F(
+                ITER_GLOB_MAXI = 20,
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+U2=CALC_CHAMP(reuse=U2,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=U2)
+
+
+#***********************************************************************
+#    TEST DES RESULTATS : COMPARAISON AVEC SOLUTION ANALYTIQUE
+#***********************************************************************
+
+
+
+U2=CALC_CHAMP(reuse=U2,RESULTAT=U2,NUME_ORDRE=(10,20,40,60,100),DEFORMATION=('EPSI_ELNO'))
+
+
+U2=CALC_CHAMP(  reuse=U2,     RESULTAT=U2,
+                   NUME_ORDRE=(10, 20, 40, 60, 100,),
+                       DEFORMATION='EPSI_NOEU',CONTRAINTE='SIGM_NOEU'
+               )
+
+#-------------------------
+#    TEST_RESU AU POINT A
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-279.2,
+                   VALE_REFE=-279.2,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT B
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-279.2,
+                   VALE_REFE=-279.19999999999999,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT C
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-100.0,
+                   VALE_REFE=-100.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-279.2,
+                   VALE_REFE=-279.19999999999999,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=U2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-367.1586980285,
+                   VALE_REFE=-367.159,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#***********************************************************************
+#----------------------------------------------------------------------*
+#    CALCUL DE V : PRESSION DE CONFINEMENT SIG_33 = -200 KPA           *
+#----------------------------------------------------------------------*
+#***********************************************************************
+
+
+
+#***********************************************************************
+#    CHARGEMENT MECANIQUE : FORCE DE COMPRESSION + DDL IMPOSES
+#***********************************************************************
+
+
+COEF3=DEFI_FONCTION(      NOM_PARA='INST',
+                           PROL_DROITE='CONSTANT',
+                         VALE=( 0.0,  0.0,
+                                1.0,  200.,)
+                       )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION INITIALE
+#***********************************************************************
+
+
+V1=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF3), _F(
+                CHARGE = CHAR_U2,
+                FONC_MULT = COEF3), _F(
+                CHARGE = DEPL_1)),
+                         COMP_INCR=_F(
+                RELATION = 'CJS',),
+                         INCREMENT=_F(
+                LIST_INST = TEMPS1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+V1=CALC_CHAMP(reuse=V1,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=V1)
+
+
+SIG_IN2=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',
+NOM_CHAM='SIEF_ELGA', RESULTAT=V1,
+                        INST=1.
+                      )
+
+VAR_IN2=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELGA_VARI_R',
+NOM_CHAM='VARI_ELGA', RESULTAT=V1,
+                        INST=1.
+                      )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION FINALE
+#***********************************************************************
+
+
+V2=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF3), _F(
+                CHARGE = DEPL_1), _F(
+                CHARGE = DEPL_2,
+                FONC_MULT = COEF2)),
+                         COMP_INCR=_F(
+                RELATION = 'CJS',),
+                         ETAT_INIT=_F(
+                SIGM = SIG_IN2,
+                VARI = VAR_IN2),
+                         INCREMENT=_F(
+                LIST_INST = TEMPS2),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE'),
+                       CONVERGENCE=_F(
+                ITER_GLOB_MAXI = 20,
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+V2=CALC_CHAMP(reuse=V2,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=V2)
+
+
+#***********************************************************************
+#    TEST DES RESULTATS : COMPARAISON AVEC SOLUTION ANALYTIQUE
+#***********************************************************************
+
+
+V2=CALC_CHAMP(reuse=V2,RESULTAT=V2,NUME_ORDRE=(10,20,40,60,100),DEFORMATION=('EPSI_ELNO'))
+
+
+V2=CALC_CHAMP(  reuse=V2,     RESULTAT=V2,
+                   NUME_ORDRE=(10, 20, 40, 60, 100,),
+                       DEFORMATION='EPSI_NOEU',CONTRAINTE='SIGM_NOEU'
+               )
+
+#-------------------------
+#    TEST_RESU AU POINT A
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-379.2,
+                   VALE_REFE=-379.19999999999999,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-558.4,
+                   VALE_REFE=-558.39999999999998,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT B
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-379.2,
+                   VALE_REFE=-379.19999999999999,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-558.4,
+                   VALE_REFE=-558.39999999999998,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT C
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-200.0,
+                   VALE_REFE=-200.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-379.2,
+                   VALE_REFE=-379.19999999999999,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-558.4,
+                   VALE_REFE=-558.39999999999998,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=V2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-734.31739605699,
+                   VALE_REFE=-734.31700000000001,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#***********************************************************************
+#----------------------------------------------------------------------*
+#    CALCUL DE W : PRESSION DE CONFINEMENT SIG_33 = -400 KPA           *
+#----------------------------------------------------------------------*
+#***********************************************************************
+
+
+
+#***********************************************************************
+#    CHARGEMENT MECANIQUE :
+#***********************************************************************
+
+
+COEF4=DEFI_FONCTION(      NOM_PARA='INST',
+                           PROL_DROITE='CONSTANT',
+                         VALE=( 0.0,  0.0,
+                                1.0,  400.,)
+                       )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION INITIALE
+#***********************************************************************
+
+
+W1=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF4), _F(
+                CHARGE = CHAR_U2,
+                FONC_MULT = COEF4), _F(
+                CHARGE = DEPL_1)),
+                         COMP_INCR=_F(
+                RELATION = 'CJS',),
+                         INCREMENT=_F(
+                LIST_INST = TEMPS1),
+                       CONVERGENCE=_F(
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+W1=CALC_CHAMP(reuse=W1,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=W1)
+
+
+SIG_IN3=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',
+NOM_CHAM='SIEF_ELGA', RESULTAT=W1,
+                        INST=1.
+                      )
+
+VAR_IN3=CREA_CHAMP(  OPERATION='EXTR', TYPE_CHAM='ELGA_VARI_R',
+NOM_CHAM='VARI_ELGA', RESULTAT=W1,
+                        INST=1.
+                      )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION FINALE
+#***********************************************************************
+
+
+W2=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF4), _F(
+                CHARGE = DEPL_1), _F(
+                CHARGE = DEPL_2,
+                FONC_MULT = COEF2)),
+                         COMP_INCR=_F(
+                RELATION = 'CJS'),
+                         ETAT_INIT=_F(
+                SIGM = SIG_IN3,
+                VARI = VAR_IN3),
+                         INCREMENT=_F(
+                LIST_INST = TEMPS2),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE'),
+                       CONVERGENCE=_F(
+                ITER_GLOB_MAXI = 20,
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+W2=CALC_CHAMP(reuse=W2,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=W2)
+
+
+#***********************************************************************
+#    TEST DES RESULTATS : COMPARAISON AVEC SOLUTION ANALYTIQUE
+#***********************************************************************
+
+
+W2=CALC_CHAMP(reuse=W2,RESULTAT=W2,NUME_ORDRE=(10,20,40,60,100),DEFORMATION=('EPSI_ELNO'))
+
+
+W2=CALC_CHAMP(  reuse=W2,     RESULTAT=W2,
+                    NUME_ORDRE=(10, 20, 40, 60, 100,),
+                       DEFORMATION='EPSI_NOEU',CONTRAINTE='SIGM_NOEU'
+               )
+
+#-------------------------
+#    TEST_RESU AU POINT A
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-579.2,
+                   VALE_REFE=-579.20000000000005,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-758.4,
+                   VALE_REFE=-758.39999999999998,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1116.8,
+                   VALE_REFE=-1116.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1468.634792114,
+                   VALE_REFE=-1468.6348,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='A',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1468.634792114,
+                   VALE_REFE=-1468.6348,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT B
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-579.2,
+                   VALE_REFE=-579.20000000000005,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-758.4,
+                   VALE_REFE=-758.39999999999998,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1116.8,
+                   VALE_REFE=-1116.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1468.634792114,
+                   VALE_REFE=-1468.6348,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='B',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1468.634792114,
+                   VALE_REFE=-1468.6348,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT C
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-400.0,
+                   VALE_REFE=-400.0,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-579.2,
+                   VALE_REFE=-579.20000000000005,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-758.4,
+                   VALE_REFE=-758.39999999999998,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1116.8,
+                   VALE_REFE=-1116.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=60,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1468.634792114,
+                   VALE_REFE=-1468.6348,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=100,
+                   GROUP_NO='C',
+                   RESULTAT=W2,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1468.634792114,
+                   VALE_REFE=-1468.6348,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION FINALE OPTION GROT_GDEP ACTIVEE MATRICE SYM
+#***********************************************************************
+# LIMITATION A UNE DEFORMATION DE 5% => NUMERO D'ORDRE 40
+# CAR GROT_GDEP  EST FAUX EN GRANDES DEFORMATIONS
+#***********************************************************************
+
+
+W3=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF4), _F(
+                CHARGE = DEPL_1), _F(
+                CHARGE = DEPL_2,
+                FONC_MULT = COEF2)),
+                         COMP_INCR=_F(
+                RELATION = 'CJS',
+                DEFORMATION='GROT_GDEP',),
+                         ETAT_INIT=_F(
+                SIGM = SIG_IN3,
+                VARI = VAR_IN3),
+                         INCREMENT=_F(  NUME_INST_FIN=40,
+                LIST_INST = TEMPS2),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE'),
+                SOLVEUR=_F(SYME='OUI'),
+                       CONVERGENCE=_F(
+                ITER_GLOB_MAXI = 20,
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+W3=CALC_CHAMP(reuse=W3,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=W3)
+
+
+#***********************************************************************
+#    TEST DES RESULTATS : COMPARAISON AVEC SOLUTION ANALYTIQUE
+#***********************************************************************
+
+
+W3=CALC_CHAMP(reuse=W3,RESULTAT=W3,NUME_ORDRE=(10,20,40),DEFORMATION=('EPSI_ELNO'))
+
+
+W3=CALC_CHAMP(  reuse=W3,     RESULTAT=W3,
+                    NUME_ORDRE=(10, 20, 40,),
+                       DEFORMATION='EPSI_NOEU',CONTRAINTE='SIGM_NOEU'
+               )
+
+#-------------------------
+#    TEST_RESU AU POINT A
+#-------------------------
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-570.52992402874,
+                   VALE_REFE=-570.52999999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='A',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-735.25034088386,
+                   VALE_REFE=-735.25,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='A',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1047.7981704596,
+                   VALE_REFE=-1047.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT B
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-570.52992402874,
+                   VALE_REFE=-570.52999999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='B',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-735.25034088386,
+                   VALE_REFE=-735.25,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='B',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1047.7981704596,
+                   VALE_REFE=-1047.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT C
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-570.52992402874,
+                   VALE_REFE=-570.52999999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='C',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-735.25034088386,
+                   VALE_REFE=-735.25,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='C',
+                   RESULTAT=W3,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1047.7981704596,
+                   VALE_REFE=-1047.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#***********************************************************************
+#    CALCUL DE LA SOLUTION FINALE OPTION GROT_GDEP ACTIVEE MATRICE NONSYM
+#***********************************************************************
+# LIMITATION A UNE DEFORMATION DE 5% => NUMERO D'ORDRE 40
+# CAR GROT_GDEP  EST FAUX EN GRANDES DEFORMATIONS
+#***********************************************************************
+
+W4=STAT_NON_LINE(
+                            MODELE=MODELE,
+                        CHAM_MATER=CHMAT,EXCIT=(
+                             _F(
+                CHARGE = CHAR_U1,
+                FONC_MULT = COEF4), _F(
+                CHARGE = DEPL_1), _F(
+                CHARGE = DEPL_2,
+                FONC_MULT = COEF2)),
+                         COMP_INCR=_F(
+                RELATION = 'CJS',
+                DEFORMATION='GROT_GDEP',),
+                         ETAT_INIT=_F(
+                SIGM = SIG_IN3,
+                VARI = VAR_IN3),
+                         INCREMENT=_F( NUME_INST_FIN=40,
+                LIST_INST = TEMPS2),
+                            NEWTON=_F(
+                MATRICE = 'TANGENTE'),
+                SOLVEUR=_F(SYME='NON'),
+                       CONVERGENCE=_F(
+                ITER_GLOB_MAXI = 20,
+                RESI_GLOB_RELA = 1.E-6)
+              )
+
+W4=CALC_CHAMP(reuse=W4,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),RESULTAT=W4)
+
+
+#***********************************************************************
+#    TEST DES RESULTATS : COMPARAISON AVEC SOLUTION ANALYTIQUE
+#***********************************************************************
+
+
+W4=CALC_CHAMP(reuse=W4,RESULTAT=W4,NUME_ORDRE=(10,20,40),DEFORMATION=('EPSI_ELNO'))
+
+
+W4=CALC_CHAMP(  reuse=W4,     RESULTAT=W4,
+                    NUME_ORDRE=(10, 20, 40,),
+                       DEFORMATION='EPSI_NOEU',CONTRAINTE='SIGM_NOEU'
+               )
+
+#-------------------------
+#    TEST_RESU AU POINT A
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='A',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-570.52992402874,
+                   VALE_REFE=-570.52999999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='A',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-735.25034088386,
+                   VALE_REFE=-735.25,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='A',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1047.7981704596,
+                   VALE_REFE=-1047.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT B
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='B',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-570.52992402874,
+                   VALE_REFE=-570.52999999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='B',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-735.25034088386,
+                   VALE_REFE=-735.25,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='B',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1047.7981704596,
+                   VALE_REFE=-1047.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+#-------------------------
+#    TEST_RESU AU POINT C
+#-------------------------
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIYY',
+                   VALE_CALC=-402.25644370896,
+                   VALE_REFE=-402.25599999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=10,
+                   GROUP_NO='C',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-570.52992402874,
+                   VALE_REFE=-570.52999999999997,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=20,
+                   GROUP_NO='C',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-735.25034088386,
+                   VALE_REFE=-735.25,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                _F(NUME_ORDRE=40,
+                   GROUP_NO='C',
+                   RESULTAT=W4,
+                   NOM_CHAM='SIGM_NOEU',
+                   NOM_CMP='SIZZ',
+                   VALE_CALC=-1047.7981704596,
+                   VALE_REFE=-1047.8,
+                   REFERENCE = 'ANALYTIQUE',
+                   PRECISION=1.0E-05,
+                   ),
+                ),
+          )
+
+FIN()
+#

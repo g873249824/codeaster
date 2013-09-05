@@ -1,0 +1,384 @@
+# TITRE ESSAI DE TRACTION CISAILLEMENT EN 3D (VISCOCHAB / VISC_CIN2_MEMO)
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#----------------------------------------------------------------------
+#         ELEMENT 3D CUBE A 8 NOEUDS EN TRACTION - COMPRESSION
+#              ETAT UNIAXIAL DE CONTRAINTE DEFORMATION
+#       UNITES : NEWTON , MILLIMETRE , SECONDE (N,MM,S,->MPA)
+#
+#
+#               Z       A                     A = 1 MM
+#               L<------------->                      2
+#                                             S = 1 MM
+#                / N5            N8
+#              >O--------------O
+#              /L             /L
+#         N6  / L         N7 / L
+#           >O--+-----------O  L
+#            L  L           L  L
+#            L  L     S     L  L
+#            L  L           L  L
+#            L  L/ N1       L  L N4
+#            L >O-----------L--O-> Y
+#            L /V           L /
+#         N2 L/          N3 L/
+#           >O--------------O
+#
+#          /
+#         X         SEUIL ELASTIQUE :
+#                                   (SIGXX**2 + 3 SIGXY**2 = K**2 )
+#
+#
+#----------------------------------------------------------------------
+#
+DEBUT(CODE=_F(NOM='SSNV118D', NIV_PUB_WEB='INTERNET'), DEBUG=_F(SDVERI='OUI'))
+
+CUBE=LIRE_MAILLAGE(    )
+
+TROISD=AFFE_MODELE(            MAILLAGE=CUBE,
+                                    AFFE=_F(   PHENOMENE = 'MECANIQUE',
+                                            MODELISATION = '3D',
+                                            MAILLE = 'MA1'))
+
+ACIER=DEFI_MATERIAU(            ELAS=_F(   E = 145000.,
+                                            NU = 0.3,
+                                            ALPHA = 0.),
+
+                                CIN2_CHAB=_F(R_0=35.,
+                                             R_I=75.,
+                                             B=12.,
+                                             C1_I=1950.,
+                                             C2_I=65000.,
+                                             K=1.,
+                                             W=0.,
+                                             G1_0=50.,
+                                             G2_0=1300.,
+                                             A_I=0.5,
+                                             ),
+                               MEMO_ECRO=_F(
+                                            MU = 19.,
+                                            Q_M = 460.,
+                                            Q_0 = 40.,
+                                            ETA = .04,
+                                          ),
+                               LEMAITRE=_F(N=24.,
+                                           UN_SUR_K=1./70.),
+
+                               VISCOCHAB=_F(
+                                            # viscosite
+                                            K_0 = 70.,
+                                            N = 24.,
+
+                                            # ecrouissage isotrope
+                                            K = 35.,
+                                            B = 12.,
+
+                                            # memoire
+                                            MU = 19.,
+                                            Q_M = 460.,
+                                            Q_0 = 40.,
+                                            QR_0 = 0.,
+                                            ETA = .04,
+
+                                            # ecrouissage cinematique
+                                            C1 = 1950.,
+                                            C2 = 65000.,
+                                            G1_0 = 50.,
+                                            G2_0 = 1300.,
+                                            # modif de gamma
+                                            A_I = 0.5,
+                                            ))
+
+MAT=AFFE_MATERIAU(            MAILLAGE=CUBE,
+                                    AFFE=_F(  MAILLE = 'MA1',
+                                           MATER = ACIER))
+
+LINST=DEFI_LIST_REEL(              DEBUT=0.,INTERVALLE=(
+
+                            _F(  JUSQU_A = 4.,      NOMBRE = 5),
+                            _F(  JUSQU_A = 10.,      NOMBRE = 80))
+                                         )
+
+LARCH=DEFI_LIST_REEL(              DEBUT=0.,INTERVALLE=(
+
+                            _F(  JUSQU_A = 4.,      NOMBRE = 1),
+                            _F(  JUSQU_A = 10.,      NOMBRE = 10))
+                                         )
+
+COND_LIM=AFFE_CHAR_MECA(
+                     MODELE=TROISD,DDL_IMPO=(
+                   _F(  NOEUD = 'N6',         DZ = 0.,  DY = 0.),
+                            _F(  NOEUD = 'N2',         DY = 0.),
+                            _F(  GROUP_NO = 'FACE1YZ',  DX = 0.)))
+
+TRAC=AFFE_CHAR_MECA(
+                     MODELE=TROISD,
+               FORCE_NODALE=_F(  GROUP_NO = 'FACEYZ',  FX = -.25))
+
+CIS=AFFE_CHAR_MECA(
+                     MODELE=TROISD,FORCE_NODALE=(
+               _F(  GROUP_NO = 'FACEYZ',  FY = -.25),
+               _F(  GROUP_NO = 'FACEXZ',  FX = -.25),
+               _F(  GROUP_NO = 'FACE1YZ', FY = .25),
+               _F(  GROUP_NO = 'FACE1XZ', FX = .25)))
+
+COEF_TR=DEFI_FONCTION(
+                              NOM_PARA='INST',
+                                  VALE=(
+                                           0.,   0.,
+                                          10.,   150.,
+     ))
+
+COEF_CS=DEFI_FONCTION(
+                              NOM_PARA='INST',
+                                  VALE=(
+                                           0.,     0.,
+                                          10.,    60.,
+     ))
+
+SOLNL=STAT_NON_LINE(
+                TITRE='TEST TRAC MODELE VISCOCHAB',
+                MODELE=TROISD,
+                CHAM_MATER=MAT,
+                EXCIT=(  _F( CHARGE = COND_LIM),
+                         _F( CHARGE = TRAC,
+                             FONC_MULT = COEF_TR),
+                         _F( CHARGE = CIS,
+                             FONC_MULT = COEF_CS), ),
+                COMP_INCR=_F(  RELATION = 'VISCOCHAB',
+                               DEFORMATION = 'PETIT',
+                               ALGO_INTE='NEWTON_RELI',
+                               ITER_INTE_MAXI = 100,
+                               TOUT = 'OUI'),
+                INCREMENT=_F( LIST_INST = LINST,),
+                NEWTON=_F(   MATRICE = 'TANGENTE',
+                             REAC_INCR = 1,
+                             REAC_ITER = 1),
+                CONVERGENCE=_F( ITER_GLOB_MAXI = 40,
+                                RESI_GLOB_RELA = 1.0E-06),
+                ARCHIVAGE=_F(LIST_INST=LARCH),
+              )
+
+SOLNL=CALC_CHAMP(reuse=SOLNL,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),DEFORMATION=('EPSI_ELNO'),RESULTAT=SOLNL,INST=10.)
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=150.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIXY',
+                   VALE_CALC=60.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=0.016769512418889999,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='EPXY',
+                   VALE_CALC= 9.97894883E-03,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V13',
+                   VALE_CALC=0.019142489181422001,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V14',
+                   VALE_CALC=9.506173343,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V15',
+                   VALE_CALC= 7.65699567E-04,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLNL,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V16',
+                   VALE_CALC=0.015074217,
+                   MAILLE='MA1',),
+                ),
+          )
+
+NORME = FORMULE(VALE='sqrt(DX*DX+DY*DY+DZ*DZ)',
+              NOM_PARA=('DX','DY','DZ',));
+
+SOLMEMO=STAT_NON_LINE(
+                TITRE='TEST TRAC MODELE VISCOCHAB',
+                MODELE=TROISD,
+                CHAM_MATER=MAT,
+                EXCIT=(
+                             _F(  CHARGE = COND_LIM),
+                             _F(  CHARGE = TRAC,
+                                  FONC_MULT = COEF_TR),
+                             _F(  CHARGE = CIS,
+                                  FONC_MULT = COEF_CS),  ),
+                COMP_INCR=_F(  RELATION = 'VISC_CIN2_MEMO',
+                               DEFORMATION = 'PETIT',
+                               ITER_INTE_MAXI = 140,
+                               TOUT = 'OUI'),
+                INCREMENT=_F( LIST_INST = LINST),
+                NEWTON=_F( MATRICE = 'TANGENTE',
+                           REAC_INCR = 1,
+                           REAC_ITER = 1),
+                CONVERGENCE=_F(  ITER_GLOB_MAXI = 40,
+                                 RESI_GLOB_RELA = 1.0E-06),
+                ARCHIVAGE=_F(LIST_INST=LARCH),
+                OBSERVATION=(_F(NOM_CMP='V1',
+                                       NOM_CHAM='VARI_ELGA',
+                                       TOUT = 'OUI',
+                                       EVAL_ELGA       ='MAX'
+                                       ),
+                                    _F(NOM_CMP='SIXX',
+                                       NOM_CHAM='SIEF_ELGA',
+                                       TOUT = 'OUI',
+                                       EVAL_ELGA       ='MAX',
+                                       PAS_OBSE = 2,
+                                       ),
+                                    _F(NOM_CMP='DX',
+                                       NOM_CHAM='DEPL',
+                                       TOUT = 'OUI',
+                                       ),
+                                    _F(NOM_CMP='DY',
+                                       NOM_CHAM='DEPL',
+                                       TOUT = 'OUI',
+                                       ),
+                                    _F(NOM_CMP='DZ',
+                                       NOM_CHAM='DEPL',
+                                       TOUT = 'OUI',
+                                       ),
+                                    _F(
+                                    NOM_CMP=('DX','DY','DZ',),
+                                    EVAL_CMP = 'FORMULE',
+                                    FORMULE = NORME,
+                                       NOM_CHAM='DEPL',
+                                       TOUT = 'OUI',
+                                       ),
+                                    ),
+                            SUIVI_DDL=(
+                                    _F(
+                                    NOM_CMP=('DX','DY','DZ',),
+                                    EVAL_CMP = 'FORMULE',
+                                    FORMULE = NORME,
+                                       NOM_CHAM='DEPL',
+                                       NOEUD           ='N1',
+                                       ),
+                                    ),);
+
+SOLMEMO=CALC_CHAMP(reuse=SOLMEMO,CONTRAINTE=('SIGM_ELNO'),VARI_INTERNE=('VARI_ELNO'),DEFORMATION=('EPSI_ELNO'),RESULTAT=SOLMEMO,INST=10.)
+
+
+TEST_RESU(RESU=(_F(NUME_ORDRE=11,
+                   RESULTAT=SOLMEMO,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIXX',
+                   VALE_CALC=150.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   RESULTAT=SOLMEMO,
+                   NOM_CHAM='SIGM_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='SIXY',
+                   VALE_CALC=60.0,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=SOLMEMO,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='EPXX',
+                   VALE_CALC=0.016769451,
+                   VALE_REFE=0.016769512418889999,
+                   PRECISION=0.010999999999999999,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=SOLMEMO,
+                   NOM_CHAM='EPSI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='EPXY',
+                   VALE_CALC= 9.97891218E-03,
+                   VALE_REFE=9.9789488283525997E-3,
+                   PRECISION=0.010999999999999999,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=SOLMEMO,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V1',
+                   VALE_CALC=0.019142413,
+                   VALE_REFE=0.019142489181422001,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=SOLMEMO,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V15',
+                   VALE_CALC=9.506134574,
+                   VALE_REFE=9.5061733417098004,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=SOLMEMO,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V16',
+                   VALE_CALC= 7.65696609E-04,
+                   VALE_REFE=7.6569956682343997E-4,
+                   PRECISION=1.E-3,
+                   MAILLE='MA1',),
+                _F(NUME_ORDRE=11,
+                   REFERENCE='AUTRE_ASTER',
+                   RESULTAT=SOLMEMO,
+                   NOM_CHAM='VARI_ELNO',
+                   NOEUD='N1',
+                   NOM_CMP='V17',
+                   VALE_CALC=0.015105570,
+                   VALE_REFE=0.015074149396844001,
+                   PRECISION=3.0E-3,
+                   MAILLE='MA1',),
+                ),
+          )
+
+FIN()
+#

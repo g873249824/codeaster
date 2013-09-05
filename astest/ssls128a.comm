@@ -1,0 +1,201 @@
+# TITRE  : CALCUL STATIQUE D'UNE PLAQUE COMPOSEE DE COUCHES
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+#---------------------------------------------------------------------
+#
+DEBUT(CODE=_F(NOM='SSLS128A',NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
+
+PRE_GMSH();
+
+MAIL=LIRE_MAILLAGE();
+
+MAIL=DEFI_GROUP(reuse =MAIL,
+                MAILLAGE=MAIL,
+                CREA_GROUP_MA=(_F(NOM='DROITE',
+                                  GROUP_MA='GM160',),
+                               _F(NOM='GAUCHE',
+                                  GROUP_MA='GM150',),
+                               _F(NOM='TOUT',
+                                  TOUT='OUI',),),
+                CREA_GROUP_NO=(_F(GROUP_MA='GM150',
+                                  NOM='GAUCHE',),
+                               _F(GROUP_MA='GM160',
+                                  NOM='DROITE',),
+                               _F(OPTION='PLAN',
+                                  NOM='MILIEU',
+                                  NOEUD_CENTRE='N62',
+                                  VECT_NORMALE=(1.0,0.0,),
+                                  PRECISION=0.2,),),
+                INFO=2,);
+
+MOD=AFFE_MODELE(MAILLAGE=MAIL,
+                AFFE=(_F(TOUT='OUI',
+                         PHENOMENE='MECANIQUE',
+                         MODELISATION='DKT',),),);
+
+CARBONE=DEFI_MATERIAU(ELAS_ORTH=_F(E_L=59000,
+                                   E_T=59000,
+                                   NU_LT=0.08,
+                                   G_LT=3700,
+                                   XT=560.0,
+                                   XC=-475.0,
+                                   YT=560,
+                                   YC=-475,
+                                   S_LT=48,),);
+
+CARA=AFFE_CARA_ELEM(MODELE=MOD,
+#                    COQUE=_F(GROUP_MA='GM170',
+                   COQUE=_F(GROUP_MA='TOUT',
+                             EPAIS=4.48,
+                             COQUE_NCOU=16,
+                             ANGL_REP=(0.0,0.0,),),);
+
+COMPO=DEFI_COMPOSITE(COUCHE=(_F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=0.0,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=45,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=0.0,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=45,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=0.0,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=45,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=0.0,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=45,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=45,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=0.0,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=45,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=0.0,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=45,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=0.0,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=45,),
+                             _F(EPAIS=0.28,
+                                MATER=CARBONE,
+                                ORIENTATION=0.0,),),
+                     IMPRESSION=_F(UNITE=8),);
+
+CHAMPMAT=AFFE_MATERIAU(MAILLAGE=MAIL,
+                       AFFE=_F(TOUT='OUI',
+                               MATER=COMPO,),);
+
+CONDLIM=AFFE_CHAR_MECA(MODELE=MOD,
+                       DDL_IMPO=(_F(NOEUD='N1',
+                                    DY=0.0,
+                                    DZ=0.0,
+                                    DRX=0.0,
+                                    DRY=0.0,
+                                    DRZ=0.0,),
+                                 _F(GROUP_NO='GAUCHE',
+                                    DX=0.0,),),
+                       FORCE_ARETE=_F(GROUP_MA='DROITE',
+                                      FX=-784,),);
+
+RESU=MECA_STATIQUE(MODELE=MOD,
+                   CHAM_MATER=CHAMPMAT,
+                   CARA_ELEM=CARA,
+                   EXCIT=_F(CHARGE=CONDLIM,),);
+
+RESU=CALC_CHAMP(reuse=RESU,RESULTAT=RESU,CONTRAINTE=('SIGM_ELNO'))
+
+
+RESU1=POST_CHAMP(RESULTAT=RESU,
+                 EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                               NUME_COUCHE=1,
+                               NIVE_COUCHE='INF',),);
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  REFERENCE='AUTRE_ASTER',
+                  RESULTAT=RESU1,
+                  NOM_CHAM='SIGM_ELNO',
+                  NOEUD='N1',
+                  NOM_CMP='SIXX',
+                  VALE_CALC=-241.622880344,
+                  VALE_REFE=-242,
+                  CRITERE='RELATIF',
+                  PRECISION=5.0000000000000001E-3,
+                  MAILLE='M49',),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  REFERENCE='AUTRE_ASTER',
+                  RESULTAT=RESU1,
+                  NOM_CHAM='SIGM_ELNO',
+                  NOEUD='N1',
+                  NOM_CMP='SIYY',
+                  VALE_CALC=66.622880344,
+                  VALE_REFE=67,
+                  CRITERE='RELATIF',
+                  PRECISION=6.0000000000000001E-3,
+                  MAILLE='M49',),
+          )
+
+RESU2=POST_CHAMP(RESULTAT=RESU,
+                 EXTR_COQUE=_F(NOM_CHAM='SIGM_ELNO',
+                               NUME_COUCHE=2,
+                               NIVE_COUCHE='INF',),);
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  REFERENCE='AUTRE_ASTER',
+                  RESULTAT=RESU2,
+                  NOM_CHAM='SIGM_ELNO',
+                  NOEUD='N1',
+                  NOM_CMP='SIXX',
+                  VALE_CALC=-108.377119656,
+                  VALE_REFE=-108,
+                  CRITERE='RELATIF',
+                  PRECISION=5.0000000000000001E-3,
+                  MAILLE='M49',),
+          )
+
+TEST_RESU(RESU=_F(NUME_ORDRE=1,
+                  REFERENCE='AUTRE_ASTER',
+                  RESULTAT=RESU2,
+                  NOM_CHAM='SIGM_ELNO',
+                  NOEUD='N1',
+                  NOM_CMP='SIYY',
+                  VALE_CALC=-66.622880344,
+                  VALE_REFE=-67,
+                  CRITERE='RELATIF',
+                  PRECISION=6.0000000000000001E-3,
+                  MAILLE='M49',),
+          )
+
+FIN();
