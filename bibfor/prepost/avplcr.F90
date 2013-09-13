@@ -4,7 +4,7 @@ subroutine avplcr(nbvec, vectn, vectu, vectv, nbordr,&
                   fordef, fatsoc, proaxe, nommat, vala,&
                   coefpa, post, cudomx, nxm, nym,&
                   nzm)
-! aslint: disable=W1306,W1501,W1504
+! aslint: disable=W1306,W1504
     implicit      none
 #include "jeveux.h"
 #include "asterc/getvr8.h"
@@ -83,7 +83,7 @@ subroutine avplcr(nbvec, vectn, vectu, vectv, nbordr,&
 ! REMARQUE : CETTE ROUTINE SERT POUR LE TRAITEMENT DES POINTS DE GAUSS
 !            ET DES NOEUDS.
 ! ----------------------------------------------------------------------
-    integer :: ncycl(nbvec), nbvec1, nval, ibid, dir
+    integer :: ncycl(nbvec), nbvec1, nval, ibid
 !    integer :: omin(nbvec*(nbordr+2)), omax(nbvec*(nbordr+2))
     integer ::jomin, jomax, jvmin, jvmax
     integer :: vnormx(2), ideb, ifin, n, k, dim, j, kp, nbp

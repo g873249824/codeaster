@@ -5,7 +5,6 @@ subroutine nmfonc(parcri, parmet, method, solveu, modele,&
 !
     implicit      none
 !
-! aslint: disable=W1501
 #include "jeveux.h"
 #include "asterc/gcucon.h"
 #include "asterc/getfac.h"
