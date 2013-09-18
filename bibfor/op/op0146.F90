@@ -87,11 +87,11 @@ subroutine op0146()
     nff = 1
     if (npoi .ne. 0) then
         call getvis(' ', 'NB_POIN  ', 0, iarg, 1,&
-                    nbpf, zi)
+                    nbpf, ibid)
         call getvr8(' ', 'FREQ_INIT', 0, iarg, 1,&
-                    freqi, zi)
+                    freqi, ibid)
         call getvr8(' ', 'FREQ_FIN ', 0, iarg, 1,&
-                    freqf, zi)
+                    freqf, ibid)
     else
         nfi = 0
         nff = 0
@@ -157,7 +157,7 @@ subroutine op0146()
         zk16(lrefe+1) = 'TOUT'
     else
         call getvtx(' ', 'OPTION', 0, iarg, 1,&
-                    option, zi)
+                    option, ibid)
         zk16(lrefe) = 'SPEC_GENE'
         zk16(lrefe+1) = option
     endif
@@ -169,7 +169,7 @@ subroutine op0146()
 ! --- 2.RECUPERATION DES OBJETS DE LA BASE MODALE PERTURBEE ---
 !
         call getvid(' ', 'BASE_ELAS_FLUI', 0, iarg, 1,&
-                    base, zi)
+                    base, ibid)
 !
         vite = base//'.VITE'
         freq = base//'.FREQ'
@@ -178,9 +178,9 @@ subroutine op0146()
         call jeveuo(vite, 'L', ivite)
         call jelira(vite, 'LONUTI', npv, k8b)
         call getvr8(' ', 'VITE_FLUI', 0, iarg, 1,&
-                    vitef, zi)
+                    vitef, ibid)
         call getvr8(' ', 'PRECISION', 0, iarg, 1,&
-                    epsi, zi)
+                    epsi, ibid)
 !
         ivitef = 1
         do 300 i3 = 1, npv
@@ -315,7 +315,7 @@ subroutine op0146()
 !
         casint = .true.
         call getvtx(' ', 'OPTION', 0, iarg, 1,&
-                    option, zi)
+                    option, ibid)
         if (option(1:4) .eq. 'DIAG') casint = .false.
 !
 ! --- 4.DECOUPAGE DE LA BANDE DE FREQUENCE ---

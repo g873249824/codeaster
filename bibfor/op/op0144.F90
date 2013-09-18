@@ -148,7 +148,7 @@ subroutine op0144()
 ! --- 1.RECUPERATION DES CARACTERISTIQUES MODALES AVANT COUPLAGE ---
 !
     call getvid('BASE_MODALE', 'MODE_MECA', 1, iarg, 1,&
-                nombm, zi)
+                nombm, ibid)
 !
     tmode = .false.
     calcul(1)=.false.
@@ -206,11 +206,11 @@ subroutine op0144()
 ! --- 2.1.CREATION ET REMPLISSAGE DE L'OBJET .VITE
 !
     call getvr8('VITE_FLUI', 'VITE_MIN', 1, iarg, 1,&
-                vmin, zi)
+                vmin, ibid)
     call getvr8('VITE_FLUI', 'VITE_MAX', 1, iarg, 1,&
-                vmax, zi)
+                vmax, ibid)
     call getvis('VITE_FLUI', 'NB_POIN ', 1, iarg, 1,&
-                nbpv, zi)
+                nbpv, ibid)
     if (vmin .gt. vmax) then
         umin = vmin
         vmin = vmax

@@ -59,7 +59,7 @@ subroutine op0147()
 ! --- 1.RECUPERATION DES OBJETS DE LA BASE MODALE PERTURBEE ---
 !
     call getvid(' ', 'BASE_ELAS_FLUI', 0, iarg, 1,&
-                base, zi)
+                base, ibid)
 !
     masg = base//'.MASG'
     vite = base//'.VITE'
@@ -71,9 +71,9 @@ subroutine op0147()
     call jeveuo(vite, 'L', ivite)
     call jelira(vite, 'LONUTI', npv, k8b)
     call getvr8(' ', 'VITE_FLUI', 0, iarg, 1,&
-                vitef, zi)
+                vitef, ibid)
     call getvr8(' ', 'PRECISION', 0, iarg, 1,&
-                epsi, zi)
+                epsi, ibid)
 !
     ivitef = 1
     do 300 i3 = 1, npv
@@ -92,7 +92,7 @@ subroutine op0147()
 ! --- 2.RECUPERATION DU NOM DE LA TABLE ---
 !
     call getvid('EXCIT ', 'INTE_SPEC_GENE', 1, iarg, 1,&
-                table, zi)
+                table, ibid)
 !
 !     VERIFICATION DES PARAMETRES DE LA TABLE
 !

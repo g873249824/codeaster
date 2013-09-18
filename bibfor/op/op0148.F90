@@ -150,9 +150,9 @@ subroutine op0148()
     call jeveuo(vite, 'L', ivite)
     call jelira(vite, 'LONUTI', npv, k8b)
     call getvr8(' ', 'VITE_FLUI', 0, iarg, 1,&
-                vitef, zi)
+                vitef, ibid)
     call getvr8(' ', 'PRECISION', 0, iarg, 1,&
-                epsi, zi)
+                epsi, ibid)
 !
     ivitef = 1
     do 300 i3 = 1, npv
