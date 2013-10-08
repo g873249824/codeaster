@@ -75,7 +75,7 @@ subroutine rfrgen(trange)
 !     ------------------------------------------------------------------
 !
 !-----------------------------------------------------------------------
-    integer :: i, iagno, idbase, iddl, idinsg, idvecg, ie
+    integer :: i, iagno, idbase, iddl, idinsg, idvecf, idvecg, ie
     integer :: ier, ierd, ign2, ii, ino, inoeud, iordr
     integer :: ip, ipas, ipsdel, iret, itresu, jfon, jinst
     integer :: ldesc, lfon, lg1, lg2, lordr, lpas, lpro
@@ -218,11 +218,12 @@ subroutine rfrgen(trange)
             if (intres(1:3) .ne. 'NON') then
                 call jeveuo(resu//'.DISC', 'L', idinsg)
                 call jelira(resu//'.DISC', 'LONMAX', nbinsg, k8b)
+                call wkvect('&&RFRGEN.VECTGENF', 'V V R', nbmode, idvecf)
                 do 40 iordr = 0, nbordr-1
                     call extrac(intres, epsi, crit, nbinsg, zr(idinsg),&
-                                zr(jinst+iordr), zr(itresu), nbmode, rep, ierd)
+                                zr(jinst+iordr), zr(itresu), nbmode, zr(idvecf), ierd)
                     zr(lvar+iordr) = zr(jinst+iordr)
-                    zr(lfon+iordr) = rep
+                    zr(lfon+iordr) = zr(idvecf+numcmp-1)
 40              continue
             else
                 do 42 iordr = 0, nbordr-1
