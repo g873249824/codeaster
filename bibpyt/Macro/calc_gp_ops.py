@@ -1,6 +1,5 @@
 # coding=utf-8
 
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -520,8 +519,8 @@ def calc_gp_ops(self,**args):
 
       tabmax=[0]*nbcoptot*nb_inst
       for i in range(nb_inst):
-          maxinst= max(tabenel[nbcoptot*i:nbcoptot*(i+1)])
-          index1 = tabenel[nbcoptot*i:nbcoptot*(i+1)].index(maxinst)
+          maxinst= max(tabgp[nbcoptot*i:nbcoptot*(i+1)])
+          index1 = tabgp[nbcoptot*i:nbcoptot*(i+1)].index(maxinst)
           index  = index1+i*nbcoptot
           tabmax[index] = 1
           if GPMAX!=None:
