@@ -1,5 +1,5 @@
-subroutine utflmd(mailla, limail, dim, typmai, nbtrou,&
-                  litrou)
+subroutine utflmd(mailla, limail, nbmail, dim, typmai,&
+                  nbtrou, litrou)
     implicit none
 #include "jeveux.h"
 !
@@ -11,7 +11,7 @@ subroutine utflmd(mailla, limail, dim, typmai, nbtrou,&
 #include "asterfort/juveca.h"
 #include "asterfort/utflm2.h"
 #include "asterfort/wkvect.h"
-    integer :: dim, nbtrou
+    integer :: nbmail, dim, nbtrou
     character(len=8) :: mailla
     character(len=*) :: litrou, limail, typmai
 ! ----------------------------------------------------------------------
@@ -46,6 +46,7 @@ subroutine utflmd(mailla, limail, dim, typmai, nbtrou,&
 !-------------
 ! IN   MAILLA    : NOM DU MAILLAGE
 ! IN   LIMAIL    : LISTE DES MAILLES (OBJET JEVEUX)
+! IN   NBMA      : NOMBRE DE MAILLES DE LA LISTE
 ! IN   NDIM      : DIMENSION DES MAILLES A TROUVER (-1,0,1,2,3)
 ! IN   TYPMAI    : SI DIM=-1, ON FILTRE SUR TYPMAI='QUAD4'/'TRIA3'/...
 !                  SINON, ON NE SE SERT PAS DE TYPMAI
@@ -62,8 +63,7 @@ subroutine utflmd(mailla, limail, dim, typmai, nbtrou,&
 !
 !
 !
-    integer :: nbmail
-    integer :: ilimai, itrma
+    integer :: ilimai, lonmax, itrma
 !
     character(len=1) :: k1bid
 !
@@ -71,7 +71,8 @@ subroutine utflmd(mailla, limail, dim, typmai, nbtrou,&
     call jemarq()
 !
     call jeveuo(limail, 'L', ilimai)
-    call jelira(limail, 'LONMAX', nbmail, k1bid)
+    call jelira(limail, 'LONMAX', lonmax, k1bid)
+    call assert(nbmail.le.lonmax)
     call wkvect(litrou, 'V V I', nbmail, itrma)
 !
     call utflm2(mailla, zi(ilimai), nbmail, dim, typmai,&
