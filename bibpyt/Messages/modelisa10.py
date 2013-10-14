@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -99,6 +98,10 @@ Il est obligatoire de fournir au moins un comportement pour définir le matéria
 
 17 : _(u"""
 La valeur du mot clé DEFORMATION='%(k1)s' et incompatible avec la modélisation.
+"""),
+
+18 : _(u"""
+On ne sait pas calculer l'option AMOR_MECA pour une élasticité de type %(k1)s
 """),
 
 }
