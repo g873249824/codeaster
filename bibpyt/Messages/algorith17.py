@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -159,5 +158,8 @@ cata_msg={
   Le macro-élément est assemblé à partir de données mesurées.
   Le calcul des masses effectives est impossible. Ne pas en tenir
   compte dans les calculs postérieurs.
+"""),
+41 : _(u"""
+   Le type de résultat %(k1)s (mot clé TYPE_RESU) n'est pas autorisé pour le mot clé facteur %(k2)s (mot clé OPERATION)
 """),
 }
