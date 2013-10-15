@@ -990,6 +990,28 @@ subroutine jni080(elrefe, nmaxob, liobj, nbobj)
 !
         call fcepai(zr(lzr))
 !
+!
+!
+!     DEFINITION DES 7 FONCTIONS D'INTERPOLATION QUI PERMETTENT
+!     D'EXTRAPOLER
+!     LES DEFORMATIONS GENERALISEES AUX NOEUDS A PARTIR DE
+!     LEURS VALEURS AUX POINTS DE HAMMER
+!
+        xi3 = 0.d0
+        do 360 l = 1, 7
+            i1 = 810 + l
+            i2 = 810 + 9 + l
+            xi1 = zr(lzr-1+i1)
+            xi2 = zr(lzr-1+i2)
+            call fcesnd(elrefe, 0, xi1, xi2, xi3,&
+                        'NL', vfesnd)
+            ll = 7* (l-1)
+            do 370 k = 1, 7
+                i3 = 1600 + ll + k
+                zr(lzr-1+i3) = vfesnd(k)
+370          continue
+360      continue
+
     endif
 !
 350  continue
