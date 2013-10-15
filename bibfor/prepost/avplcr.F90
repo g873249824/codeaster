@@ -94,7 +94,7 @@ subroutine avplcr(nbvec, vectn, vectu, vectv, nbordr,&
     real(kind=8) :: vecn1(3*nbvec), vecu1(3*nbvec), vecv1(3*nbvec)
     real(kind=8) :: dgam2, pi, phi0, cudom1, cudom2
     real(kind=8) :: prec
-    character(len=8) :: method 
+    character(len=8) :: method
 !     --------------------------
     epsilo = 1.0d-7
     pi = r8pi()
@@ -109,13 +109,13 @@ subroutine avplcr(nbvec, vectn, vectu, vectv, nbordr,&
                 pseuil, nval)
 !
 ! CONSTRUCTION DU VECTEUR NORMAL SUR UNE DEMI SPHERE
-
 !
-    call wkvect('&&AVPLCR.VECT_OMIN', 'V V R', nbvec*(nbordr+2), jomin)
-    call wkvect('&&AVPLCR.VECT_OMAX', 'V V R', nbvec*(nbordr+2), jomax)
+!
+    call wkvect('&&AVPLCR.VECT_OMIN', 'V V I', nbvec*(nbordr+2), jomin)
+    call wkvect('&&AVPLCR.VECT_OMAX', 'V V I', nbvec*(nbordr+2), jomax)
     call wkvect('&&AVPLCR.VECT_VMIN', 'V V R', nbvec*(nbordr+2), jvmin)
     call wkvect('&&AVPLCR.VECT_VMAX', 'V V R', nbvec*(nbordr+2), jvmax)
-
+!
     call avcipr(nbvec1, vectn, vectu, vectv, nbordr,&
                 kwork, somnow, vwork, tdisp, tspaq,&
                 i, nomcri, nomfor, fordef, fatsoc,&
@@ -533,12 +533,12 @@ subroutine avplcr(nbvec, vectn, vectu, vectv, nbordr,&
         nzm(1) = nzm(2)
         cudomx = cudom2
     endif
-
+!
     call jedetr('&&AVPLCR.VECT_OMIN')
     call jedetr('&&AVPLCR.VECT_OMAX')
     call jedetr('&&AVPLCR.VECT_VMIN')
     call jedetr('&&AVPLCR.VECT_VMAX')
-
 !
-
+!
+!
 end subroutine
