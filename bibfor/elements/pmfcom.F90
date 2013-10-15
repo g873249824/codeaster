@@ -154,7 +154,7 @@ subroutine pmfcom(kpg, option, compor, crit, nf,&
 !
     else if (compo.eq.'LABORD_1D') then
         depsth = 0.d0
-        call verifm(fami, kpg, nspg, 'T', icdmat,&
+        call verifm(fami, kpg, nspg, '+', icdmat,&
                     'ELAS', 1, depsth, iret4)
 ! ---    ON RECUPERE LES PARAMETRES MATERIAU
         call r8inir(nbval, 0.d0, valres, 1)
@@ -172,7 +172,7 @@ subroutine pmfcom(kpg, option, compor, crit, nf,&
 !
     else if (compo.eq.'MAZARS_GC') then
         depsth = 0.d0
-        call verifm(fami, kpg, nspg, 'T', icdmat,&
+        call verifm(fami, kpg, nspg, '+', icdmat,&
                     'ELAS', 1, depsth, iret4)
 ! ---    ON RECUPERE LES PARAMETRES MATERIAU
         call r8inir(nbval, 0.d0, valres, 1)
