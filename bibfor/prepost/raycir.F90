@@ -88,7 +88,8 @@ subroutine raycir(jvecpg, jdtau, jvecn, nbordr, nbvec,&
 !-----------------------------------------------------------------------
 !
     cetir = sqrt(3.0d0/4.0d0)
-    epsilo = 1.0d-8
+
+    epsilo = 1.0d-6
     epsil1 = 1.0d-4
 !
     call wkvect('&&RAYCIR.SECT1', 'V V R', nbordr*2, jsec1)
