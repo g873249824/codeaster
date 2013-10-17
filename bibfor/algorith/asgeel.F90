@@ -66,7 +66,7 @@ subroutine asgeel(nomres, option, nugene)
     integer :: ibid, i1, j1, k1, l1, n1, lres, neq, lneq, lproj, nbddl, indsst
     integer :: lsst, llref, nbmacr, exist, lnomcr, limacr, lmacr, llmacr, indmcr
     integer :: decal, ddlcp, lselia, nlt, ind, ldconl, iret, nmaddl, ltemp
-    integer :: jrefa, ldlim, nbsst, lsilia
+    integer :: jrefa, ldlim, nbsst, lsilia, iadesc
     character(len=8) :: kbid, k8bid
     character(len=1) :: k1bid
 !-----------C
@@ -186,7 +186,7 @@ subroutine asgeel(nomres, option, nugene)
 !-- RECUPERATION DES MATRICES DES DIFERENTS MACROS ELEMENTS
 !
     call wkvect('&&ASGEEL.POINTEURS_MACRO', 'V V I', nbmacr, llmacr)
-    do 40 i1 = 1, nbmacr
+    do i1 = 1, nbmacr
         if (option .eq. 'RIGI_GENE') then
             call jeveuo(zk8(lnomcr+i1-1)//'.MAEL_RAID_VALE', 'L', lmacr)
             k1bid='K'
@@ -197,8 +197,14 @@ subroutine asgeel(nomres, option, nugene)
             call jeveuo(zk8(lnomcr+i1-1)//'.MAEL_AMOR_VALE', 'L', lmacr)
         endif
         zi(llmacr+i1-1)=lmacr
-40  end do
+    end do
 !
+! ----------- CREATION ET REMPLISSAGE DU .DESC ---------------
+    call wkvect(nomres//'           .DESC', 'G V I', 3, iadesc)
+    zi(iadesc) = 2
+    zi(iadesc+1) = neq
+    zi(iadesc+2) = 2
+
 !-- .VALM NE DOIT PAS EXISTER :
     call jeexin(nomres//'           .VALM', iret)
     call assert(iret.eq.0)

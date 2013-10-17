@@ -1,5 +1,4 @@
 subroutine penorm(resu, modele)
-! aslint: disable=W1501
     implicit   none
 #include "jeveux.h"
 #include "asterc/getvid.h"
