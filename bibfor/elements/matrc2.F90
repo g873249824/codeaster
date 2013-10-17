@@ -25,7 +25,7 @@ subroutine matrc2(nbpar, nompar, valpar, kcis, matc,&
 #include "asterfort/jevech.h"
 #include "asterfort/rccoma.h"
 #include "asterfort/rcvalb.h"
-#include "asterfort/u2mess.h"
+#include "asterfort/u2mesk.h"
 #include "asterfort/utbtab.h"
     integer :: nbpar
     real(kind=8) :: valpar(*), kcis, matc(5, 5), vectt(3, 3)
@@ -42,11 +42,11 @@ subroutine matrc2(nbpar, nompar, valpar, kcis, matc,&
     real(kind=8) :: r8bid4(4)
     integer :: i, j, jmate, nbv, jcoqu
 !
-    do 19 i = 1, 5
-        do 20 j = 1, 5
+    do i = 1, 5
+        do j = 1, 5
             matc(i,j)=0.d0
-20      end do
-19  end do
+        end do
+    end do
 !
     call jevech('PMATERC', 'L', jmate)
 !
@@ -64,7 +64,7 @@ subroutine matrc2(nbpar, nompar, valpar, kcis, matc,&
         nomres(5)='G_TN'
         nbv = 5
     else
-        call u2mess('F', 'ELEMENTS_42')
+        call u2mess('F', 'ELEMENTS_45', phenom)
     endif
 !
     if (phenom .eq. 'ELAS') then
@@ -132,10 +132,11 @@ subroutine matrc2(nbpar, nompar, valpar, kcis, matc,&
 ! ----   TENSEUR D'ELASTICITE DANS LE REPERE INTRINSEQUE :
 ! ----   D_GLOB = PASSAG_T * D_ORTH * PASSAG
 !
-        do 22 i = 1, 3
-            do 22 j = 1, 3
+        do i = 1, 3
+            do j = 1, 3
                 passag(i,j) = 0.d0
-22          continue
+            end do
+        end do
         passag(1,1) = c*c
         passag(2,2) = c*c
         passag(1,2) = s*s
@@ -149,10 +150,11 @@ subroutine matrc2(nbpar, nompar, valpar, kcis, matc,&
         call utbtab('ZERO', 3, 3, dorth, passag,&
                     work, d)
 !
-        do 24 i = 1, 3
-            do 24 j = 1, 3
+        do i = 1, 3
+            do j = 1, 3
                 matc(i,j) = d(i,j)
-24          continue
+            end do
+        end do
 !
         dcis(1,1) = glt
         dcis(1,2) = 0.d0
@@ -164,10 +166,12 @@ subroutine matrc2(nbpar, nompar, valpar, kcis, matc,&
         pas2(2,1) = -s
         call utbtab('ZERO', 2, 2, dcis, pas2,&
                     work, d2)
-        do 23 i = 1, 2
-            do 23 j = 1, 2
+        do i = 1, 2
+            do j = 1, 2
                 matc(3+i,3+j) = d2(i,j)
-23          continue
+            end do
+        end do
+
 !
     endif
 !

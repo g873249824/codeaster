@@ -11,6 +11,7 @@ subroutine dxmat2(pgl, icou, npg, ordi, epi,&
 #include "asterfort/rccoma.h"
 #include "asterfort/rcvalb.h"
 #include "asterfort/u2mess.h"
+#include "asterfort/u2mesk.h"
 #include "asterfort/utbtab.h"
     integer :: icou, npg, indith
     real(kind=8) :: pgl(3, 3), ordi, epi, epais, dm(3, 3)
@@ -160,7 +161,7 @@ subroutine dxmat2(pgl, icou, npg, ordi, epi,&
         nomres(10) = 'CISA_T  '
         nomres(11) = 'ALPHA   '
     else
-        call u2mess('F', 'ELEMENTS_42')
+        call u2mesk('F', 'ELEMENTS_44', 1, phenom)
     endif
 !
 !===============================================================

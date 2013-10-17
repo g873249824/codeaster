@@ -1,4 +1,4 @@
-subroutine matrc(nomte, nno, kcis, matc, vectt)
+subroutine matrc(nno, kcis, matc, vectt)
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -26,13 +26,12 @@ subroutine matrc(nomte, nno, kcis, matc, vectt)
 #include "asterfort/moytem.h"
 #include "asterfort/rccoma.h"
 #include "asterfort/rcvala.h"
-#include "asterfort/u2mess.h"
+#include "asterfort/u2mesk.h"
 #include "asterfort/utbtab.h"
     integer :: nno
     real(kind=8) :: kcis, matc(5, 5), vectt(3, 3)
 !
     real(kind=8) :: valres(5), valpar
-    character(len=*) :: nomte
     integer :: icodre(5)
     character(len=4) :: fami
     character(len=8) :: nomres(5), nompar
@@ -48,11 +47,11 @@ subroutine matrc(nomte, nno, kcis, matc, vectt)
     call elref4(' ', fami, ndim, nno, nnos,&
                 npg, ipoids, ivf, idfde, jgano)
 !
-    do 20 i = 1, 5
-        do 10 j = 1, 5
+    do i = 1, 5
+        do j = 1, 5
             matc(i,j) = 0.d0
-10      continue
-20  end do
+        end do
+    end do
 !
     call jevech('PMATERC', 'L', jmate)
     call jevech('PNBSP_I', 'L', jcou)
@@ -141,11 +140,11 @@ subroutine matrc(nomte, nno, kcis, matc, vectt)
 ! ----   TENSEUR D'ELASTICITE DANS LE REPERE INTRINSEQUE :
 ! ----   D_GLOB = PASSAG_T * D_ORTH * PASSAG
 !
-        do 40 i = 1, 3
-            do 30 j = 1, 3
+        do i = 1, 3
+            do j = 1, 3
                 passag(i,j) = 0.d0
-30          continue
-40      continue
+            end do
+        end do
         passag(1,1) = c*c
         passag(2,2) = c*c
         passag(1,2) = s*s
@@ -158,11 +157,11 @@ subroutine matrc(nomte, nno, kcis, matc, vectt)
         call utbtab('ZERO', 3, 3, dorth, passag,&
                     work, d)
 !
-        do 60 i = 1, 3
-            do 50 j = 1, 3
+        do i = 1, 3
+            do j = 1, 3
                 matc(i,j) = d(i,j)
-50          continue
-60      continue
+            end do
+        end do
 !
         dcis(1,1) = glt
         dcis(1,2) = 0.d0
@@ -175,14 +174,14 @@ subroutine matrc(nomte, nno, kcis, matc, vectt)
 !
         call utbtab('ZERO', 2, 2, dcis, pas2,&
                     work, d2)
-        do 80 i = 1, 2
-            do 70 j = 1, 2
+        do i = 1, 2
+            do j = 1, 2
                 matc(3+i,3+j) = d2(i,j)
-70          continue
-80      continue
+            end do
+        end do
 !
     else
-        call u2mess('F', 'ELEMENTS_42')
+        call u2mesk('F', 'ELEMENTS_45', 1, phenom)
     endif
 !
 end subroutine

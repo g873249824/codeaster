@@ -92,7 +92,7 @@ subroutine dxmat1(fami, epais, df, dm, dmf,&
         nomres(3) = 'ALPHA'
 !
     else
-        call u2mess('F', 'ELEMENTS_42')
+        call u2mesk('F', 'ELEMENTS_44', phenom)
     endif
 !
 !===============================================================

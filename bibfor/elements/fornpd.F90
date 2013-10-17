@@ -18,6 +18,7 @@ subroutine fornpd(option, nomte)
 #include "asterfort/trndgl.h"
 #include "asterfort/trnflg.h"
 #include "asterfort/u2mess.h"
+#include "asterfort/u2mesk.h"
 #include "asterfort/vectan.h"
 #include "asterfort/vexpan.h"
 #include "blas/daxpy.h"
@@ -104,7 +105,7 @@ subroutine fornpd(option, nomte)
     call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
 !
     if (phenom .ne. 'ELAS') then
-        call u2mess('F', 'ELEMENTS_42')
+        call u2mesk('F', 'ELEMENTS_45', 1, phenom)
     endif
 !
     call vectan(nb1, nb2, zr(jgeom), zr(lzr), vecta,&

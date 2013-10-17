@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -173,6 +172,10 @@ Risque & Conseil : mettre un léger écrouissage peut permettre de passer cette 
  élément non traité  %(k1)s
 """),
 
+
+
+
+
 36 : _(u"""
  nombre de couches négatif ou nul :  %(k1)s
 """),
@@ -223,14 +226,29 @@ Risque & Conseil : mettre un léger écrouissage peut permettre de passer cette 
 """),
 
 42 : _(u"""
- Le comportement matériau %(k1)s n'est pas traité. Conseil : utilisez
- la commande DEFI_COMPOSITE pour définir une coque mono couche avec ce
+ Le comportement matériau %(k1)s n'est pas traité.
+
+Conseil :
+ Utilisez la commande DEFI_COMPOSITE pour définir une coque monocouche avec ce
  comportement.
 """),
 
 43 : _(u"""
  impossibilité :
  vous avez un matériau de type "ELAS_COQUE" et le déterminant de la sous matrice de Hooke relative au cisaillement est nul.
+"""),
+
+44 : _(u"""
+ Le comportement matériau %(k1)s n'est pas traité.
+"""),
+
+45 : _(u"""
+ Le comportement matériau %(k1)s n'est pas traité.
+
+Conseil :
+ Pour définir une COQUE_3D orthotrope, il ne faut pas utiliser
+ la commande DEFI_COMPOSITE.
+ Seule la définition du comportement ELAS_ORTH est nécessaire.
 """),
 
 46 : _(u"""

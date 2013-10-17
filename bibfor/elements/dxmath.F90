@@ -11,7 +11,7 @@ subroutine dxmath(fami, epais, df, dm, dmf,&
 #include "asterfort/r8inir.h"
 #include "asterfort/rccoma.h"
 #include "asterfort/rcvalb.h"
-#include "asterfort/u2mess.h"
+#include "asterfort/u2mesk.h"
 #include "asterfort/utbtab.h"
     integer :: multic, indith, npg, npgh
     real(kind=8) :: df(3, 3), dm(3, 3), dmf(3, 3), dmc(3, 2), dfc(3, 2)
@@ -195,7 +195,7 @@ subroutine dxmath(fami, epais, df, dm, dmf,&
             nomres(34) = 'ALPHA   '
         endif
     else
-        call u2mess('F', 'ELEMENTS_42')
+        call u2mesk('F', 'ELEMENTS_42', 1, phenom)
     endif
 !
 !===============================================================
