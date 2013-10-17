@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -545,7 +544,7 @@ def calc_ecrevisse_ops(self,
                 txt2['FROTTEMENT_LIM'] = dMODELE_ECRE['FROTTEMENT_LIM']
 
             txt2['TRANSFERT_CHAL'] = dMODELE_ECRE['TRANSFERT_CHAL']
-            if int(dMODELE_ECRE['TRANSFERT_CHAL']) in [-2,-1] :
+            if int(dMODELE_ECRE['TRANSFERT_CHAL']) < 0 :
                 txt2['XMINCH'] = dMODELE_ECRE['XMINCH']
                 txt2['XMAXCH'] = dMODELE_ECRE['XMAXCH']
 
