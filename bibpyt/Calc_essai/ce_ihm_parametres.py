@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -16,8 +15,7 @@
 # ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 #    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 # ======================================================================
-
-# person_in_charge: charles.bodel at edf.fr
+# person_in_charge: albert.alarcon at edf.fr
 
 # La classe InterfaceParametres gere les options et les logiciels de Visualisation
 
@@ -779,9 +777,11 @@ class CalcEssaiSalome(CalcEssaiLogiciel):
         @param  visuType:      type de visualisation
         """
         if self.param_visu.type_visu.get()=='mac' :
-            script = './Python/Templates/salomeScriptMac.py'
+            script = './Python/Templates/salomeParaviz.py'
+            choix = 'ISO'
         elif self.param_visu.type_visu.get()=='deformee' :
-            script = './Python/Templates/salomeScript.py'
+            script = './Python/Templates/salomeParaviz.py'
+            choix = 'DEPL'
         else:
             print "Le type de deformee a visualiser n'a pas ete defini"
         if not self.study_name:
@@ -791,8 +791,8 @@ class CalcEssaiSalome(CalcEssaiLogiciel):
         dSALOME = { 'CHEMIN_SCRIPT'    : script,
                     'SALOME_PORT'      : self.salome_port,
                     'FICHIERS_ENTREE'  : [ medFilePath ],
-                    'NOM_PARA'         : [ 'STUDY' ],
-                    'VALE'             : [ self.study_name ],
+                    'NOM_PARA'         : [ 'CHOIX', 'STUDY' ],
+                    'VALE'             : [ choix, self.study_name ],
                   }
 
         EXEC_LOGICIEL(CODE_RETOUR_MAXI=-1,
@@ -861,7 +861,7 @@ class CalcEssaiSalomeCourbes(CalcEssaiSalome):
 
         self.defi_fichier()
         fw=open('fort.%s' %self.unite_logique, 'w')
-        fw.write( str(table) )
+        fw.write( str(table).replace(" "+legende_x,"#"+legende_x) )
         fw.close()
 
         # recuperation des noms des etudes Salome ouvertes
@@ -884,7 +884,7 @@ class CalcEssaiSalomeCourbes(CalcEssaiSalome):
         @param  visuType:      type de visualisation
         """
 
-        dSALOME = { 'CHEMIN_SCRIPT'    : './Python/Templates/salomeScript.py',
+        dSALOME = { 'CHEMIN_SCRIPT'    : './Python/Templates/salomeParaviz.py',
                     'SALOME_PORT'      : self.salome_port,
                     'FICHIERS_ENTREE'  : [ medFilePath ],
                     #'SALOME_RUNAPPLI'  : self.salome_runscript,

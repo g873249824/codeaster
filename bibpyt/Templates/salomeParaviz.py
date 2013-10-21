@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -116,13 +115,14 @@ if CHOIX == 'COURBE' :
      myResult = TableReader(FileName=INPUTFILE2)
      if myResult is None : raise "Erreur de fichier"
      myResult.FirstStringAsTitles = 0
+     courbe=PlotData()
 
      display=Show()
      display.AttributeType = 'Row Data'
      display.UseIndexForXAxis = 0
-     #NAME_X = display.GetProperty('SeriesNamesInfo')[0]
-     # On n'arrive pas a recuperer le label de l'axe X
-     NAME_X = 'ABSC_CURV'
+     Render()
+     NAME_X = display.GetProperty('SeriesNamesInfo')[0]
+     # NAME_X = 'ABSC_CURV'
      display.XArrayName = NAME_X
      display.UseIndexForXAxis = 0
      display.SeriesVisibility = ['vtkOriginalIndices', '0', NAME_X, '0']
