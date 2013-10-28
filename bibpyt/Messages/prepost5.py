@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -104,6 +103,13 @@ Champ inexistant DEPL numéro d'ordre %(k1)s pour le calcul de l'option %(k2)s
 
 46 : _(u"""
  élément inconnu dans le fichier IDEAS élément numéro :  %(i1)d
+"""),
+47 : _(u"""
+ Erreur d'utilisation IMPR_RESU FORMAT='CASTEM' :
+   Le format CASTEM n'autorise pas les noms de groupes de plus de
+   8 caractères. Les noms plus longs sont tronqués.
+   Ici, deux groupes sont identiques si on les tronquent : %(k1)s
+   
 """),
 
 54 : _(u"""
