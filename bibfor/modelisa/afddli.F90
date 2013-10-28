@@ -82,7 +82,6 @@ subroutine afddli(valr, valk, valc, prnm, nddla,&
 !
 !
     integer :: j, ibid, icmp, iityp
-    character(len=24) :: valkm(2)
     character(len=16) :: oper
     character(len=8) :: k8b
     character(len=4) :: fonre1, fonre2, typcoe
@@ -108,12 +107,7 @@ subroutine afddli(valr, valk, valc, prnm, nddla,&
 !       -- SI LA CMP N'EXISTE PAS SUR LE NOEUD, ON SAUTE :
         icmp = indik8(nomcmp,motcle(j)(1:8),1,nbcmp)
         call assert(icmp.gt.0)
-        if (.not.exisdg(prnm,icmp)) then
-            valkm(1)=motcle(j)
-            valkm(2)=nomn
-            call u2mesk('A','CALCULEL3_18',2,valkm)
-            goto 30
-        endif
+        if (.not.exisdg(prnm,icmp)) goto 30
 !
         if (lxfem) then
             if (zl(jnoxfl-1+2*ino) .and. motcle(j)(1:1) .eq. 'D') then
