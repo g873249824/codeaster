@@ -127,6 +127,10 @@ subroutine op0046()
     call nmlect(result, modele, mate, carele, compor,&
                 lischa, solveu)
 !
+    call dismoi('F', 'EXI_PLAQUEG', modele, 'MODELE', ibid,&
+                k8bla, ierd)
+    if(k8bla(1:3) .eq. 'OUI') call u2mess('F', 'MECASTATIQUE_1')
+!
 ! -- ACCES A LA LISTE DES CHARGGES
 !
     charge = lischa//'.LCHA'

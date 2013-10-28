@@ -144,7 +144,8 @@ subroutine dismlg(questi, nomobz, repi, repkz, ierd)
     questi.eq.'EXI_COQ3D') .or. (questi.eq.'EXI_COQ1D') .or. (&
     questi.eq.'EXI_GRILLE') .or. (questi.eq.'EXI_PLAQUE') .or. (&
     questi.eq.'EXI_COQUE') .or. (questi.eq.'CALC_RIGI') .or. (&
-    questi.eq.'EXI_STRX') .or. (questi.eq.'EXI_STR2') ) then
+    questi.eq.'EXI_STRX') .or. (questi.eq.'EXI_STR2') .or. (&
+    questi.eq.'EXI_PLAQUEG') ) then
 !
 !     -----------------------------------------------------------------
         call jeexin(nomob//'.LIEL', iexi)
@@ -209,6 +210,14 @@ subroutine dismlg(questi, nomobz, repi, repkz, ierd)
                 call dismte('MODELISATION', nomte, repi, nomodl, ierd)
                 if ((nomodl(1:3).eq.'DKT') .or. (nomodl(1:3) .eq.'DST') .or.&
                     (nomodl(1:3).eq.'Q4G')) then
+                    repk='OUI'
+                    goto 110
+!
+                endif
+!
+            else if (questi.eq.'EXI_PLAQUEG') then
+                call dismte('MODELISATION', nomte, repi, nomodl, ierd)
+                if ((nomodl(1:4).eq.'DKTG') .or. (nomodl(1:4).eq.'Q4GG')) then
                     repk='OUI'
                     goto 110
 !

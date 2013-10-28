@@ -20,6 +20,10 @@
 
 cata_msg = {
 
+1 : _(u"""
+ La commande MECA_STATIQUE n'est pas compatible avec les modélisations DKTG et Q4GG.
+"""),
+
 25 : _(u"""
  Le chargement contient plus d'une charge répartie.
  Le calcul n'est pas possible pour les modèles de poutre.

@@ -86,7 +86,8 @@ subroutine dismmo(questi, nomobz, repi, repkz, ierd)
     (questi.eq.'EXI_TUYAU') .or. (questi.eq.'EXI_COQ3D') .or. (&
     questi.eq.'EXI_COQ1D') .or. (questi.eq.'EXI_PLAQUE') .or. (&
     questi.eq.'EXI_COQUE') .or. (questi.eq.'EXI_GRILLE') .or. (&
-    questi.eq.'EXI_STRX') .or. (questi.eq.'EXI_STR2')) then
+    questi.eq.'EXI_STRX') .or. (questi.eq.'EXI_STR2') .or. (&
+    questi.eq.'EXI_PLAQUEG')) then
 !     -----------------------------------
         call dismlg(questi, nolig, repi, repk, ierd)
 !
