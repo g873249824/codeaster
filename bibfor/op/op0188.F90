@@ -104,8 +104,10 @@ subroutine op0188()
                 ' ', 0, ' ', ncmp)
 !
 !     CREATION DE LA LISTE DES MAILLES QUI AURONT LA VALEUR 1
+!     on surdimensionne a 2 fois NBMA car au pire on a NMAFOND = NBMA 
+!     et NBMAZO = NBMA
     listma = '&&OP0188.LISTMA'
-    call wkvect(listma, 'V V I', nbma, jma)
+    call wkvect(listma, 'V V I', 2*nbma, jma)
 !
 !     -------------------------------------------------------------
 !     2) REMPLISSAGE DE LA LISTE AVEC LES MAILLES CONTENANT LE FOND
@@ -115,7 +117,7 @@ subroutine op0188()
     if (typdis .eq. 'FISSURE') then
         mafond = fiss//'.MAILFISS.MAFOND'
     else if (typdis.eq.'INTERFACE') then
-        mafond = fiss//'.MAILFISS  .HEAV'
+        mafond = fiss//'.MAILFISS.HEAV'
     else
         call assert(.false.)
     endif
