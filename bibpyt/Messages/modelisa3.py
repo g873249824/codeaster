@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -20,13 +19,7 @@
 
 cata_msg={
 
-1: _(u"""
- on doit donner un CHAM_NO après le mot clé CHAM_NO derrière le mot facteur LIAISON_CHAMNO .
-"""),
 
-2: _(u"""
- il faut définir la valeur du second membre de la relation linéaire après le mot clé COEF_IMPO derrière le mot facteur LIAISON_CHAMNO .
-"""),
 
 3: _(u"""
  la première liste de noeuds dont on doit faire le vis a vis n'existe pas.

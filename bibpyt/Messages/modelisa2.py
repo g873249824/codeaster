@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -79,6 +78,10 @@ La règle de surcharge est appliquée
   Nombre d'éléments discrets         : %(i2)d
 """),
 
+
+12: _(u"""
+Pour le chargement de type LIAISON_CHAMNO, tous les coefficients donnés par le mot-clef CHAM_NO sont nuls.
+"""),
 
 13: _(u"""
  problème pour récupérer une grandeur dans la table CARA_GEOM
@@ -353,15 +356,16 @@ Les mots-clés admissibles pour définir la seconde liste de noeuds sous le mot-
   %(k1)s   %(k2)s ne fait pas partie du maillage :  %(k3)s
 """),
 
+
 97: _(u"""
   Assemblage de maillages : Présence de noeuds confondus dans la zone à coller GROUP_MA_1.
 """),
 
 98: _(u"""
- on doit utiliser le mot clé CHAM_NO pour donner le CHAM_NO dont les composantes seront les coefficients de la relation linéaire.
+Pour le chargement de type LIAISON_CHAMNO, on doit utiliser le mot clé CHAM_NO pour donner le CHAM_NO dont les composantes seront les coefficients de la relation linéaire.
 """),
 
 99: _(u"""
- il faut que le CHAM_NO dont les termes servent de coefficients à la relation linéaire à écrire ait été défini.
+Pour le chargement de type LIAISON_CHAMNO, il faut que le CHAM_NO dont les termes servent de coefficients à la relation linéaire à écrire ait été défini.
 """),
 }

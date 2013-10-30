@@ -39,7 +39,7 @@ subroutine calich(chargz)
 !
 !.========================= DEBUT DES DECLARATIONS ====================
 #include "jeveux.h"
-!
+#include "asterfort/assert.h"
 #include "asterc/getfac.h"
 #include "asterc/getvid.h"
 #include "asterc/getvr8.h"
@@ -156,19 +156,14 @@ subroutine calich(chargz)
 !       -----------------------------
         call dismoi('F', 'TYPE_CHAMP', chamno, 'CHAM_NO', ibid,&
                     tych, ier)
-!
-        if (tych .ne. 'NOEU') then
-            call u2mess('F', 'MODELISA3_1')
-        endif
+        call assert(tych.eq.'NOEU')
 !
 ! ---   RECUPERATION DE LA VALEUR DU SECOND MEMBRE DE LA RELATION
 ! ---   LINEAIRE
 !       --------
         call getvr8(motfac, 'COEF_IMPO', iocc, iarg, 1,&
                     beta, nb)
-        if (nb .eq. 0) then
-            call u2mess('F', 'MODELISA3_2')
-        endif
+        call assert(nb.ne.0)
 !
 ! ---   RECUPERATION DE LA GRANDEUR ASSOCIEE AU CHAMNO :
 !       ----------------------------------------------
@@ -180,9 +175,7 @@ subroutine calich(chargz)
 !       --------------------------------------------------
         call dismoi('F', 'NB_EC', nomgd, 'GRANDEUR', nbec,&
                     k8bid, ier)
-        if (nbec .gt. 10) then
-            call u2mesk('F', 'MODELISA2_87', 1, nomgd)
-        endif
+        call assert(nbec.le.10)
 !
 ! ---   RECUPERATION DU MAILLAGE ASSOCIE AU CHAM_NO
 !       -------------------------------------------
@@ -230,6 +223,9 @@ subroutine calich(chargz)
 10      continue
 !
         nbterm = k
+        if (nbterm.eq.0) then
+            call u2mess('F', 'MODELISA2_12')
+        endif
 !
 ! ---   CREATION DES TABLEAUX DE TRAVAIL NECESSAIRES A L'AFFECTATION
 ! ---   DE LA LISTE_RELA
