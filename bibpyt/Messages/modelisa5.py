@@ -278,7 +278,7 @@ cata_msg = {
 """),
 
 81 : _(u"""
- la TABL_INTSP de réponse modale ne contient que des auto spectres. le calcul demande n est donc pas réalisable.
+ la table d'interspectres de réponse modale ne contient que des auto spectres. le calcul demande n'est donc pas réalisable.
 """),
 
 
