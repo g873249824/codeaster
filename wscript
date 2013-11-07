@@ -53,7 +53,7 @@ def options(self):
     self.load('use_config', tooldir='waftools')
     self.load('gnu_dirs')
 
-    group = self.add_option_group('Aster options')
+    group = self.add_option_group('Code_Aster options')
 
     self.load('parallel', tooldir='waftools')
     self.load('mathematics', tooldir='waftools')
@@ -73,6 +73,7 @@ def options(self):
                     help='install the testcases files')
     self.recurse('bibfor')
     self.recurse('bibc')
+    self.recurse('i18n')
 
 def configure(self):
     from Options import options as opts
@@ -126,6 +127,7 @@ def configure(self):
 
     self.recurse('bibfor')
     self.recurse('bibc')
+    self.recurse('i18n')
     self.load('legacy', tooldir='waftools')
     # keep compatibility for as_run
     if self.env.HAVE_MPI:
@@ -148,6 +150,7 @@ def build(self):
     self.recurse('bibc')
 
     self.recurse('bibpyt')
+    self.recurse('i18n')
     lsub = ['materiau', 'datg', 'catapy', 'catalo']
     if opts.install_tests or self.env.install_tests:
         lsub.extend(['astest', '../validation/astest'])
