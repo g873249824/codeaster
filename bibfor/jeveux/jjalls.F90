@@ -128,6 +128,7 @@ subroutine jjalls(lonoi, ic, genri, typei, lty,&
             ival(2)=nint(vmxdyn*lois)/unmega
             ival(3)=nint(mcdyn*lois)/unmega
             ival(4)=(ltot*lois)/unmega
+            call u2mesi('E', 'JEVEUX_62', 4, ival)
             call jeimpm(6)
             call u2mesi('F', 'JEVEUX_62', 4, ival)
         else
@@ -155,6 +156,7 @@ subroutine jjalls(lonoi, ic, genri, typei, lty,&
         nbdyn = nbdyn + 1
     else
         if (iessai .gt. 1) then
+            call u2mesi('E', 'JEVEUX_60', 2, ival)
             call jeimpm(6)
             ival(1)=lsic*lois
             ival(2)=ltot*lois
