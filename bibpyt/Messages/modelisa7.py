@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -200,7 +199,9 @@ cata_msg={
 """),
 
 43: _(u"""
- FAISCEAU_AXIAL : les mots-clés <CARA_PAROI> et <VALE_PAROI> sont obligatoires si il n y a qu'une seule occurrence pour le mot-clé facteur. sinon, ils doivent apparaître ensemble dans au moins une des occurrences. le mot-clé <ANGL_VRIL> doit également être présent si l on définit une enceinte rectangulaire
+ FAISCEAU_AXIAL : les mots-clés <CARA_PAROI> et <VALE_PAROI> sont obligatoires si il n y a qu'une seule occurrence
+ pour le mot-clé facteur. sinon, ils doivent apparaître ensemble dans au moins une des occurrences.
+ Le mot-clé <ANGL_VRIL> doit également être présent si l on définit une enceinte rectangulaire
 """),
 
 44: _(u"""

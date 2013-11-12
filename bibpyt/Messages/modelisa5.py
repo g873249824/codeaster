@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -278,7 +277,7 @@ cata_msg = {
 """),
 
 81 : _(u"""
- la table d'interspectres de réponse modale ne contient que des auto spectres. le calcul demande n'est donc pas réalisable.
+ la table de réponse modale ne contient que des auto spectres. le calcul demande n'est donc pas réalisable.
 """),
 
 
