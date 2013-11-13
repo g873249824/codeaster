@@ -36,6 +36,7 @@ subroutine mdruku(method, tinit, tfin, dt, dtmin,&
 #include "asterc/getvr8.h"
 #include "asterc/getvtx.h"
 #include "asterc/r8prem.h"
+#include "asterfort/amgene.h"
 #include "asterfort/codent.h"
 #include "asterfort/concrk.h"
 #include "asterfort/fointe.h"
@@ -53,6 +54,7 @@ subroutine mdruku(method, tinit, tfin, dt, dtmin,&
 #include "asterfort/mdinit.h"
 #include "asterfort/preres.h"
 #include "asterfort/r8inir.h"
+#include "asterfort/rigene.h"
 #include "asterfort/sigusr.h"
 #include "asterfort/trlds.h"
 #include "asterfort/u2mess.h"
@@ -88,6 +90,12 @@ subroutine mdruku(method, tinit, tfin, dt, dtmin,&
     character(len=19) :: matasm
     character(len=24) :: cpal
 !
+!   ------------------------------------------------------------------------------------
+!   Definition of statement functions giving the appropriate (i,j) term in the mass, 
+!   rigidity and damping matrices
+#define rgen(row,col) rigene(row, col, riggen, neqgen, typbas, 'RUNGE_KUTTA')
+#define agen(row,col) amgene(row, col, amogen, neqgen, typbas, 'RUNGE_KUTTA', lamor)
+!   ------------------------------------------------------------------------------------
 !
 !
 ! ======================================================================
@@ -121,6 +129,7 @@ subroutine mdruku(method, tinit, tfin, dt, dtmin,&
     iarchi = 0
     nbscho = nbsauv * 3 * nbchoc
     nbsaui = nbsauv
+    vitvar = 'NON'
 !     PUISSANCE POUR LE CALCUL DU DT ADAPTATIF
     if (method(13:14) .eq. '54') pow=1.d0/6.d0
     if (method(13:14) .eq. '32') pow=1.d0/4.d0
@@ -137,27 +146,25 @@ subroutine mdruku(method, tinit, tfin, dt, dtmin,&
         call u2mess('F', 'ALGORITH5_21')
     endif
 !
-    do 111 iapp = 1, palmax
+    do iapp = 1, palmax
         typal(iapp)='      '
         finpal(iapp)='   '
         cnpal(iapp)=' '
-111  continue
+    end do
 !
 !  GESTION DE LA VITESSE VARIABLE MACHINES TOURNANTES
     call wkvect('&&RUKUT.AMOGYR', 'V V R8', neqgen*neqgen, jamgy)
     call wkvect('&&RUKUT.RIGGYR', 'V V R8', neqgen*neqgen, jrigy)
     if (lamor) then
-        do 100 im = 1, neqgen
+        do im = 1, neqgen
             amogen(im) = deux * amogen(im) * pulsat(im)
-100      continue
+        end do
     else
         call getvtx(' ', 'VITESSE_VARIABLE', 1, iarg, 0,&
                     vitvar, n1)
         if (n1 .ne. 0) then
             call getvtx(' ', 'VITESSE_VARIABLE', 1, iarg, 1,&
                         vitvar, n1)
-        else
-            vitvar=' '
         endif
         vrotin = 0.d0
         arotin = 0.d0
@@ -166,21 +173,21 @@ subroutine mdruku(method, tinit, tfin, dt, dtmin,&
                         vrotin, ier)
             call fointe('F ', fonca, 1, 'INST', tinit,&
                         arotin, ier)
-            do 113 im = 1, neqgen
-                do 114 jm = 1, neqgen
+            do im = 1, neqgen
+                do jm = 1, neqgen
                     ind = jm + neqgen*(im-1)
-                    zr(jamgy+ind-1) = amogen(ind) + vrotin * gyogen( ind)
-                    zr(jrigy+ind-1) = riggen(ind) + arotin * rgygen( ind)
-114              continue
-113          continue
+                    zr(jamgy+ind-1) = agen(im,jm) + vrotin * gyogen( ind)
+                    zr(jrigy+ind-1) = rgen(im,jm) + arotin * rgygen( ind)
+                end do
+            end do
         else
-            do 117 im = 1, neqgen
-                do 118 jm = 1, neqgen
+            do im = 1, neqgen
+                do jm = 1, neqgen
                     ind = jm + neqgen*(im-1)
-                    zr(jamgy+ind-1) = amogen(ind)
-                    zr(jrigy+ind-1) = riggen(ind)
-118              continue
-117          continue
+                    zr(jamgy+ind-1) = agen(im,jm)
+                    zr(jrigy+ind-1) = rgen(im,jm)
+                end do
+            end do
         endif
     endif
 !
@@ -274,14 +281,14 @@ subroutine mdruku(method, tinit, tfin, dt, dtmin,&
 !     RECUPERATION DES DONNEES SUR LES PALIERS
 !     -------------------------------------------------
         call jeveuo(cpal, 'L', iadrk)
-        do 21 iapp = 1, nbpal
+        do iapp = 1, nbpal
             fsauv(iapp,1)= 0.d0
             fsauv(iapp,2)= 0.d0
             fsauv(iapp,3)= 0.d0
             typal(iapp)=zk8(iadrk+(iapp-1))(1:6)
             finpal(iapp)=zk8(iadrk+(iapp-1)+palmax)(1:3)
             cnpal(iapp)=zk8(iadrk+(iapp-1)+2*palmax)(1:dimnas)
-21      continue
+        end do
     endif
 !  FIN COUPLAGE AVEC EDYOS
 !
