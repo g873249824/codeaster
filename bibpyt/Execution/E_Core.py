@@ -284,11 +284,12 @@ def checksd(nomsd, typesd):
     return iret
 
 def _print_header():
-    """Appelé par entete.F pour afficher des informations sur
+    """Appelé par entete.F90 pour afficher des informations sur
     la machine."""
     import aster_core
     from i18n import localization
     from Utilitai.Utmess import UTMESS
+    import numpy
     typvers = get_version_desc()
     aster_core.set_info('versLabel', typvers)
     lang_settings = '%s (%s)' % localization.get_current_settings()
@@ -306,6 +307,8 @@ def _print_header():
               aster_core.get_option('processor'),
               aster_core.get_option('system') + ' ' + aster_core.get_option('osrelease'),
               lang_settings,),)
+    pyvers = '%s.%s.%s' % tuple(sys.version_info[:3])
+    UTMESS('I', 'SUPERVIS2_9', valk=(pyvers, numpy.__version__))
     # avertissement si la version a plus de 15 mois
     if aster_core._NO_EXPIR == 0:
         try:
@@ -331,11 +334,11 @@ def _print_alarm():
     UTMESS('I', 'VIDE_1')
 
 def print_header(part):
-    """Appelé par entete.F pour afficher des informations sur la machine.
+    """Appelé par entete.F90 pour afficher des informations sur la machine.
     Certaines informations étant obtenues en fortran, une partie des messages
     est imprimée par le fortran. On a donc découpé en plusieurs morceaux.
     part = 1 : entête principal : ici
-    part = 2 : informations librairies : dans entete.F
+    part = 2 : informations librairies : dans entete.F90
     part = 3 : message d'alarme en cas de modification du code source : ici
     """
     if part == 1:
