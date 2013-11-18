@@ -21,7 +21,7 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
     implicit none
 !
 #include "jeveux.h"
-!
+#include "asterfort/assert.h"
 #include "asterfort/rcfonc.h"
 #include "asterfort/rctrac.h"
 #include "asterfort/rcvad2.h"
@@ -64,7 +64,7 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
 !
     integer :: i, jprol, jvale, nbval
 !
-    logical :: cp, trac, line
+    logical :: cp, trac, line, elas
 !
 !
 !-----------------------------------------------------------------------
@@ -75,6 +75,7 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
     cp = typmod(1) .eq. 'C_PLAN'
     trac = compor(1)(1:14).eq.'VMIS_ISOT_TRAC'
     line = compor(1)(1:14).eq.'VMIS_ISOT_LINE'
+    elas = compor(1)(1:16).eq.'ELAS            '
 !
 ! -  LECTURE DE E, NU, ALPHA ET DERIVEES / TEMPERATRURE
 !
@@ -161,6 +162,15 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
                     rbid, rbid, rbid, ppg, rp,&
                     rprim, airep, rbid, rbid)
         dairep = 0.d0
+
+    else if (elas) then
+        rp = 0.d0
+
+!    EN COMMENTAIRE POUR L'INSTANT, VOIR CE QU'IL FAUDRA FAIRE 
+!    SUITE A ISSUE21711
+!    else
+!        call assert(.false.)
+
     endif
 !
 ! - CALCUL DE EPSMO ET EPSDV
