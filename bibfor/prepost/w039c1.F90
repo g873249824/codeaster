@@ -61,27 +61,29 @@ subroutine w039c1(carte, ifi, form, ligrel, titre)
 ! ----------------------------------------------------------------------
 !
     call jemarq()
-!
-!     -- SI LA CARTE N'EXISTE PAS, IL N'Y A RIEN A FAIRE :
+
+!     -- si la carte n'existe pas, il n'y a rien a faire :
 !     -----------------------------------------------------
     call exisd('CARTE', carte, iexi)
     if (iexi .eq. 0) goto 9999
-!
+
 !
     ifm=6
     ifr=8
     cart1=carte
-!
+
 !     -- POUR QUE LE CHAM_ELEM QUE L'ON VA IMPRIMER AIT UN NOM "PROCHE"
 !        DE CELUI DE LA VRAIE CARTE
     cel2=cart1
     cel2(9:9)='_'
-!
-!
+
+
 !     -- QUELQUES INFOS SUR LA CARTE :
     call jeveuo(cart1//'.DESC', 'L', jdesc)
     call jeveuo(cart1//'.VALE', 'L', jvale)
     ngedit=zi(jdesc-1+3)
+    if (ngedit.eq.0) goto 9999
+
     nugd=zi(jdesc-1+1)
     call jenuno(jexnum('&CATA.GD.NOMGD', nugd), nomgd)
     call dismoi('F', 'TYPE_SCA', nomgd, 'GRANDEUR', ibid,&
@@ -93,8 +95,8 @@ subroutine w039c1(carte, ifi, form, ligrel, titre)
     write (ifr,'(A,A)')'IMPRESSION D''UN CHAMP DE CONCEPT : ',titre
     write (ifm,'(A,A)')'NOM DU CHAMP : ',cel2
     write (ifr,'(A,A)')'NOM DU CHAMP : ',cel2
-!
-!
+
+
 !     -- SI LA CARTE A DES VALEURS REELLES ET QUE LE FORMAT EST 'MED'
 !        ON L'IMPRIME AVEC SES VALEURS REELLES. C'EST PLUS JOLI !
     if (form .eq. 'MED' .and. tsca .eq. 'R') then
@@ -145,9 +147,9 @@ subroutine w039c1(carte, ifi, form, ligrel, titre)
     call w039c2(nuzone, jvale, jdesc, nomgd, ifm,&
                 ifr)
     30 end do
-!
-!
-!
+
+
+
 !     -- ON TRANSFORME LA CARTE EN UN CHAM_ELEM_S DE NEUT_R :
 !     ------------------------------------------------------
     call jelira(cart1//'.DESC', 'DOCU', ibid, kbid)
@@ -179,19 +181,19 @@ subroutine w039c1(carte, ifi, form, ligrel, titre)
         zr(jcesv-1-iad)=dble(nuzone)
     endif
     40 end do
-!
-!
+
+
 !     -- TRANSFORMATION DE CES2 EN CEL2 (CHAM_ELEM/ELEM) :
 !     ----------------------------------------------------
     call cescel(ces2, ligrel, 'TOU_INI_ELEM', 'PNEU1_R', 'OUI',&
                 nncp, 'V', cel2, 'F', iret)
     call assert(iret.eq.0)
     call detrsd('CHAM_ELEM_S', ces2)
-!
-!
+
+
 !     -- IMPRESSION DE CEL2 :
 !     -----------------------
-!
+
     if (form .eq. 'MED') then
 !     -------------------------
         nommed=cel2
@@ -203,19 +205,19 @@ subroutine w039c1(carte, ifi, form, ligrel, titre)
                     0.d0, 0, 0, 0, sdcarm,&
                     iret)
         call assert(iret.eq.0)
-!
-!
+
+
     else if (form.eq.'RESULTAT') then
 !     ---------------------------
         call imprsd('CHAMP', cel2, ifi, titre)
-!
-!
+
+
     else
         call assert(.false.)
     endif
     call detrsd('CHAM_ELEM', cel2)
     call jedetr('&&W039C1.ZONES')
-!
+
 !
 9999  continue
     call jedema()

@@ -13,6 +13,8 @@ subroutine cmpcha(nomcha, nomcmp, corr1, corr2, ncmp,&
 #include "asterfort/jeveuo.h"
 #include "asterfort/jexnum.h"
 #include "asterfort/wkvect.h"
+#include "asterfort/u2mess.h"
+!
     character(len=*) :: nomcha, nomcmp, corr1, corr2
     integer :: ncmp, ncmpmx
 ! ======================================================================
@@ -201,12 +203,13 @@ subroutine cmpcha(nomcha, nomcmp, corr1, corr2, ncmp,&
 !     --------------------
     call wkvect(corr1, 'V V I', ncmpmx, jcorr1)
     ncmp=0
-    do 100 icmp = 1, ncmpmx
+    do icmp = 1, ncmpmx
         if (exisdg(dg(1),icmp)) then
             ncmp=ncmp+1
             zi(jcorr1-1+icmp)=ncmp
         endif
-100  end do
+    end do
+    if (ncmp.eq.0) call u2mesk('F','MODELISA_12', 1, nomcha)
 !
 !
 !

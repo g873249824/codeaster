@@ -1,6 +1,6 @@
 subroutine affori(typ, nomt, cara, val, jad,&
-                  jdno, jdco, ivr, nutyma, ntseg,&
-                  carori, nco, ier)
+                  jdno, jdco, nutyma, ntseg,&
+                  carori, nco)
     implicit        none
 #include "jeveux.h"
 #include "asterc/r8dgrd.h"
@@ -10,7 +10,7 @@ subroutine affori(typ, nomt, cara, val, jad,&
 #include "asterfort/u2mesg.h"
 #include "asterfort/u2mesk.h"
 #include "asterfort/vdiff.h"
-    integer :: nco, ivr(*), nutyma, ntseg, jad, jdno, jdco, ier
+    integer :: nco,  nutyma, ntseg, jad, jdno, jdco
     character(len=*) :: typ, nomt, cara, carori(nco)
     real(kind=8) :: val(6)
 !       ----------------------------------------------------------------
@@ -37,7 +37,7 @@ subroutine affori(typ, nomt, cara, val, jad,&
 !
     character(len=16) :: cmd, car, nom
     character(len=24) :: valk(2)
-    integer :: ibid, no1, no2, lg, i
+    integer :: ibid, no1, no2, lg, i, locvr(2)
     real(kind=8) :: x1(3), x2(3), x3(3), angl(3), valr(2)
     real(kind=8) :: alpha, beta, gamma
     real(kind=8) :: dgrd
@@ -52,10 +52,13 @@ subroutine affori(typ, nomt, cara, val, jad,&
 ! --- ------------------------------------------------------------------
 ! ---   VERIFS PRELIMINAIRES
 !       0 = PAS VERIF, 1 = VERIF, (1) = MAILLE, (2) = NOEUD, (3) = IMPR
+! Vérification systématique :
+    locvr(1) = 1
+    locvr(2) = 1
 !
 ! --- ------------------------------------------------------------------
 ! --- CALCUL DE LA LONGUEUR DU SEGMENT
-    if (typ(1:6) .eq. 'MAILLE') then
+ if (typ(1:6) .eq. 'MAILLE') then
         if (nutyma .eq. ntseg) then
             no1 = zi(jdno)
             no2 = zi(jdno+1)
@@ -83,21 +86,19 @@ subroutine affori(typ, nomt, cara, val, jad,&
         if (typ(1:6) .eq. 'MAILLE') then
 ! ---       SI LA MAILLE N EST PAS UN SEG2 > RETURN
             if (nutyma .ne. ntseg) then
-                if (ivr(1) .eq. 1) then
+                if (locvr(1) .eq. 1) then
                     valk(1) = car
                     valk(2) = nom
-                    call u2mesk('A', 'MODELISA_87', 2, valk)
-                    ier = ier + 1
+                    call u2mesk('F', 'MODELISA_87', 2, valk)
                 endif
                 goto 9999
             endif
 ! ---       SI LA MAILLE (SEG2) EST DE LONGUEUR NULLE > RETURN
             if (lg .eq. 0) then
-                if (ivr(1) .eq. 1) then
+                if (locvr(1) .eq. 1) then
                     valk(1) = car
                     valk(2) = nom
-                    call u2mesk('A', 'MODELISA_88', 2, valk)
-                    ier = ier + 1
+                    call u2mesk('F', 'MODELISA_88', 2, valk)
                 endif
                 goto 9999
             endif
@@ -118,11 +119,10 @@ subroutine affori(typ, nomt, cara, val, jad,&
 ! --- ------------------------------------------------------------------
 ! ---    NOEUD
 ! --        PAS D AFFECTATION SUR UN NOEUD POI1 > RETURN
-            if (ivr(2) .eq. 1) then
+            if (locvr(2) .eq. 1) then
                 valk(1) = car
                 valk(2) = nom
-                call u2mesk('A', 'MODELISA_89', 2, valk)
-                ier = ier + 1
+                call u2mesk('F', 'MODELISA_89', 2, valk)
             endif
             goto 9999
         endif
@@ -139,11 +139,10 @@ subroutine affori(typ, nomt, cara, val, jad,&
         if (typ(1:6) .eq. 'MAILLE') then
 ! ---       SI LA MAILLE (SEG2) EST DE LONGUEUR NON NULLE > RETURN
             if (lg .eq. 1) then
-                if (ivr(1) .eq. 1) then
+                if (locvr(1) .eq. 1) then
                     valk(1) = car
                     valk(2) = nom
-                    call u2mesk('A', 'MODELISA_90', 2, valk)
-                    ier = ier + 1
+                    call u2mesk('F', 'MODELISA_90', 2, valk)
                 endif
                 goto 9999
             else
@@ -226,11 +225,10 @@ subroutine affori(typ, nomt, cara, val, jad,&
         if (typ(1:6) .eq. 'MAILLE') then
 ! ---       SI LA MAILLE (SEG2) EST DE LONGUEUR NON NULLE > RETURN
             if (lg .eq. 1) then
-                if (ivr(1) .eq. 1) then
+                if (locvr(1) .eq. 1) then
                     valk(1) = car
                     valk(2) = nom
                     call u2mesk('A', 'MODELISA_90', 2, valk)
-                    ier = ier + 1
                 endif
                 goto 9999
             else
@@ -321,21 +319,19 @@ subroutine affori(typ, nomt, cara, val, jad,&
         if (typ(1:6) .eq. 'MAILLE') then
 ! ---       SI LA MAILLE N EST PAS UN SEG2 > RETURN
             if (nutyma .ne. ntseg) then
-                if (ivr(1) .eq. 1) then
+                if (locvr(1) .eq. 1) then
                     valk(1) = car
                     valk(2) = nom
-                    call u2mesk('A', 'MODELISA_91', 2, valk)
-                    ier = ier + 1
+                    call u2mesk('F', 'MODELISA_91', 2, valk)
                 endif
                 goto 9999
             endif
 ! ---       SI LA MAILLE (SEG2) EST DE LONGUEUR NULLE > GOTO 9999
             if (lg .eq. 0) then
-                if (ivr(1) .eq. 1) then
+                if (locvr(1) .eq. 1) then
                     valk(1) = car
                     valk(2) = nom
-                    call u2mesk('A', 'MODELISA_88', 2, valk)
-                    ier = ier + 1
+                    call u2mesk('F', 'MODELISA_88', 2, valk)
                 endif
                 goto 9999
             endif
@@ -361,11 +357,10 @@ subroutine affori(typ, nomt, cara, val, jad,&
 ! --- ------------------------------------------------------------------
 ! ---    NOEUD
 ! ---       PAS D AFFECTATION SUR UN NOEUD POI1 > RETURN
-            if (ivr(2) .eq. 1) then
+            if (locvr(2) .eq. 1) then
                 valk(1) = car
                 valk(2) = nom
-                call u2mesk('A', 'MODELISA_89', 2, valk)
-                ier = ier + 1
+                call u2mesk('F', 'MODELISA_89', 2, valk)
             endif
             goto 9999
         endif

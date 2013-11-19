@@ -17,20 +17,18 @@
 !
 interface
     subroutine affori(typ, nomt, cara, val, jad,&
-                      jdno, jdco, ivr, nutyma, ntseg,&
-                      carori, nco, ier)
+                      jdno, jdco, nutyma, ntseg,&
+                      carori, nco)
         integer :: nco
-        character(*) :: typ
-        character(*) :: nomt
-        character(*) :: cara
+        character(len=*) :: typ
+        character(len=*) :: nomt
+        character(len=*) :: cara
         real(kind=8) :: val(6)
         integer :: jad
         integer :: jdno
         integer :: jdco
-        integer :: ivr(*)
         integer :: nutyma
         integer :: ntseg
-        character(*) :: carori(nco)
-        integer :: ier
+        character(len=*) :: carori(nco)
     end subroutine affori
 end interface
