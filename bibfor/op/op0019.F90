@@ -21,7 +21,6 @@ subroutine op0019()
 !                O P E R A T E U R    AFFE_CARA_ELEM
 !
 ! ----------------------------------------------------------------------
-! aslint: disable=W1501
     implicit  none
 !     NBEPO  13 : NOMBRE D'ELEMENTS DE TYPE "POUTRE"
 !     NBEDI   8 : NOMBRE D'ELEMENTS DE TYPE "DISCRET"
