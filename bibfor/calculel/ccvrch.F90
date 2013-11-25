@@ -42,9 +42,9 @@ subroutine ccvrch(resuin, numor0)
 !
     if (excisd .eq. ' ') then
         if (nchalu .eq. 0) then
-            call u2mesk('I', 'UTILITAI4_2', 1, resuin)
+            call u2mesk('A', 'UTILITAI4_2', 1, resuin)
         else
-            call u2mesk('I', 'UTILITAI4_1', 1, resuin)
+            call u2mesk('A', 'UTILITAI4_1', 1, resuin)
         endif
     endif
 !
