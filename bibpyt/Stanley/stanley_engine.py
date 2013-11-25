@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -1413,7 +1412,7 @@ class SELECTION:
       type_actu = ''
       liste_actu = []
       for nom in self.interface.geom.courant :
-        nom_group  = string.strip(nom[:8])
+        nom_group  = string.strip(nom[:24])
         type_group = self.etat_geom.Type(nom_group)
         liste_actu.append(nom_group)
         if not type_actu :
@@ -1977,7 +1976,7 @@ class INTERFACE :
     reponse = SAISIE(infos, _(u"Creation d'un point"), defaut, fonte=fonte)
 
     nom = reponse[0][0]
-    nom = nom[0:8]            # pas plus de 8 caracteres dans un GROUP_MA
+    nom = nom[0:24]            # pas plus de 24 caracteres dans un GROUP_MA
     nom = string.strip(nom)   # pas de blancs
     nom = string.upper(nom)   # en majuscules
     x0 = y0 = z0 = 0
@@ -2011,7 +2010,7 @@ class INTERFACE :
     reponse = SAISIE(infos, _(u"Creation d'un chemin") , defaut, fonte=fonte)
 
     nom = reponse[0][0]
-    nom = nom[0:8]            # pas plus de 8 caracteres dans un GROUP_MA
+    nom = nom[0:24]            # pas plus de 24 caracteres dans un GROUP_MA
     nom = string.strip(nom)   # pas de blancs
     nom = string.upper(nom)   # en majuscules
     x0 = y0 = z0 = x1 = y1 = z1 = 0
@@ -2907,7 +2906,7 @@ class DRIVER_SUP_GMSH(DRIVER) :
 
    # Creation du maillage du point et de la ligne (pour proj_champ)
     nom_bid = '_'+nom
-    nom_bid = nom_bid[:8]
+    nom_bid = nom_bid[:24]
     eps = 1.E-2
     P0  = sup_gmsh.Point(x0,y0,z0)
     P1  = sup_gmsh.Point(x0*(1+eps)+eps,y0*(1+eps)+eps,z0)
