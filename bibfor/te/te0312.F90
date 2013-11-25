@@ -1,7 +1,7 @@
 subroutine te0312(option, nomte)
     implicit none
 #include "jeveux.h"
-!
+#include "asterfort/assert.h"
 #include "asterfort/jevech.h"
 #include "asterfort/rcvalb.h"
 #include "asterfort/u2mesk.h"
@@ -23,12 +23,12 @@ subroutine te0312(option, nomte)
 !   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 ! ======================================================================
 !
-!  CALCUL DU CHARGEMENT DU AU SECHAGE
+!  CALCUL DU CHARGEMENT DU AU SECHAGE ET A L'HYDRATATION
 !.......................................................................
 !
     integer :: lmater
     character(len=8) :: fami, poum
-    real(kind=8) :: kdessi
+    real(kind=8) :: bendog(1),kdessi(1)
     integer :: icodre(2), kpg, spt
 !.......................................................................
 !
@@ -37,14 +37,30 @@ subroutine te0312(option, nomte)
     kpg=1
     spt=1
     poum='+'
-    call rcvalb(fami, kpg, spt, poum, zi(lmater),&
-                ' ', 'ELAS', 0, ' ', 0.d0,&
-                1, 'K_DESSIC', kdessi, icodre, 0)
 !
-    if (icodre(1) .eq. 0) then
-        call u2mesk('F', 'ELEMENTS_2', 1, nomte)
-    else
+    write(6,*)'AJOJO TE0312'
+    if (option.eq.'CHAR_MECA_HYDR_R') then
+        call rcvalb(fami, kpg, spt, poum, zi(lmater),&
+                    ' ', 'ELAS', 0, ' ', 0.d0,&
+                    1, 'B_ENDOGE', bendog, icodre, 0)
+!
+        if ((icodre(1) .eq. 0).and. (bendog(1).ne.0.d0)) then
+            call u2mesk('F', 'ELEMENTS_22', 1, nomte)
+        else
+!       -- BENDOGE ABSENT => CHARGEMENT NUL
+        endif
+    else if (option.eq.'CHAR_MECA_SECH_R') then
+        call rcvalb(fami, kpg, spt, poum, zi(lmater),&
+                    ' ', 'ELAS', 0, ' ', 0.d0,&
+                    1, 'K_DESSIC', kdessi, icodre, 0)
+!
+        if ((icodre(1) .eq. 0).and. (kdessi(1).ne.0.d0)) then
+            call u2mesk('F', 'ELEMENTS_23', 1, nomte)
+        else
 !       -- KDESSI ABSENT => CHARGEMENT NUL
+        endif
+    else
+        call assert(.false.)
     endif
 !
 end subroutine
