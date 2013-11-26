@@ -4,6 +4,7 @@ subroutine cgleco(resu, modele, iord0, typfis, compor,&
 !
 #include "asterc/getfac.h"
 #include "asterfort/assert.h"
+#include "asterfort/cgvein.h"
 #include "asterfort/dismoi.h"
 #include "asterfort/gverlc.h"
 #include "asterfort/jedema.h"
@@ -125,6 +126,10 @@ subroutine cgleco(resu, modele, iord0, typfis, compor,&
 !
 !     X-FEM N'EST PAS ENCORE DEVELOPPE POUR GTP (G EN INCREMENTAL)
     if (incr .and. typfis .eq. 'FISSURE') call u2mess('F', 'RUPTURE1_43')
+!
+! - Check COMPORTEMENT / RELATION in result for incremental comportement 
+!
+    if (incr) call cgvein(resu, compor, iord0)
 !
     call jedema()
 !

@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -379,6 +378,17 @@ Veuillez revoir les données du matériau.
 
 68:_(u"""
 La macro-commande POST_RUPTURE ne fonctionne pas quand les paramètres matériau ne sont pas constants.
+"""),
+
+69:_(u"""
+GTP : 
+La relation de comportement %(k1)s n'est pas prévue dans CALC_G
+"""),
+
+70:_(u"""
+GTP : 
+La relation de comportement VMIS_ISOT_TRAC est interdite dans CALC_G en présence de thermique.
+Dans la commande AFFE_MATERIAU, le mot clé facteur AFFE_VARC ne doit pas être présent.
 """),
 
 }

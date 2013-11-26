@@ -166,10 +166,8 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
     else if (elas) then
         rp = 0.d0
 
-!    EN COMMENTAIRE POUR L'INSTANT, VOIR CE QU'IL FAUDRA FAIRE 
-!    SUITE A ISSUE21711
-!    else
-!        call assert(.false.)
+    else
+        call assert(.false.)
 
     endif
 !
