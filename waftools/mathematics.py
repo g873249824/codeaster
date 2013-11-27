@@ -51,7 +51,6 @@ def configure(self):
     self.check_math_libs_call()
 
 ###############################################################################
-
 @Configure.conf
 def check_opts_math_lib(self):
     from Options import options as opts
@@ -94,8 +93,8 @@ def detect_mkl(self):
     # http://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/
     if self.env.HAVE_MPI:
         totest.append('-mkl=cluster')
-        scalapack = ['mkl_scalapack' + suffix or '_core']   # ia32: mkl_scalapack_core
-        blacs = ['blacs_intelmpi' + suffix]
+        scalapack = ['-lmkl_scalapack' + suffix or '_core']   # ia32: mkl_scalapack_core
+        blacs = ['-lblacs_intelmpi' + suffix]
     else:
         scalapack = []
         blacs = []
@@ -219,7 +218,7 @@ def check_math_libs_call(self):
     """Compile and run a small blas/lapack program"""
     self.start_msg('Checking for a program using blas/lapack')
     try:
-        ret = self.check_fc(fragment=blas_lapack_fragment, use='OPENMP MATH MPI',
+        ret = self.check_fc(fragment=blas_lapack_fragment, use='MATH MPI',
                             mandatory=False, execute=True, define_ret=True)
         values = map(float, ret and ret.split() or [])
         ref = [10.0, 5.0]
