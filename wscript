@@ -29,23 +29,25 @@ def options(self):
         return ori_get_usage() + os.linesep.join((
         '',
         'Environment variables:',
-        '  INCLUDES  : space separated list of directories extending the include'
+        '  INCLUDES       : space separated list of directories extending the include'
         ' path',
-        '  CC        : C compiler',
-        '  FC        : Fortran compiler',
-        '  CXX       : C++ compiler',
-        '  INCLUDES  : extra include paths',
-        '  DEFINES   : extra preprocessor defines',
-        '  LINKFLAGS : extra C linker options',
-        '  FCLINKFLAGS : extra Fortran linker options',
-        '  LIBPATH   : extra paths where to find libraries',
-        '  LIB       : extra libraries to link with',
-        '  STLIB     : extra static libraries to link with',
-        '  OPTLIB_FLAGS : extra linker flags inserted after static libs '
-        '(for example when -Wl,start-group options are necessary)',
-        '  CFLAGS    : extra C compilation options',
-        '  FCFLAGS   : extra Fortran compilation options',
-        '  PREFIX    : default installation prefix to be used, '
+        '  CC             : C compiler',
+        '  FC             : Fortran compiler',
+        '  CXX            : C++ compiler',
+        '  INCLUDES       : extra include paths',
+        '  DEFINES        : extra preprocessor defines',
+        '  LINKFLAGS      : extra C linker options',
+        '  FCLINKFLAGS    : extra Fortran linker options',
+        '  LIBPATH        : extra paths where to find libraries',
+        '  LIB            : extra libraries to link with',
+        '  STLIB          : extra static libraries to link with',
+        '  OPTLIB_FLAGS   : extra linker flags appended at the end of link commands '
+        '(for example when -Wl,start-group options are necessary). '
+        'OPTLIB_FLAGS will be added for all links. Usually, you should prefer '
+        'to define more specific variable as OPTLIB_FLAGS_MATH (or OPTLIB_FLAGS_HDF5...)',
+        '  CFLAGS         : extra C compilation options',
+        '  FCFLAGS        : extra Fortran compilation options',
+        '  PREFIX         : default installation prefix to be used, '
         'if no --prefix option is given.',
         '',))
     self.parser.get_usage = _usage
