@@ -26,6 +26,7 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
 #include "asterfort/rctrac.h"
 #include "asterfort/rcvad2.h"
 #include "asterfort/rcvarc.h"
+#include "asterfort/u2mesk.h"
 #include "asterfort/u2mess.h"
     integer :: kpg, ksp, ndim, imate
     character(len=*) :: fami, poum
@@ -134,6 +135,9 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
     dairep=0.d0
 !
     if (line) then
+!
+! ----- VMIS_ISOT_LINE
+!
         nomres(1)='D_SIGM_EPSI'
         nomres(2)='SY'
         call rcvad2(fami, kpg, ksp, poum, imate,&
@@ -156,6 +160,10 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
         dairep = 0.5d0*(dsigy+drp)*ppg
 !
     else if (trac) then
+!
+! ----- VMIS_ISOT_TRAC (INTERDIT EN PRESENCE DE THERMIQUE)
+!
+        if ((iret1+iret2) .eq. 0) call u2mess('F', 'RUPTURE1_70')
         call rctrac(imate, 1, 'SIGM', temp, jprol,&
                     jvale, nbval, e)
         call rcfonc('V', 1, jprol, jvale, nbval,&
@@ -164,10 +172,16 @@ subroutine nmplru(fami, kpg, ksp, poum, ndim,&
         dairep = 0.d0
 
     else if (elas) then
+!
+! ----- ELAS (AVEC ETAT_INIT -> COMP_INCR)
+!
         rp = 0.d0
 
     else
-        call assert(.false.)
+!
+! ----- LES AUTRES RELATIONS DE COMPORTEMENT NE SONT PAS PREVUES
+!
+        call u2mesk('F', 'RUPTURE1_69', 1, compor(1)(1:16))
 
     endif
 !
