@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -21,6 +20,12 @@
 cata_msg = {
 1 : _(u"""
  On ne peut pas affecter des moments répartis sur des éléments de type %(k1)s.
+"""),
+
+2 : _(u"""
+
+ L'option %(k1)s n'est pas développée avec le comportement %(k2)s pour les éléments %(k3)s.
+
 """),
 
 10 : _(u"""
