@@ -11,6 +11,7 @@ subroutine nurenu(nu, base)
 #include "asterfort/mpicm0.h"
 #include "asterfort/mpicm2.h"
 #include "asterfort/mpippv.h"
+#include "asterfort/u2mess.h"
 #include "asterfort/wkvect.h"
     character(len=14) :: nu
     character(len=2) :: base
@@ -73,6 +74,7 @@ subroutine nurenu(nu, base)
     do 10 iddl = 0, neql-1
         if (zi(jpddl+iddl) .eq. rang) nbrddl=nbrddl+1
 10  end do
+    if ( nbrddl .eq. 0 ) call u2mess('F', 'PETSC_20')
 !
     call wkvect(nonbdd, 'V V I', nbproc, jnbddl)
     zi(jnbddl+rang)=nbrddl

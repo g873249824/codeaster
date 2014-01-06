@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -160,6 +159,15 @@ Solveur PETSc :
   Conseils :
   - reconstruisez une version de PETSc avec le support des préconditionneurs BOOMER et ML
   - utilisez un autre préconditionneur (comme 'LDLT_SP' par exemple)
+"""),
+
+20 : _(u"""
+Solveur PETSc :
+  Un ou plusieurs processeurs ne se sont vu attribuer aucun degré de liberté pour la résolution
+  du système linéaire. La résolution n'est pas possible.
+
+  Conseil : changez le mode de partitionnement avec MODI_MODELE et préférez l'utilisation de
+            "SOUS_DOMAINE".
 """),
 
 }
