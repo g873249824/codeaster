@@ -240,7 +240,7 @@ subroutine nugllo(nu, base, solveu)
 20                      continue
 !
                         do 30 iddl = 1, nddl
-                            zi(jddlp+ddl1g+iddl-1)=1
+                            zi(jddlp+ddl1g+iddl-2)=1
                             zi(jtaeq+numinc-1+iddl-1)=ddl1g+iddl-1
 30                      continue
                         numinc=numinc+nddl
@@ -262,7 +262,7 @@ subroutine nugllo(nu, base, solveu)
                             zi(jtano+nuno-1)=1
                         endif
                         ddl1g=zzprno(ilib,nuno,1)
-                        if (zi(jddlp+ddl1g) .eq. 1) goto 70
+                        if (zi(jddlp+ddl1g-1) .eq. 1) goto 70
                         zi(izzpr2(ilib,nuno,1))=numinc
                         nddl=zzprno(ilib,nuno,2)
                         zi(izzpr2(ilib,nuno,2))=nddl
@@ -271,7 +271,7 @@ subroutine nugllo(nu, base, solveu)
                             nuno, 2+numec)
 50                      continue
                         do 60 iddl = 1, nddl
-                            zi(jddlp+ddl1g+iddl-1)=1
+                            zi(jddlp+ddl1g+iddl-2)=1
                             zi(jtaeq+numinc-1+iddl-1)=ddl1g+iddl-1
                             zi(jdelgt+numinc-1+iddl-1)=zi(jdelgg+&
                             ddl1g-1+iddl-1)
