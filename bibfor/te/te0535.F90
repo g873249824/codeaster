@@ -15,10 +15,12 @@ subroutine te0535(option, nomte)
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 !    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 ! ======================================================================
-    implicit     none
+    implicit none
 #include "jeveux.h"
 !
 #include "asterc/r8prem.h"
+#include "asterfort/assert.h"
+#include "asterfort/elref4.h"
 #include "asterfort/jedetr.h"
 #include "asterfort/jeexin.h"
 #include "asterfort/jevech.h"
@@ -67,7 +69,8 @@ subroutine te0535(option, nomte)
     integer :: jtab(7), ivarmp, istrxp, istrxm
     integer :: ip, inbf, jcret, codret, codrep
     integer :: iposcp, iposig, ipomod, iinstp, iinstm
-    integer :: icomax, ico, nbgf, isdcom, nbgfmx, npg
+    integer :: icomax, ico, nbgf, isdcom, nbgfmx,ncomp
+    integer :: npg, ndim, nnoel, nnos, ipoids, ivf, iplouf
     real(kind=8) :: xi, wi, b(4), gg, vs(3), ve(12)
     real(kind=8) :: defam(6), defap(6)
     real(kind=8) :: alicom, dalico, ss1, hv, he, minus
@@ -77,21 +80,23 @@ subroutine te0535(option, nomte)
     parameter  (zero=0.0d+0,deux=2.d+0)
 !
 ! --- ------------------------------------------------------------------
-    call jevech('PNBSP_I', 'L', inbf)
-!     NOMBRE DE FIBRES TOTAL DE L'ELEMENT
-    nbfib = zi(inbf)
-    call jevech('PFIBRES', 'L', jacf)
+!
+    call elref4(' ', 'RIGI', ndim, nnoel, nnos,&
+                npg, ipoids, ivf, iplouf, iplouf)
+    call assert(nno.eq.nnoel)
+!   NOMBRE DE COMPOSANTES DES CHAMPS PSTRX? PAR POINTS DE GAUSS
+    ncomp = 18
+!
     ncarfi = 3
     codret = 0
     codrep = 0
-!     NOMBRE DE POINT DE GAUSS
-    npg = 2
-!
 !
 ! --- BOOLEENS PRATIQUES
     matric = option .eq. 'FULL_MECA' .or. option .eq. 'RIGI_MECA_TANG'
     vecteu = option .eq. 'FULL_MECA' .or. option .eq. 'RAPH_MECA'
 !
+    call jevech('PNBSP_I', 'L', inbf)
+    call jevech('PFIBRES', 'L', jacf)
     call jevech('PGEOMER', 'L', igeom)
     call jevech('PCOMPOR', 'L', icompo)
     call jevech('PINSTMR', 'L', iinstm)
@@ -149,6 +154,7 @@ subroutine te0535(option, nomte)
 ! --- ------------------------------------------------------------------
 ! --- RECUPERATION DU NOMBRE DE FIBRES TOTAL DE L'ELEMENT
 !     ET DU NOMBRE DE GROUPES DE FIBRES SUR CET ELEMENT
+    nbfib = zi(inbf)    
     nbgf = zi(inbf+1)
 !
 ! --- VERIFICATION QUE C'EST BIEN DES MULTIFIBRES
@@ -213,8 +219,8 @@ subroutine te0535(option, nomte)
 ! ---    BOUCLE SUR LES POINTS DE GAUSS
         do 500 ip = 1, npg
 ! ---       POSITION, POIDS X JACOBIEN ET MATRICE B ET G
-            call pmfpti(ip, xl, xi, wi, b,&
-                        gg)
+            call pmfpti(ip, zr(ipoids), zr(ivf), xl, xi,&
+                        wi, b, gg)
 ! ---       DEFORMATIONS '-' ET INCREMENT DE DEFORMATION PAR FIBRE
 !           MOINS --> M
             call pmfdge(b, gg, deplm, alicom, dege)
@@ -267,9 +273,9 @@ subroutine te0535(option, nomte)
 710  continue
 !
 ! --- QUAND ON A CONVERGE SUR ALICO, ON PEUT INTEGRER SUR L'ELEMENT
-    do 800 ip = 1, npg
-        call pmfpti(ip, xl, xi, wi, b,&
-                    gg)
+    do ip = 1, npg
+        call pmfpti(ip, zr(ipoids), zr(ivf), xl, xi,&
+                     wi, b, gg)
 ! ---    CALCUL LA MATRICE ELEMENTAIRE (SAUF POUR RAPH_MECA)
         if (option .ne. 'RAPH_MECA') then
             ipomod = jmodfb + nbfib*(ip-1)
@@ -299,7 +305,7 @@ subroutine te0535(option, nomte)
                 fl(i) = fl(i)+ve(i)
 360          continue
         endif
-800  end do
+    end do
 ! --  ON MODIFIE LA MATRICE DE RAIDEUR PAR CONDENSATION STATIQUE
     if (option .ne. 'RAPH_MECA') then
         call pmffft(fv, sv)
