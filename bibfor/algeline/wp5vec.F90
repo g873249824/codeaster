@@ -1,5 +1,5 @@
-subroutine wp5vec(opt, nbfreq, nbvect, neq, vp,&
-                  vecp, mxresf, resufi, resufr, vauc)
+subroutine wp5vec(nbfreq, nbvect, neq, vp, vecp, &
+                  mxresf, resufi, resufr, vauc)
     implicit none
 #include "jeveux.h"
 !
@@ -8,8 +8,8 @@ subroutine wp5vec(opt, nbfreq, nbvect, neq, vp,&
 #include "asterfort/jemarq.h"
 #include "asterfort/wkvect.h"
 #include "asterfort/wpordc.h"
-    character(len=*) :: opt
-    integer :: nbfreq, nbvect, neq, resufi(mxresf, *), mxresf
+    integer :: mxresf
+    integer :: nbfreq, nbvect, neq, resufi(mxresf, *)
     complex(kind=8) :: vecp(neq, *), vauc(2*neq, *), vp(*)
     real(kind=8) :: resufr(mxresf, *)
 !     -----------------------------------------------------------------
@@ -33,7 +33,6 @@ subroutine wp5vec(opt, nbfreq, nbvect, neq, vp,&
 !     RESTITUTION DES VALEURS PROPRES ET DES MODES DU PB QUADRATIQUE
 !     AVEC MATRICE DE RAIDEUR COMPLEXE
 !     -----------------------------------------------------------------
-! IN  OPT    : K : OPTION : 'CENTRE' OU 'PLUS_PETITE'
 ! IN  NBFREQ : I : NOMBRE DE MODES DEMANDES
 ! IN  NBVECT : I : NOMBRE DE VECTEURS DE LANCZOS
 ! IN  NEQ    : I : TAILLE DES MATRICES DU PB QUADRATIQUE
@@ -43,14 +42,9 @@ subroutine wp5vec(opt, nbfreq, nbvect, neq, vp,&
 ! OUT RESUFR : C : TABLEAU DE POST-TRAITEMENT
 !     -----------------------------------------------------------------
 !
-!
-!     ------------------------------------------------------------------
     real(kind=8) :: am, om
     integer :: i, j, k, iadind
-!     -----------------------------------------------------------------
-!-----------------------------------------------------------------------
-    integer :: nbcmpp
-!-----------------------------------------------------------------------
+!
     call jemarq()
 !
     call wkvect('&&WP5VEC.INDIC.PART.VP', 'V V I', nbvect, iadind)
@@ -72,7 +66,6 @@ subroutine wp5vec(opt, nbfreq, nbvect, neq, vp,&
 !
     if (zi(iadind + nbvect-1) .eq. -2) then
         zi(iadind + nbvect-1) = 0
-        nbcmpp = nbcmpp +1
     endif
 !
 !
