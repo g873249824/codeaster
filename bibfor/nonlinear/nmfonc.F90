@@ -721,7 +721,7 @@ subroutine nmfonc(parcri, parmet, method, solveu, modele,&
 ! --- FONCTIONNALITES INCOMPATIBLES
 !
     call exfonc(fonact, parmet, method, solveu, defico,&
-                sddyna)
+                sddyna, mate)
 !
     call jedema()
 end subroutine

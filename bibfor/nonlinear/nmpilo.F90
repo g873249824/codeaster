@@ -35,6 +35,7 @@ subroutine nmpilo(sdpilo, deltat, rho, solalg, veasse,&
 #include "asterfort/nmpidd.h"
 #include "asterfort/nmpila.h"
 #include "asterfort/nmpipe.h"
+#include "asterfort/u2mesk.h"
     integer :: nbatte, nbeffe
     integer :: pilcvg
     real(kind=8) :: deltat, rho, eta(nbatte)
@@ -84,7 +85,7 @@ subroutine nmpilo(sdpilo, deltat, rho, solalg, veasse,&
 !
 !
     integer :: neq, i, iret, ierm
-    integer :: jpltk, jplir, jdu0, jdu1
+    integer :: jpltk, jplir, jdu0, jdu1, ibid
     real(kind=8) :: dtau, etrmin, etrmax, coef
     character(len=8) :: k8bid
     character(len=19) :: ddepl0, ddepl1
@@ -93,6 +94,7 @@ subroutine nmpilo(sdpilo, deltat, rho, solalg, veasse,&
     character(len=19) :: ligrpi, cartyp, careta
     character(len=19) :: depmoi, depdel, deppr1, deppr2
     character(len=19) :: cnfepi
+    character(len=3) :: mfdet
     integer :: ifm, niv
     logical :: isxfe
 !
@@ -137,6 +139,13 @@ subroutine nmpilo(sdpilo, deltat, rho, solalg, veasse,&
     ligrpi = zk24(jpltk+1)(1:19)
     cartyp = zk24(jpltk+2)(1:19)
     careta = zk24(jpltk+3)(1:19)
+!
+! --- VERIFICATION QUE LES VARIABLES DE COMMANDE NE DEPENDENT PAS DU TEMPS
+!
+    call dismoi('F', 'VARC_F_INST', mate, 'CHAM_MATER', ibid, mfdet, iret)
+    if (mfdet.eq.'OUI') then
+       call u2mesk('F', 'CALCULEL2_58', 1, mate)
+    endif
 !
 ! --- INCREMENTS DE DEPLACEMENT RHO.DU0 ET RHO.DU1
 !

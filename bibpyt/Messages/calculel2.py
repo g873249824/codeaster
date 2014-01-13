@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -299,6 +298,21 @@ Erreur utilisateur :
   le champ associe au paramètre :  %(k1)s  n'est pas dans la liste des champs paramètres.
 """),
 
+
+
+
+
+58: _(u"""
+Erreur Utilisateur :
+  Vous utilisez le mot clé PILOTAGE et votre calcul utilise des variables de
+  commande qui dépendent du temps (mot clé AFFE_VARC / EVOL).
+  C'est interdit.
+  Champ de matériau : %(k1)s
+Conseil :
+  Lorsque l'on utilise le mot clé PILOTAGE, les variables de commande ne doivent
+  pas dépendre du temps.
+  Il faut utiliser le mot clé AFFE_VARC / CHAM_GD
+"""),
 
 
 

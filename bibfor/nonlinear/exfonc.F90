@@ -1,5 +1,5 @@
 subroutine exfonc(fonact, parmet, method, solveu, defico,&
-                  sddyna)
+                  sddyna, mate)
 !
     implicit none
 !
@@ -14,6 +14,7 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
 #include "asterfort/ndynlo.h"
 #include "asterfort/u2mesk.h"
 #include "asterfort/u2mess.h"
+#include "asterfort/dismoi.h"
 !
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -39,6 +40,7 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
     character(len=24), intent(in) :: defico
     real(kind=8), intent(in) :: parmet(*)
     character(len=16), intent(in) :: method(*)
+    character(len=24), intent(in) :: mate
 !
 ! --------------------------------------------------------------------------------------------------
 !
@@ -59,7 +61,7 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
 ! ---------------------------------------------------------------------
 !
     integer :: reincr
-    integer :: jslvk, n1
+    integer :: jslvk, n1, ibid, iret
     logical :: lcont, lallv, lctcc, lctcd, lpena, leltc
     logical :: lfeti, lpilo, lreli, lmacr, lunil
     logical :: lmvib, lflam, lexpl, lxfem, lmodim
@@ -68,6 +70,7 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
     logical :: lener, lproj, lmatdi, lldsp, lctgcp, lcomp
     integer :: ifm, niv
     character(len=24) :: typilo, typrel, metres
+    character(len=3)  :: mfdet
     integer :: iarg
 !
 ! ---------------------------------------------------------------------
@@ -229,6 +232,13 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
         if ((method(5).eq.'DEPL_CALCULE') .or. (method(5) .eq.'EXTRAPOLE')) then
             call u2mess('F', 'MECANONLINE5_36')
         endif
+!
+!       --- VERIFICATION QUE LES VARIABLES DE COMMANDE NE DEPENDENT PAS DU TEMPS
+        call dismoi('F', 'VARC_F_INST', mate, 'CHAM_MATER', ibid, mfdet, iret)
+        if (mfdet.eq.'OUI') then
+           call u2mesk('F', 'CALCULEL2_58', 1, mate(1:8))
+        endif
+
     endif
     if (lreli) then
         call getvtx('RECH_LINEAIRE', 'METHODE', 1, iarg, 1,&
