@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -169,8 +168,11 @@ class TableBase(object):
       # est-ce que l'attribut .type est renseigné ?
       typdef=typ != [None]*len(typ)
       txt=[]
-      # ['']+ pour ajouter un séparateur en début de ligne
-      lspa=['',]
+      ASTER = (FORMAT=='ASTER')
+      lspa=[]
+      if ASTER:
+          # ['']+ pour ajouter un séparateur en début de ligne
+          lspa.append('')
       # lmax : largeur max des colonnes = max(form{K,R,I},len(parametre))
       lmax=[]
       # formats
@@ -189,7 +191,6 @@ class TableBase(object):
       txt.append(dform['ccom'])
       txt.append(dform['ccom']+'-'*80)
       txt.append(dform['ccom'])
-      ASTER=(FORMAT=='ASTER')
       if ASTER:
          txt.append('#DEBUT_TABLE')
       if self.titr:
@@ -201,7 +202,9 @@ class TableBase(object):
       if ASTER and typdef:
          txt.append(stype)
       for r in rows:
-         lig=['']
+         lig=[]
+         if ASTER:
+             lig.append('')
          empty=True
          for t, p, lmax_i in zip(typ, para, lmax):
             val = r.get(p)
