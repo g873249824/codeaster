@@ -49,6 +49,10 @@ def options(self):
         '  FCFLAGS        : extra Fortran compilation options',
         '  PREFIX         : default installation prefix to be used, '
         'if no --prefix option is given.',
+        '  CATALO_CMD     : command line used to build the elements catalog. '
+        'It is just inserted before the executable '
+        '(may define additional environment variables or a wrapper that takes '
+        'all arguments, see catalo/wscript)',
         '',))
     self.parser.get_usage = _usage
 
