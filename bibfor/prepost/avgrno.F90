@@ -82,7 +82,7 @@ subroutine avgrno(vwork, tdisp, lisnoe, nbnot, nbordr,&
 !-----------------------------------------------------------------------
     integer :: i, ibid, jvectn, jvectu, jvectv
     integer :: jcnrd, jcnrl, jcnrv, iret, icesd, icesl, icesv
-    integer :: tneces, tdisp2, jvecno, n, k
+    integer :: tneces, tdisp2, n, k
     integer :: nunoe, ideb, dim, j, ngam, tab2(18), ifin
     integer :: l, cnbno, ibidno, kwork, somnow, inop
     integer :: nbma, adrma, jtypma
@@ -160,8 +160,6 @@ subroutine avgrno(vwork, tdisp, lisnoe, nbnot, nbordr,&
         vali (2) = tneces
         call u2mesg('F', 'PREPOST5_8', 0, ' ', 2,&
                     vali, 0, 0.d0)
-    else
-        call wkvect('&&AVGRNO.VECTNO', 'V V R', tneces, jvecno)
     endif
 !
     typcha = 'NON_PERIODIQUE'
@@ -328,7 +326,9 @@ subroutine avgrno(vwork, tdisp, lisnoe, nbnot, nbordr,&
 !
     call jedetr('&&AVGRNO.VECT_NORMA')
     call jedetr('&&AVGRNO.VECT_TANGU')
-    call jedetr('&&AVGRNO.VECT_TANGV')
+    call jedetr('&&AVGRNO.VECT_TANGV') 
+
+    call jedetr('&&AVGRNO.CNCINV')
 !
     call jedema()
 end subroutine
