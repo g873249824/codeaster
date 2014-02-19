@@ -93,7 +93,9 @@ subroutine vpmain(modele, mate, cara, xmastr, nbpara)
     lchin(13) = compor
     lpain(14) = 'PCINFDI'
     lchin(14) = chcara(15)
-    nb = 14
+    lpain(15) = 'PABSCUR'
+    lchin(15) = chgeom(1:8)//'.ABS_CURV'
+    nb = 15
     lpaout(1) = 'PMASSINE'
     lchout(1) = chelem
 !
@@ -108,6 +110,7 @@ subroutine vpmain(modele, mate, cara, xmastr, nbpara)
     iorig=0
     icage=0
 !
+    ibid = 0
     call pemica(chelem, mxvale, zmas, 0, ibid,&
                 rbi3, iorig, icage)
     xmastr=zmas(1)

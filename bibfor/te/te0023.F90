@@ -42,9 +42,13 @@ subroutine te0023(option, nomte)
     call jevech('PCAORIE', 'L', iorien)
     call jevech('PSTRX_R', 'E', istrx)
 !
-    if (nomte .eq. 'MECA_POU_D_TGM') then
+    if (nomte .eq. 'MECA_POU_D_TGM' .or. nomte.eq.'MECA_POU_D_EM') then
+        if (nomte.eq.'MECA_POU_D_EM') then
+            npg = 2
+        else
+            npg = 3
+        endif
         ncomp = 18
-        npg = 3
         do 3 kpg = 1, npg
             do 2 i = 1, 15
                 zr(istrx-1+ncomp*(kpg-1) +i) = 0.d0
@@ -53,24 +57,10 @@ subroutine te0023(option, nomte)
                 zr(istrx-1+ncomp*(kpg-1)+15+i) = zr(iorien-1+i)
  1          continue
  3      continue
-    else if (nomte.eq.'MECA_POU_D_EM') then
-        ncomp = 15
-!       NCOMP = 18
-        npg = 2
-        do 20 kpg = 1, npg
-            do 10 i = 1, ncomp
-                zr(istrx-1+ncomp*(kpg-1)+i)=0.d0
-10          continue
-!          DO 11 I=1,3
-!            ZR(ISTRX-1+NCOMP*(KPG-1)+15+I) = ZR(IORIEN-1+I)
-! 11       CONTINUE
-20      continue
-    else if (nomte(1:8).eq.'MECA_POU') then
+    else
         do 30 i = 1, 3
             zr(istrx-1+i) = zr(iorien-1+i)
 30      continue
-    else
-        call assert(.false.)
     endif
     call jedema()
 end subroutine

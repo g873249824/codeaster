@@ -5,7 +5,7 @@ subroutine mecalc(option, modele, chdepl, chgeom, chmate,&
                   chdynr, suropt, chelem, chelex, ligrel,&
                   base, ch1, ch2, chvari, compor,&
                   chtese, chdese, nopase, typese, chacse,&
-                  codret)
+                  chstrx, codret)
 ! ----------------------------------------------------------------------
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -73,7 +73,7 @@ subroutine mecalc(option, modele, chdepl, chgeom, chmate,&
     character(len=*) :: chgeom, chmate, chcara(*), chfreq, chmass, chsig, chtemp
     character(len=*) :: chtref, chtime, chnumc, chharm, charge, cheps, chmeta
     character(len=*) :: typcoe, ligrel, base, ch1, ch2, chvari, chacse, chelex
-    character(len=*) :: chdese, chtese, nopase
+    character(len=*) :: chdese, chtese, nopase, chstrx
     real(kind=8) :: alpha, r8b
     complex(kind=8) :: calpha, c16b
     integer :: typese, codret
@@ -136,20 +136,17 @@ subroutine mecalc(option, modele, chdepl, chgeom, chmate,&
             call copisd('CHAM_ELEM_S', 'V', canbva, chele2)
             call detrsd('CHAM_ELEM_S', canbva)
 !
-            else if ((optio2.eq.'EPSI_ELGA') .or. (optio2.eq.'SIEF_ELGA')&
-        .or. (optio2.eq.'STRX_ELGA')) then
+        else if ( (optio2.eq.'EPSI_ELGA') .or. (optio2.eq.'SIEF_ELGA') ) then
             canbsp = '&&'//nompro//'.NBSP'
             call exisd('CHAM_ELEM_S', canbsp, iret1)
             if (iret1 .ne. 1) call cesvar(carel, ' ', ligrel, canbsp)
             call copisd('CHAM_ELEM_S', 'V', canbsp, chele2)
 !
-            else if ((optio2.eq.'SIEQ_ELGA') .or. (optio2.eq.'EPEQ_ELGA'))&
-        then
+        else if ((optio2.eq.'SIEQ_ELGA') .or. (optio2.eq.'EPEQ_ELGA')) then
             canbsp = '&&'//nompro//'.NBSP'
             call exisd('CHAM_ELEM_S', canbsp, iret1)
             if (iret1 .ne. 1) call cesvar(carel, ' ', ligrel, canbsp)
             call copisd('CHAM_ELEM_S', 'V', canbsp, chele2)
-!
         endif
 !
 ! ----------------------------------------------------------------------
@@ -416,6 +413,8 @@ subroutine mecalc(option, modele, chdepl, chgeom, chmate,&
         call ajchca('PVARIGR', chvari, lpain, lchin, nbin,&
                     maxin, 'N')
         call ajchca('PVARIGS', chvari, lpain, lchin, nbin,&
+                    maxin, 'N')
+        call ajchca('PSTRXRR', chstrx, lpain, lchin, nbin,&
                     maxin, 'N')
 !
 !

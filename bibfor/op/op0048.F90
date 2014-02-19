@@ -87,7 +87,7 @@ subroutine op0048()
     character(len=24) :: infoch, criter
     character(len=24) :: chgeom, chcara(18), chharm, chtime
     character(len=24) :: chvarc, chvref, chstru, k24bla, compor
-    complex(kind=8) :: calpha(2)
+    complex(kind=8) :: calpha
     character(len=19) :: force0, force1
 !
     logical :: lamort, lcrea, lprem, exipou
@@ -310,7 +310,7 @@ subroutine op0048()
                     k24bla, k24bla, chstru, k24bla, ligrel,&
                     base, chvarc, chvref, k24bla, compor,&
                     k24bla, k24bla, k8b, ibid, k24bla,&
-                    iret)
+                    k24bla, iret)
 !
         call rsnoch(result, 'STRX_ELGA', iordr)
 !

@@ -64,7 +64,7 @@ subroutine te0535(option, nomte)
     integer :: lx
     real(kind=8) :: pgl(3, 3), fl(nd), klv(nk), sk(nk)
     real(kind=8) :: deplm(12), deplp(12), matsec(6), dege(6)
-    real(kind=8) :: zero, deux
+    real(kind=8) :: zero
     integer :: jdefm, jdefp, jmodfb, jsigfb, nbfib, ncarfi, jacf, nbvalc
     integer :: jtab(7), ivarmp, istrxp, istrxm
     integer :: ip, inbf, jcret, codret, codrep
@@ -75,9 +75,11 @@ subroutine te0535(option, nomte)
     real(kind=8) :: defam(6), defap(6)
     real(kind=8) :: alicom, dalico, ss1, hv, he, minus
     real(kind=8) :: vv(12), fv(12), sv(78), ksg(3)
-    logical :: vecteu, matric
+    real(kind=8) :: gamma, angp(3), sigma(nd), cars1(6)
+    real(kind=8) :: a, xiy, xiz, ey, ez
+    logical :: vecteu, matric, reactu
     character(len=8) :: mator
-    parameter  (zero=0.0d+0,deux=2.d+0)
+    parameter  (zero=0.0d+0)
 !
 ! --- ------------------------------------------------------------------
 !
@@ -154,7 +156,7 @@ subroutine te0535(option, nomte)
 ! --- ------------------------------------------------------------------
 ! --- RECUPERATION DU NOMBRE DE FIBRES TOTAL DE L'ELEMENT
 !     ET DU NOMBRE DE GROUPES DE FIBRES SUR CET ELEMENT
-    nbfib = zi(inbf)    
+    nbfib = zi(inbf)
     nbgf = zi(inbf+1)
 !
 ! --- VERIFICATION QUE C'EST BIEN DES MULTIFIBRES
@@ -200,7 +202,7 @@ subroutine te0535(option, nomte)
     call utpvgl(nno, nc, pgl, zr(ideplp), deplp)
     epsm = (deplm(7)-deplm(1))/xl
 ! --- ON RECUPERE ALPHA MODE INCOMPATIBLE=ALICO
-    alicom=zr(istrxm+15)
+    alicom=zr(istrxm-1+15)
 !
 ! --- MISES A ZERO
     call r8inir(nk, zero, klv, 1)
@@ -275,7 +277,7 @@ subroutine te0535(option, nomte)
 ! --- QUAND ON A CONVERGE SUR ALICO, ON PEUT INTEGRER SUR L'ELEMENT
     do ip = 1, npg
         call pmfpti(ip, zr(ipoids), zr(ivf), xl, xi,&
-                     wi, b, gg)
+                    wi, b, gg)
 ! ---    CALCUL LA MATRICE ELEMENTAIRE (SAUF POUR RAPH_MECA)
         if (option .ne. 'RAPH_MECA') then
             ipomod = jmodfb + nbfib*(ip-1)
@@ -330,20 +332,16 @@ subroutine te0535(option, nomte)
             do 300 i = 0, nbfib-1
                 zr(iposcp+i) = zr(iposig+i)
 300          continue
+!           STOCKAGE DES FORCES INTEGREES
+            zr(istrxp-1+ncomp*(ip-1)+1) = fl(6*(ip-1)+1)
+            zr(istrxp-1+ncomp*(ip-1)+2) = fl(6*(ip-1)+2)
+            zr(istrxp-1+ncomp*(ip-1)+3) = fl(6*(ip-1)+3)
+            zr(istrxp-1+ncomp*(ip-1)+4) = fl(6*(ip-1)+4)
+            zr(istrxp-1+ncomp*(ip-1)+5) = fl(6*(ip-1)+5)
+            zr(istrxp-1+ncomp*(ip-1)+6) = fl(6*(ip-1)+6)
+            zr(istrxp-1+ncomp*(ip-1)+15)= alicom+dalico
 310      continue
         call utpvlg(nno, nc, pgl, fl, zr(ivectu))
-!
-! ---    STOCKE LES FORCES INTEGREES POUR EVITER DES CALCULS PLUS TARD
-!        NX=FL(7), TY=FL(8), TZ=FL(9), MX=FL(10)
-!        MY=(FL(11)-FL(5))/DEUX, MZ=(FL(12)-FL(6))/DEUX
-        zr(istrxp-1+1) = fl(7)
-        zr(istrxp-1+2) = fl(8)
-        zr(istrxp-1+3) = fl(9)
-        zr(istrxp-1+4) = fl(10)
-        zr(istrxp-1+5) = (fl(11)-fl(5))/deux
-        zr(istrxp-1+6) = (fl(12)-fl(6))/deux
-!        ON STOCKE LE ALPHA MODE INCOMPATIBLE
-        zr(istrxp+15)=alicom+dalico
     endif
 !
 900  continue
