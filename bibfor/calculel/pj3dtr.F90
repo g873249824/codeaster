@@ -68,14 +68,14 @@ subroutine pj3dtr(cortr3, corres, nutm3d, elrf3d, geom1,&
     integer :: j1xxk1, i1conb, i1conu, i1cocf, i1cotr, nno1, ie, nno2
     integer :: nma1, nma2, ialim1, ialin1, ialin2, iatr3, iacnx1, ilcnx1, iatyma
     integer :: j2xxk1, i2conb, i2com1, ideca2, ino2, itr, ima1, nbno, i2conu
-    integer :: i2cocf, i2coco, ideca1, itypm, nutm, ityp, ndim, nno
-    integer :: nnos, nbfpg, kk, ino, nuno, kdim, iret, ibid
+    integer :: i2cocf, i2coco, ideca1, itypm, nutm, ityp, ndim, nno, kdim
+    integer :: nnos, nbfpg, kk, ino, nuno, iret, ibid
     integer :: iarg
 !
     integer :: nbmax
     parameter  (nbmax=5)
     integer :: tino2m(nbmax), nbnod, nbnodm, ii, ino2m
-    real(kind=8) :: tdmin2(nbmax), umessr(4), disprj
+    real(kind=8) :: tdmin2(nbmax), umessr(4), disprj, distv
     character(len=8) :: nono2
     logical :: loin2
 ! --- DEB --------------------------------------------------------------
@@ -210,6 +210,8 @@ subroutine pj3dtr(cortr3, corres, nutm3d, elrf3d, geom1,&
 !
     loin2 = .false.
     nbnod = 0
+    tdmin2(:)=0.d0
+    tino2m(:)=0
     nbnodm = 0
 !     2.2 ALLOCATION DE .PJEF_NU .PJEF_CF .PJEF_CO:
 !         (ET REMPLISSAGE DE CES 3 OBJETS)
@@ -294,9 +296,8 @@ subroutine pj3dtr(cortr3, corres, nutm3d, elrf3d, geom1,&
         xr1(2) = eta
         xr1(3) = dzeta
 !
-!       -- ON ESSAYE D'AMELIORER LA PRECISION DE XR1(*)
-!          EN UTILISANT REEREG :
-        do ino=1,nbno
+!       -- on essaye d'ameliorer la precision de xr1(*) en utilisant reereg :
+        do ino = 1, nbno
             nuno = zi(iacnx1+ zi(ilcnx1-1+ima1)-2+ino)
             do kdim=1,ndim
                 cooele(ndim*(ino-1)+kdim)=geom1(3*(nuno-1)+kdim)
@@ -305,26 +306,28 @@ subroutine pj3dtr(cortr3, corres, nutm3d, elrf3d, geom1,&
         call reereg('C', elrefa, nno, cooele, geom2(3*(ino2-1)+1),&
                     ndim, xr2, iret)
 !
-!        -- ON REGARDE SI INO2 EST EXTERIEUR A IMA1 :
+!       -- on regarde si ino2 est exterieur a ima1 :
         call pjeflo(elrefa, ndim, iret, xr2, disprj)
-        call inslri(nbmax, nbnod, tdmin2, tino2m, disprj,&
-                    ino2)
         lext= (disprj.gt.1.0d-02)
-        if (disprj .gt. 1.0d-01) then
+!
+!       -- on choisit la meilleure approximation entre xr1 et xr2:
+        call pjefmi(elrefa, nno, cooele, geom2(3*(ino2-1)+1), ndim,&
+                    xr1, xr2, lext, xr3, distv)
+
+        if (nint(disprj).eq.999) then
+            loin2=.true.
+        else if (disprj .gt. 1.0d-01) then
             loin2=.true.
             nbnodm = nbnodm + 1
+            call inslri(nbmax, nbnod, tdmin2, tino2m, distv,ino2)
         endif
-!
-!       -- ON CHOISIT LA MEILLEURE APPROXIMATION ENTRE XR1 ET XR2:
-        call pjefmi(elrefa, nno, cooele, geom2(3*(ino2-1)+1), ndim,&
-                    xr1, xr2, lext, xr3)
 !
         zr(i2coco-1+3*(ino2-1)+1)=xr3(1)
         zr(i2coco-1+3*(ino2-1)+2)=xr3(2)
         zr(i2coco-1+3*(ino2-1)+3)=xr3(3)
 !
 !       2.2.2 :
-!       CALCUL DES F. DE FORME AUX NOEUDS POUR LE POINT KSI,ETA,DZETA:
+!       calcul des f. de forme aux noeuds pour le point ksi,eta,dzeta:
 !       --------------------------------------------------------------
         call elrfvf(elrefa, xr3, 27, ff, nno)
 !
@@ -338,8 +341,8 @@ subroutine pj3dtr(cortr3, corres, nutm3d, elrf3d, geom1,&
         ideca2=ideca2+nbno
 20      continue
     enddo
-!
-!     -- EMISSION D'UN EVENTUEL MESSAGE D'ALARME:
+!   -- emission d'un eventuel message d'alarme:
+!   --------------------------------------------
     if (loin2) then
         alarme='OUI'
         call getres(k16bid, k16bid, nomcmd)
@@ -358,9 +361,8 @@ subroutine pj3dtr(cortr3, corres, nutm3d, elrf3d, geom1,&
                 call u2mesg('I', 'CALCULEL5_43', 1, nono2, 0,&
                             0, 4, umessr)
             enddo
-            call jenuno(jexnum(m2//'.NOMNOE', tino2m(1)), nono2)
-            call u2mesg('A', 'CALCULEL5_48', 1, nono2, 1,&
-                        nbnodm, 1, tdmin2(1))
+            call u2mesg('A', 'CALCULEL5_48', 0, nono2, 1,&
+                        nbnodm, 0, 0.d0)
         endif
     endif
 !
