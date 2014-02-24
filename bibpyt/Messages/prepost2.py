@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -38,6 +37,13 @@ On ne sait pas écrire des champs par élément aux points de gauss au format CA
 
 5 : _(u"""
  Le mot-clé RESTREINT n'est pas autorisé dans EXTR_RESU en reuse.
+"""),
+
+6 : _(u"""
+  Aucune maille n'a été trouvée avec le critère donné.
+
+Conseil :
+  Il faut vérifier votre critère ou le supprimer.
 """),
 
 35 : _(u"""

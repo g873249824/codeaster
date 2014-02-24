@@ -68,7 +68,7 @@ subroutine penorm(resu, modele)
     integer :: ibid, iret, nbmato, nr, nd, np, nc, ni, no, nli, nlo, nco
     integer :: jno, jin, jcoef, jco
     integer :: nbpar, nbpmax, inum, numo, iresma, nbordr, jlicmp, jlicm1, jma
-    integer :: nn
+    integer :: nn, nbmaf
     integer :: jlicm2, i, nncp, nbma, jvalk, jvalr, jvali, ncmpm, ncp, ifm, niv
     integer :: jlicmx, nb30, ncmpt, nbcoef
     parameter(nbpmax=13,nb30=30)
@@ -339,9 +339,14 @@ subroutine penorm(resu, modele)
                 call assert(.false.)
             endif
             call utflmd(mailla, mesmai, nbma, iresma, ' ',&
-                         nbma, mesmaf)
-            call jedetr(mesmai)
-            mesmai=mesmaf
+                        nbmaf, mesmaf)
+            if (nbmaf .gt. 0) then
+                call jedetr(mesmai)
+                nbma = nbmaf
+                mesmai = mesmaf
+            else
+                call u2mess('F', 'PREPOST2_6')
+            endif    
         else
             infoma='-'
         endif
