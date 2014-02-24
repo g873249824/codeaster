@@ -59,13 +59,17 @@ subroutine irchme(ifichi, chanom, partie, nochmd, noresu,&
 ! 0.1. ==> ARGUMENTS
 !
 #include "jeveux.h"
-!
 #include "asterc/utflsh.h"
+#include "asterfort/assert.h"
+#include "asterfort/dismoi.h"
 #include "asterfort/infniv.h"
 #include "asterfort/irceme.h"
 #include "asterfort/ircnme.h"
 #include "asterfort/irvari.h"
+#include "asterfort/jedetr.h"
 #include "asterfort/jeexin.h"
+#include "asterfort/jelira.h"
+#include "asterfort/jexnum.h"
 #include "asterfort/jenonu.h"
 #include "asterfort/jeveuo.h"
 #include "asterfort/jexnom.h"
@@ -73,13 +77,14 @@ subroutine irchme(ifichi, chanom, partie, nochmd, noresu,&
 #include "asterfort/u2mesg.h"
 #include "asterfort/u2mesk.h"
 #include "asterfort/u2mess.h"
-    character(len=8) :: noresu, typech, sdcarm
+#include "asterfort/wkvect.h"
+    character(len=8) :: noresu, typech, sdcarm, k8b
     character(len=16) :: nomsym
-    character(len=19) :: chanom
+    character(len=19) :: chanom, ligrel
     character(len=24) :: nocelk
     character(len=*) :: nomcmp(*), partie
 !
-    integer :: numord, nbrcmp, ifichi, iret
+    integer :: numord, nbrcmp, ifichi, iret, ie, ibid
     integer :: nbnoec, nbmaec, icelk
     integer :: linoec(*), limaec(*)
 !
@@ -96,10 +101,10 @@ subroutine irchme(ifichi, chanom, partie, nochmd, noresu,&
     integer :: ednopt
     parameter (ednopt=-1)
 !
-    integer :: ifm, nivinf, numpt, iaux
+    integer :: ifm, nivinf, numpt, iaux, nbgrel, jmaille, j1, n1
+    integer :: nbma,igr,iel,ite,ima
 !
-    character(len=8) :: saux08, modele
-    character(len=24) :: valk(1)
+    character(len=8) :: saux08, modele, ma
     character(len=64) :: nochmd
 !
     real(kind=8) :: instan
@@ -181,7 +186,7 @@ subroutine irchme(ifichi, chanom, partie, nochmd, noresu,&
 !
     endif
 !
-! 1.3. ==> NOM DU MODELE ASSOCIE, DANS LE CAS D'UNE STRUCTURE RESULTAT
+! 1.3. ==> recherche du nom du modele (pour les champs ELGA) :
 !
     if (codret .eq. 0) then
 !
@@ -201,16 +206,27 @@ subroutine irchme(ifichi, chanom, partie, nochmd, noresu,&
                 endif
             endif
             if (iret .eq. 0) then
-                valk (1) = chanom
-                call u2mesg('F', 'MED_82', 1, valk, 0,&
-                            0, 0, 0.d0)
+!               -- on n'a pas trouve de modele, on va en construire un "faux".
+!               -- le seul objet a creer est .MAILLE
+                modele='&&IRCHME'
+                call dismoi('F','NOM_MAILLA', chanom, 'CHAMP', ibid, ma, ie)
+                call dismoi('F','NB_MA_MAILLA', ma, 'MAILLAGE', nbma, k8b, ie)
+                call wkvect('&&IRCHME.MAILLE','V V I',nbma,jmaille)
+                ligrel = zk24(icelk)(1:19)
+                call jelira(ligrel//'.LIEL', 'NUTIOC', nbgrel, k8b)
+                do igr = 1, nbgrel
+                    call jelira(jexnum(ligrel//'.LIEL', igr), 'LONMAX', n1, k8b)
+                    call jeveuo(jexnum(ligrel//'.LIEL', igr), 'L', j1)
+                    ite=zi(j1-1+n1)
+                    do iel = 1, n1-1
+                        ima=zi(j1-1+iel)
+                        call assert(ima.ge.0 .and. ima.le.nbma)
+                        if (ima.gt.0) zi(jmaille-1+ima)=ite
+                    end do
+                end do
             endif
         endif
 !
-        if (nivinf .gt. 1) then
-            write (ifm,13001) modele
-            13001 format(2x,'MODELE ASSOCIE AU CHAMP : ',a)
-        endif
     endif
 !
 !====
@@ -266,5 +282,7 @@ subroutine irchme(ifichi, chanom, partie, nochmd, noresu,&
         call utflsh(codret)
         write (ifm,10001)
     endif
+
+    call jedetr('&&IRCHME.MAILLE')
 !
 end subroutine
