@@ -76,7 +76,7 @@ subroutine spect1(casint, nomu, spectr, ispect, base,&
     character(len=24) :: chvale
     character(len=3) :: tout
     real(kind=8) :: rbid, valx(3)
-    integer :: iarg, mxval, lnumi, lnumj, num, ij
+    integer :: iarg, ij
 !-----------------------------------------------------------------------
     integer :: i, ic, icha, ide, ideb, idefm, idep
     integer :: ier, ifre, ifsic, ifsvi, ifsvk, ii, ik
@@ -283,10 +283,6 @@ subroutine spect1(casint, nomu, spectr, ispect, base,&
 !
 ! --- 6.2.BOUCLE POUR CHAQUE VITESSE
 !
-    call jelira(nomu//'.NUMI', 'LONMAX', mxval, k8bid)
-    call jeveuo(nomu//'.NUMI', 'L', lnumi)
-    call jeveuo(nomu//'.NUMJ', 'L', lnumj)
-!
     vitezi = vite*vmoyzi/vmoyto
 !
 ! --- 6.2.1.RECUPERATION DE LA DISCRETISATION FREQUENTIELLE
@@ -384,14 +380,12 @@ subroutine spect1(casint, nomu, spectr, ispect, base,&
 !
     chvale = nomu//'.VALE'
 !
+    ij = 0
     do 170 im2 = imodi, imodf
         ideb = im2
         if (casint) ideb = imodi
         do 160 im1 = ideb, im2
-            ij = 0
-            do 161 num = 1, mxval
-                if ((zi(lnumi-1+num) .eq. im2) .and. (zi(lnumj-1+num) .eq. im1)) ij = num
-161          continue
+            ij = ij + 1
             call jeveuo(jexnum(chvale, ij), 'E', ivale)
             call jelira(jexnum(chvale, ij), 'LONMAX', nbval, k8bid)
 !
