@@ -111,7 +111,7 @@ subroutine nmconv(noma, modele, mate, numedd, sdnume,&
     logical :: lreli, lnkry, lfeti, limpex, lcont
     integer :: iret
     real(kind=8) :: r8bid
-    real(kind=8) :: resigr, pasmin
+    real(kind=8) :: resi_glob_rela, resi_glob_maxi, pasmin
     real(kind=8) :: instam, instap
     character(len=24) :: critfe
     integer :: jcrit
@@ -140,7 +140,8 @@ subroutine nmconv(noma, modele, mate, numedd, sdnume,&
     itemax = .false.
     lerror = .false.
     cvnewt = .false.
-    resigr = parcri(2)
+    resi_glob_maxi = parcri(1)
+    resi_glob_rela = parcri(2)
     pasmin = parmet(3)
     vrela = r8vide()
     vmaxi = r8vide()
@@ -215,10 +216,10 @@ subroutine nmconv(noma, modele, mate, numedd, sdnume,&
 ! --- CALCUL DES RESIDUS
 !
     call nmresi(noma, mate, numedd, sdnume, fonact,&
-                sddyna, sdconv, sdimpr, defico, resoco,&
-                matass, numins, conv, resigr, eta,&
-                comref, valinc, solalg, veasse, measse,&
-                vrela, vmaxi, vchar, vresi, vrefe,&
+                sddyna, sdconv, sdimpr, defico, resoco, &
+                matass, numins, conv, resi_glob_rela, resi_glob_maxi, eta, &
+                comref, valinc, solalg, veasse, measse, &
+                vrela, vmaxi, vchar, vresi, vrefe, &
                 vinit, vcomp, vfrot, vgeom)
 !
 ! --- VERIFICATION DES CRITERES D'ARRET SUR RESIDUS
