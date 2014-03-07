@@ -1,5 +1,7 @@
 subroutine apmain(action, kptsc, rsolu, vcine, istop,&
                   iret)
+    implicit none
+! person_in_charge: thomas.de-soza at edf.fr
 !
 ! COPYRIGHT (C) 1991 - 2013  EDF R&D                WWW.CODE-ASTER.ORG
 !
@@ -17,35 +19,6 @@ subroutine apmain(action, kptsc, rsolu, vcine, istop,&
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 ! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 !
-    implicit none
-! person_in_charge: thomas.desoza at edf.fr
-#include "asterf_config.h"
-#include "jeveux.h"
-#include "asterc/matfpe.h"
-#include "asterfort/apalmc.h"
-#include "asterfort/apalmd.h"
-#include "asterfort/apksp.h"
-#include "asterfort/apmamc.h"
-#include "asterfort/apmamd.h"
-#include "asterfort/appcpr.h"
-#include "asterfort/appcrs.h"
-#include "asterfort/apsolu.h"
-#include "asterfort/apvsmb.h"
-#include "asterfort/assert.h"
-#include "asterfort/comcou.h"
-#include "asterfort/csmbgg.h"
-#include "asterfort/detrsd.h"
-#include "asterfort/infniv.h"
-#include "asterfort/jedema.h"
-#include "asterfort/jeexin.h"
-#include "asterfort/jelira.h"
-#include "asterfort/jemarq.h"
-#include "asterfort/jeveuo.h"
-#include "asterfort/mrconl.h"
-#include "asterfort/mtdscr.h"
-#include "asterfort/u2mesi.h"
-#include "asterfort/u2mesr.h"
-#include "asterfort/u2mess.h"
     character(len=*) :: action
     integer :: kptsc
     real(kind=8) :: rsolu(*)
@@ -69,6 +42,34 @@ subroutine apmain(action, kptsc, rsolu, vcine, istop,&
 ! IN  : ISTOP (I)  : COMPORTEMENT EN CAS D'ERREUR
 ! OUT : IRET  (I)  : CODE RETOUR
 !---------------------------------------------------------------
+#include "asterf_config.h"
+#include "jeveux.h"
+#include "asterc/matfpe.h"
+#include "asterfort/apalmc.h"
+#include "asterfort/apalmd.h"
+#include "asterfort/apksp.h"
+#include "asterfort/apmamc.h"
+#include "asterfort/apmamd.h"
+#include "asterfort/appcpr.h"
+#include "asterfort/appcrs.h"
+#include "asterfort/apsolu.h"
+#include "asterfort/apvsmb.h"
+#include "asterfort/assert.h"
+#include "asterfort/comcou.h"
+#include "asterfort/csmbgg.h"
+#include "asterfort/detrsd.h"
+#include "asterfort/filter_smd.h" 
+#include "asterfort/infniv.h"
+#include "asterfort/jedema.h"
+#include "asterfort/jeexin.h"
+#include "asterfort/jelira.h"
+#include "asterfort/jemarq.h"
+#include "asterfort/jeveuo.h"
+#include "asterfort/mrconl.h"
+#include "asterfort/mtdscr.h"
+#include "asterfort/u2mesi.h"
+#include "asterfort/u2mesr.h"
+#include "asterfort/u2mess.h"
 !
 #ifdef _HAVE_PETSC
 #include "aster_petsc.h"
@@ -175,9 +176,11 @@ subroutine apmain(action, kptsc, rsolu, vcine, istop,&
 !        -- MISE A L'ECHELLE DES LAGRANGES DANS LE SECOND MEMBRE
         call mtdscr(nomat)
         call jeveuo(nomat//'.&INT', 'L', lmat)
-        call mrconl('MULT', lmat, 0, 'R', rsolu,&
-                    1)
+        call mrconl('MULT', lmat, 0, 'R', rsolu, 1)
 !
+!        -- MISE A ZERO DES TERMES NON CINEMATIQUES DONT LE PROC 
+!           COURANT N'EST PAS SEUL PROPRIETAIRE 
+        call filter_smd(nomat, rsolu)
 !        -- PRISE EN COMPTE DES CHARGES CINEMATIQUES :
         call jeexin(vcine//'.VALE', ierd)
         if (ierd .ne. 0) then
