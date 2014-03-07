@@ -66,10 +66,10 @@ subroutine penorm(resu, modele)
 !     ------------------------------------------------------------------
 !
     integer :: ibid, iret, nbmato, nr, nd, np, nc, ni, no, nli, nlo, nco
-    integer :: jno, jin, jcoef, jco
+    integer :: jno, jin, jcoef
     integer :: nbpar, nbpmax, inum, numo, iresma, nbordr, jlicmp, jlicm1, jma
     integer :: nn, nbmaf
-    integer :: jlicm2, i, nncp, nbma, jvalk, jvalr, jvali, ncmpm, ncp, ifm, niv
+    integer :: jlicm2, i, nncp, nbma, jvalk, jvalr, jvali, ncmpm, ifm, niv
     integer :: jlicmx, nb30, ncmpt, nbcoef
     parameter(nbpmax=13,nb30=30)
     real(kind=8) :: r8b, prec, inst, vnorm(1)
