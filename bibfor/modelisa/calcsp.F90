@@ -122,9 +122,9 @@ subroutine calcsp(casint, nomu, table, freq, masg,&
     do 25 im = imod1, imodf
         fri = freq(2*nbm*(iv-1)+2*(im-1)+1)
         if (fri .lt. 0.d0) then
-            vali(1) = iv
-            vali(2) = nuor(im)
-            call u2mesi('A', 'MODELISA2_90', 2, vali)
+            vali(1) = nuor(im)
+            vali(2) = iv
+            call u2mesi('F', 'MODELISA2_90', 2, vali)
             goto 20
         endif
 25  continue
