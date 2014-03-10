@@ -33,7 +33,6 @@ subroutine te0027(option, nomte)
 !
 ! ----------------------------------------------------------------------
 ! CORPS DU PROGRAMME
-! aslint: disable=W1501
     implicit none
 !
 ! DECLARATION PARAMETRES D'APPELS
@@ -58,7 +57,7 @@ subroutine te0027(option, nomte)
 !
 !
 ! DECLARATION VARIABLES LOCALES
-    integer :: ipoids, ivf, idfde
+    integer :: ipoids, ivf, idfde, ibid
     integer :: icomp, igeom, itemps, idepl, imate
     integer :: iepsr, iepsf, isigi, isigm, iepsp, ivari
     integer :: iforc, iforf, ithet, igthet, irota, ipesa, ier
@@ -73,7 +72,7 @@ subroutine te0027(option, nomte)
     real(kind=8) :: sigl(6), sigin(6), dsigin(6, 3)
     real(kind=8) :: thet, tgdm(3), tgd(20)
     real(kind=8) :: prod, prod1, prod2, divt, valpar(4)
-    real(kind=8) :: tcla, tthe, tfor, tplas, tini, poids, rbid
+    real(kind=8) :: tcla, tthe, tfor, tplas, tini, poids, rbid,dsidep(6,6)
     real(kind=8) :: dudm(3, 4), dfdm(3, 4), dtdm(3, 4), der(4), dvdm(3, 4)
     real(kind=8) :: p, ppg, dpdm(3), rp, energi(2), rho, om, omo
     real(kind=8) :: ecin, prod3, prod4, accele(3), e, nu, mu
@@ -431,9 +430,10 @@ subroutine te0027(option, nomte)
             crit(1) = 300
             crit(2) = 0.d0
             crit(3) = 1.d-3
-            call nmelnl(fami, kp, 1, '+', ndim,&
+
+            call nmelnl(fami, kp, 1,ibid, '+',  ndim,&
                         typmod, matcod, compor, crit, oprupt,&
-                        eps, sigl, rbid, rbid, energi)
+                        eps, sigl, rbid, dsidep, energi)
             call tecach('NNN', 'PCONTGR', 'L', 1, isigm,&
                         iret)
             if (iret .eq. 0) then
@@ -549,6 +549,7 @@ subroutine te0027(option, nomte)
 550      continue
         prod = prod - ecin*divt + prod3 - prod4
         tcla = tcla + poids* (prod-energi(1)*divt)
+
 !
 ! =======================================================
 ! - TERME THERMIQUE :   -(D(ENER)/DT)(GRAD(T).THETA)
@@ -620,5 +621,6 @@ subroutine te0027(option, nomte)
 9999  continue
 ! ASSEMBLAGE FINAL DES TERMES DE G OU DG
     zr(igthet) = tthe + tcla + tfor + tplas + tini
+
     call jedema()
 end subroutine

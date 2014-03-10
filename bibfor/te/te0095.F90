@@ -62,7 +62,7 @@ subroutine te0095(option, nomte)
     real(kind=8) :: vaparu(4), vaparv(4)
     real(kind=8) :: gelem, guv3, g, poids, puls
     real(kind=8) :: tgudm(3), tgvdm(3)
-    real(kind=8) :: rho, om, omo
+    real(kind=8) :: rho, om, omo, coef
 !
     integer :: jgano, ipoids, ivf, idfde, nno, kp, npg1, compt
     integer :: igeom, ithet, ific, idepu, idepv
@@ -345,9 +345,10 @@ subroutine te0095(option, nomte)
 ! PAS DE TERME DYNAMIQUE DANS GBIL
         puls = 0.d0
         rho = 0.d0
+        coef = 2.d0
         call gbil3d(dudm, dvdm, dtdm, dfudm, dfvdm,&
                     tgudm, tgvdm, ttrgu, ttrgv, poids,&
-                    c1, c2, c3, k3a, rho,&
+                    c1, c2, c3, k3a, alpha, coef, rho,&
                     puls, gelem)
         guv3 = guv3 + gelem
 90  end do

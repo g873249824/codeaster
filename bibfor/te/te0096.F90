@@ -58,7 +58,7 @@ subroutine te0096(option, nomte)
 !
 ! DECLARATION VARIABLES LOCALES
 !
-    integer :: icodre, kpg, spt
+    integer :: icodre, kpg, spt, ibid
     character(len=4) :: fami
     character(len=8) :: nompar(3), typmod(2), famil, poum
     character(len=16) :: compor(4), oprupt, phenom
@@ -69,7 +69,7 @@ subroutine te0096(option, nomte)
     real(kind=8) :: eps(6), epsin(6), depsin(6, 3), epsp(6), depsp(6, 3)
     real(kind=8) :: epsino(36), fno(18)
     real(kind=8) :: thet, tn(20), tgdm(3), prod, prod1, prod2, divt
-    real(kind=8) :: valpar(3), tcla, tthe, tfor, tplas, tini, poids, r, rbid
+    real(kind=8) :: valpar(3), tcla, tthe, tfor, tplas, tini, poids, r, rbid, dsidep(6,6)
     real(kind=8) :: p, ppg, dpdm(3), rp, energi(2), rho, om, omo
     real(kind=8) :: dtdm(3, 5), der(6), dfdm(3, 5), dudm(3, 4), dvdm(3, 4)
     real(kind=8) :: vepscp
@@ -489,9 +489,9 @@ subroutine te0096(option, nomte)
             crit(1) = 300
             crit(2) = 0.d0
             crit(3) = 1.d-3
-            call nmelnl(fami, kp, 1, '+', ndim,&
+            call nmelnl(fami, kp, 1, ibid, '+', ndim,&
                         typmod, matcod, compor, crit, oprupt,&
-                        eps, sigl, rbid, rbid, energi)
+                        eps, sigl, rbid, dsidep, energi)
 !
             call tecach('NNN', 'PCONTGR', 'L', 1, isigm,&
                         iret)

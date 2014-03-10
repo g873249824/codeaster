@@ -16,13 +16,14 @@
 ! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 !
 interface
-    subroutine nmelru(fami, kpg, ksp, poum, imate,&
+    subroutine nmelru(fami, kpg, ksp, idecpg, poum, imate,&
                       compor, epseq, p, divu, nonlin,&
                       ener)
         character(*) :: fami
         integer :: kpg
         integer :: ksp
-        character(*) :: poum
+        integer :: idecpg
+        character(len=*) :: poum
         integer :: imate
         character(len=16) :: compor(*)
         real(kind=8) :: epseq

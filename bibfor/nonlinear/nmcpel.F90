@@ -87,9 +87,9 @@ subroutine nmcpel(fami, kpg, ksp, poum, ndim,&
         else if (compor(1)(1:5) .eq. 'ELAS ' .or. compor(1)(1:14) .eq.&
     'ELAS_VMIS_LINE' .or. compor(1)(1:14) .eq. 'ELAS_VMIS_PUIS' .or.&
     compor(1)(1:14) .eq. 'ELAS_VMIS_TRAC' ) then
-        call nmelnl(fami, kpg, ksp, poum, ndim,&
+        call nmelnl(fami, kpg, ksp, 0, poum, ndim,&
                     typmod, imate, compor, crit, option,&
-                    eps, sig, vi, dsidep, energi)
+                    eps, sig, vi(1), dsidep, energi)
 !
 !    LOI ELASTIQUE POUR MODELE SIGNORINI
     else if (compor(1)(1:10).eq. 'ELAS_HYPER') then
