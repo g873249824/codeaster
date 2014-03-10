@@ -27,6 +27,7 @@ subroutine nmdecc(nomlis, linfo, optdez, deltat, instam,&
 #include "asterfort/assert.h"
 #include "asterfort/jedema.h"
 #include "asterfort/jemarq.h"
+#include "asterfort/u2mess.h"
 #include "asterfort/u2mesg.h"
 #include "asterfort/wkvect.h"
     character(len=*) :: optdez
@@ -82,7 +83,7 @@ subroutine nmdecc(nomlis, linfo, optdez, deltat, instam,&
 !
 !
     real(kind=8) :: inst, pasdt, premie, suivan, valr(3)
-    integer :: ipas, jinst
+    integer :: ipas, jinst, ibid
     character(len=16) :: k16bid, optdec
 !
 ! ----------------------------------------------------------------------
@@ -111,7 +112,7 @@ subroutine nmdecc(nomlis, linfo, optdez, deltat, instam,&
             premie = ratio*deltat
             suivan = ((1.d0-ratio)*deltat)/(nbrpas-1)
             if (premie .le. r8prem() .or. suivan .le. r8prem()) then
-                retdec = 2
+                retdec = 0
                 goto 99
             endif
         else if (typdec.eq.'DELT') then
@@ -124,7 +125,7 @@ subroutine nmdecc(nomlis, linfo, optdez, deltat, instam,&
             premie = ((1.d0-ratio)*deltat)/(nbrpas-1)
             suivan = ratio*deltat
             if (premie .le. r8prem() .or. suivan .le. r8prem()) then
-                retdec = 2
+                retdec = 0
                 goto 99
             endif
         else if (typdec.eq.'DELT') then
@@ -134,7 +135,7 @@ subroutine nmdecc(nomlis, linfo, optdez, deltat, instam,&
             premie = deltac
             suivan = deltat-(nbrpas-1)*deltac
             if (premie .le. r8prem() .or. suivan .le. r8prem()) then
-                retdec = 2
+                retdec = 0
                 goto 99
             endif
         else
@@ -217,6 +218,12 @@ subroutine nmdecc(nomlis, linfo, optdez, deltat, instam,&
     endif
 !
 99  continue
+!
+    if (retdec.eq.0) then
+        call u2mess('I', 'SUBDIVISE_50')
+        call u2mesg('I', 'SUBDIVISE_53', 0, k16bid, 0,&
+                    ibid, 1, premie)
+    endif
 !
     call jedema()
 !
