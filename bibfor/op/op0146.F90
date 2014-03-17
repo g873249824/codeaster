@@ -48,6 +48,7 @@ subroutine op0146()
 #include "asterfort/titre.h"
 #include "asterfort/u2mesk.h"
 #include "asterfort/u2mess.h"
+#include "asterfort/u2mesg.h"
 #include "asterfort/wkvect.h"
     integer :: lvmoy, n1, n2, nb, nbm
     integer :: dim, ij, nbabs
@@ -182,13 +183,16 @@ subroutine op0146()
         call getvr8(' ', 'PRECISION', 0, iarg, 1,&
                     epsi, ibid)
 !
-        ivitef = 1
+        ivitef = 0
         do 300 i3 = 1, npv
             val = zr(ivite-1+i3)-vitef
             if (abs(val) .lt. epsi) then
                 ivitef = i3
             endif
 300      continue
+        if (ivitef .eq. 0) then
+            call u2mesg('F', 'ALGELINE3_25', 0, k8b, 0, ibid, 1, vitef)
+        endif
 !
         call jeveuo(freq, 'L', ifreq)
         call jelira(freq, 'LONUTI', nbm, k8b)
