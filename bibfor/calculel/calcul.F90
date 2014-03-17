@@ -1,7 +1,7 @@
 subroutine calcul(stop, optio, ligrlz, nin, lchin,&
                   lpain, nou, lchou, lpaou, base,&
                   mpic)
-! aslint: disable=W1306,W1501
+! aslint: disable=W1306
     implicit none
 !
 ! ======================================================================
@@ -426,8 +426,7 @@ subroutine calcul(stop, optio, ligrlz, nin, lchin,&
 !     -------------------------------------------------
     call alrslt(opt, ligrel, nou2, lchou2, lpaou2,&
                 base2, ldist, lfeti)
-    call alchlo(opt, ligrel, nin2, lpain2, lchin2,&
-                nou2, lpaou2)
+    call alchlo(opt, ligrel, nin2, lpain2, nou2, lpaou2)
 !
 !     5- AVANT BOUCLE SUR LES GREL :
 !     QUELQUES ACTIONS HORS BOUCLE GREL DUES A CALVOI==1 :

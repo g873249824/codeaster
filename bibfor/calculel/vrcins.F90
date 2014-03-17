@@ -16,9 +16,8 @@ subroutine vrcins(modelz, chmatz, carelz, inst, chvarc,&
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 !   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 ! ======================================================================
-    implicit   none
+    implicit none
 #include "jeveux.h"
-!
 #include "asterc/r8nnem.h"
 #include "asterfort/assert.h"
 #include "asterfort/cescel.h"
@@ -32,6 +31,8 @@ subroutine vrcins(modelz, chmatz, carelz, inst, chvarc,&
 #include "asterfort/u2mesk.h"
 #include "asterfort/vrcin1.h"
 #include "asterfort/vrcin2.h"
+#include "asterfort/detrsd.h"
+!
     character(len=2) :: codret
     character(len=19) :: chvarc
     character(len=*) :: chmatz, carelz, modelz
@@ -69,6 +70,7 @@ subroutine vrcins(modelz, chmatz, carelz, inst, chvarc,&
     chmat=chmatz
     carele=carelz
     modele=modelz
+    call detrsd('CHAM_ELEM', chvarc)
 !
 !
     call jeexin(chmat//'.CVRCVARC', iret)
@@ -120,7 +122,7 @@ subroutine vrcins(modelz, chmatz, carelz, inst, chvarc,&
     5 end do
 !
     do 1, ichs=1,nbchs
-    chs=zk24(jlisch-1+ichs)
+    chs=zk24(jlisch-1+ichs)(1:19)
     varc1=zk16(jlissd-1+7*(ichs-1)+4)(1:8)
     call jeveuo(chs//'.CESD', 'L', jcesd)
     call jeveuo(chs//'.CESL', 'L', jcesl)
