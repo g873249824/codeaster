@@ -70,7 +70,7 @@ subroutine pmfd00()
     integer :: nbocc0, nbocc1, nbocc2, nbocc3, nbocc4
     integer :: iret, ibid, ifm, niv, iarg, iasbon, iasedi, iasmax
     integer :: nbvm, nmailp, numail, nbfib, icode, igrand, ima, inomcp
-    integer :: ii, jj, ioc, ipos, icmp, ier, izone, nbcmp, nbec
+    integer :: ii, jj, ioc, ipos, ier, izone, nbcmp, nbec
     integer :: ira1, iriy1, iriz1, irva1, irviy1, irviz1
     integer :: jdnm, jnf, jmp
     integer :: jnbfg, nbgf, jngf, jcarfi, jpoint, ipoint, ngf, ig, ng, ig1
@@ -181,7 +181,7 @@ subroutine pmfd00()
                 k8b, ier)
 !
     valmi = 0
-    do 100 ioc = 1, nbocc0
+    do ioc = 1, nbocc0
         do 110 ig = 1, ngmxel
             nugrp(ig)=0
 110      continue
@@ -342,7 +342,7 @@ subroutine pmfd00()
             if (erre .gt. precai) then
                 valmi = ioc
                 call jenuno(jexnum(mommai, nummai), valmk(1))
-                valmk(2) = 'IY'
+                valmk(2) = 'IZ'
                 valmr(1) = moinoz
                 valmr(2) = casect(4)
                 valmr(3) = erre
@@ -351,7 +351,7 @@ subroutine pmfd00()
                             valmi, 4, valmr)
             endif
 150      continue
-100  end do
+    end do
     if (valmi .ne. 0) then
         call u2mess('F', 'MODELISA8_6')
     endif
