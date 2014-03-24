@@ -283,14 +283,14 @@ subroutine calirc(chargz)
             if (zi(jelim-1+nuno2) .eq. 0) then
                 zi(jelim-1+nuno2)=1
                 kkno2=kkno2+1
-                zi(jnu2bs+kkno2)=nuno2
+                zi(jnu2bs-1+kkno2)=nuno2
             endif
 40          continue
             nbno2=kkno2
             call jedetr('&&CALIRC.LINONU2')
             call wkvect('&&CALIRC.LINONU2', 'V V I', nbno2, iagno2)
             do 50,kno2=1,nbno2
-            zi(iagno2-1+kno2)=zi(jnu2bs+kno2)
+            zi(iagno2-1+kno2)=zi(jnu2bs-1+kno2)
 50          continue
             call jedetr('&&CALIRC.LINONU2BIS')
         endif
