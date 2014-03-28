@@ -1,6 +1,3 @@
-/* ------------------------------------------------------------------ */
-/*           CONFIGURATION MANAGEMENT OF EDF VERSION                  */
-/* person_in_charge: j-pierre.lefebvre at edf.fr */
 /* ================================================================== */
 /* COPYRIGHT (C) 1991 - 2012  EDF R&D              WWW.CODE-ASTER.ORG */
 /*                                                                    */
@@ -17,6 +14,7 @@
 /* ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,      */
 /*    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.     */
 /* ================================================================== */
+/* person_in_charge: mathieu.courtois@edf.fr */
 /* Minimal main program -- everything is loaded from the library */
 
 /* NOTE: 
@@ -27,6 +25,7 @@
  * 
  *  source: http://docs.python.org/c-api/intro.html
  */
+#include "Python.h"
 #include "aster.h"
 
 #ifdef _USE_MPI
@@ -41,7 +40,7 @@ extern DL_EXPORT(int) Py_Main();
 extern void initaster();
 extern void initaster_core();
 extern void initaster_fonctions();
-extern void initmed_fonctions();
+extern void initmed_aster();
 
 #ifndef _MAIN_
 #define _MAIN_ main
@@ -71,9 +70,9 @@ _MAIN_(argc, argv)
     PyImport_AppendInittab("aster",initaster);
 
     /* Module définissant des opérations sur les objets fonction_sdaster */
-    PyImport_AppendInittab("aster_fonctions",initaster_fonctions);
+    PyImport_AppendInittab("aster_fonctions", initaster_fonctions);
 #ifndef _DISABLE_MED
-    PyImport_AppendInittab("med_aster",initmed_fonctions);
+    PyImport_AppendInittab("med_aster", initmed_aster);
 #endif
     ierr= Py_Main(argc, argv);
     return ierr;
