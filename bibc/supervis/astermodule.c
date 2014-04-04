@@ -27,6 +27,7 @@
 #include "aster.h"
 #include "aster_module.h"
 #include "aster_core.h"
+#include "shared_vars.h"
 #include "aster_error.h"
 #include "aster_fort.h"
 #include "aster_utils.h"
@@ -39,38 +40,18 @@
 
 void TraiteMessageErreur( _IN char* ) ;
 
-/* --- liste des variables globales au fonctions  de ce fichier --- */
-
-/* jeveux_status vaut :
-      0 avant aster_init,
-      1 pendant l'exécution,
-      0 après xfini
-   Cela permet de verrouiller l'appel à des fonctions jeveux hors de l'exécution
-*/
-static int jeveux_status = 0;
-
-/* commande (la commande courante) est definie par les fonctions aster_debut et aster_oper */
-static PyObject *commande       = (PyObject*)0 ;
-static PyObject *pile_commandes = (PyObject*)0 ;
-
-/* NomCas est initialise dans aster_debut() */
-/* NomCas est initialise a blanc pour permettre la recuperation de la
-   trace des commandes lors de l'appel a debut ou poursuite. On ne connait
-   pas encore NomCas qui sera initialise lors de l'appel a RecupNomCas */
-static char *NomCas          = "        ";
-
 
 INTEGER DEF0(ISJVUP, isjvup)
 {
    /* "is jeveux up ?" : retourne 1 si jeveux est démarré/initialisé, sinon 0. */
-   return (INTEGER)jeveux_status;
+   return (INTEGER)get_sh_jeveux_status();
 }
 
 void DEFP(XFINI,xfini, _IN INTEGER *code)
 {
    /* XFINI est n'appelé que par JEFINI avec code=19 (=EOFError) */
    /* jeveux est fermé */
-   jeveux_status = 0;
+   register_sh_jeveux_status(0);
    interruptTry(*code);
 }
 
@@ -160,8 +141,7 @@ void DEFSSPPPPP(GETLTX,getltx,_IN char *motfac,_IN STRING_SIZE lfac,
                                                         AS_ASSERT(mcs!=(char*)0);
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getltx","ssiii",mfc,mcs,ioc,(int)*mxval, (int)*taille);
+        res=PyObject_CallMethod(get_sh_etape(),"getltx","ssiii",mfc,mcs,ioc,(int)*mxval, (int)*taille);
 
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
@@ -194,9 +174,8 @@ void DEFSP(GETFAC,getfac,_IN char *nomfac, _IN STRING_SIZE lfac, _OUT INTEGER *o
         */
         PyObject *res  = (PyObject*)0 ;
         char *mfc;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
         mfc = MakeCStrFromFStr(nomfac, lfac);
-        res=PyObject_CallMethod(commande,"getfac","s",mfc);
+        res=PyObject_CallMethod(get_sh_etape(),"getfac","s",mfc);
 
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
@@ -225,7 +204,7 @@ void DEFP(GETRAN,getran, _OUT DOUBLE *rval)
     PyObject *val  = (PyObject*)0 ;
     int ok=0;
 
-    res=PyObject_CallMethod(commande,"getran","");
+    res=PyObject_CallMethod(get_sh_etape(),"getran","");
     /*  si le retour est NULL : exception Python a transferer
         normalement a l appelant mais FORTRAN ??? */
     if (res == NULL)MYABORT("erreur dans la partie Python");
@@ -249,7 +228,7 @@ void DEFP(INIRAN,iniran,_IN INTEGER *jump)
         */
         PyObject *res  = (PyObject*)0 ;
 
-        res=PyObject_CallMethod(commande,"iniran","i",(int)*jump);
+        res=PyObject_CallMethod(get_sh_etape(),"iniran","i",(int)*jump);
         Py_DECREF(res);                /*  decrement sur le refcount du retour */
         return ;
 }
@@ -271,8 +250,7 @@ void DEFSS(GETTCO,gettco,_IN char *nomobj, _IN STRING_SIZE lnom,
         recherche dans le jeu de commandes python du nom du type de
          du concept Aster de nom nomobj
         */
-                                                              AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"gettco","s",mcs);
+        res=PyObject_CallMethod(get_sh_etape(),"gettco","s",mcs);
         if (res == (PyObject*)0)MYABORT("erreur dans la partie Python (gettco)");
                                                               AS_ASSERT( PyString_Check(res) );
         nomType=PyString_AsString(res);
@@ -300,8 +278,7 @@ void DEFPS(GETMAT,getmat,_OUT INTEGER *nbarg,_OUT char *motcle,_IN STRING_SIZE l
         int          k = 0 ;
                                                                 AS_ASSERT(lcle>0);
         for ( k=0 ;k<lcle ; k++ ) motcle[k]=' ' ;
-                                                                AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getmat","");
+        res=PyObject_CallMethod(get_sh_etape(),"getmat","");
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
         if (res == NULL)MYABORT("erreur dans la partie Python");
@@ -356,8 +333,7 @@ void DEFSPPSSP(GETMJM,getmjm,_IN char *nomfac,_IN STRING_SIZE lfac,
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
         mfc = MakeCStrFromFStr(nomfac, lfac);
-                                                                AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getmjm","sii",mfc,ioc,(int)*nbval);
+        res=PyObject_CallMethod(get_sh_etape(),"getmjm","sii",mfc,ioc,(int)*nbval);
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
         if (res == NULL)MYABORT("erreur dans la partie Python");
@@ -416,10 +392,9 @@ INTEGER DEFSS( GETEXM, getexm, _IN char *motfac,_IN STRING_SIZE lfac,
         char *mfc, *mcs;
         INTEGER presence;
                                                                     AS_ASSERT(motcle!=(char*)0);
-                                                                AS_ASSERT(commande!=(PyObject*)0);
         mfc = MakeCStrFromFStr(motfac, lfac);
         mcs = MakeCStrFromFStr(motcle, lcle);
-        res=PyObject_CallMethod(commande,"getexm","ss", mfc, mcs);
+        res=PyObject_CallMethod(get_sh_etape(),"getexm","ss", mfc, mcs);
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
         if (res == NULL)MYABORT("erreur dans la partie Python");
@@ -446,20 +421,21 @@ void DEFSSS( GETRES ,getres, _OUT char *nomres, _IN STRING_SIZE lres,
             le nom de la commande          : nomcmd (string)
         */
         PyObject *res  = (PyObject*)0 ;
+        PyObject *etape;
         int ok;
         char *ss1,*ss2,*ss3;
 
         /* (MC) le 1er test ne me semble pas suffisant car entre deux commandes,
            commande n'est pas remis à (PyObject*)0... */
-        if(commande == (PyObject*)0 || PyObject_HasAttrString(commande, "getres")==0) {
+        etape = get_sh_etape();
+        if(etape == (PyObject*)0 || PyObject_HasAttrString(etape, "getres")==0) {
           /* Aucune commande n'est active on retourne des chaines blanches */
           BlankStr(nomres,lres);
           BlankStr(concep,lconc);
           BlankStr(nomcmd,lcmd);
           return ;
         }
-                                                        AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getres","");
+        res = PyObject_CallMethod(etape,"getres","");
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
         if (res == NULL){
@@ -496,7 +472,7 @@ void DEFSPS(GETTYP,gettyp, _IN char *typaster, _IN STRING_SIZE ltyp,
     int nval = 0;
 
     typ = MakeCStrFromFStr(typaster, ltyp);
-    res = PyObject_CallMethod(commande, "gettyp", "s", typ);
+    res = PyObject_CallMethod(get_sh_etape(), "gettyp", "s", typ);
     if ( res == NULL ) MYABORT("erreur dans la partie Python de gettyp");
 
     ok = PyArg_ParseTuple(res, "iO", &nval, &tup);
@@ -558,7 +534,7 @@ void DEFSSPPPPP(GETVC8,getvc8,_IN char *motfac,_IN STRING_SIZE lfac,
         {
                 printf( "<F> GETVC8 : le numero d'occurence (IOCC=%ld) est invalide\n",*iocc) ;
                 printf( "             commande : %s\n",
-                       PyString_AsString(PyObject_CallMethod(commande,"retnom",""))) ;
+                       PyString_AsString(PyObject_CallMethod(get_sh_etape(),"retnom",""))) ;
                 printf( "             mot-cle facteur : %s\n",mfc) ;
                 printf( "             mot-cle simple  : %s\n",mcs) ;
                 MYABORT( "erreur d'utilisation detectee") ;
@@ -566,8 +542,7 @@ void DEFSSPPPPP(GETVC8,getvc8,_IN char *motfac,_IN STRING_SIZE lfac,
 
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getvc8","ssii",mfc,mcs,ioc,(int)*mxval);
+        res=PyObject_CallMethod(get_sh_etape(),"getvc8","ssii",mfc,mcs,ioc,(int)*mxval);
 
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
@@ -631,15 +606,14 @@ void DEFSSPPPPP(GETVR8,getvr8,_IN char *motfac,_IN STRING_SIZE lfac,
         {
                 printf( "<F> GETVR8 : le numero d'occurence (IOCC=%ld) est invalide\n",*iocc) ;
                 printf( "             commande : %s\n",
-                       PyString_AsString(PyObject_CallMethod(commande,"retnom",""))) ;
+                       PyString_AsString(PyObject_CallMethod(get_sh_etape(),"retnom",""))) ;
                 printf( "             mot-cle facteur : %s\n",mfc) ;
                 printf( "             mot-cle simple  : %s\n",mcs) ;
                 MYABORT( "erreur d'utilisation detectee") ;
         }
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getvr8","ssii",mfc,mcs,ioc,(int)*mxval);
+        res=PyObject_CallMethod(get_sh_etape(),"getvr8","ssii",mfc,mcs,ioc,(int)*mxval);
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
         if (res == NULL)MYABORT("erreur dans la partie Python");
@@ -675,7 +649,6 @@ void DEFSPSPPSP(FIINTF,fiintf,_IN char *nomfon,_IN STRING_SIZE lfon,
         PyObject *tup_val;
         char *kvar, *sret;
         int i;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
         tup_par = PyTuple_New( (Py_ssize_t)*nbpu ) ;
         tup_val = PyTuple_New( (Py_ssize_t)*nbpu ) ;
         for(i=0;i<*nbpu;i++){
@@ -686,7 +659,7 @@ void DEFSPSPPSP(FIINTF,fiintf,_IN char *nomfon,_IN STRING_SIZE lfon,
            PyTuple_SetItem( tup_val, i, PyFloat_FromDouble((double)val[i]) ) ;
         }
 
-        tup2 = PyObject_CallMethod(commande,"fiintf","s#s#OO",
+        tup2 = PyObject_CallMethod(get_sh_etape(),"fiintf","s#s#OO",
                                    coderr,lcod,nomfon,lfon,tup_par,tup_val);
 
         if (tup2 == NULL) MYABORT("erreur dans la partie Python");
@@ -761,15 +734,14 @@ void DEFSSPPPPP(GETVIS,getvis,_IN char *motfac,_IN STRING_SIZE lfac,
         {
                 printf( "<F> GETVIS : le numero d'occurence (IOCC=%ld) est invalide\n",*iocc) ;
                 printf( "             commande : %s\n",
-                       PyString_AsString(PyObject_CallMethod(commande,"retnom",""))) ;
+                       PyString_AsString(PyObject_CallMethod(get_sh_etape(),"retnom",""))) ;
                 printf( "             mot-cle facteur : %s\n",mfc) ;
                 printf( "             mot-cle simple  : %s\n",mcs) ;
                 MYABORT( "erreur d'utilisation detectee") ;
         }
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getvis","ssii",mfc,mcs,ioc,(int)*mxval);
+        res=PyObject_CallMethod(get_sh_etape(),"getvis","ssii",mfc,mcs,ioc,(int)*mxval);
 
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
@@ -788,19 +760,6 @@ void DEFSSPPPPP(GETVIS,getvis,_IN char *motfac,_IN STRING_SIZE lfac,
         FreeStr(mcs);
         return ;
 }
-
-
-/* ------------------------------------------------------------------ */
-void DEFS(GETVLI,getvli, _OUT char *cas , _IN STRING_SIZE lcas )
-{
-        /*
-        Cette fonction est destinee a etre utilisee pour le fichier "*.code" (fort.15)
-        */
-                                                        AS_ASSERT(NomCas!=(char*)0) ;
-        CopyCStrToFStr(cas, NomCas, lcas);
-        return ;
-}
-
 
 /* ------------------------------------------------------------------ */
 void DEFSSPPPPP(GETVLS,getvls,_IN char *motfac,_IN STRING_SIZE lfac,
@@ -846,7 +805,7 @@ void DEFSSPPPPP(GETVLS,getvls,_IN char *motfac,_IN STRING_SIZE lfac,
         {
                 printf( "<F> GETVLS : le numero d'occurence (IOCC=%ld) est invalide\n",*iocc) ;
                 printf( "             commande : %s\n",
-                       PyString_AsString(PyObject_CallMethod(commande,"retnom",""))) ;
+                       PyString_AsString(PyObject_CallMethod(get_sh_etape(),"retnom",""))) ;
                 printf( "             mot-cle facteur : %s\n",mfc) ;
                 printf( "             mot-cle simple  : %s\n",mcs) ;
                 MYABORT( "erreur d'utilisation detectee") ;
@@ -854,8 +813,7 @@ void DEFSSPPPPP(GETVLS,getvls,_IN char *motfac,_IN STRING_SIZE lfac,
 
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getvls","ssii",mfc,mcs,ioc,(int)*mxval);
+        res=PyObject_CallMethod(get_sh_etape(),"getvls","ssii",mfc,mcs,ioc,(int)*mxval);
 
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
@@ -923,15 +881,14 @@ void DEFSSPPPSP(GETVTX,getvtx,_IN char *motfac,_IN STRING_SIZE lfac,
         {
                 printf( "<F> GETVTX : le numero d'occurence (IOCC=%ld) est invalide\n",*iocc) ;
                 printf( "             commande : %s\n",
-                       PyString_AsString(PyObject_CallMethod(commande,"retnom",""))) ;
+                       PyString_AsString(PyObject_CallMethod(get_sh_etape(),"retnom",""))) ;
                 printf( "             mot-cle facteur : %s\n",mfc) ;
                 printf( "             mot-cle simple  : %s\n",mcs) ;
                 MYABORT( "erreur d'utilisation detectee") ;
         }
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getvtx","ssii",mfc,mcs,ioc,(int)*mxval);
+        res=PyObject_CallMethod(get_sh_etape(),"getvtx","ssii",mfc,mcs,ioc,(int)*mxval);
 
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
@@ -939,7 +896,7 @@ void DEFSSPPPSP(GETVTX,getvtx,_IN char *motfac,_IN STRING_SIZE lfac,
         {
                 printf( "<F> GETVTX : numero d'occurence (IOCC=%ld) \n",*iocc) ;
                 printf( "             commande : %s\n",
-                       PyString_AsString(PyObject_CallMethod(commande,"retnom",""))) ;
+                       PyString_AsString(PyObject_CallMethod(get_sh_etape(),"retnom",""))) ;
                 printf( "             mot-cle facteur : %s\n",mfc) ;
                 printf( "             mot-cle simple  : %s\n",mcs) ;
                 MYABORT("erreur dans la partie Python");
@@ -1008,15 +965,14 @@ void DEFSSPPPSP(GETVID,getvid,_IN char *motfac,_IN STRING_SIZE lfac,
         {
                 printf( "<F> GETVID : le numero d'occurence (IOCC=%ld) est invalide\n",*iocc) ;
                 printf( "             commande : %s\n",
-                       PyString_AsString(PyObject_CallMethod(commande,"retnom",""))) ;
+                       PyString_AsString(PyObject_CallMethod(get_sh_etape(),"retnom",""))) ;
                 printf( "             mot-cle facteur : %s\n",mfc) ;
                 printf( "             mot-cle simple  : %s\n",mcs) ;
                 MYABORT( "erreur d'utilisation detectee") ;
         }
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
-                                                        AS_ASSERT(commande!=(PyObject*)0);
-        res=PyObject_CallMethod(commande,"getvid","ssii",mfc,mcs,ioc,(int)*mxval);
+        res=PyObject_CallMethod(get_sh_etape(),"getvid","ssii",mfc,mcs,ioc,(int)*mxval);
 
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
@@ -1053,7 +1009,7 @@ void DEFP(PUTVIR,putvir, _IN INTEGER *ival)
    */
    PyObject *res = (PyObject*)0 ;
 
-   res = PyObject_CallMethod(commande,"putvir","i",(int)*ival);
+   res = PyObject_CallMethod(get_sh_etape(),"putvir","i",(int)*ival);
    if (res == NULL)
       MYABORT("erreur a l appel de putvir dans la partie Python");
 
@@ -1073,7 +1029,7 @@ void DEFP(PUTVRR,putvrr, _IN DOUBLE *rval)
    */
    PyObject *res = (PyObject*)0 ;
 
-   res = PyObject_CallMethod(commande,"putvrr","d",(double)*rval);
+   res = PyObject_CallMethod(get_sh_etape(),"putvrr","d",(double)*rval);
    if (res == NULL)
       MYABORT("erreur a l appel de putvrr dans la partie Python");
 
@@ -1100,7 +1056,7 @@ void DEFSSP(GCUCON,gcucon, _IN char *resul, STRING_SIZE lresul,
    PyObject * res = (PyObject*)0 ;
                                                                               AS_ASSERT(lresul) ;
                                                                               AS_ASSERT(lconcep) ;
-   res = PyObject_CallMethod(commande,"gcucon","s#s#",resul,lresul,concep,lconcep);
+   res = PyObject_CallMethod(get_sh_etape(),"gcucon","s#s#",resul,lresul,concep,lconcep);
    /*
                Si le retour est NULL : une exception a ete levee dans le code Python appele
                Cette exception est a transferer normalement a l appelant mais FORTRAN ???
@@ -1136,7 +1092,7 @@ void DEFPSP(GCUCDT,gcucdt,INTEGER *icmd,char *resul,STRING_SIZE lresul,INTEGER *
                 detruits
         */
         PyObject * res = (PyObject*)0 ;
-        res = PyObject_CallMethod(commande,"gcucon","is#s",(int)*icmd,resul,lresul,"");
+        res = PyObject_CallMethod(get_sh_etape(),"gcucon","is#s",(int)*icmd,resul,lresul,"");
         /*
            Si le retour est NULL : une exception a ete levee dans le code Python appele
             Cette exception est a transferer normalement a l appelant mais FORTRAN ???
@@ -1179,7 +1135,7 @@ void DEFSSPPP(GETTVC,gettvc,_IN char * nom,STRING_SIZE lnom,
         int ok=0;
         int iret;
         *ier=0;
-        res = PyObject_CallMethod(commande,"gettvc","s#",nom,lnom);
+        res = PyObject_CallMethod(get_sh_etape(),"gettvc","s#",nom,lnom);
         /*
                     Si le retour est NULL : une exception a ete levee dans le code Python appele
                     Cette exception est a transferer normalement a l appelant mais FORTRAN ???
@@ -1217,7 +1173,7 @@ void DEFP(GCECDU,gcecdu, INTEGER *numint)
              Recuperation du numero de l operateur
         */
         PyObject * res = (PyObject*)0 ;
-        res = PyObject_CallMethod(commande,"getoper","");
+        res = PyObject_CallMethod(get_sh_etape(),"getoper","");
         /*
                     Si le retour est NULL : une exception a ete levee dans le code Python appele
                     Cette exception est a transferer normalement a l appelant mais FORTRAN ???
@@ -1256,63 +1212,6 @@ void gcncon2_(char *type,char *resul,STRING_SIZE ltype,int lresul)
             Delivrer un nom de concept non encore utilise et unique
         */
         MYABORT("Cette procedure n est pas implementee");
-}
-
-/* ------------------------------------------------------------------ */
-/*
- * Pour conserver le lien entre le code de calcul en Fortran et le superviseur
- * en Python, on memorise la commande courante.
- * Cette commande est celle que le fortran interroge lors de ses appels à l'API
- * GETXXX.
- * Cette commande courante est enregistrée dans une pile de commandes car avec le
- * mécanisme des macros, une commande peut avoir des sous commandes qui sont
- * appelées pendant l'exécution de la commande principale.
- * La fonction empile doit etre appelée avant l'exécution d'une commande (appel à oper,
- * par exemple) et la fonction depile doit etre appelée après l'exécution de cette
- * commande.
- */
-static PyObject * empile(PyObject *c)
-{
-        /* PyList_Append incremente de 1 le compteur de references de c (commande courante) */
-        PyList_Append(pile_commandes,c);
-        return c;
-}
-
-/* ------------------------------------------------------------------ */
-static PyObject * depile()
-{
-        PyObject * com;
-        int l=PyList_Size(pile_commandes);
-        if(l == 0){
-          /* Pile vide */
-          Py_INCREF( Py_None ) ;
-          return Py_None;
-        }
-        /* Derniere commande dans la pile */
-        com = PyList_GetItem(pile_commandes,l-1);
-        /* PyList_GetItem n incremente pas le compteur de ref de com */
-        /* On tronque la liste a la dimension l-1 */
-        PyList_SetSlice(pile_commandes,l-1,l,NULL);
-        /* Le compteur de ref de com est decremente de 1 */
-        if(l == 1){
-          /* La pile tronquee est vide */
-          Py_INCREF( Py_None ) ;
-          return Py_None;
-        }
-        /* On ne passe ici que pour les macros avec sous commandes
-         * en mode commande par commande */
-        /* On retourne la derniere commande de la pile */
-        com = PyList_GetItem(pile_commandes,l-2);
-        return com;
-}
-
-/* ------------------------------------------------------------------ */
-PyObject * get_active_command()
-{
-        /*
-         * Retourne un pointeur sur la commande active
-         */
-   return commande;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1953,7 +1852,7 @@ PyObject *args;
         if (!PyArg_ParseTuple(args, "Oi",&temp,&ijxvrf)) return NULL;
         jxvrf = (INTEGER)ijxvrf;
         /* On empile le nouvel appel */
-        commande=empile(temp);
+        register_sh_etape(append_etape(temp));
 
         if ( PyErr_Occurred() ) {
             fprintf(stderr,"Warning: une exception n'a pas ete traitee\n");
@@ -1972,12 +1871,12 @@ PyObject *args;
         }
         exceptAll {
             /* On depile l'appel */
-            commande = depile();
+            register_sh_etape(pop_etape());
             raiseException();
         }
         endTry();
         /* On depile l'appel */
-        commande = depile();
+        register_sh_etape(pop_etape());
         Py_INCREF(Py_None);
         return Py_None;
 }
@@ -1995,7 +1894,7 @@ PyObject *args;
         oper=(INTEGER)ioper;
 
         /* On empile le nouvel appel */
-        commande=empile(temp);
+        register_sh_etape(append_etape(temp));
 
         if ( PyErr_Occurred() ) {
             fprintf(stderr,"Warning: une exception n'a pas ete traitee\n");
@@ -2013,12 +1912,12 @@ PyObject *args;
         }
         exceptAll {
             /* On depile l'appel */
-            commande = depile();
+            register_sh_etape(pop_etape());
             raiseException();
         }
         endTry();
         /* On depile l'appel */
-        commande = depile();
+        register_sh_etape(pop_etape());
         Py_INCREF(Py_None);
         return Py_None;
 }
@@ -2356,40 +2255,6 @@ PyObject *args;
 
 
 /* ------------------------------------------------------------------ */
-int RecupNomCas(void)
-{
-   /* recuperation du nom du cas */
-   INTEGER un          = 1 ;
-   INTEGER *iocc       = (INTEGER*)&un ;
-   INTEGER *iarg       = (INTEGER*)&un ;
-   INTEGER *mxval      = (INTEGER*)&un ;
-   INTEGER nbval       = 1 ;
-   int lng;
-   INTEGER longueur;
-   INTEGER taille = 80; // taille max
-                                                   AS_ASSERT(commande!=(PyObject*)0);
-   CALL_GETLTX ( "CODE","NOM",iocc,&taille,mxval, &longueur ,&nbval) ;
-   lng = (int)longueur;
-   if(nbval == 0){
-      /* Le mot cle NOM n'a pas ete fourni on donne un nom
-         par defaut au nom du cas */
-      NomCas = strdup("??????");
-   }
-   else if(nbval > 0){
-                                                   AS_ASSERT(lng>0);
-      NomCas = MakeBlankFStr(lng);
-                                                   AS_ASSERT(NomCas!=(char*)0);
-      CALL_GETVTX ( "CODE","NOM",iocc,iarg,mxval, NomCas ,&nbval) ;
-   }
-   else{
-      /* Erreur  */
-      PyErr_SetString(PyExc_KeyError, "Erreur a la recuperation du nom du cas");
-      return -1;
-   }
-   return 0;
-}
-
-/* ------------------------------------------------------------------ */
 static PyObject * aster_poursu(self, args)
 PyObject *self; /* Not used */
 PyObject *args;
@@ -2400,12 +2265,12 @@ PyObject *args;
         */
         PyObject *temp = (PyObject*)0 ;
         static int nbPassages=0 ;
-                                            AS_ASSERT((nbPassages==1)||(commande==(PyObject*)0));
+                                            AS_ASSERT((nbPassages==1)||(get_sh_etape()==(PyObject*)0));
         nbPassages++ ;
         if (!PyArg_ParseTuple(args, "O",&temp)) return NULL;
 
         /* On empile le nouvel appel */
-        commande=empile(temp);
+        register_sh_etape(append_etape(temp));
 
         if ( PyErr_Occurred() ) {
             fprintf(stderr,"Warning: une exception n'a pas ete traitee\n");
@@ -2422,19 +2287,12 @@ PyObject *args;
         }
         exceptAll {
             /* On depile l'appel */
-            commande = depile();
+            register_sh_etape(pop_etape());
             raiseException();
         }
         endTry();
-        /* On recupere le nom du cas */
-        if (RecupNomCas() == -1) {
-            /* Erreur a la recuperation */
-            /* On depile l'appel */
-            commande = depile();
-            return NULL;
-        }
         /* On depile l'appel */
-        commande = depile();
+        register_sh_etape(pop_etape());
         Py_INCREF(Py_None);
         return Py_None;
 }
@@ -2446,12 +2304,12 @@ PyObject *args;
 {
         PyObject *temp = (PyObject*)0 ;
         static int nbPassages=0 ;
-                                            AS_ASSERT((nbPassages==1)||(commande==(PyObject*)0));
+                                            AS_ASSERT((nbPassages==1)||(get_sh_etape()==(PyObject*)0));
         nbPassages++ ;
         if (!PyArg_ParseTuple(args, "O",&temp)) return NULL;
 
         /* On empile le nouvel appel */
-        commande=empile(temp);
+        register_sh_etape(append_etape(temp));
 
         if ( PyErr_Occurred() ) {
             fprintf(stderr,"Warning: une exception n'a pas ete traitee\n");
@@ -2468,19 +2326,12 @@ PyObject *args;
         }
         exceptAll {
             /* On depile l'appel */
-            commande = depile();
+            register_sh_etape(pop_etape());
             raiseException();
         }
         endTry();
-        /* On recupere le nom du cas */
-        if (RecupNomCas() == -1) {
-            /* Erreur a la recuperation */
-            /* On depile l'appel */
-            commande = depile();
-            return NULL;
-        }
         /* On depile l'appel */
-        commande = depile();
+        register_sh_etape(pop_etape());
         Py_INCREF(Py_None);
         return Py_None;
 }
@@ -2503,7 +2354,7 @@ PyObject *args;
    CALL_IBMAIN(&dbg);
 
    /* jeveux est parti ! */
-   jeveux_status = 1;
+   register_sh_jeveux_status(1);
 
 return PyInt_FromLong((long)ier);
 }
@@ -2756,7 +2607,7 @@ void DEFP(GETCMC,getcmc,INTEGER *icmc)
 
         */
         PyObject * res = (PyObject*)0 ;
-        res = PyObject_GetAttrString(commande,"icmd");
+        res = PyObject_GetAttrString(get_sh_etape(),"icmd");
         /*
                     Si le retour est NULL : une exception a ete levee dans le code Python appele
                     Cette exception est a transferer normalement a l appelant mais FORTRAN ???
@@ -2822,7 +2673,6 @@ PyMODINIT_FUNC initaster(void)
     PyModule_AddObject(aster, "__version__", Py_None);
     initExceptions(dict);
 
-    /* Initialisation de la pile d appel des commandes */
-    pile_commandes = PyList_New(0);
+    init_etape_stack();
 }
 #endif
