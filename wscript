@@ -68,7 +68,6 @@ def options(self):
     self.load('mumps', tooldir='waftools')
     self.load('scotch', tooldir='waftools')
     self.load('petsc', tooldir='waftools')
-    self.load('legacy', tooldir='waftools')
     self.load('runtest', tooldir='waftools')
 
     group.add_option('-E', '--embed-all', dest='embed_all',
@@ -80,6 +79,7 @@ def options(self):
     self.recurse('bibfor')
     self.recurse('bibc')
     self.recurse('i18n')
+    self.recurse('data')
 
 def configure(self):
     self.setenv('default')
@@ -132,7 +132,7 @@ def configure(self):
     self.recurse('bibfor')
     self.recurse('bibc')
     self.recurse('i18n')
-    self.load('legacy', tooldir='waftools')
+    self.recurse('data')
     # keep compatibility for as_run
     if self.get_define('HAVE_MPI'):
         self.env.ASRUN_MPI_VERSION = 1
@@ -167,7 +167,7 @@ def build(self):
         if osp.exists(osp.join(optional, 'wscript')):
             self.recurse(optional)
     self.load('scm_aster', tooldir='waftools')
-    self.load('legacy', tooldir='waftools')
+    self.recurse('data')
 
 def build_elements(self):
     self.recurse('catalo')
