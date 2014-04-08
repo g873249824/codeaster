@@ -34,6 +34,7 @@ subroutine te0299(option, nomte)
 #include "jeveux.h"
 #include "asterc/r8prem.h"
 #include "asterfort/assert.h"
+#include "asterfort/cgverho.h"
 #include "asterfort/chauxi.h"
 #include "asterfort/elref4.h"
 #include "asterfort/fointe.h"
@@ -51,7 +52,6 @@ subroutine te0299(option, nomte)
 #include "asterfort/vecini.h"
 !
     integer :: icodre(3)
-    integer :: codrho
     integer :: ipoids, ivf, idfde, nno, kp, npg, compt, ier, nnos, jgano, icomp
     integer :: igeom, ithet, irota, ipesa, ificg, idepl, iret, ipuls
     integer :: imate, iforc, iforf, ifond, itemps, k, i, j, kk, l, ndim, jtab(7)
@@ -60,7 +60,7 @@ subroutine te0299(option, nomte)
     real(kind=8) :: dfdi(18), f(3, 3), eps(6), fno(18)
     real(kind=8) :: dudm(3, 4), dfdm(3, 4), dtdm(3, 4), der(4)
     real(kind=8) :: du1dm(3, 4), du2dm(3, 4)
-    real(kind=8) :: rho, om, omo, rbid, e, nu, rbid2(3, 3, 3)
+    real(kind=8) :: rhocst, rho, om, omo, rbid, e, nu, rbid2(3, 3, 3)
     real(kind=8) :: thet, tno(20), tgdm(3)
     real(kind=8) :: xag, yag, xg, yg, xa, ya, norm, a, b
     real(kind=8) :: c1, c2, c3, cs, u1(2), u2(2)
@@ -74,7 +74,7 @@ subroutine te0299(option, nomte)
     character(len=8) :: nomres(3), nompar(4)
     character(len=16) :: phenom, compor(4)
 !
-    logical :: lcour, lmoda, fonc, lpesa, lrota
+    logical :: lcour, fonc, lpesa, lrota
     logical :: axi
 !
 ! ----------------------------------------------------------------------
@@ -105,9 +105,9 @@ subroutine te0299(option, nomte)
     g = 0.d0
     k1 = 0.d0
     k2 = 0.d0
-    rho = 0.d0
     nomres(1) = 'E'
     nomres(2) = 'NU'
+    nomres(3) = 'RHO'
 !
 ! --- PAS DE CALCUL DE G POUR LES ELEMENTS OU THETA EST NULLE
 !
@@ -121,6 +121,9 @@ subroutine te0299(option, nomte)
     end do
     if (compt .eq. nno) goto 999
 !
+! --- VERIFS DE COHERENCE RHO <-> PESANTEUR, ROTATION, PULSATION
+!
+    if ( .not. cgverho(imate) ) call u2mess('F', 'RUPTURE1_26')
 !
 ! --- RECUPERATION DES FORCES
 !
@@ -173,13 +176,11 @@ subroutine te0299(option, nomte)
 !
 ! --- RECUPERATION DE LA PULSATION
 !
-    lmoda = .false.
     call tecach('ONN', 'PPULPRO', 'L', 7, jtab,&
                 iret)
     ipuls=jtab(1)
     if (iret .eq. 0) then
         puls = zr(ipuls)
-        lmoda = .true.
     else
         puls = 0.d0
     endif
@@ -211,12 +212,12 @@ subroutine te0299(option, nomte)
         call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
         call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rhocst, icodre, 1)
         if (lpesa) then
             do i = 1, nno
                 do j = 1, ndim
                     kk = ndim*(i-1)+j
-                    fno(kk)=fno(kk)+rho*zr(ipesa)*zr(ipesa+j)
+                    fno(kk)=fno(kk)+rhocst*zr(ipesa)*zr(ipesa+j)
                 end do
             end do
         endif
@@ -230,7 +231,7 @@ subroutine te0299(option, nomte)
                 end do
                 do j = 1, ndim
                     kk = ndim*(i-1)+j
-                    fno(kk)=fno(kk)+rho*om*om*(zr(igeom+kk-1)-omo*zr(&
+                    fno(kk)=fno(kk)+rhocst*om*om*(zr(igeom+kk-1)-omo*zr(&
                     irota+j))
                 end do
             end do
@@ -313,22 +314,15 @@ subroutine te0299(option, nomte)
 !
         call rcvalb(fami, kp, 1, '+', zi(imate),&
                     ' ', phenom, 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 0)
+                    3, nomres, valres, icodre, 0)
         call assert(icodre(1)+icodre(2).eq.0)
-!
-!
-! ----- RECUPERATION DE RHO
-!
-        call rcvalb(fami, kp, 1, '+', zi(imate),&
-                    ' ', phenom, 0, ' ', 0.d0,&
-                    1, 'RHO', rho, codrho, 0)
-!
-        if ((codrho.ne.0) .and. lmoda) then
-            call u2mess('F', 'RUPTURE1_26')
+        if (icodre(3) .ne. 0) then
+            valres(3) = 0.d0
         endif
 !
         e = valres(1)
         nu = valres(2)
+        rho = valres(3)
 !
         c3 = e/(2.d0*(1.d0+nu))
         if (lteatt(' ','D_PLAN','OUI') .or. lteatt(' ','AXIS','OUI')) then

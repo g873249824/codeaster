@@ -1,4 +1,4 @@
-subroutine xcgfvo(option, ndim, nnop, fno, rho)
+subroutine xcgfvo(option, ndim, nnop, fno)
 !
     implicit none
 !
@@ -12,7 +12,7 @@ subroutine xcgfvo(option, ndim, nnop, fno, rho)
 #include "asterfort/vecini.h"
     character(len=16) :: option
     integer :: ndim, nnop
-    real(kind=8) :: fno(ndim*nnop), rho
+    real(kind=8) :: fno(ndim*nnop)
 !
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -40,14 +40,13 @@ subroutine xcgfvo(option, ndim, nnop, fno, rho)
 ! IN  NDIM   : DIMENSION DE L'ESPACE
 ! IN  NNOP   : NOMBRE DE NOEUDS DE L'ELEMENT PARENT
 ! OUT FNO    : FORCES NODALES CORRESPONDANT AUX CHARGES VOLUMIQUES
-! OUT RHO    : MASSE VOLUMIQUE
 !
 !
 !
     integer :: igeom, imate, iforc, iforf, itemps, ipesa, irota
     integer :: iret, ino, j, kk, mxstac
     logical :: fonc
-    real(kind=8) :: valpar(4), rbid, om, omo
+    real(kind=8) :: valpar(4), rbid, om, omo, val, rhocst
     integer :: icodre
     character(len=8) :: nompar(4)
     character(len=16) :: phenom
@@ -79,9 +78,6 @@ subroutine xcgfvo(option, ndim, nnop, fno, rho)
 !
 !     INITIALISATION DE FNO
     call vecini(ndim*nnop, 0.d0, fno)
-!
-!     INITIALISATION DE RHO
-    rho = 0.d0
 !
 !     ------------------------------------------------------------------
 !                     TRAITEMENT DES FORCES VOLUMIQUES
@@ -129,16 +125,18 @@ subroutine xcgfvo(option, ndim, nnop, fno, rho)
 !
     if ((ipesa.ne.0) .or. (irota.ne.0)) then
 !
+!       on est sur de la presence de RHO suite a l'appel a cgverho 
         call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
         call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', val, icodre, 1)
+        rhocst=val
 !
         if (ipesa .ne. 0) then
             do 60 ino = 1, nnop
                 do 61 j = 1, ndim
                     kk = ndim*(ino-1)+j
-                    fno(kk) = fno(kk) + rho*zr(ipesa)*zr(ipesa+j)
+                    fno(kk) = fno(kk) + rhocst*zr(ipesa)*zr(ipesa+j)
 61              continue
 60          continue
         endif
@@ -152,7 +150,7 @@ subroutine xcgfvo(option, ndim, nnop, fno, rho)
 63              continue
                 do 64 j = 1, ndim
                     kk = ndim*(ino-1)+j
-                    fno(kk)=fno(kk)+rho*om*om*(zr(igeom+kk-1)-omo*zr(&
+                    fno(kk)=fno(kk)+rhocst*om*om*(zr(igeom+kk-1)-omo*zr(&
                     irota+j))
 64              continue
 62          continue
