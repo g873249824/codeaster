@@ -31,8 +31,6 @@ B_ETAPE/E_ETAPE) et des concepts/ASSD.
 import sys
 import os
 import os.path as osp
-import time
-from datetime import datetime
 import platform
 from optparse import OptionParser
 
@@ -156,9 +154,7 @@ The ASTERDATADIR environment variable changes the data directory.
             self.info[attr] = getattr(properties, attr)
         vers = self.info['version']
         if vers:
-            aster_core.__version__ = vers
             # for backward compatibility
-            aster.__version__ = aster_core.__version__
             lv = vers.split('.')
             try:
                 self.info['versMAJ'] = int(lv.pop(0))
@@ -214,133 +210,6 @@ def getargs(argv=None):
     coreopts = CoreOptions()
     coreopts.parse_args(argv or sys.argv)
     return coreopts
-
-def checksd(nomsd, typesd):
-    """Vérifie la validité de la SD `nom_sd` (nom jeveux) de type `typesd`.
-    Exemple : typesd = sd_maillage
-    C'est le pendant de la "SD.checksd.check" à partir d'objets nommés.
-    Code retour :
-      0 : tout est ok
-      1 : erreurs lors du checksd
-      4 : on n'a meme pas pu tester
-    """
-    from Utilitai.Utmess import UTMESS
-    nomsd  = nomsd.strip()
-    typesd = typesd.lower().strip()
-    # import
-    iret = 4
-    try:
-        sd_module = __import__('SD.%s' % typesd, globals(), locals(), [typesd])
-    except ImportError, msg:
-        UTMESS('F', 'SDVERI_1', valk=typesd)
-        return iret
-    # on récupère la classe typesd
-    clas = getattr(sd_module, typesd, None)
-    if clas:
-        objsd = clas(nomj=nomsd)
-        chk = objsd.check()
-        ichk = min([1,] + [level for level, obj, msg in chk.msg])
-        if ichk == 0:
-            iret = 1
-        else:
-            iret = 0
-    # on imprime les messages d'erreur (level=0):
-    for level, obj, msg in chk.msg:
-        if level == 0 :
-            aster.affiche('MESSAGE',repr(obj)+msg)
-    return iret
-
-def _print_header():
-    """Appelé par entete.F90 pour afficher des informations sur
-    la machine."""
-    import aster_core
-    from i18n import localization
-    from Utilitai.Utmess import UTMESS
-    import numpy
-    typvers = get_version_desc()
-    aster_core.set_info('versLabel', typvers)
-    lang_settings = '%s (%s)' % localization.get_current_settings()
-
-    date_build = aster_core.get_option('date')
-    UTMESS('I', 'SUPERVIS2_4', valk=typvers)
-    UTMESS('I', 'SUPERVIS2_23',
-        valk=(aster_core.get_option('version'), date_build,
-              aster_core.get_option('parentid'), aster_core.get_option('branch')),)
-    UTMESS('I', 'SUPERVIS2_10',
-        valk=("1991", time.strftime('%Y'),
-              time.strftime('%c'),
-              aster_core.get_option('hostname'),
-              aster_core.get_option('architecture'),
-              aster_core.get_option('processor'),
-              aster_core.get_option('system') + ' ' + aster_core.get_option('osrelease'),
-              lang_settings,),)
-    pyvers = '%s.%s.%s' % tuple(sys.version_info[:3])
-    UTMESS('I', 'SUPERVIS2_9', valk=(pyvers, numpy.__version__))
-    # avertissement si la version a plus de 15 mois
-    if aster_core._NO_EXPIR == 0:
-        try:
-            d0, m0, y0 = map(int, date_build.split('/'))
-            tbuild = datetime(y0, m0, d0)
-            tnow = datetime.today()
-            delta = (tnow - tbuild).days
-            if delta > 550:
-                UTMESS('A', 'SUPERVIS2_2')
-        except ValueError:
-            pass
-
-def _print_alarm():
-    import aster_core
-    from Utilitai.Utmess import UTMESS
-    changes = aster_core.get_option('changes')
-    uncommitted = aster_core.get_option('uncommitted')
-    if changes:
-        UTMESS('A+', 'SUPERVIS_41', valk=aster_core.get_option('version'), vali=changes)
-    if uncommitted and type(uncommitted) is list:
-        fnames = ', '.join(uncommitted)
-        UTMESS('A+', 'SUPERVIS_42', valk=(aster_core.get_option('parentid'), fnames),)
-    UTMESS('I', 'VIDE_1')
-
-def print_header(part):
-    """Appelé par entete.F90 pour afficher des informations sur la machine.
-    Certaines informations étant obtenues en fortran, une partie des messages
-    est imprimée par le fortran. On a donc découpé en plusieurs morceaux.
-    part = 1 : entête principal : ici
-    part = 2 : informations librairies : dans entete.F90
-    part = 3 : message d'alarme en cas de modification du code source : ici
-    """
-    if part == 1:
-        _print_header()
-    elif part == 3:
-        _print_alarm()
-    else:
-        raise ValueError("unknown value for 'part'")
-
-def get_version_name():
-    """Return the 'name' of the version.
-    - testing or stable for a frozen version,
-    - stable-updates or unstable"""
-    import aster_core
-    sta = aster_core.get_option('version').split('.')[-1] == '0'
-    expl = aster_core.get_option('exploit')
-    changes = aster_core.get_option('changes')
-    name = aster_core.get_option('from_branch')
-    if expl:
-        name = sta and 'stable' or 'stable-updates'
-    else:
-        name = sta and 'testing' or 'unstable'
-    return name
-
-def get_version_desc():
-    """Return the description of the version"""
-    names = {
-        'stable' : _(u"""EXPLOITATION (stable)"""),
-        'stable-updates' : _(u"""CORRECTIVE AVANT STABILISATION (stable-updates)"""),
-        'testing' : _(u"""DÉVELOPPEMENT STABILISÉE (testing)"""),
-        'unstable' : _(u"""DÉVELOPPEMENT (unstable)"""),
-    }
-    name = get_version_name()
-    typvers = names.get(name, _(u"""DÉVELOPPEMENT (%s)""") % name)
-    return typvers
 
 def _bwc_arguments(argv):
     """Fonction de compatibilité de transition vers des options "GNU".

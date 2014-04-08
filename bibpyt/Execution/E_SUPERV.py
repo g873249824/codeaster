@@ -39,7 +39,7 @@ MODULES_RAISING_FPE = (
 )
 for mod in MODULES_RAISING_FPE:
     try:
-        __import__('sympy')
+        __import__(mod)
     except ImportError:
         pass
 
@@ -48,6 +48,7 @@ for mod in MODULES_RAISING_FPE:
 # les arguments de la ligne de commande parsés.
 import E_Core
 from strfunc import convert, ufmt
+import aster_core
 
 class SUPERV:
     usage="""
@@ -91,12 +92,6 @@ class SUPERV:
         pour permettre d'importer Noyau."""
         from Noyau.N_info import message, SUPERV as SUPCAT
         message.error(SUPCAT, *args)
-
-    def register(self):
-        """Enregistre le JDC et les objets nécessaires à aster_core."""
-        import aster_core
-        from Utilitai.Utmess import MessageLog
-        aster_core.register(self.jdc, self.coreopts, MessageLog, E_Core)
 
     def set_i18n(self):
         """Met en place les fonctions d'internationalisation."""
@@ -156,7 +151,7 @@ class SUPERV:
         self.jdc = self.JdC(procedure=text, cata=self.cata, nom=fort1,
                             context_ini=params, **args)
         # on enregistre les objets dans aster_core dès que le jdc est créé
-        self.register()
+        aster_core.register(self.jdc, self.coreopts)
 
     def CompileJDC(self):
         """Compile the JDC content (byte-compile).

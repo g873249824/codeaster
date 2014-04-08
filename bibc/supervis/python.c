@@ -38,7 +38,7 @@
 
 extern DL_EXPORT(int) Py_Main();
 extern void initaster();
-extern void initaster_core();
+extern void init_aster_core();
 extern void initaster_fonctions();
 extern void initmed_aster();
 
@@ -66,7 +66,7 @@ _MAIN_(argc, argv)
         exit(EXIT_FAILURE);
     }
 #endif
-    PyImport_AppendInittab("aster_core",initaster_core);
+    PyImport_AppendInittab("_aster_core", init_aster_core);
     PyImport_AppendInittab("aster",initaster);
 
     /* Module définissant des opérations sur les objets fonction_sdaster */
