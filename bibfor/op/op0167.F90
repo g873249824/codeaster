@@ -86,7 +86,7 @@ subroutine op0167()
     real(kind=8) :: epais
     character(len=1) :: k1b
     character(len=4) :: cdim, repk
-    character(len=8) :: k8b, nomain, nomaou, newmai, prefix, mo, geofi
+    character(len=8) :: k8b, nomain, nomaou, newmai, prefix, mo
     character(len=8) :: nomori, knume, prfno, prfma, plan, trans
     character(len=16) :: typcon, nomcmd, option, k16bid
     character(len=16) :: motfac, tymocl(nbmc), motcle(nbmc)
@@ -99,7 +99,7 @@ subroutine op0167()
     character(len=24) :: lisk
     character(len=24) :: nomg, valk(2), nogma, gpptnm, gpptnn
     character(len=24) :: prfn1, prfn2, nume2, iadr, nume1, momoto, momuto, prfn
-    integer :: nn1, iaa, iagma, iatyma, ierd, ii, ima, in, ino, inumol, j, nfi
+    integer :: nn1, iaa, iagma, iatyma, ierd, ii, ima, in, ino, inumol, j
     integer :: jcrgno, jcrgnu, jcrmno, jcrmnu, jgg, jlii, jlik, jmail, jmomto
     integer :: jmomtu, jnoeu, jnono, jnpt, jopt, jtom, jtrno, jvale, jvg, kvale
     integer :: nbcrma, nbcrp1, nbdgma, nbgma, nbgrma, nbgrmn, nbgrmt, nbgrmv
@@ -107,7 +107,7 @@ subroutine op0167()
     integer :: nbpt, nbptt, nori, nrep, ntab, ntpoi
     integer :: ibid, icham, ifm, iocc, jdime, jiad, jlima, jma, jmomno, jmomnu
     integer :: jnommc, jnu2, jnum, joccmc, jpr2, jpro, jrefe, jtypmv
-    integer :: nbmaiv, nbmoma, nbnoaj, nbnoev, nch, ndinit, niv, k, jgeofi
+    integer :: nbmaiv, nbmoma, nbnoaj, nbnoev, nch, ndinit, niv, k
     integer :: jnnoma, jnnomb, jadrjv, jnonum, dimcon, decala, iocct
     real(kind=8) :: shrink, lonmin
     logical :: lpb
@@ -147,18 +147,6 @@ subroutine op0167()
         cham1=' '
         call eclpgm(nomaou, mo, cham1, ligrel, shrink,&
                     lonmin, nch, zk16( icham))
-        goto 350
-    endif
-!
-!
-! ----------------------------------------------------------------------
-!          TRAITEMENT DU MOT CLE "GEOM_FIBRE"
-! ----------------------------------------------------------------------
-    call getvid(' ', 'GEOM_FIBRE', 1, iarg, 1,&
-                geofi, nfi)
-    if (nfi .ne. 0) then
-        call jeveuo(geofi//'.GFMA', 'L', jgeofi)
-        call copisd('MAILLAGE', 'G', zk8(jgeofi), nomaou)
         goto 350
     endif
 !
