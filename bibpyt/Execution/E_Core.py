@@ -37,17 +37,13 @@ import platform
 from optparse import OptionParser
 
 import osutils
+import aster_core
 
 # Pas d'import des autres packages d'aster
 # car le premier import de ce module est fait avant l'ajout des paths.
 
 def check_value(option, opt, value, parser):
     """Callback to check some values."""
-    if opt == '--bibpyt':
-        if not osp.isdir(value):
-            parser.error("option '%s' expects an existing directory" % opt)
-        if not osp.isdir(osp.join(value, 'Accas')):
-            parser.error("option '%s' should define a directory containing 'Accas'." % opt)
     if opt == '--commandes':
         if not osp.isfile(value):
             parser.error("option '%s' expects an existing file" % opt)
@@ -60,10 +56,6 @@ class CoreOptions(object):
     On centralise également le stockage d'informations de base comme le nom
     de la machine, la plate-forme, etc.
 
-    :Attention: ``sys.path`` est modifiée juste après le l'interprétation de
-                la ligne de commande. La liste est enrichie avec la valeur de
-                ``--bibpyt`` (ajouté en debut de list).
-                "." et "bibpyt/Cata"  sont aussi ajoutés.
     """
     doc = """usage: ./%%prog %s [-h|--help] [options]
 
@@ -81,10 +73,6 @@ The ASTERDATADIR environment variable changes the data directory.
         parser.add_option('--commandes', dest='fort1', type='str', metavar='FILE',
             action='callback', callback=check_value,
             help="Code_Aster command file")
-        parser.add_option('--bibpyt', dest='bibpyt', type='string', metavar='DIR',
-            action='callback', callback=check_value,
-            help="path to Code_Aster python source files")
-
         parser.add_option('--memjeveux', dest='memjeveux', type='float', action='store',
             help="maximum size of the memory taken by the execution (in Mw)")
         parser.add_option('--memory', dest='memory', type='float', action='store',
@@ -137,19 +125,11 @@ The ASTERDATADIR environment variable changes the data directory.
         """Analyse les arguments de la ligne de commmande."""
         argv = _bwc_arguments(argv)
         self.opts, self.args = self.parser.parse_args(argv[1:])
-        self.set_path()
         self.default_values()
         self.init_info()
         if self._dbg:
             print 'options   :', self.opts
             print 'arguments :', self.args
-
-    def set_path(self):
-        sys.path.insert(0, '.')
-        bibpyt = self.get_option('bibpyt')
-        if bibpyt:
-            sys.path.insert(0, osp.abspath(bibpyt))
-            sys.path.append(osp.join(osp.abspath(bibpyt), 'Cata'))
 
     def init_info(self):
         """Stocke les informations générales (machine, os...)."""
@@ -170,25 +150,24 @@ The ASTERDATADIR environment variable changes the data directory.
         for attr in ('version', 'versionD0', 'versionSTA', 'versLabel', 'date', 'exploit'):
             self.info[attr] = None
         self.info['versMAJ'] = self.info['versMIN'] = self.info['versSUB'] = 0
-        if self.opts.bibpyt:
-            from Accas import properties
-            for attr in ('version', 'date', 'exploit', 'parentid',
-                         'branch', 'from_branch', 'changes', 'uncommitted'):
-                self.info[attr] = getattr(properties, attr)
-            vers = self.info['version']
-            if vers:
-                aster_core.__version__ = vers
-                # for backward compatibility
-                aster.__version__ = aster_core.__version__
-                lv = vers.split('.')
-                try:
-                    self.info['versMAJ'] = int(lv.pop(0))
-                    self.info['versMIN'] = int(lv.pop(0))
-                    self.info['versSUB'] = int(lv.pop(0))
-                except (IndexError, ValueError):
-                    pass
-            self.info['versionD0'] = '%d.%02d.%02d' % (self.info['versMAJ'],
-                self.info['versMIN'], self.info['versSUB'])
+        from Accas import properties
+        for attr in ('version', 'date', 'exploit', 'parentid',
+                     'branch', 'from_branch', 'changes', 'uncommitted'):
+            self.info[attr] = getattr(properties, attr)
+        vers = self.info['version']
+        if vers:
+            aster_core.__version__ = vers
+            # for backward compatibility
+            aster.__version__ = aster_core.__version__
+            lv = vers.split('.')
+            try:
+                self.info['versMAJ'] = int(lv.pop(0))
+                self.info['versMIN'] = int(lv.pop(0))
+                self.info['versSUB'] = int(lv.pop(0))
+            except (IndexError, ValueError):
+                pass
+        self.info['versionD0'] = '%d.%02d.%02d' % (self.info['versMAJ'],
+            self.info['versMIN'], self.info['versSUB'])
 
     def set_info(self, key, value):
         """Définit la valeur d'une information générale."""
@@ -208,7 +187,6 @@ The ASTERDATADIR environment variable changes the data directory.
                 limcpu = int(1.e18)
             self.opts.tpmax = limcpu
         if not self.opts.memory and self.opts.memjeveux:
-            import aster_core # depend on self.opts.bibpyt (see parse_args)
             self.opts.memory = self.opts.memjeveux * aster_core.ASTER_INT_SIZE
 
     def sub_tpmax(self, tsub):
@@ -375,7 +353,7 @@ def _bwc_arguments(argv):
     if inew:
         return argv
     long_opts = (
-        'eficas_path', 'commandes', 'num_job', 'mode',
+        'commandes', 'num_job', 'mode',
         'rep_outils', 'rep_mat', 'rep_dex', 'rep_vola', 'rep_glob',
         'memjeveux', 'tpmax', 'memory', 'max_base',
     )
@@ -386,9 +364,9 @@ def _bwc_arguments(argv):
     # removed options
     long_opts_rm = ('rep', 'mem', 'mxmemdy', 'memory_stat', 'memjeveux_stat',
                     'type_alloc', 'taille', 'partition',
-                    'origine', 'ORBInitRef',)
+                    'origine', 'ORBInitRef', 'eficas_path')
     # renamed options
-    long_opts_mv = { 'eficas_path' : 'bibpyt' }
+    long_opts_mv = {}
     orig = argv[:]
     new = []
     buffer = ''
