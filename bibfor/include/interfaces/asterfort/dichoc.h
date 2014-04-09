@@ -19,7 +19,7 @@ interface
     subroutine dichoc(nbt, neq, nno, nc, icodma,&
                       dul, utl, xg, pgl, klv,&
                       duly, dvl, dpe, dve, force,&
-                      varmo, varpl, dimele)
+                      varmo, varpl, dimele, vitesse)
         integer :: neq
         integer :: nbt
         integer :: nno
@@ -38,5 +38,6 @@ interface
         real(kind=8) :: varmo(8)
         real(kind=8) :: varpl(8)
         integer :: dimele
+        integer :: vitesse
     end subroutine dichoc
 end interface

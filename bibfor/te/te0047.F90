@@ -94,6 +94,7 @@ subroutine te0047(optioz, nomtez)
     character(len=8) :: k8bid, famil, poum
     character(len=24) :: messak(5)
     parameter     (zero = 0.0d0, moins1=-1.0d0)
+    integer :: vitesse
 ! ----------------------------------------------------------------------
 !
 !         COMPORTEMENT NON-LINEAIRE POUR LES DISCRETS
@@ -784,21 +785,21 @@ subroutine te0047(optioz, nomtez)
             varmo(i) = zr(ivarim+i-1)
 30      continue
         call jevech('PINSTPR', 'L', jinst)
-        call tecach('ONN', 'PVITPLU', 'L', 1, ivitp,&
-                    iret)
+        call tecach('ONN', 'PVITPLU', 'L', 1, ivitp, iret)
+        vitesse = 0
         if (iret .eq. 0) then
             if (ndim .eq. 3) then
                 call utpvgl(nno, nc, pgl, zr(ivitp), dvl)
             else if (ndim.eq.2) then
                 call ut2vgl(nno, nc, pgl, zr(ivitp), dvl)
             endif
+            vitesse = vitesse + 1
         else
             do 40 i = 1, 12
                 dvl(i) = 0.d0
 40          continue
         endif
-        call tecach('ONN', 'PDEPENT', 'L', 1, idepen,&
-                    iret)
+        call tecach('ONN', 'PDEPENT', 'L', 1, idepen, iret)
         if (iret .eq. 0) then
             if (ndim .eq. 3) then
                 call utpvgl(nno, nc, pgl, zr(idepen), dpe)
@@ -810,14 +811,14 @@ subroutine te0047(optioz, nomtez)
                 dpe(i) = 0.d0
 50          continue
         endif
-        call tecach('ONN', 'PVITENT', 'L', 1, iviten,&
-                    iret)
+        call tecach('ONN', 'PVITENT', 'L', 1, iviten, iret)
         if (iret .eq. 0) then
             if (ndim .eq. 3) then
                 call utpvgl(nno, nc, pgl, zr(iviten), dve)
             else if (ndim.eq.2) then
                 call ut2vgl(nno, nc, pgl, zr(iviten), dve)
             endif
+            vitesse = vitesse + 1
         else
             do 60 i = 1, 12
                 dve(i) = 0.d0
@@ -827,7 +828,7 @@ subroutine te0047(optioz, nomtez)
         call dichoc(nbt, neq, nno, nc, zi(imate),&
                     dul, ulp, zr(igeom), pgl, klv,&
                     duly, dvl, dpe, dve, force,&
-                    varmo, varpl, ndim)
+                    varmo, varpl, ndim, vitesse)
 ! ---    ACTUALISATION DE LA MATRICE TANGENTE
         if (option .eq. 'FULL_MECA' .or. option .eq. 'RIGI_MECA_TANG') then
             call jevech('PMATUUR', 'E', imat)

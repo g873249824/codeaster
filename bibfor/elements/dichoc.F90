@@ -1,12 +1,13 @@
 subroutine dichoc(nbt, neq, nno, nc, icodma,&
                   dul, utl, xg, pgl, klv,&
                   duly, dvl, dpe, dve, force,&
-                  varmo, varpl, dimele)
+                  varmo, varpl, dimele, vitesse)
 ! ----------------------------------------------------------------------
     implicit none
 #include "asterc/r8prem.h"
 #include "asterfort/r8inir.h"
 #include "asterfort/rcvala.h"
+#include "asterfort/u2mess.h"
 #include "asterfort/ut2vgl.h"
 #include "asterfort/utpvgl.h"
 #include "asterfort/vdiff.h"
@@ -16,6 +17,7 @@ subroutine dichoc(nbt, neq, nno, nc, icodma,&
     real(kind=8) :: dpe(neq), dve(neq)
     real(kind=8) :: klv(nbt), duly, xg(6), pgl(3, 3)
     real(kind=8) :: varmo(8), varpl(8), force(3)
+    integer :: vitesse
 ! ----------------------------------------------------------------------
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -87,8 +89,12 @@ subroutine dichoc(nbt, neq, nno, nc, icodma,&
 !        SI MOT_CLE RIGI_NOR ==> RIGNOR = VALRE1(1)
 !        SINON               ==> RIGNOR = KLV(1)
         call rcvala(icodma, ' ', 'DIS_CONTACT', nbpar, nompar,&
-                    valpar, nbre1, nomre1, valre1, codre1,&
-                    0)
+                    valpar, nbre1, nomre1, valre1, codre1, 0)
+!       Blindage : vitesse=0 (pas de champ de vitesse) et COULOMB ==> <F>
+        coulom = 0.0d0
+        if ( (vitesse.eq.0) .and. (codre1(5).eq.0) ) then
+            call u2mess('F', 'DISCRETS_35')
+        endif
         if (codre1(1) .eq. 0) then
             rignor = valre1(1)
         else
@@ -210,8 +216,12 @@ subroutine dichoc(nbt, neq, nno, nc, icodma,&
 !        SI MOT_CLE RIGI_NOR ==> RIGNOR = VALRE1(1)
 !        SINON               ==> RIGNOR = KLV(1)
         call rcvala(icodma, ' ', 'DIS_CONTACT', nbpar, nompar,&
-                    valpar, nbre1, nomre1, valre1, codre1,&
-                    0)
+                    valpar, nbre1, nomre1, valre1, codre1, 0)
+!       Blindage : vitesse=0 (pas de champ de vitesse) et COULOMB ==> <F>
+        coulom = 0.0d0
+        if ( (vitesse.eq.0) .and. (codre1(5).eq.0) ) then
+            call u2mess('F', 'DISCRETS_35')
+        endif
         if (codre1(1) .eq. 0) then
             rignor = valre1(1)
         else

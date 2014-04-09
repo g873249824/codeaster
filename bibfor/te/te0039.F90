@@ -250,7 +250,7 @@ subroutine te0039(option, nomte)
                 call dichoc(nbt, neq, nno, nc, zi(lmater),&
                             dul, ulp, zr( igeom), pgl, klv,&
                             duly, dvl, dpe, dve, force,&
-                            varmo, varpl, ndim)
+                            varmo, varpl, ndim, 1)
                 ilogic = 2
                 call disief(nbt, neq, nno, nc, pgl,&
                             klv, ulp, sim, ilogic, duly,&
