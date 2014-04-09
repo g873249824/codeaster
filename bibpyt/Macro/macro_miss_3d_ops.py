@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -44,7 +43,7 @@ def macro_miss_3d_ops(self,UNITE_IMPR_ASTER,UNITE_OPTI_MISS,
   DEFI_FICHIER(ACTION='LIBERER',UNITE=UNITE_IMPR_ASTER)
 
   loc_fic=aster_core.get_option('repout')
-  tv = aster.__version__.split('.')
+  tv = aster_core.get_option('version').split('.')
   if len(tv) < 3:
       tv.extend(['x']*(3-len(tv)))
   elif len(tv) > 3:

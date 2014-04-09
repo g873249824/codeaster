@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -64,7 +63,7 @@ def _printDBG(*args):
 def get_titre_concept(co=None):
     """Retourne un titre automatique."""
     # ASTER 10.01.25 CONCEPT tab0 CALCULE LE 21/05/2010 A 17:58:50 DE TYPE TABLE_SDASTER
-    import aster
+    import aster_core
     from Noyau.N_ASSD import ASSD
     if not isinstance(co, ASSD):
         co = None
@@ -77,7 +76,7 @@ def get_titre_concept(co=None):
     }
     format = [fmt["version"], ]
     dfmt = {
-        "version" : aster.__version__,
+        "version" : aster_core.get_option('version'),
         "dateheure" : time.strftime("LE %m/%d/%Y A %H:%M:%S"),
     }
     if co:
