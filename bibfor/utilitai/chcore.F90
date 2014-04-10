@@ -11,14 +11,14 @@ subroutine chcore(chou)
 ! WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
 ! MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
 ! GENERAL PUBLIC LICENSE FOR MORE DETAILS.
-!
+
 ! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 !   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 ! ======================================================================
-!
-!     BUT : TRANSFORMER UN CHAMP : REEL --> COMPLEXE
-!
+
+!     BUT : TRANSFORMER UN CHAM_NO : REEL --> COMPLEXE
+
 !     LE CHAMP COMPLEXE EST CONSTRUIT DE SORTE QUE:
 !    - SA PARTIE REELLE CORRESPOND AUX VALEURS DU CHAMP REEL
 !    - SA PARTIE IMAGINAIRE EST NULLE.
@@ -42,71 +42,56 @@ subroutine chcore(chou)
     real(kind=8) :: zero
     parameter(zero=0.d0)
     character(len=3) :: tsca
-    character(len=4) :: docu
+    character(len=4) :: tych
     character(len=8) :: chou, chin, nomgd, k8b
     character(len=24) :: k24b, vale, valin
     integer :: iarg
-!
+!---------------------------------------------------------------------
+
     call jemarq()
-!
-!     RECUPERATION DU CHAMP REEL
-    call getvid(' ', 'CHAM_GD', 0, iarg, 1,&
-                chin, iret)
-!
-!     VERIFICATION : CHIN REEL?
-    call dismoi('F', 'NOM_GD', chin, 'CHAMP', ibid,&
-                nomgd, ibid)
-    call dismoi('F', 'TYPE_SCA', nomgd, 'GRANDEUR', ibid,&
-                tsca, ibid)
-    if (tsca .ne. 'R') call u2mesk('F', 'UTILITAI_20', 1, chin)
-!
-!     COPIE CHIN --> CHOU
+
+!   -- recuperation du champ reel
+    call getvid(' ', 'CHAM_GD', 0, iarg, 1, chin, iret)
+
+!   -- verification : chin cham_no et reel ?
+    call dismoi('F', 'TYPE_CHAMP', chin, 'CHAMP', ibid, tych, ibid)
+    if (tych .ne. 'NOEU')  call u2mesk('F','UTILITAI_37', 1,chin)
+    call dismoi('F', 'NOM_GD', chin, 'CHAMP', ibid, nomgd, ibid)
+    call dismoi('F', 'TYPE_SCA', nomgd, 'GRANDEUR', ibid, tsca, ibid)
+    if (tsca .ne. 'R') then
+        call u2mesk('F', 'UTILITAI_20', 1, chin)
+    endif
+
+!   -- copie chin --> chou
     call copisd('CHAMP', 'G', chin, chou)
-!
-!
-!     MODIFICATIONS DE CHOU:
-!    ======================
-!
-! --- 1. ".VALE"
-!     ----------
-!     CHAM_NO OU CHAM_ELEM ?
-    vale(1:19)=chou
-    k24b=vale(1:19)//'.DESC'
-    call jeexin(k24b, ibid)
-    if (ibid .gt. 0) then
-        k24b=vale(1:19)//'.DESC'
-        call jelira(k24b, 'DOCU', ibid, docu)
-    else
-        k24b=vale(1:19)//'.CELD'
-        call jelira(k24b, 'DOCU', ibid, docu)
-    endif
-!
-    if (docu .eq. 'CHNO') then
-        vale(20:24)='.VALE'
-    else if (docu.eq.'CHML') then
-        vale(20:24)='.CELV'
-    else
-        call u2mess('F', 'UTILITAI_21')
-    endif
-!
+
+
+!   modifications de chou:
+!   ======================
+
+!   -- 1. ".vale"
+!   --------------
+    vale=chou
+    vale(20:24)='.VALE'
+
     call jelira(vale, 'LONMAX', nbval, k8b)
     call jedetr(vale)
     call jecreo(vale, 'G V C')
     call jeecra(vale, 'LONMAX', nbval, k8b)
     call jeveuo(vale, 'E', jvale)
-!
+
     valin=vale
     valin(1:19)=chin
     call jeveuo(valin, 'L', jvalin)
-!
-    do 10 i = 1, nbval
+
+    do i = 1, nbval
         zc(jvale+i-1)=dcmplx(zr(jvalin+i-1),zero)
-10  end do
-!
-! --- 2. CHANGEMENT DE LA GRANDEUR
-!     ----------------------------
+    end do
+
+!   -- 2. changement de la grandeur
+!   ----------------------------
     call sdchgd(chou, 'C')
-!
+
     call jedema()
-!
+
 end subroutine

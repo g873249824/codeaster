@@ -20,7 +20,6 @@ subroutine sdchgd(champ, tysca)
 !     ARGUMENTS:
 !     ----------
 #include "jeveux.h"
-!
 #include "asterfort/jedema.h"
 #include "asterfort/jeexin.h"
 #include "asterfort/jemarq.h"
@@ -54,11 +53,8 @@ subroutine sdchgd(champ, tysca)
     character(len=19) :: nocham
     character(len=8) :: nomgd, nomgd2
     character(len=1) :: tysca2
-!
-! DEB-------------------------------------------------------------------
-!-----------------------------------------------------------------------
     integer :: iadesc, ibid, igd, igd2
-!-----------------------------------------------------------------------
+!----------------------------------------------------------------------
     call jemarq()
     nocham= champ
     tysca2= tysca
