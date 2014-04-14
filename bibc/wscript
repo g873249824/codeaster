@@ -2,7 +2,7 @@
 
 import os.path as osp
 
-from waflib import Configure, Logs
+from waflib import Configure, Logs, Utils
 
 def options(self):
     self.load('python_cfg', tooldir='waftools')
@@ -44,6 +44,7 @@ def configure(self):
 @Configure.conf
 def check_bibc_depends(self):
     """check dependencies of bibc"""
+    # never in static
     self.check_cc(uselib_store='SYS', lib='dl')
 
 def build(self):
@@ -77,7 +78,7 @@ def build(self):
     )
     # install generated headers (C + fortran)
     bld = self.path.get_bld().parent
-    config_includes = bld.ant_glob('aster*_config.h')
+    config_includes = bld.ant_glob('aster*_config.h', quiet=True)
     self.install_files(
         osp.join(env.INCLUDEDIR, 'aster'),
         config_includes
@@ -85,7 +86,7 @@ def build(self):
 
 def build_as_shared(self, shenv):
     get_srcs = self.path.get_src().ant_glob
-    uses = self.env['all_dependencies']
+    uses = shenv['all_dependencies']
 
     self(
         features = 'c cshlib',
@@ -102,7 +103,7 @@ def build_as_shared(self, shenv):
     self(
         features = 'c cshlib pyext',
           target = '../bibpyt/_aster_core',
-            name = 'aster_core',
+            name = 'aster_core_module',
           source = get_srcs('**/astercore_module.c'),
              env = shenv.derive(),
              use = ['asterlib'] + uses,
@@ -111,7 +112,7 @@ def build_as_shared(self, shenv):
     self(
         features = 'c cshlib pyext',
           target = '../bibpyt/aster',
-            name = 'astermodule',
+            name = 'aster_module',
           source = get_srcs('**/astermodule.c'),
              env = shenv.derive(),
              use = ['asterlib'] + uses,
@@ -138,7 +139,7 @@ def build_as_shared(self, shenv):
 
 def build_as_embeded(self, stenv):
     get_srcs = self.path.get_src().ant_glob
-    uses = self.env['all_dependencies']
+    uses = stenv['all_dependencies']
 
     excl = ['**/med_aster_module.c'] if not stenv.BUILD_MED else []
 
@@ -175,7 +176,7 @@ def check_cflags(self):
 @Configure.conf
 def check_optimization_cflags(self):
     self.setenv('debug')
-    flags = ['-g']
+    flags = ['-g'] + Utils.to_list(self.env['CFLAGS_ASTER_DEBUG'])
     self.start_msg('Setting C debug flags')
     self.env.append_unique('CFLAGS', flags)
     self.end_msg(flags)

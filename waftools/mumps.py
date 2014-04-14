@@ -25,6 +25,8 @@ def configure(self):
     try:
         self.check_mumps()
     except Errors.ConfigurationError:
+        self.define('_DISABLE_MUMPS', 1)
+        self.undefine('HAVE_MUMPS')
         if self.options.enable_mumps == True:
             raise
     else:
@@ -44,6 +46,10 @@ def check_mumps(self):
         opts.mumps_libs += ' mpiseq'
     if opts.mumps_libs:
         self.check_mumps_libs()
+    self.set_define_from_env('MUMPS_INT_SIZE',
+                             'Setting size of Mumps integers',
+                             'unexpected value for mumps int: %(size)s',
+                             into=(4, 8), default=4)
 
 @Configure.conf
 def check_mumps_libs(self):
@@ -86,7 +92,7 @@ def get_mumps_version(self):
         to_search = 'bibfor/include_mumps-%s*/' % ret
         if not self.srcnode.ant_glob(to_search, src=True, dir=True):
             raise Errors.ConfigurationError('"%s" not compatible (see bibfor/include_mumps*)' % ret)
-        self.define('MUMPS_VERSION', ret)
+        self.define('ASTER_MUMPS_VERSION', ret)
     except:
         self.end_msg('no', 'YELLOW')
         raise

@@ -74,7 +74,7 @@ subroutine entete()
 ! --- LIBRARIES SOLVEURS
 #ifdef _HAVE_MUMPS
 !   to avoid C1510
-#   define vers MUMPS_VERSION
+#   define vers ASTER_MUMPS_VERSION
     call u2mesk('I', 'SUPERVIS2_18', 1, vers)
 #else
     call u2mess('I', 'SUPERVIS2_19')

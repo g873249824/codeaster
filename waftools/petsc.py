@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os.path as osp
+import re
 from functools import partial
 from waflib import Options, Configure, Logs, Utils, Errors
 
@@ -26,6 +27,8 @@ def configure(self):
         self.check_petsc()
     except Errors.ConfigurationError:
         self.env.revert()
+        self.define('_DISABLE_PETSC', 1)
+        self.undefine('HAVE_PETSC')
         if self.options.enable_petsc == True:
             raise
     else:
@@ -48,6 +51,7 @@ def check_petsc(self):
         self.check_petsc_libs(optlibs)
 
     self.check_petsc_headers()
+    self.check_petsc_version()
 
 @Configure.conf
 def check_petsc_libs(self, optlibs):
@@ -60,7 +64,8 @@ def check_petsc_libs(self, optlibs):
 
 @Configure.conf
 def check_petsc_headers(self):
-    check = partial(self.check, header_name='petsc.h', uselib='PETSC')
+    check = partial(self.check, header_name='petsc.h', uselib='PETSC',
+                    uselib_store='PETSC')
 
     self.start_msg('Checking for header petsc.h')
     try:
@@ -72,3 +77,34 @@ def check_petsc_headers(self):
         raise
     else:
         self.end_msg('yes')
+
+@Configure.conf
+def check_petsc_version(self):
+    fragment = r'''
+#include <stdio.h>
+#include <petsc.h>
+int main(void){
+#if defined(PETSC_VERSION_MAJOR) && defined(PETSC_VERSION_MINOR) && defined(PETSC_VERSION_SUBMINOR) && defined(PETSC_VERSION_PATCH)
+    printf("PETSCVER: %d.%d.%d.%d", PETSC_VERSION_MAJOR, PETSC_VERSION_MINOR, PETSC_VERSION_SUBMINOR, PETSC_VERSION_PATCH);
+    return 0;
+#endif
+/* unexpected */
+    return 1;
+}'''
+    self.start_msg('Checking petsc version')
+    try:
+        ret = self.check_cc(fragment=fragment, use='PETSC',
+                            mandatory=True, execute=True, define_ret=True)
+        mat = re.search('PETSCVER: *(?P<vers>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', ret)
+        vers = mat and mat.group('vers')
+        major, minor, sub, patch = [int(i) for i in vers.split('.')]
+        vers = '%d.%d.%dp%d' % (major, minor, sub, patch)
+        if major < 3 or (major == 3 and minor < 2):
+            self.end_msg('unsupported petsc version: %s (expected 3.2.* or newer)' % vers, 'RED')
+            raise Errors.ConfigurationError
+        self.define('ASTER_PETSC_VERSION', vers)
+    except:
+        self.end_msg('can not get version', 'RED')
+        raise
+    else:
+        self.end_msg(vers)

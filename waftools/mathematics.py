@@ -13,21 +13,6 @@ LAPACK = ('lapack', )
 SCALAPACK = ('scalapack', )
 OPTIONAL_DEPS = ('cblas', )
 
-###############################################################################
-from waflib.Tools import fc, c, ccroot
-# original run_str command line is store as hcode
-for feature in ('c', 'cxx', 'cprogram', 'cshlib', 'fc', 'fcprogram', 'fcshlib'):
-    ccroot.USELIB_VARS[feature].add('OPTLIB_FLAGS')
-
-class fcprogram(fc.fcprogram):
-    """Link object files into a fortran program, add optional OPTLIB_FLAGS at the end"""
-    run_str = fc.fcprogram.hcode + ' ${OPTLIB_FLAGS}'
-
-class cprogram(c.cprogram):
-    """Link object files into a C program, add optional OPTLIB_FLAGS at the end"""
-    run_str = c.cprogram.hcode + ' ${OPTLIB_FLAGS}'
-
-###############################################################################
 def options(self):
     group = self.add_option_group("Mathematics  libraries options")
     group.add_option('--maths-libs', type='string',
@@ -39,7 +24,7 @@ def options(self):
                     help='Embed math libraries as static library')
 
 def configure(self):
-    # always check for libpthread, libm
+    # always check for libpthread, libm (never in static)
     self.check_cc(uselib_store='MATH', lib='pthread')
     self.check_cc(uselib_store='MATH', lib='m')
     if self.options.maths_libs in (None, 'auto'):
@@ -62,6 +47,14 @@ def check_opts_math_lib(self):
 
     for lib in Utils.to_list(opts.maths_libs):
         check_lib(lib)
+
+@Configure.conf
+def check_sizeof_blas_int(self):
+    """Check size of blas integers"""
+    self.set_define_from_env('BLAS_INT_SIZE',
+                             'Setting size of blas/lapack integers',
+                             'unexpected value for blas int: %(size)s',
+                             into=(4, 8), default=4)
 
 @Configure.conf
 def check_libm_after_files(self):
@@ -131,7 +124,6 @@ def detect_math_lib(self):
     opts = self.options
     embed = opts.embed_math or (opts.embed_all and not self.get_define('HAVE_MPI'))
     varlib = ('ST' if embed else '') + 'LIB_MATH'
-    self.start_msg('Detecting math libraries')
 
     # blas
     blaslibs, lapacklibs = self.get_mathlib_from_numpy()
@@ -140,20 +132,44 @@ def detect_math_lib(self):
     if 'openblas' not in self.env.get_flat(varlib):
         self.check_math_libs('lapack', list(LAPACK) + lapacklibs, embed)
 
+    def _scalapack():
+        """Check scalapack"""
+        libs = list(SCALAPACK)
+        libs = libs + [''.join(n) for n in product(libs, ['mpi', '-mpi', 'openmpi', '-openmpi'])]
+        return self.check_math_libs('scalapack', libs, embed)
+
+    def _blacs():
+        """Check blacs"""
+        libs = list(BLACS)
+        libs = libs + \
+               [''.join(n) for n in product(libs, ['mpi', '-mpi', 'openmpi', '-openmpi'])] \
+             + [''.join(n) for n in product(['mpi', 'mpi-', 'openmpi', 'openmpi-'], libs)] \
+        # check the 3 blacs libs together: Cinit, F77init, ''
+        ins = []
+        for i in libs:
+            ins.append([l.replace('blacs', 'blacs' + n) for l, n in \
+                        product([i], ['Cinit', 'F77init', ''])])
+        libs = ins + libs
+        return self.check_math_libs('blacs', libs, embed)
+    
+    def _optional():
+        """Check optional dependencies"""
+        self.check_math_libs('optional', OPTIONAL_DEPS, embed, optional=True)
+
     # parallel
     if self.get_define('HAVE_MPI'):
-        # scalapack
-        libs = list(SCALAPACK)
-        libs = ['-'.join(n) for n in product(libs, ['mpi', 'openmpi'])] + libs
-        self.check_math_libs('scalapack', libs, embed)
-        # blacs
-        libs = list(BLACS)
-        libs = ['-'.join(n) for n in product(libs, ['mpi', 'openmpi'])] + libs
-        self.check_math_libs('blacs', libs, embed)
+        self.env.stash()
+        try:
+            _blacs() and _scalapack()
+            _optional()
+            self.check_math_libs_call()
+        except:
+            self.env.revert()
+            _scalapack() and _blacs()
+            _optional()
+            self.check_math_libs_call()
 
-    # optional dependencies
-    self.check_math_libs('optional', OPTIONAL_DEPS, embed, optional=True)
-
+    self.start_msg('Detected math libraries')
     self.end_msg(self.env[varlib])
     if self.get_define('HAVE_MPI') and embed:
         msg = "WARNING:\n"\
@@ -165,18 +181,24 @@ def detect_math_lib(self):
 @Configure.conf
 def check_math_libs(self, name, libs, embed, optional=False):
     """Check for library 'name', stop on first found"""
-    check_maths = partial(self.check_cc, uselib_store='MATH', use='MPI',
+    check_maths = partial(self.check_cc, uselib_store='MATH', use='MATH MPI',
                           mandatory=False)
     if embed:
         check_lib = lambda lib: check_maths(stlib=lib)
     else:
         check_lib = lambda lib: check_maths(lib=lib)
+    self.start_msg('Checking library %s' % name)
+    found = None
     for lib in libs:
         if check_lib(lib=lib):
+            self.end_msg('yes (%s)' % lib)
+            found = lib
             break
     else:
         if not optional:
             self.fatal('Missing the %s library' % name)
+        self.end_msg('not found', 'YELLOW')
+    return found
 
 @Configure.conf
 def get_mathlib_from_numpy(self):

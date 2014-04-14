@@ -49,6 +49,10 @@ def options(self):
         '  FCFLAGS        : extra Fortran compilation options',
         '  PREFIX         : default installation prefix to be used, '
         'if no --prefix option is given.',
+        '  BLAS_INT_SIZE  : kind of integers to use in the fortran blas/lapack '
+        'calls (4 or 8, default is 4)',
+        '  MUMPS_INT_SIZE : kind of integers to use in the fortran mumps calls '
+        ' (4 or 8, default is 4)',
         '  CATALO_CMD     : command line used to build the elements catalog. '
         'It is just inserted before the executable '
         '(may define additional environment variables or a wrapper that takes '
@@ -72,7 +76,7 @@ def options(self):
 
     group.add_option('-E', '--embed-all', dest='embed_all',
                     action='store_true', default=False,
-                    help='activate all embed-* options')
+                    help='activate all embed-* options (except embed-python)')
     group.add_option('--install-tests', dest='install_tests',
                     action='store_true', default=False,
                     help='install the testcases files')
@@ -84,6 +88,7 @@ def options(self):
 def configure(self):
     self.setenv('default')
 
+    self.load('ext_aster', tooldir='waftools')
     self.load('use_config', tooldir='waftools')
     self.load('gnu_dirs')
     self.env.append_value('ASTERDATADIR', osp.join(self.env.DATADIR, 'aster'))
@@ -197,7 +202,6 @@ class BuildElementContext(Build.BuildContext):
     fun = 'build_elements'
 
 def runtest(self):
-    """Run a testcase"""
     self.load('runtest', tooldir='waftools')
 
 class TestContext(Build.BuildContext):
@@ -233,7 +237,7 @@ def check_platform(self):
 
 @Configure.conf
 def check_optimization_options(self):
-    """adapt the environment of the build variants"""
+    # adapt the environment of the build variants
     self.setenv('debug', env=self.all_envs['default'])
     self.setenv('release', env=self.all_envs['default'])
     # these functions must switch between each environment
@@ -248,8 +252,8 @@ CMT = { 'C' : '/* %s */', 'Fortran' : '! %s' }
 
 @Configure.conf
 def write_config_headers(self):
-    """Write both xxxx_config.h files for C and Fortran,
-    then remove entries from DEFINES"""
+    # Write both xxxx_config.h files for C and Fortran,
+    # then remove entries from DEFINES
     for variant in ('debug', 'release'):
         self.setenv(variant)
         self.write_config_h('Fortran', variant)
@@ -260,9 +264,8 @@ def write_config_headers(self):
 
 @Configure.conf
 def write_config_h(self, language, variant, configfile=None, env=None):
-    """Write a configuration header containing defines
-    ASTERC defines will be used if language='C', not 'Fortran'.
-    """
+    # Write a configuration header containing defines
+    # ASTERC defines will be used if language='C', not 'Fortran'.
     self.start_msg('Write config file')
     assert language in ('C', 'Fortran')
     cmt = CMT[language]
@@ -287,9 +290,8 @@ def write_config_h(self, language, variant, configfile=None, env=None):
 
 @Configure.conf
 def get_config_h(self, language):
-    """Create the contents of a ``config.h`` file from the defines
-    set in conf.env.define_key / conf.env.include_key. No include guards are added.
-    """
+    # Create the contents of a ``config.h`` file from the defines
+    # set in conf.env.define_key / conf.env.include_key. No include guards are added.
     cmt = CMT[language]
     lst = []
     for x in self.env[DEFKEYS]:

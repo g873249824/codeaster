@@ -5,17 +5,31 @@ import os
 import os.path as osp
 from functools import partial
 from subprocess import Popen, PIPE
+from distutils.version import LooseVersion
 
 from waflib import Options, Configure, Errors, Utils
 
 def options(self):
     #self.load('python')    # only --nopyc/--nopyo, always disabled below
-    pass
+    group = self.add_option_group('Code_Aster options')
+    group.add_option('--embed-python', dest='embed_python',
+                    default=False, action='store_true',
+                    help='Embed python as static libraries (experimental, '
+                         'not enabled by embed-all)')
 
 def configure(self):
     self.configure_pythonpath()
+    # require to force static libs if --embed-python is present
+    embed_py = self.options.embed_python
+    if embed_py:
+        self.static_lib_pref()
     self.check_python()
     self.check_numpy()
+    if embed_py:
+        self.revert_lib_pref()
+        if self.env['LIB_PYEMBED']:
+            self.env['STLIB_PYEMBED'] = self.env['LIB_PYEMBED']
+            del self.env['LIB_PYEMBED']
 
 ###############################################################################
 
@@ -85,18 +99,16 @@ def check_numpy_version(self, minver=None):
     """
     if not self.env['PYTHON']:
         self.fatal('load python tool first')
-    assert minver is None or isinstance(minver, tuple)
-    cmd = self.env['PYTHON'] + ['-c', 'import numpy; print(numpy.version.short_version)']
-    res = self.cmd_and_log(cmd)
-    npyver_tuple = tuple(map(int, res.strip().split('.')))
-    result = minver is None or npyver_tuple >= minver
-
-    npyver = '.'.join(map(str, npyver_tuple))
     if minver is None:
         self.msg('Checking for numpy version', npyver)
-    else:
-        minver_str = '.'.join(map(str, minver))
-        self.msg('Checking for numpy version', npyver_tuple, ">= %s" % (minver_str,) and 'GREEN' or 'YELLOW')
+        return
+    assert isinstance(minver, tuple)
+    cmd = self.env['PYTHON'] + ['-c', 'import numpy; print(numpy.__version__)']
+    res = self.cmd_and_log(cmd)
+    npyver = res.strip()
+    minver_str = '.'.join(map(str, minver))
+    result = LooseVersion(npyver) >= LooseVersion(minver_str)
+    self.msg('Checking for numpy version', npyver, ">= %s" % (minver_str,) and 'GREEN' or 'YELLOW')
 
     if not result:
         self.fatal('The NumPy version is too old, expecting %r' % (minver,))
@@ -107,6 +119,7 @@ def check_optimization_python(self):
     self.env['PYC'] = self.env['PYO'] = 0
     self.setenv('release')
     self.env['PYC'] = self.env['PYO'] = 0
+
 def _get_default_pythonpath():
     """Default sys.path should be added into PYTHONPATH"""
     env = os.environ.copy()
