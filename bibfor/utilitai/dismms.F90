@@ -54,7 +54,7 @@ subroutine dismms(questi, nomobz, repi, repkz, ierd)
     character(len=7) :: typmat
 !-----------------------------------------------------------------------
     integer :: i, ibid, ier, nec, ieq, neq
-    integer :: ialime, nblime, nbddl, nbddlc, numno
+    integer :: ialime, nblime, nbddl, nbddlc, numno, icmp 
 !-----------------------------------------------------------------------
     call jemarq()
     repk = ' '
@@ -71,7 +71,7 @@ subroutine dismms(questi, nomobz, repi, repkz, ierd)
         call dismnu('NOM_GD', zk24(jrefa-1+2)(1:14), repi, repk, ierd)
 !
     else if (questi.eq.'TYPE_MATRICE') then
-        typmat=zk24(jrefa-1+9)
+        typmat=zk24(jrefa-1+9)(1:2)
         if (typmat .eq. 'MS') then
             repk='SYMETRI'
         else if (typmat.eq.'MR') then
@@ -111,10 +111,15 @@ subroutine dismms(questi, nomobz, repi, repkz, ierd)
         if (ierd .ne. 0) goto 999
         call dismnu('NB_EQUA', zk24(jrefa-1+2)(1:14), neq, kbid, ierd)
         if (ierd .ne. 0) goto 999
-!
-        nbddl = zi(jprno-1+2)
+! 
+       nbddl = zi(jprno-1+2)
         do 100 ieq = 2, neq
             numno = zi(jdeeq-1+(ieq -1)* 2 +1)
+            icmp  = zi(jdeeq-1+(ieq -1)* 2 +2)
+            if ((numno .le. 0) .or. (icmp .le. 0)) then
+                repi = -1
+                goto 200
+            endif
             nbddlc = zi(jprno-1+(numno-1)*(2+nec)+2)
             if (nbddlc .ne. nbddl) then
                 repi = -1
@@ -184,15 +189,15 @@ subroutine dismms(questi, nomobz, repi, repkz, ierd)
         p2=' '
         ier=0
         do 1, i=1,nblime
-        if (zk24(ialime-1+i) .eq. ' ') goto 1
-        call dismme(questi, zk24(ialime-1+i)(1:19), ibid, p1, ierd)
-        if (p1 .ne. ' ') then
-            if (p2 .eq. ' ') then
-                p2=p1
-            else
-                if (p1 .ne. p2) ier=1
+            if (zk24(ialime-1+i) .eq. ' ') goto 1
+            call dismme(questi, zk24(ialime-1+i)(1:19), ibid, p1, ierd)
+            if (p1 .ne. ' ') then
+                if (p2 .eq. ' ') then
+                    p2=p1
+                else
+                    if (p1 .ne. p2) ier=1
+                endif
             endif
-        endif
  1      continue
         if (ier .eq. 0) then
             repk=p2
