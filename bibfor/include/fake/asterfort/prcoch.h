@@ -24,6 +24,6 @@ interface
         character(len=8) :: nocmp
         character(len=8) :: ktype
         integer :: itopo
-        character(len=8) :: group(ngroup)
+        character(len=24) :: group(ngroup)
     end subroutine prcoch
 end interface

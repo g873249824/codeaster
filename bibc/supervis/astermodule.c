@@ -141,7 +141,8 @@ void DEFSSPPPPP(GETLTX,getltx,_IN char *motfac,_IN STRING_SIZE lfac,
                                                         AS_ASSERT(mcs!=(char*)0);
         ioc=(int)*iocc ;
         ioc=ioc-1 ;
-        res=PyObject_CallMethod(get_sh_etape(),"getltx","ssiii",mfc,mcs,ioc,(int)*mxval, (int)*taille);
+        res=PyObject_CallMethod(get_sh_etape(),"getltx","ssiii",
+                                mfc,mcs,ioc,(int)*mxval, (int)*taille);
 
         /*  si le retour est NULL : exception Python a transferer
             normalement a l appelant mais FORTRAN ??? */
@@ -1228,6 +1229,7 @@ PyObject *args;
         int inval=0;
         INTEGER nval;
         int long_nomcham=8;
+        int long_nomgrp=24;
         int itopo;
         INTEGER topo;
 
@@ -1242,10 +1244,10 @@ PyObject *args;
         nval=(INTEGER)inval;
         topo=(INTEGER)itopo;
         if (inval > 0) {
-          groups = MakeTabFStr(inval, long_nomcham);
-          converltx(inval,list,groups,long_nomcham); /* conversion  */
+          groups = MakeTabFStr(inval, long_nomgrp);
+          converltx(inval,list,groups,long_nomgrp); /* conversion  */
         } else {
-          groups = MakeBlankFStr(long_nomcham);
+          groups = MakeBlankFStr(long_nomgrp);
         }
 
         try {
@@ -2265,7 +2267,7 @@ PyObject *args;
         */
         PyObject *temp = (PyObject*)0 ;
         static int nbPassages=0 ;
-                                            AS_ASSERT((nbPassages==1)||(get_sh_etape()==(PyObject*)0));
+                                     AS_ASSERT((nbPassages==1)||(get_sh_etape()==(PyObject*)0));
         nbPassages++ ;
         if (!PyArg_ParseTuple(args, "O",&temp)) return NULL;
 
@@ -2304,7 +2306,7 @@ PyObject *args;
 {
         PyObject *temp = (PyObject*)0 ;
         static int nbPassages=0 ;
-                                            AS_ASSERT((nbPassages==1)||(get_sh_etape()==(PyObject*)0));
+                                     AS_ASSERT((nbPassages==1)||(get_sh_etape()==(PyObject*)0));
         nbPassages++ ;
         if (!PyArg_ParseTuple(args, "O",&temp)) return NULL;
 
