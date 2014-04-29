@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -19,6 +18,7 @@
 # person_in_charge: romeo.fernandes at edf.fr
 import aster_core
 from mac3coeur_coeur import CoeurFactory
+
 
 def makeXMGRACEjeu(unit,post,coeur,valjeuac,valjeucu):
     def computeColor(value):
@@ -75,17 +75,29 @@ def makeXMGRACEjeu(unit,post,coeur,valjeuac,valjeucu):
     xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
     xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
     for val_abs in range(0,len(coeur.ALPHABET)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' %(val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2, coeur.ALPHABET[val_abs]))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color ' \
+                       '(0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n' \
+                       '@string def \"%s\"\n' \
+                       % (val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2,
+                          coeur.ALPHABET[val_abs]))
     for val_ord in range(0,len(coeur.NumV)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' %(-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2, coeur.NumV[len(coeur.NumV)-1-val_ord]))
-    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' %(-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,(len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
+                       '@string char size 0.8\n@string just 2\n@string %f, %f\n' \
+                       '@string def \"%s\"\n' \
+                       % (-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2,
+                          coeur.NumV[len(coeur.NumV)-1-val_ord]))
+    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' \
+        %(-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,
+          (len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
 
     ind=0
     for k in POSITION:
        ind=ind+1
        y=coeur.ALPHAMAC.index(k[0])-(len(coeur.ALPHAMAC)-1)/2.
        x=coeur.ALPHAMAC.index(k[1])-(len(coeur.ALPHAMAC)-1)/2.
-       xmgrfile.write('@kill s%d\n@s%d symbol 2\n@s%d symbol pattern 1\n@s%d symbol size 0.4\n@s%d symbol color 1\n@s%d symbol fill pattern 1\n@s%d symbol fill color 1\n@type xy\n%10.8f %10.8f\n' %(ind,ind,ind,ind,ind,ind,ind,x,y))
+       xmgrfile.write('@kill s%d\n@s%d symbol 2\n@s%d symbol pattern 1\n@s%d symbol size 0.4\n' \
+                      '@s%d symbol color 1\n@s%d symbol fill pattern 1\n@s%d symbol fill color 1\n' \
+                      '@type xy\n%10.8f %10.8f\n' %(ind,ind,ind,ind,ind,ind,ind,x,y))
 
     for name in valjeucu.keys():
         position1 = name[3:5]
@@ -121,6 +133,7 @@ def makeXMGRACEjeu(unit,post,coeur,valjeuac,valjeucu):
     xmgrfile.close()
 
 def makeXMGRACEdef_amp(unit,post,coeur,valdefac):
+
     def computeColor(value):
         valmin= 0.
         valmax=20.
@@ -148,10 +161,18 @@ def makeXMGRACEdef_amp(unit,post,coeur,valdefac):
     xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
     xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
     for val_abs in range(0,len(coeur.ALPHABET)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' %(val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2, coeur.ALPHABET[val_abs]))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
+            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
+            % (val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2,
+               coeur.ALPHABET[val_abs]))
     for val_ord in range(0,len(coeur.NumV)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' %(-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2, coeur.NumV[len(coeur.NumV)-1-val_ord]))
-    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' %(-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,(len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
+            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
+            % (-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2,
+             coeur.NumV[len(coeur.NumV)-1-val_ord]))
+    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' \
+        % (-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,
+            (len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
     ind=0
     for name in valdefac.keys():
         ind=ind+1
@@ -168,9 +189,14 @@ def makeXMGRACEdef_amp(unit,post,coeur,valdefac):
         else :
             (redF,greenF,blueF,size) = computeColor(valdefac[name][4*(post-1)])
             titre = 'au niveau des grilles %s'%post
-        xmgrfile.write('@kill s%d\n@s%d symbol fill pattern %d\n@s%d symbol fill color (%d, %d, %d)\n@s%d symbol 1\n@s%d symbol size %f\n@s%d symbol color (%d, %d, %d)\n%d %d\n' %(ind,ind,1,ind,redF,greenF,blueF,ind,ind,2.*size,ind,redF,greenF,blueF,x,y))
+        xmgrfile.write('@kill s%d\n@s%d symbol fill pattern %d\n' \
+            '@s%d symbol fill color (%d, %d, %d)\n@s%d symbol 1\n@s%d symbol size %f\n' \
+            '@s%d symbol color (%d, %d, %d)\n%d %d\n' % (ind,ind,1,ind,redF,greenF,blueF,ind,
+                ind,2.*size,ind,redF,greenF,blueF,x,y))
 
-    xmgrfile.write('&\n@xaxis ticklabel off\n@yaxis ticklabel off\n@xaxis tick off\n@yaxis tick off\n@subtitle \"Deformation residuelle %s entre les ACs du Coeur (en mm)"\n@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(titre))
+    xmgrfile.write('&\n@xaxis ticklabel off\n@yaxis ticklabel off\n@xaxis tick off\n' \
+        '@yaxis tick off\n@subtitle \"Deformation residuelle %s entre les ACs du Coeur (en mm)"\n' \
+        '@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(titre))
     xmgrfile.close()
 
 def makeXMGRACEdef_mod(unit,post,coeur,valdefac):
@@ -187,10 +213,18 @@ def makeXMGRACEdef_mod(unit,post,coeur,valdefac):
     xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
     xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
     for val_abs in range(0,len(coeur.ALPHABET)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' %(val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2, coeur.ALPHABET[val_abs]))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
+            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
+            % (val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2,
+               coeur.ALPHABET[val_abs]))
     for val_ord in range(0,len(coeur.NumV)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' %(-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2, coeur.NumV[len(coeur.NumV)-1-val_ord]))
-    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' %(-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,(len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
+            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
+            % (-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2,
+               coeur.NumV[len(coeur.NumV)-1-val_ord]))
+    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' \
+        % (-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,
+           (len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
     ind=0
     for name in valdefac.keys():
         ind=ind+1
@@ -207,10 +241,17 @@ def makeXMGRACEdef_mod(unit,post,coeur,valdefac):
         else :
             (redF,greenF,blueF,value) = computeColor(valdefac[name][4*(post-1)])
             titre = 'au niveau des grilles %s'%post
-        xmgrfile.write('@kill s%d\n@s%d symbol 2\n@s%d symbol pattern 1\n@s%d symbol size 2\n@s%d symbol color 1\n@s%d symbol fill pattern 1\n@s%d symbol fill color (248,248,252)\n@type xy\n%10.8f %10.8f\n' %(ind,ind,ind,ind,ind,ind,ind,x,y))
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color(%d,%d,%d)\n@string char size %f\n@string just 2\n@string %f, %f\n@string def \"%10.1f\"\n' %(redF,greenF,blueF,0.7,x-0.37,y-0.15,value))
+        xmgrfile.write('@kill s%d\n@s%d symbol 2\n@s%d symbol pattern 1\n@s%d symbol size 2\n' \
+            '@s%d symbol color 1\n@s%d symbol fill pattern 1\n' \
+            '@s%d symbol fill color (248,248,252)\n@type xy\n%10.8f %10.8f\n' \
+            % (ind,ind,ind,ind,ind,ind,ind,x,y))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n' \
+            '@string color(%d,%d,%d)\n@string char size %f\n@string just 2\n@string %f, %f\n' \
+            '@string def \"%10.1f\"\n' % (redF,greenF,blueF,0.7,x-0.37,y-0.15,value))
 
-    xmgrfile.write('&\n@xaxis ticklabel off\n@yaxis ticklabel off\n@xaxis tick off\n@yaxis tick off\n@subtitle \"Module des deformations residuelles %s entre les ACs du Coeur (en mm)"\n@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(titre))
+    xmgrfile.write('&\n@xaxis ticklabel off\n@yaxis ticklabel off\n@xaxis tick off\n' \
+        '@yaxis tick off\n@subtitle \"Module des deformations residuelles %s entre les ACs' \
+        ' du Coeur (en mm)"\n@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(titre))
     xmgrfile.close()
 
 def makeXMGRACEdef_vec(unit,post,coeur,valdefac,valdirYac,valdirZac):
@@ -229,10 +270,18 @@ def makeXMGRACEdef_vec(unit,post,coeur,valdefac,valdirYac,valdirZac):
     xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
     xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
     for val_abs in range(0,len(coeur.ALPHABET)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' %(val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2, coeur.ALPHABET[val_abs]))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
+            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
+            % (val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2,
+                coeur.ALPHABET[val_abs]))
     for val_ord in range(0,len(coeur.NumV)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' %(-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2, coeur.NumV[len(coeur.NumV)-1-val_ord]))
-    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' %(-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,(len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
+            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
+            % (-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2,
+                coeur.NumV[len(coeur.NumV)-1-val_ord]))
+    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' \
+        % (-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,
+           (len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
     ind=0
     for name in valdefac.keys():
         ind=ind+1
@@ -251,9 +300,17 @@ def makeXMGRACEdef_vec(unit,post,coeur,valdefac,valdirYac,valdirZac):
         else :
             (Xvec,Yvec,Rvec) = computeVector(valdefac[name][4*(post-1)],valdirYac[name][4*(post-1)],valdirZac[name][4*(post-1)])
             titre = 'au niveau des grilles %s'%post
-        xmgrfile.write('@kill s%d\n@s%d errorbar on\n@s%d errorbar color (%d, %d, %d)\n@s%d errorbar place both\n@s%d errorbar pattern 1\n@s%d errorbar size %f\n@s%d errorbar linewidth %f\n@s%d errorbar linestyle 1\n@s%d errorbar riser linewidth %f\n@s%d errorbar riser clip off\n@type xyvmap\n%d %d %10.8f %10.8f\n' %(ind,ind,ind,0,0,0,ind,ind,ind,0.6*Rvec,ind,2.5*Rvec,ind,ind,2.5*Rvec,ind,x,y,0.03*Xvec,0.03*Yvec))
+        xmgrfile.write('@kill s%d\n@s%d errorbar on\n@s%d errorbar color (%d, %d, %d)\n' \
+            '@s%d errorbar place both\n@s%d errorbar pattern 1\n@s%d errorbar size %f\n' \
+            '@s%d errorbar linewidth %f\n@s%d errorbar linestyle 1\n' \
+            '@s%d errorbar riser linewidth %f\n@s%d errorbar riser clip off\n@type xyvmap\n' \
+            '%d %d %10.8f %10.8f\n' \
+            % (ind,ind,ind,0,0,0,ind,ind,ind,0.6*Rvec,ind,2.5*Rvec,ind,ind,2.5*Rvec,
+               ind,x,y,0.03*Xvec,0.03*Yvec))
 
-    xmgrfile.write('&\n@xaxis ticklabel off\n@yaxis ticklabel off\n@xaxis tick off\n@yaxis tick off\n@subtitle \"Orientation des deformations %s entre les ACs du Coeur (en mm)"\n@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(titre))
+    xmgrfile.write('&\n@xaxis ticklabel off\n@yaxis ticklabel off\n@xaxis tick off\n' \
+        '@yaxis tick off\n@subtitle \"Orientation des deformations %s entre les ACs' \
+        ' du Coeur (en mm)"\n@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(titre))
     xmgrfile.close()
 
 
@@ -262,16 +319,21 @@ def makeXMGRACEdeforme(unit,name,typeAC,coeur,valdefac):
     filename = './fort.%d' %(unit)
 
     xmgrfile = open(filename, 'w')
-    xmgrfile.write('@focus off\n@g0 on\n@with g0\n@kill s0\n@s0 symbol 9\n@s0 symbol linewidth 3\n@s0 linewidth 3\n')
+    xmgrfile.write('@focus off\n@g0 on\n@with g0\n@kill s0\n@s0 symbol 9\n' \
+        '@s0 symbol linewidth 3\n@s0 linewidth 3\n')
     xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
 
     for k in range(0,len(ac.altitude)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,50,120)\n@string char size %f\n@string just 2\n@string %f, %f\n@string def \"%10.1f\"\n' %(0.7,valdefac[name][4*k]+1.0,ac.altitude[k]-0.035,valdefac[name][4*k]))
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n' \
+            '@string color (0,50,120)\n@string char size %f\n@string just 2\n' \
+            '@string %f, %f\n@string def \"%10.1f\"\n' \
+            % (0.7,valdefac[name][4*k]+1.0,ac.altitude[k]-0.035,valdefac[name][4*k]))
     for k in range(0,len(ac.altitude)):
         xmgrfile.write('%10.8f %10.8f\n' %(valdefac[name][4*k],ac.altitude[k]))
 
     xmgrfile.write('&\n@s2 on\n@with s2\n-20.0 -0.1\n&\n@s3 on\n@with s3\n20.0 4.6\n')
-    xmgrfile.write('&\n@subtitle \"D\éform\ée de l\'assemblage %s (amplitudes (mm)/hauteur (m))"\n@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(name))
+    xmgrfile.write('&\n@subtitle \"D\éform\ée de l\'assemblage %s (amplitudes (mm)/ha' \
+        'uteur (m))"\n@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(name))
     xmgrfile.close()
 
 
@@ -300,7 +362,12 @@ def post_mac3coeur_ops(self, **args):
     coeur_factory = CoeurFactory(datg)
     _coeur = coeur_factory.get(_typ_coeur)('post', _typ_coeur, self, datg)
 
+    #############################################################################################################"
+    #                                          MOT-CLE FACTEUR LAME
+    #############################################################################################################"
+
     if (POST_LAME != None) :
+        
        valjeuac={}
        valjeucu={}
        post_table=0
@@ -311,26 +378,37 @@ def post_mac3coeur_ops(self, **args):
 
        _formule = FORMULE(NOM_PARA='V8',VALE='1000.*V8')
 
+#      formule qui permet d'associer les COOR_X "presque" identiques (suite a un calcul LAME)
+       _indicat = FORMULE(NOM_PARA='COOR_X',VALE='int(10*COOR_X)')
+
        UTMESS('I','COEUR0_5')
        k=0
        dim=len(_coeur.nomContactCuve)
+
        for name in _coeur.nomContactCuve:
+
           _TAB2 = CREA_TABLE(RESU=_F(RESULTAT=_RESU,NOM_CHAM='VARI_ELGA',NOM_CMP='V8',GROUP_MA=name,INST=_inst))
+
           _TAB2 = CALC_TABLE(reuse=_TAB2,TABLE=_TAB2,
                             ACTION = (_F(OPERATION='FILTRE',NOM_PARA='POINT',CRIT_COMP='EQ',VALE_I=1),
                                       _F(OPERATION='TRI',NOM_PARA='COOR_X',ORDRE='CROISSANT'),
-                                      _F(OPERATION='OPER',FORMULE=_formule,NOM_PARA=name)))
+                                      _F(OPERATION='OPER',FORMULE=_formule,NOM_PARA=name),
+                                      _F(OPERATION='OPER',FORMULE=_indicat,NOM_PARA='INDICAT'),
+                                      )
+                           )
 
           if (post_table==1):
-             if (len(valjeuac)==0):
+
+             # a la premiere occurence, on cree la table qui sera imprimee (_TAB3), sinon, on concatene les tables
+             if k==0:
                 _TAB3 = CALC_TABLE(TABLE  =  _TAB2,
-                                   ACTION = (_F(OPERATION='EXTR',NOM_PARA=('COOR_X',name))))
+                                   ACTION = (_F(OPERATION='EXTR',NOM_PARA=('COOR_X','INDICAT',name))))
              else:
                 
                 _TABTMP = CALC_TABLE(TABLE  =  _TAB2,
-                                      ACTION = (_F(OPERATION='EXTR',NOM_PARA=('COOR_X',name))))
+                                      ACTION = (_F(OPERATION='EXTR',NOM_PARA=('INDICAT',name))))
                 _TAB3   = CALC_TABLE(TABLE=_TAB3,
-                                      ACTION = (_F(OPERATION='COMB',TABLE=_TABTMP,NOM_PARA='COOR_X')))
+                                      ACTION = (_F(OPERATION='COMB',TABLE=_TABTMP,NOM_PARA='INDICAT')))
 
           tab2 = _TAB2.EXTR_TABLE()
           tab2.Renomme(name, 'P_LAME')
@@ -340,44 +418,63 @@ def post_mac3coeur_ops(self, **args):
        UTMESS('I','COEUR0_4')
        k=0
        dim=len(_coeur.nomContactAssLame)
+
        if dim != 0 :
           for name in _coeur.nomContactAssLame:
               _TAB1 = CREA_TABLE(RESU=_F(RESULTAT=_RESU,NOM_CHAM='VARI_ELGA',NOM_CMP='V8',GROUP_MA=name,INST=_inst))
               _TAB1 = CALC_TABLE(reuse=_TAB1,TABLE=_TAB1,
                                 ACTION = (_F(OPERATION='FILTRE',NOM_PARA='POINT',CRIT_COMP='EQ',VALE_I=1),
                                           _F(OPERATION='TRI',NOM_PARA='COOR_X',ORDRE='CROISSANT'),
-                                          _F(OPERATION='OPER',FORMULE=_formule,NOM_PARA=name)))
+                                          _F(OPERATION='OPER',FORMULE=_formule,NOM_PARA=name),
+                                          _F(OPERATION='OPER',FORMULE=_indicat,NOM_PARA='INDICAT'),
+                                          )
+                                 )
               if (post_table==1):
                 _TABTMP = CALC_TABLE(TABLE  =  _TAB1,
-                                    ACTION = (_F(OPERATION='EXTR',NOM_PARA=('COOR_X',name))))
+                                    ACTION = (_F(OPERATION='EXTR',NOM_PARA=('INDICAT',name))))
                 _TAB3   = CALC_TABLE(TABLE=_TAB3,
-                                    ACTION = (_F(OPERATION='COMB',TABLE=_TABTMP,NOM_PARA='COOR_X')))
+                                    ACTION = (_F(OPERATION='COMB',TABLE=_TABTMP,NOM_PARA='INDICAT')))
               tab1 = _TAB1.EXTR_TABLE()
               tab1.Renomme(name, 'P_LAME')
               valjeuac[name] = tab1.P_LAME.values()
               k=k+1
 
        for attr in POST_LAME:
-          _num_grille = attr['NUME_GRILLE']
           _unit       = attr['UNITE']
-          _extremum   = attr['TYPE_RESU']
           _typ_post   = attr['FORMAT']
 
           DEFI_FICHIER(ACTION='LIBERER',UNITE=_unit)
 
-          if (_extremum == None):
-             post  = _num_grille
-             texte = 'sur la grille '+str(post)
-          else:
-             post = _extremum
-             texte = 'sur la valeur '+post
-
           if (_typ_post=='GRACE'):
+
+             _num_grille = attr['NUME_GRILLE']
+             _extremum   = attr['TYPE_RESU']
+
+             if (_extremum == None):
+                post  = _num_grille
+                texte = 'sur la grille '+str(post)
+             else:
+                post = _extremum
+                texte = 'sur la valeur '+post
+
              makeXMGRACEjeu(_unit,post,_coeur,valjeuac,valjeucu)
+
           elif (_typ_post=='TABLE'):
-             IMPR_TABLE(UNITE=_unit,TABLE=_TAB3)
+
+             # liste des parametres a afficher (dans l'ordre)
+             # Rq : on affiche la premiere occurence de 'COOR_X'
+             l_para=['COOR_X',]+_coeur.nomContactAssLame+_coeur.nomContactCuve
+
+             IMPR_TABLE(UNITE=_unit,TABLE=_TAB3,NOM_PARA=l_para)
+
+
+    #############################################################################################################"
+    #                                          MOT-CLE FACTEUR DEFORMATION
+    #############################################################################################################"
+
 
     if (POST_DEF != None) :
+
        valdefac={}
        valdirYac={}
        valdirZac={}
