@@ -24,7 +24,7 @@ def configure(self):
         'module load intel_compilers/14.0.0.080'])
 
     self.env.append_value('LIBPATH', [
-        #'/usr/lib/atlas',                           # for NumPy, see issue18751
+        '/usr/lib/atlas-base/atlas',                       # for NumPy, see issue18751
         YAMMROOT + 'prerequisites/Hdf5_1810/lib',
         YAMMROOT + 'tools/Medfichier_307/lib',
         YAMMROOT + 'prerequisites/Mumps_20141/lib',
