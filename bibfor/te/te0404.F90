@@ -126,6 +126,8 @@ subroutine te0404(option, nomte)
                     multic, coupmf, t2ev, t2ve, t1ve)
         nu = dm(1,2)/dm(1,1)
         e = (1.d0-nu**2)*dm(1,1)/epais
+    else
+        call u2mess('F','DYNAMIQUE_32')
     endif
 !
     call rcvalb(fami, 1, 1, '+', zi(imate),&

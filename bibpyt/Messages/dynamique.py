@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
@@ -169,6 +168,10 @@ celle choisie précédemment.
 25 : _(u"""
  La fréquence d'actualisation de FORCE_SOL n'est pas cohérente avec la fréquence d'archivage des résultats dans
  DYNA_NON_LINE.
+"""),
+
+32: _(u"""
+La condition de stabilité n'a pas pu être calculée car il s'agit d'élasticité non-isotrope.
 """),
 
 }
