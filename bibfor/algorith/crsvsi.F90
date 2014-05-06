@@ -58,9 +58,13 @@ subroutine crsvsi(solveu)
         else
             call u2mess('I', 'DISCRETISATION_43')
         endif
-    else
-        call u2mesk('I', 'DISCRETISATION_40', 1, nomslv)
+    elseif ( (nomslv.eq.'GCPC') .or. (nomslv.eq.'PETSC') ) then 
+    ! Lorsque le solveur est itératif, on active la remontée du code de retour du solveur,
+    ! afin de déclencher le découpage 
+        zi(islvi-1+8) = 2
     endif
+    
+    
 !
     call jedema()
 end subroutine
