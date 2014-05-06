@@ -68,7 +68,7 @@ subroutine chpond(tych, dejain, chin, cesout, cespoi,&
     character(len=19) :: chins
     character(len=24) :: ligrel, chgeom, lchin(nbchin), lchout(2), vefch1
     character(len=24) :: vefch2
-    logical :: peecal
+    logical :: peecal, cond
 !
     call jemarq()
 !
@@ -80,10 +80,10 @@ subroutine chpond(tych, dejain, chin, cesout, cespoi,&
     call dismoi('F', 'NB_MA_MAILLA', noma, 'MAILLAGE', nbma,&
                 k8b, iret)
     call jeexin('&&PEECAL.IND.MAILLE', iret)
-    peecal=.true.
     if (iret .eq. 0) then
         peecal=.false.
     else
+        peecal=.true.
         call jeveuo('&&PEECAL.IND.MAILLE', 'L', indma)
     endif
 !
@@ -189,7 +189,16 @@ subroutine chpond(tych, dejain, chin, cesout, cespoi,&
 !
 !     -- PONDERATION DU CHAMP PAR LES POIDS DES POINTS :
     do 10 ima = 1, nbma
-        if (.not.peecal .or. (peecal .and. zi(indma+ima-1).eq.1)) then
+        if (.not.peecal) then
+            cond=.true.
+        else
+            if (zi(indma+ima-1).eq.1) then
+                cond=.true.
+            else
+                cond=.false.
+            endif
+        endif
+        if (cond) then
             nbpt =zi(jchsd-1+5+4*(ima-1)+1)
             nbsp =zi(jchsd-1+5+4*(ima-1)+2)
             nbcmp=zi(jchsd-1+5+4*(ima-1)+3)
