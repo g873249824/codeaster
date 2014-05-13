@@ -120,8 +120,17 @@ subroutine chpond(tych, dejain, chin, cesout, cespoi,&
 !           -- IL NE FAUT VERIFIER QUE LES MAILLES AFFECTEES DE CHIN:
                 if (zk16(jch1+ima-1) .eq. ' ') goto 5
 !           -- IL NE FAUT VERIFIER QUE LES MAILLES POSTRAITEES:
-                if (.not.peecal .or. (peecal .and. zi(indma+ima-1) .eq.1)) then
-!           -- SI LE CHAMP COOR_ELGA N'EST PAS CALCULE ON S'ARRETE:
+                if (.not.peecal) then
+                    cond=.true.
+                else
+                    if (zi(indma+ima-1).eq.1) then
+                        cond=.true.
+                    else
+                        cond=.false.
+                    endif
+                endif
+                if (cond) then
+!                   -- SI LE CHAMP COOR_ELGA N'EST PAS CALCULE ON S'ARRETE:
                     if (zk16(jch2+ima-1) .eq. ' ') then
                         valk=zk16(jch1+ima-1)(1:8)
                         call u2mesg('F', 'UTILITAI8_63', 1, valk, 1,&
@@ -170,7 +179,16 @@ subroutine chpond(tych, dejain, chin, cesout, cespoi,&
         if (iexi .eq. 0) then
             call wkvect(cespoi//'.PDSM', 'V V R', nbma, jpdsm)
             do 11 ima = 1, nbma
-                if (.not.peecal .or. (peecal .and. zi(indma+ima-1) .eq.1)) then
+                if (.not.peecal) then
+                    cond=.true.
+                else
+                    if (zi(indma+ima-1).eq.1) then
+                        cond=.true.
+                    else
+                        cond=.false.
+                    endif
+                endif
+                if (cond) then
                     nbpt=zi(jpoid-1+5+4*(ima-1)+1)
                     do 21 ipt = 1, nbpt
                         call cesexi('C', jpoid, jpoil, ima, ipt,&
