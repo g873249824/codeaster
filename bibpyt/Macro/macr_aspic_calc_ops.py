@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -309,7 +308,7 @@ def macr_aspic_calc_ops(self,TYPE_MAILLAGE,TUBULURE,MAILLAGE,MODELE,CHAM_MATER,C
                             
                             ZONE =_F(GROUP_MA_MAIT = 'LEVRCORP',
                                      GROUP_MA_ESCL = 'LEVRTUBU',
-                                     TOLE_INTERP   = -1.E-6,
+                                     TOLE_INTERP   = 1.E-6,
                                      RESOLUTION    = 'NON',
                                      SANS_GROUP_MA = mcfond,),)
 
