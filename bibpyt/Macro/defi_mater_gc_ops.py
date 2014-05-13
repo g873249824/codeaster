@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -205,7 +204,7 @@ def defi_mater_gc_ops(self,MAZARS,ACIER,REGLE,**args):
    # Le concept sortant (de type mater_sdaster) est nommé 'Materiau' dans le contexte de la macro
    self.DeclareOut('Materiau',self.sd)
    #
-   if ( REGLE == 'EC2'):
+   if ( REGLE == 'BAEL91'):
       if ( MAZARS != None ): mclef = Mazars_Unil(MAZARS[0],args)
       if ( ACIER  != None ): mclef = Acier_Cine_Line(ACIER[0],args)
    # Définition du matériau
