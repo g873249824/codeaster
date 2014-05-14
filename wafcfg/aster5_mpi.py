@@ -9,8 +9,8 @@ waf_mpi configure --use-config=aster5_mpi --prefix=../install/mpi
 waf_mpi install -p
 """
 
-import os
 import aster5
+ASTER_ROOT = aster5.ASTER_ROOT
 YAMMROOT = aster5.YAMMROOT
 
 def configure(self):
@@ -25,10 +25,10 @@ def configure(self):
         'module load intel_mpi'])
 
     self.env.prepend_value('LIBPATH', [
-        YAMMROOT + 'prerequisites/Mumps_mpi_20141/lib',        
-        YAMMROOT + 'prerequisites/Petsc_mpi_petsc_aster/lib'])
+        YAMMROOT + '/prerequisites/Mumps_mpi_20141/lib',        
+        YAMMROOT + '/prerequisites/Petsc_mpi_petsc_aster/lib'])
     self.env.prepend_value('INCLUDES', [
-        YAMMROOT + 'prerequisites/Petsc_mpi_petsc_aster/include'])
+        YAMMROOT + '/prerequisites/Petsc_mpi_petsc_aster/include'])
 
     opts.enable_petsc = True
 
