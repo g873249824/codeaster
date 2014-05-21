@@ -36,5 +36,8 @@ def configure(self):
         YAMMROOT + '/tools/Medfichier_307/include',
         YAMMROOT + '/prerequisites/Metis_40/Lib',
         YAMMROOT + '/prerequisites/Scotch_5111/include'])
+        
+    # openblas from $ASTER_ROOT/public/lib embeds lapack
+    opts.maths_libs = 'openblas'
 
     opts.enable_petsc = False
