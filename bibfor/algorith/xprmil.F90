@@ -1,7 +1,7 @@
 subroutine xprmil(noma, cnslt, cnsln)
     implicit none
 #include "jeveux.h"
-!
+#include "asterfort/assert.h"
 #include "asterfort/conare.h"
 #include "asterfort/dismoi.h"
 #include "asterfort/infmaj.h"
@@ -56,6 +56,7 @@ subroutine xprmil(noma, cnslt, cnsln)
 !
     integer :: ifm, niv, iret, nbma, jma, jconx1, jconx2, jlnno, jltno, ima
     integer :: ar(12, 3), nbar, ia, na, nb, nunoa, nunob, nmil, nunom
+    integer :: nm(12), nbar2
     real(kind=8) :: lsna, lsnb, lsta, lstb
     character(len=8) :: k8bid, typma
     character(len=19) :: mai
@@ -86,6 +87,12 @@ subroutine xprmil(noma, cnslt, cnsln)
 !
         call conare(typma, ar, nbar)
 !
+!       ON RECUPERE LES NUMEROS DES NOEUDS MILIEUX
+!       DE TOUTES LES ARETES DE L'ELEMENT
+        call nomil(typma, nm, nbar2)
+!
+        call assert(nbar.eq.nbar2)
+!
 !       BOUCLE SUR LES ARETES DE LA MAILLE
         do 110 ia = 1, nbar
 !       ON RECUPERE LES NUMEROS DES 2 NOEUDS DE L'ARETE
@@ -101,7 +108,7 @@ subroutine xprmil(noma, cnslt, cnsln)
             lstb=zr(jltno-1+(nunob-1)+1)
 !
 !       ON RECUPERE LE NUMERO DU NOEUD MILIEU
-            nmil=nomil(typma,ia)
+            nmil=nm(ia)
             nunom=zi(jconx1-1+zi(jconx2+ima-1)+nmil-1)
 !
 !       ON REMPLI LES CHAM_NO_S AVEC LES VALEUR DE LEVEL SETS MOYENNES

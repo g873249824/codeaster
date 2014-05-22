@@ -1,5 +1,4 @@
 # coding=utf-8
-#            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -197,7 +196,7 @@ Les combinaisons possibles sont :
 """),
 
 92 : _(u"""
- la maille doit être de type TETRA10,PENTA15,HEXA20,QUAD8 ou TRIA6.
+ la maille doit être de type SEG3, TRIA6, QUAD8 TETRA10, PENTA15 ou HEXA20.
  or la maille est de type :  %(k1)s .
 """),
 
