@@ -519,4 +519,15 @@ cata_msg={
      commande (pour STAT_NON_LINE par exemple).
 
 """),
+
+
+
+86: _(u"""
+  -> Il n'est pas possible de réaliser la propagation d'une fissure en présence de mailles
+     quadratiques dans le cadre d'un modèle X-FEM.
+
+  -> Risque & Conseil:
+     Veuillez utiliser un maillage linéaire.
+"""),
+
 }
