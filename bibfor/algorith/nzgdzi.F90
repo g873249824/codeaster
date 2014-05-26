@@ -162,7 +162,7 @@ subroutine nzgdzi(fami, kpg, ksp, ndim, imat,&
     call rcvarc(' ', 'TEMP', c1, fami, kpg,&
                 ksp, temp, iret1)
     call verift(fami, kpg, ksp, c1, imat,&
-                'ELAS_MAT', 2, epsthe, iret1)
+                'ELAS_META', 2, epsthe, iret1)
 !
     zalpha=phase(1)+phase(2)
     phase(nz)=1.d0-zalpha
