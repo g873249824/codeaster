@@ -308,7 +308,7 @@ def calc_gp_ops(self,**args):
         tabcopmax =[]
         tabenelmax=[]
         tablcopmax=[]
-        tabgpmax  =[] 
+        tabgpmax  =[]
 
 ##########################################################################################
 
@@ -385,7 +385,7 @@ def calc_gp_ops(self,**args):
         __CHXG=CREA_CHAMP(OPERATION='DISC',
                           TYPE_CHAM='ELGA_GEOM_R',
                           MODELE=__model,
-                          CHAM_GD=__CHXN)                
+                          CHAM_GD=__CHXN)
 
 # construction du champ copeau pour visualisation par utilisateur s'il le souhaite
         if TRANCHE_2D['CHAMP_VISU']!=0:
@@ -414,7 +414,7 @@ def calc_gp_ops(self,**args):
                                CHAM_PARA=(__CHXG),);
 
 # calcul des energies et du gp              
-        __ener = [None for cop in range(nbcop)]        
+        __ener = [None for cop in range(nbcop)]
         for cop in range(nbcop):
             __ener[cop]=FORMULE(VALE='''NRJ(TOTALE,X,Y,origine[0],origine[1],rayon,taille,%d,ccos,ssin)'''%(cop+1),
                                 NOM_PARA=('TOTALE','X','Y'),)
@@ -458,7 +458,8 @@ def calc_gp_ops(self,**args):
                                INTEGRALE=_F(TOUT='OUI',
                                             NOM_CHAM='ENEL_ELGA',
                                             NOM_CMP=nom_cmp,
-                                            DEJA_INTEGRE='NON'),)
+                                            DEJA_INTEGRE='NON',
+                                            TYPE_MAILLE='2D'),)
 
             tabenerel = __tabnrj.EXTR_TABLE().values()
 
