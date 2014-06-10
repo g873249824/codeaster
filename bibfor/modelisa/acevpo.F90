@@ -2,6 +2,8 @@ subroutine acevpo(nbocc, nlm, nlg, ier)
     implicit none
 #include "jeveux.h"
 #include "asterc/getres.h"
+#include "asterfort/assert.h"
+#include "asterfort/check_homo_ratio.h"
 #include "asterc/getvr8.h"
 #include "asterc/getvtx.h"
 #include "asterfort/codent.h"
@@ -46,6 +48,7 @@ subroutine acevpo(nbocc, nlm, nlg, ier)
 !-----------------------------------------------------------------------
     integer :: i, ioc, nc, ncar, ng, nm, ns
     integer :: nsom, nv, nval, nvs
+    real(kind=8) :: vale(100)
 !-----------------------------------------------------------------------
     call jemarq()
     call getres(nomu, concep, cmd)
@@ -94,6 +97,10 @@ subroutine acevpo(nbocc, nlm, nlg, ier)
                     call u2mesk('E', 'MODELISA_66', 1, kioc)
                     ier = ier + 1
                 endif
+            else if (vsec .eq. 'HOMOTHETIQUE') then
+                call assert(nval .le. 100)
+                call getvr8('POUTRE', 'VALE', ioc, iarg, nval, vale, nc)
+                call check_homo_ratio(cara, vale, min(nval, ncar))
             endif
         endif
 !
