@@ -2,26 +2,26 @@
 
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
-# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
-# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
-# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
-# (AT YOUR OPTION) ANY LATER VERSION.                                                  
-#                                                                       
-# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
-# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
-# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
-# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
-#                                                                       
-# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
-# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
-#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 # ======================================================================
 
 # --------------------------------------------------------------
 # --------------------------------------------------------------
 def SomListStr(x):
   """
-  """ 
+  """
   str_tmp = ""
   cpt     = 0
   while cpt < len(x):
@@ -39,7 +39,7 @@ def SomListStr(x):
 # --------------------------------------------------------------
 def ListR_2_Str(x):
   """
-  """ 
+  """
   char = ""
   for i in xrange(len(x)):
     assert type(x[i]) is float
@@ -61,7 +61,7 @@ def ListR_2_Str(x):
 # --------------------------------------------------------------
 def int_2_str(i,lon):
   """
-  """ 
+  """
   assert type(i) is int and type(lon) is int
   return "0"*(len(str(lon))-len(str(i)))+str(i)
 # --------------------------------------------------------------
@@ -74,9 +74,9 @@ def int_2_str(i,lon):
 # --------------------------------------------------------------
 def affiche_infos_essai(str_n_essai,type_essai,val_PRES_CONF,val2):
   """
-  """ 
+  """
   import aster
-  
+
   mesg1 = " ESSAI_"+type_essai+" numero "+str_n_essai+" :"
 
   if type_essai   == "TD":
@@ -84,10 +84,10 @@ def affiche_infos_essai(str_n_essai,type_essai,val_PRES_CONF,val2):
     mesg3 = "  > EPSI_IMPOSE = "
   elif type_essai == "TND":
     mesg2 = "  > PRES_CONF   = "
-    mesg3 = "  > EPSI_IMPOSE = "    
+    mesg3 = "  > EPSI_IMPOSE = "
   elif type_essai == "CISA_C":
     mesg2 = "  > PRES_CONF   = "
-    mesg3 = "  > EPSI_IMPOSE = "    
+    mesg3 = "  > EPSI_IMPOSE = "
   elif type_essai == "TND_C":
     mesg2 = "  > PRES_CONF   = "
     mesg3 = "  > SIGM_IMPOSE = "
@@ -103,15 +103,15 @@ def affiche_infos_essai(str_n_essai,type_essai,val_PRES_CONF,val2):
 
   lonmax = max(len(mesg2),len(mesg3))
   lonmax = max(len(mesg1),lonmax    )
-  
+
   separ1 = "\n  "
   separ2 = "-"*(lonmax+2)
   separ3 = "|"
-  
+
   mesg  = separ1
   mesg += separ2+separ1
   mesg += separ3+mesg1+" "*(lonmax-len(mesg1))+separ3+separ1
-  mesg += separ2+separ1 
+  mesg += separ2+separ1
   mesg += separ3+mesg2+" "*(lonmax-len(mesg2))+separ3+separ1
   mesg += separ3+mesg3+" "*(lonmax-len(mesg3))+separ3+separ1
   mesg += separ2
@@ -151,10 +151,10 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
     List_essais += ESSAI_TD.List_F()
 
     # Lois de comportement autorisees. (lois de sol elasto-plastiques non visco)
-    RdC_OK = ['HUJEUX',        
-              'DRUCK_PRAGER',  
+    RdC_OK = ['HUJEUX',
+              'DRUCK_PRAGER',
               'DRUCK_PRAG_N_A',
-              'CAM_CLAY',      
+              'CAM_CLAY',
               'CJS',]
     nom_rdc = COMP_INCR.List_F()[0]['RELATION']
     if not( nom_rdc in RdC_OK ):
@@ -173,10 +173,10 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
 
       # on s'assure que tous les PRES_CONF et EPSI_IMPOSE sont bien < 0.
       for i in xrange(len(DicoEssai['PRES_CONF'])):
-        if DicoEssai['PRES_CONF'][i]>=0. : 
+        if DicoEssai['PRES_CONF'][i]>=0. :
           UTMESS('F','COMPOR2_32',valk=(typ_essai,"PRES_CONF",),vali=(iocc+1),
                                   valr=(DicoEssai['PRES_CONF'][i]))
-        if DicoEssai['EPSI_IMPOSE'][i]>=0. : 
+        if DicoEssai['EPSI_IMPOSE'][i]>=0. :
           UTMESS('F','COMPOR2_32',valk=(typ_essai,"EPSI_IMPOSE"),vali=(iocc+1),
                                   valr=(DicoEssai['EPSI_IMPOSE'][i]))
 
@@ -189,10 +189,10 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
     List_essais += ESSAI_TND.List_F()
 
     # Lois de comportement autorisees. (lois de sol elasto-plastiques non visco)
-    RdC_OK = ['HUJEUX',        
-              'DRUCK_PRAGER',  
+    RdC_OK = ['HUJEUX',
+              'DRUCK_PRAGER',
               'DRUCK_PRAG_N_A',
-              'CAM_CLAY',      
+              'CAM_CLAY',
               'CJS',]
     nom_rdc = COMP_INCR.List_F()[0]['RELATION']
     if not( nom_rdc in RdC_OK ):
@@ -211,10 +211,10 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
 
       # on s'assure que tous les PRES_CONF et EPSI_IMPOSE sont bien < 0.
       for i in xrange(len(DicoEssai['PRES_CONF'])):
-        if DicoEssai['PRES_CONF'][i]>=0. : 
+        if DicoEssai['PRES_CONF'][i]>=0. :
           UTMESS('F','COMPOR2_32',valk=(typ_essai,"PRES_CONF"),
                                   valr=(DicoEssai['PRES_CONF'][i]),vali=(iocc+1))
-        if DicoEssai['EPSI_IMPOSE'][i]>=0. : 
+        if DicoEssai['EPSI_IMPOSE'][i]>=0. :
           UTMESS('F','COMPOR2_32',valk=(typ_essai,"EPSI_IMPOSE"),
                                   valr=(DicoEssai['EPSI_IMPOSE'][i]),vali=(iocc+1))
       # on s'assure que 0. < BIOT_COEF <= 1
@@ -226,7 +226,7 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
   # Essai "CISA_C"
   # ---
   if ESSAI_CISA_C != None :
-    
+
     typ_essai    = "ESSAI_CISA_C"
     List_essais += ESSAI_CISA_C.List_F()
 
@@ -234,7 +234,7 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
     nom_rdc = COMP_INCR.List_F()[0]['RELATION']
     if not( nom_rdc == 'HUJEUX'):
       UTMESS('F','COMPOR2_39',valk=(typ_essai,'HUJEUX',nom_rdc))
-    
+
     for iocc,DicoEssai in enumerate(ESSAI_CISA_C.List_F()):
 
       # coherence du nbre de TABLE_RESU avec le nbre de PRES_CONF
@@ -252,7 +252,7 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
       for epsimpo in DicoEssai['EPSI_IMPOSE']:
         if epsimpo<=0. : UTMESS('F','COMPOR2_34',valk=(typ_essai,"EPSI_IMPOSE"),
                                                  valr=(epsimpo),vali=(iocc+1))
-      if DicoEssai['EPSI_ELAS']<=0. : 
+      if DicoEssai['EPSI_ELAS']<=0. :
         UTMESS('F','COMPOR2_34',valk=(typ_essai,"EPSI_ELAS"),
                                 valr=(DicoEssai['EPSI_ELAS']),vali=(iocc+1))
 
@@ -268,7 +268,7 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
   # Essai "TND_C"
   # ---
   if ESSAI_TND_C != None :
-    
+
     typ_essai    = "ESSAI_TND_C"
     List_essais += ESSAI_TND_C.List_F()
 
@@ -276,7 +276,7 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
     nom_rdc = COMP_INCR.List_F()[0]['RELATION']
     if not( nom_rdc == 'HUJEUX'):
       UTMESS('F','COMPOR2_39',valk=(typ_essai,'HUJEUX',nom_rdc))
-    
+
     for iocc,DicoEssai in enumerate(ESSAI_TND_C.List_F()):
 
       # coherence du nbre de TABLE_RESU avec le nbre de PRES_CONF
@@ -298,7 +298,7 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
           if pconf+sigimpo>=0. : UTMESS('F','COMPOR2_37',valk=(typ_essai),
                                  vali=(iocc+1),valr=(pconf,sigimpo,pconf+sigimpo))
       # on s'assure que UN_SUR_K > 0. et 0. < BIOT_COEF <= 1
-      if DicoEssai['UN_SUR_K']<=0. : 
+      if DicoEssai['UN_SUR_K']<=0. :
         UTMESS('F','COMPOR2_34',valk=(typ_essai,"UN_SUR_K"),
                                 valr=(DicoEssai['UN_SUR_K']),vali=(iocc+1))
       biot = DicoEssai['BIOT_COEF']
@@ -327,7 +327,7 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
   # --------------------------------------------------------------
 
   for DicoEssai in List_essais:
-    if DicoEssai.has_key('TABLE_REF'): 
+    if DicoEssai.has_key('TABLE_REF'):
       for table_tmp in DicoEssai['TABLE_REF']:
 
         # on s'assure chaque TABLE_REF est bien construite...
@@ -335,17 +335,17 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
         nom_tbref = table_tmp.nom
 
         list_paras = ['TYPE','LEGENDE','ABSCISSE','ORDONNEE']
-        if not set(table_ref.keys()) == set(list_paras) : 
-          UTMESS('F','COMPOR2_44',valk=(nom_tbref,SomListStr(table_ref.keys()))) 
+        if not set(table_ref.keys()) == set(list_paras) :
+          UTMESS('F','COMPOR2_44',valk=(nom_tbref,SomListStr(table_ref.keys())))
         typc         = table_ref['TYPE']
         logi_typc    = [x == None for x in typc]
         logi_typc[0] = type(typc[0]) is str
-        if not logi_typc == [True]*len(typc): 
+        if not logi_typc == [True]*len(typc):
           UTMESS('F','COMPOR2_45',valk=(nom_tbref,'TYPE'))
         lege         = table_ref['LEGENDE']
         logi_lege    = [x == None for x in lege]
         logi_lege[0] = type(lege[0]) is str
-        if not logi_lege == [True]*len(lege): 
+        if not logi_lege == [True]*len(lege):
           UTMESS('F','COMPOR2_45',valk=(nom_tbref,'LEGENDE'))
         absc      = table_ref['ABSCISSE']
         ordo      = table_ref['ORDONNEE']
@@ -354,10 +354,10 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
         test = len(absc) == len(ordo)
         test = test and logi_absc == [True]*len(absc)
         test = test and logi_ordo == [True]*len(absc)
-        if not test : 
+        if not test :
           UTMESS('F','COMPOR2_46',valk=(nom_tbref))
 
-        # on s'assure que le TYPE indique dans chaque TABLE_REF figure bien dans 
+        # on s'assure que le TYPE indique dans chaque TABLE_REF figure bien dans
         # la liste des GRAPHIQUE demandes en sortie pour l'esssai courant
         if not typc[0].replace(" ","") in DicoEssai['GRAPHIQUE']:
           UTMESS('F','COMPOR2_43',valk=(nom_tbref,typc[0],
@@ -370,97 +370,36 @@ def verif_essais(COMP_INCR,ESSAI_TD ,
 
 # --------------------------------------------------------------
 # --------------------------------------------------------------
-def bilan_alarmes(str_n_essai,typ_essai,DicoEssai,error_list):
+def affiche_alarm_TND_C(str_n_essai,pres,dsig,codret,NB_CYCLE,ncycrit,ncyerro):
   """
   """
   from Utilitai.Utmess import UTMESS  
 
-  # ---
-  # Essai "TD"
-  # ---  
-  if typ_essai   == "TD":
-    pass
+  assert codret in ['0','1','2','3']
+  charg1 = str("%E"%( pres ))
+  charg2 = str("%E"%( dsig ))
 
-  # ---
-  # Essai "TND"
-  # ---  
-  elif typ_essai == "TND":
-    pass
+  nom_essai = "ESSAI_TND_C"
 
-  # ---
-  # Essai "CISA_C"
-  # ---  
-  elif typ_essai == "CISA_C":
-    pass
+  kval_char1 = "  > PRES_CONF   = " + charg1 + "\n"
+  kval_char2 = "  > SIGM_IMPOSE = " + charg2 + "\n"
+  kval_cycl  = "  > NB_CYCLE    = " + str(NB_CYCLE) +"\n"
 
-  # ---
-  # Essai "TND_C"
-  # ---  
-  elif typ_essai == "TND_C":
-     
-    NB_CYCLE  = DicoEssai['NB_CYCLE']
-    nom_essai = "ESSAI_TND_C numero "+str_n_essai
+  # codret '0' : CALC_POINT_MAT va jusqu'au bout et critere atteint -> pas d'alarme
+  # codret '1' : CALC_POINT_MAT va jusqu'au bout et critere non atteint
+  # codret '2' : CALC_POINT_MAT s'arrete en NonConvergenceError et critere atteint
+  # codret '3' : CALC_POINT_MAT s'arrete en NonConvergenceError et critere non atteint
 
-    kvals_cod1 = ""
-    kvals_cod2 = ""
-    kvals_cod3 = ""
+  Lk = [nom_essai,str_n_essai,kval_char1,kval_char2,kval_cycl]
 
-    for dico in error_list:
-
-      charg1 = str("%E"%(dico['chargements'][0]))
-      charg2 = str("%E"%(dico['chargements'][1]))
-      charg3 = str(NB_CYCLE)
-      codret = dico['code_retour']
-      assert codret in ['0','1','2','3']
-
-      # codret '0' : le calcul s'est bien deroule et le critere de
-      #              liquefaction a ete atteint avant le nombre de
-      #              cycles max donne par l'utilisateur
-      #              -> tout es OK : rien a faire
-      #
-      # codret '1' : le calcul s'est bien deroule mais le critere n'a 
-      #              pas ete atteint  avec le nb de cycles max donne 
-      #              par l'utilisateur
-      #              -> ALARME pour signaler que les valeurs qui correpondent
-      #                 a ces chargements ne seront reportees ni dans les 
-      #                 graphiques ni dans les tables...
-      #
-      # codret '2' : le calcul a plante dans un cycle>=2 : on considere qu'il 
-      #              s'agit d'une erreur de cvgce due au fait que le crit de 
-      #              liquefaction a ete atteint pendant ce cycle (sale mais 
-      #              seule solution pr l'instant : fiche 19056)
-      #              -> ALARME pour en informer l'utilisateur
-      #
-      # codret '3' : le calcul a plante, au 1er cycle, on ne peut donc 
-      #              post-traiter aucun resultat
-      #              -> ALARME pour signaler que les valeurs qui correpondent
-      #                 a ces chargements ne seront reportees ni dans les 
-      #                 graphiques ni dans les tables...
-
-      if   codret == '1':
-        kvals_cod1 += "    > (PRES_CONF,SIGM_IMPOSE) = ("+charg1+","+charg2+"),\n"
-      elif codret == '2':
-        kvals_cod2 += "    > (PRES_CONF,SIGM_IMPOSE) = ("+charg1+","+charg2+"),\n"
-      elif codret == '3':
-        kvals_cod3 += "    > (PRES_CONF,SIGM_IMPOSE) = ("+charg1+","+charg2+"),\n"
-
-    if len(kvals_cod1) > 0:
-      UTMESS('A','COMPOR2_40',valk=(nom_essai,kvals_cod1,
-             'NCYCL-DSIGM','NCYCL','DSIGM'),vali=NB_CYCLE)
-    if len(kvals_cod2) > 0:
-      UTMESS('A','COMPOR2_41',valk=(nom_essai,kvals_cod2))
-    if len(kvals_cod3) > 0:
-      UTMESS('A','COMPOR2_42',valk=(nom_essai,kvals_cod3))
-
-  # ---
-  # Essai "XXX"
-  # ---  
-  #elif typ_essai == "XXX":
-  #  pass
-
-  else : assert False
+  if codret ==  '1':
+    UTMESS('A','COMPOR2_40',valk=Lk,vali=NB_CYCLE)
+  elif codret ==  '2':
+    UTMESS('A','COMPOR2_41',valk=Lk,vali=(ncyerro,ncycrit))
+  elif codret ==  '3':
+    UTMESS('A','COMPOR2_42',valk=Lk,vali=ncyerro)
 # --------------------------------------------------------------
-# --------------------------------------------------------------  
+# --------------------------------------------------------------
 
 
 
@@ -471,28 +410,28 @@ def bilan_alarmes(str_n_essai,typ_essai,DicoEssai,error_list):
 def preparer_graphique(niveau,DicoEssai,str_fich,Courbes,NomsFich,Leg_x,Leg_y,Ech_x,Ech_y):
   """
   XXX
-  """ 
+  """
 
   ext = ".dat"
-  
+
   # "niveau1": courbes "recapitulatives" pour les essais cycliques
   if niveau == '1':
     for TypGraph in DicoEssai['GRAPHIQUE']:
-      if TypGraph == "EPSXY-G" : 
+      if TypGraph == "EPSXY-G" :
         Courbes[TypGraph]  = []
         NomsFich[TypGraph] = str_fich+TypGraph+ext
         Leg_x[TypGraph]    = "EPSXY"
         Leg_y[TypGraph]    = "G"
         Ech_x[TypGraph]    = "LOG"
         Ech_y[TypGraph]    = "LIN"
-      if TypGraph == "EPSXY-D" : 
+      if TypGraph == "EPSXY-D" :
         Courbes[TypGraph]  = []
         NomsFich[TypGraph] = str_fich+TypGraph+ext
         Leg_x[TypGraph]    = "EPSXY"
         Leg_y[TypGraph]    = "D"
         Ech_x[TypGraph]    = "LOG"
         Ech_y[TypGraph]    = "LIN"
-      if TypGraph == "NCYCL-DSIGM" : 
+      if TypGraph == "NCYCL-DSIGM" :
         Courbes[TypGraph]  = []
         NomsFich[TypGraph] = str_fich+TypGraph+ext
         Leg_x[TypGraph]    = "NCYCL"
@@ -506,12 +445,12 @@ def preparer_graphique(niveau,DicoEssai,str_fich,Courbes,NomsFich,Leg_x,Leg_y,Ec
   # "niveau2": resultats bruts pour chaque valeurs chargement
   elif niveau == '2':
     for TypGraph in DicoEssai['GRAPHIQUE']:
-      if TypGraph == "P-Q" : 
+      if TypGraph == "P-Q" :
         Courbes[TypGraph]  = []
         NomsFich[TypGraph] = str_fich+TypGraph+ext
         Leg_x[TypGraph]    = "P"
         Leg_y[TypGraph]    = "Q"
-      if TypGraph == "EPS_AXI-Q" : 
+      if TypGraph == "EPS_AXI-Q" :
         Courbes[TypGraph]  = []
         NomsFich[TypGraph] = str_fich+TypGraph+ext
         Leg_x[TypGraph]    = "EPS_AXI"
@@ -526,12 +465,12 @@ def preparer_graphique(niveau,DicoEssai,str_fich,Courbes,NomsFich,Leg_x,Leg_y,Ec
         NomsFich[TypGraph] = str_fich+TypGraph+ext
         Leg_x[TypGraph]    = "EPS_AXI"
         Leg_y[TypGraph]    = "PRE_EAU"
-      if TypGraph == "EPSXY-SIGXY" : 
+      if TypGraph == "EPSXY-SIGXY" :
         Courbes[TypGraph]  = []
         NomsFich[TypGraph] = str_fich+TypGraph+ext
         Leg_x[TypGraph]    = "EPSXY"
         Leg_y[TypGraph]    = "SIGXY"
-      if TypGraph == "SIG_AXI-PRE_EAU" : 
+      if TypGraph == "SIG_AXI-PRE_EAU" :
         Courbes[TypGraph]  = []
         NomsFich[TypGraph] = str_fich+TypGraph+ext
         Leg_x[TypGraph]    = "SIG_AXI"
@@ -554,7 +493,7 @@ def preparer_graphique(niveau,DicoEssai,str_fich,Courbes,NomsFich,Leg_x,Leg_y,Ec
 def remplir_graphique(DicoEssai,Courbes,Resu_x,Resu_y,str_leg,TypGraph_in):
   """
   XXX
-  """   
+  """
   # sortie si pr une qqcque raison les listes de resultats sont vides
   if Resu_x == [] or  Resu_y == [] : return
 
@@ -570,7 +509,7 @@ def remplir_graphique(DicoEssai,Courbes,Resu_x,Resu_y,str_leg,TypGraph_in):
 
   L_graph_ok = set(TD_graph+TND_graph+CISA_C_graph+TND_C_graph)
   assert TypGraph_in in L_graph_ok
-  
+
   for TypGraph in DicoEssai['GRAPHIQUE']:
     if TypGraph == TypGraph_in :
       dico_tmp = {}
@@ -589,7 +528,7 @@ def remplir_graphique(DicoEssai,Courbes,Resu_x,Resu_y,str_leg,TypGraph_in):
 def impr_graphique(self,DicoEssai,Courbes,NomsFich,Leg_x,Leg_y,Ech_x,Ech_y):
   """
   Tracer une liste de courbes dans une liste de fichiers
-  """ 
+  """
 #  import os
   from Accas import _F
 
@@ -616,9 +555,9 @@ def impr_graphique(self,DicoEssai,Courbes,NomsFich,Leg_x,Leg_y,Ech_x,Ech_y):
   # boucle sur les types de graphiques demandes en sortie
   # ---
   for cle in Courbes:
-  
+
     # on passe a l'iteration suivante si les listes de resultats sont vides
-    if len(Courbes[cle]) == 0 : 
+    if len(Courbes[cle]) == 0 :
       DEFI_FICHIER(ACTION='ASSOCIER',
                    FICHIER='./REPE_OUT/'+NomsFich[cle],
                    UNITE=unite,)
@@ -647,16 +586,16 @@ def impr_graphique(self,DicoEssai,Courbes,NomsFich,Leg_x,Leg_y,Ech_x,Ech_y):
 
     if Ech_x.has_key(cle) and Ech_y.has_key(cle) :
 
-      IMPR_FONCTION(FORMAT='XMGRACE', UNITE=unite,      
+      IMPR_FONCTION(FORMAT='XMGRACE', UNITE=unite,
                     COURBE =  Courbes[cle],
                     LEGENDE_X = Leg_x[cle],
                     LEGENDE_Y = Leg_y[cle],
                     ECHELLE_X = Ech_x[cle],
                     ECHELLE_Y = Ech_y[cle],)
-  
+
     else :
 
-      IMPR_FONCTION(FORMAT='XMGRACE', UNITE=unite,      
+      IMPR_FONCTION(FORMAT='XMGRACE', UNITE=unite,
                     COURBE =  Courbes[cle],
                     LEGENDE_X = Leg_x[cle],
                     LEGENDE_Y = Leg_y[cle],)
@@ -672,7 +611,7 @@ def impr_graphique(self,DicoEssai,Courbes,NomsFich,Leg_x,Leg_y,Ech_x,Ech_y):
 # --------------------------------------------------------------
 def remplir_tables(self,typ_essai,str_n_essai,DicoEssai,Resu_in):
   """
-  """ 
+  """
   from Accas import _F
   if DicoEssai.has_key('TABLE_RESU'):
 
@@ -703,7 +642,7 @@ def remplir_tables(self,typ_essai,str_n_essai,DicoEssai,Resu_in):
                  _F(LISTE_R=Resu_in['SIG_AXI'][i] ,PARA='SIG_AXI'),
                  _F(LISTE_R=Resu_in['SIG_LAT'][i] ,PARA='SIG_LAT'),
                  _F(LISTE_R=Resu_in['P'][i]       ,PARA='P'),
-                 _F(LISTE_R=Resu_in['Q'][i]       ,PARA='Q'),))        
+                 _F(LISTE_R=Resu_in['Q'][i]       ,PARA='Q'),))
 
     # ---
     # Essai "TND"
@@ -731,7 +670,7 @@ def remplir_tables(self,typ_essai,str_n_essai,DicoEssai,Resu_in):
                  _F(LISTE_R=Resu_in['P'][i]       ,PARA='P'),
                  _F(LISTE_R=Resu_in['Q'][i]       ,PARA='Q'),
                  _F(LISTE_R=Resu_in['PRE_EAU'][i] ,PARA='PRE_EAU'),
-                 ))        
+                 ))
 
     # ---
     # Essai "CISA_C"
@@ -782,17 +721,6 @@ def remplir_tables(self,typ_essai,str_n_essai,DicoEssai,Resu_in):
                     +" / PRES_CONF = "+str("%E"%(PRES_CONF[i]))+"\n"
         LdicoRes = []
         for j in xrange(len(SIGM_IMPOSE)):
-          resu_vide =              Resu_in['EPS_AXI'][i][j] == []
-          resu_vide = resu_vide or Resu_in['EPS_LAT'][i][j] == []
-          resu_vide = resu_vide or Resu_in['EPS_VOL'][i][j] == []
-          resu_vide = resu_vide or Resu_in['SIG_AXI'][i][j] == []
-          resu_vide = resu_vide or Resu_in['SIG_LAT'][i][j] == []
-          resu_vide = resu_vide or Resu_in['INST'][i][j]    == []
-          resu_vide = resu_vide or Resu_in['P'][i][j]       == []
-          resu_vide = resu_vide or Resu_in['Q'][i][j]       == []
-          resu_vide = resu_vide or Resu_in['PRE_EAU'][i][j] == []
-          # en cas d'abscence de resultats on passe a l'iteration suivante (boucle j)
-          if resu_vide : continue
           stjp1 = int_2_str(j+1,len(SIGM_IMPOSE))
           LdicoRes += [{'PARA':'SIGM_IMPOSE_'+stjp1,'LISTE_R':[SIGM_IMPOSE[j]]        }]
           LdicoRes += [{'PARA':'INST_'       +stjp1,'LISTE_R':Resu_in['INST'][i][j]   }]
@@ -804,27 +732,16 @@ def remplir_tables(self,typ_essai,str_n_essai,DicoEssai,Resu_in):
           LdicoRes += [{'PARA':'P_'          +stjp1,'LISTE_R':Resu_in['P'      ][i][j]}]
           LdicoRes += [{'PARA':'Q_'          +stjp1,'LISTE_R':Resu_in['Q'      ][i][j]}]
           LdicoRes += [{'PARA':'PRE_EAU_'    +stjp1,'LISTE_R':Resu_in['PRE_EAU'][i][j]}]
-        # si il n'y a aucun resultat ds LdicoRes on cree une table vide
-        if LdicoRes == []:
-          TABLRES = CREA_TABLE(TITRE=titre_table)
-        else:
-          TABLRES = CREA_TABLE(TITRE=titre_table,LISTE=(LdicoRes))
+        TABLRES = CREA_TABLE(TITRE=titre_table,LISTE=(LdicoRes))
 
-        resu_vide = Resu_in['NCYCL'][i] == [] or Resu_in['DSIGM'][i] == []
-        # en cas d'abscence de resultats on passe a l'iteration suivante (boucle i)
-        if resu_vide : continue
         stip1 = int_2_str(i+1,len(PRES_CONF))
         LdicoResGlob += [{'PARA':'PRES_CONF_'  +stip1,'LISTE_R':[PRES_CONF[i]]     }]
-        LdicoResGlob += [{'PARA':'NCYCL_'      +stip1,'LISTE_R':Resu_in['NCYCL'][i]}]
+        LdicoResGlob += [{'PARA':'NCYCL_'      +stip1,'LISTE_I':Resu_in['NCYCL'][i]}]
         LdicoResGlob += [{'PARA':'SIGM_IMPOSE_'+stip1,'LISTE_R':Resu_in['DSIGM'][i]}]
 
       self.DeclareOut('TABLRES',DicoEssai['TABLE_RESU'][-1])
-      titre_table = "Resultats globaux : ESSAI_CISA_C numero "+str_n_essai+"\n"
-      # si il n'y a aucun resultat ds LdicoResGlob on cree une table vide
-      if LdicoResGlob == []:
-        TABLRES = CREA_TABLE(TITRE=titre_table)
-      else:
-        TABLRES = CREA_TABLE(TITRE=titre_table,LISTE=(LdicoResGlob))
+      titre_table = "Resultats globaux : ESSAI_TND_C numero "+str_n_essai+"\n"
+      TABLRES = CREA_TABLE(TITRE=titre_table,LISTE=(LdicoResGlob))
 
     # ---
     # Pour nouvel essai
@@ -847,7 +764,7 @@ def Calc_Gs_max(self,EPSI_ELAS,PRES_CONF,MATER,COMP_INCR,CONVERGENCE):
   """
   Pour l'essai CISA_C : calcul du module de cisaillement secant max
   (EPSI_ELAS doit etre telle qu'on reste bien dans le domaine elastique)
-  """ 
+  """
   from Accas import _F
 
   DEFI_FONCTION  = self.get_cmd('DEFI_FONCTION')
@@ -868,7 +785,7 @@ def Calc_Gs_max(self,EPSI_ELAS,PRES_CONF,MATER,COMP_INCR,CONVERGENCE):
 
   __CHAR1 = DEFI_FONCTION(NOM_PARA = 'INST',
                           VALE = (0., 0., 1., -1.*EPSI_ELAS,),)
-    
+
   __CHAR2 = DEFI_FONCTION(NOM_PARA = 'INST',
                           VALE = (0., PRES_CONF, 1., PRES_CONF,),)
 
@@ -902,7 +819,7 @@ def Calc_Gs_max(self,EPSI_ELAS,PRES_CONF,MATER,COMP_INCR,CONVERGENCE):
   DETRUIRE(CONCEPT=_F(NOM = (__CHAR1,__CHAR2,__EVOL,
                              __RLIST,__DLIST),),
            INFO=1)
-  
+
   return 0.5*sig_xy/eps_xy
 # --------------------------------------------------------------
 # --------------------------------------------------------------

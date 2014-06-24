@@ -18,7 +18,7 @@ subroutine pmactn(sddisc, parcri, iterat, numins, itemax,&
 !   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 ! ======================================================================
 !
-    implicit     none
+    implicit none
 #include "jeveux.h"
 #include "asterfort/assert.h"
 #include "asterfort/jedema.h"
@@ -26,6 +26,7 @@ subroutine pmactn(sddisc, parcri, iterat, numins, itemax,&
 #include "asterfort/nmacto.h"
 #include "asterfort/nmevac.h"
 #include "asterfort/u2mess.h"
+#include "asterfort/utexcp.h"
     character(len=19) :: sddisc
     character(len=24) :: sderro
     real(kind=8) :: parcri(*)
@@ -146,7 +147,7 @@ subroutine pmactn(sddisc, parcri, iterat, numins, itemax,&
 ! ----- ON ARRETE TOUT
 !
         action = 0
-        call u2mess('F', 'MECANONLINE9_7')
+        call utexcp(22, 'MECANONLINE9_7')
 !
     else if ((retact.eq.4).and.(.not.arret).and.itemax) then
 !
