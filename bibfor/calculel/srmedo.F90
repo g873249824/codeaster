@@ -68,9 +68,8 @@ subroutine srmedo(modele, mate, cara, kcha, ncha,&
     character(len=24) :: ligr1
     character(len=24) :: mail2d, mail3d, mailto, noobj
 !
-! ----------------------------------------------------------------------
-!
     save nbligr, iligrs, imodls, ibases
+! ----------------------------------------------------------------------
 !
     call jemarq()
 !
@@ -78,8 +77,6 @@ subroutine srmedo(modele, mate, cara, kcha, ncha,&
 !     NUMERO ORDRE
     call medom1(modele, mate, cara, kcha, ncha,&
                 ctyp, result, nuord)
-!
-!     RECUPERATION DU LIGREL DU MODELE
 !
 !     POUR LE PREMIER PASSAGE ON INITIALISE LES TABLEAUX SAUVES
     if (npass .eq. 0) then
@@ -89,7 +86,7 @@ subroutine srmedo(modele, mate, cara, kcha, ncha,&
         call jedetr('&&SRMEDO.MODELS   ')
         call jedetr('&&SRMEDO.BASES    ')
         call wkvect('&&SRMEDO.LIGRS    ', 'V V K24', nbordr*nbmxba, iligrs)
-        call wkvect('&&SRMEDO.MODELS   ', 'V V K8', nbordr, imodls)
+        call wkvect('&&SRMEDO.MODELS   ', 'V V K8', nbordr*nbmxba, imodls)
         call wkvect('&&SRMEDO.BASES    ', 'V V K8', nbordr*nbmxba, ibases)
         call jeveut('&&SRMEDO.LIGRS    ', 'L', iligrs)
         call jeveut('&&SRMEDO.MODELS   ', 'L', imodls)
@@ -99,12 +96,12 @@ subroutine srmedo(modele, mate, cara, kcha, ncha,&
 !     ON REGARDE SI LE MODELE A DEJA ETE RENCONTRE
     kmod=indik8(zk8(imodls-1),modele,1,nbligr+1)
     baslig=' '
-    do 10,i = 1,nbligr
-    if (zk8(imodls-1+i) .eq. modele) then
-        kmod=1
-        baslig=zk8(ibases-1+i)(1:1)
-    endif
-    10 end do
+    do i = 1,nbligr
+        if (zk8(imodls-1+i) .eq. modele) then
+            kmod=1
+            baslig=zk8(ibases-1+i)(1:1)
+        endif
+    end do
 !
 !     SI OUI, ON REGARDE SI LE LIGREL A ETE CREE SUR LA MEME BASE
 !     QUE LA BASE DEMANDEE
@@ -113,8 +110,8 @@ subroutine srmedo(modele, mate, cara, kcha, ncha,&
 !     SI OUI ALORS ON LE REPREND
         ligrel=zk24(iligrs-1+nbligr)
 !
-!     SI NON ON CREE UN NOUVEAU LIGREL
     else
+!     SINON, ON CREE UN NOUVEAU LIGREL
         mail2d='&&SRMEDO.MAILLE_FACE'
         mail3d='&&SRMEDO.MAILLE_3D_SUPP'
         mailto='&&SRMEDO.MAILLE_2D_3D'
@@ -137,8 +134,8 @@ subroutine srmedo(modele, mate, cara, kcha, ncha,&
 !
         nbligr=nbligr+1
         zk24(iligrs-1+nbligr)=ligr1
-        zk8( imodls-1+nbligr)=modele
-        zk8( ibases-1+nbligr)=base
+        zk8(imodls-1+nbligr)=modele
+        zk8(ibases-1+nbligr)=base
         ligrel=ligr1
     endif
 !
