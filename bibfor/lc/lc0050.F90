@@ -90,9 +90,9 @@ subroutine lc0050(fami, kpg, ksp, ndim, typmod,&
     real(kind=8) :: vim(*), statev(nvi), bendom, kdessm, bendop, kdessp
     real(kind=8) :: predef(npred), dpred(npred), vrcm, vrcp, valreb(2)
     real(kind=8) :: hydrm, hydrp, sechm, sechp, sref, epsbp, epsbm, epsthp
-    real(kind=8) :: ddsdde(36), dfgrd0(3, 3), dfgrd1(3, 3), xyz(3)
+    real(kind=8) :: ddsdde(54), dfgrd0(3, 3), dfgrd1(3, 3)
     real(kind=8) :: ddsddt(6), drplde(6), celent, stran(9), dsidep(6, 6)
-    real(kind=8) :: dtime, temp, dtemp, coords(3), rpl, pnewdt, drpldt, rep(4)
+    real(kind=8) :: dtime, temp, dtemp, coords(3), rpl, pnewdt, drpldt
     real(kind=8) :: depst1, epsth1, epsth(6), rac2, usrac2, drott(3, 3)
     character(len=16) :: compor(*), option
     character(len=8) :: typmod(*), nomres(nprops), nomreb(2), lvarc(npred)
@@ -102,7 +102,6 @@ subroutine lc0050(fami, kpg, ksp, ndim, typmod,&
 !     POUR TECAEL
     character(len=128) :: nomlib
     character(len=16) :: nomsub
-    character(len=2) :: k2
     integer :: ii, dimaki, nbcoef, icodrb(2)
 !     DIMAKI = DIMENSION MAX DE LA LISTE DES RELATIONS KIT
     parameter (dimaki=9)
@@ -432,6 +431,9 @@ subroutine lc0050(fami, kpg, ksp, ndim, typmod,&
     endif
 !
     if (option(1:9) .eq. 'RIGI_MECA' .or. option(1:9) .eq. 'FULL_MECA') then
+        if (compor(3) .eq. 'SIMO_MIEHE') then
+            call dcopy(54, ddsdde, 1, dsidep, 1)
+        else
         call r8inir(36, 0.d0, dsidep, 1)
         call lcicma(ddsdde, ntens, ntens, ntens, ntens,&
                     1, 1, dsidep, 6, 6,&
@@ -444,11 +446,12 @@ subroutine lc0050(fami, kpg, ksp, ndim, typmod,&
             do 50 j = 1, 6
                 dsidep(i,j) = dsidep(i,j)*rac2
 50          continue
-        if ((niv.ge.2) .and. (idbg.eq.1)) then
-            write(ifm,*)'APRES APPEL UMAT,OPERATEUR TANGENT DSIDEP='
-            do 60 i = 1, 6
+            if ((niv.ge.2) .and. (idbg.eq.1)) then
+                write(ifm,*)'APRES APPEL UMAT,OPERATEUR TANGENT DSIDEP='
+                do 60 i = 1, 6
                 write(ifm,'(6(1X,E11.4))') (dsidep(i,j),j=1,6)
-60          continue
+60              continue
+            endif
         endif
     endif
 !
