@@ -30,11 +30,15 @@ void DEFPPPP(HPALLOC, hpalloc, void **addr,INTEGER *length, INTEGER *errcode, IN
     else
     {
         ir=mallopt(M_MMAP_THRESHOLD,0);
-        *addr = (void *)malloc(*length * sizeof(INTEGER)); 
+        *addr = (void *)malloc(*length * sizeof(INTEGER));
         ir=mallopt(M_MMAP_THRESHOLD,128*1024);
         if ( *addr == (void *)-1 )
         {
             *errcode = -2;
+        }
+        else if ( *addr == NULL )
+        {
+            *errcode = -3;
         }
         else
         {
