@@ -45,6 +45,12 @@ subroutine debut()
     character(len=80) :: fichdf
     integer :: ier, lout, n, ncode, ibid
     integer :: iarg
+    integer :: ipass=0
+!
+    if (ipass .ne. 0) then
+        call u2mess('F', 'SUPERVIS_2')
+    endif
+    ipass = 1
 !
     fichdf=' '
 !

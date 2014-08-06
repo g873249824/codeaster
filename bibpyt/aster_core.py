@@ -131,7 +131,8 @@ def _print_header():
               get_option('hostname'),
               get_option('architecture'),
               get_option('processor'),
-              get_option('system') + ' ' + get_option('osrelease'),
+              get_option('system') + ' ' + get_option('osname') \
+                  + ' '  + get_option('osrelease'),
               lang_settings,),)
     pyvers = '%s.%s.%s' % tuple(sys.version_info[:3])
     UTMESS('I', 'SUPERVIS2_9', valk=(pyvers, numpy.__version__))
