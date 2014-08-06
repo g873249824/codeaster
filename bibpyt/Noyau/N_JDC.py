@@ -32,7 +32,7 @@ import types,sys,linecache
 # Modules EFICAS
 import N_OBJECT
 import N_CR
-from N_Exception import AsException
+from N_Exception import AsException, InterruptParsingError
 from N_ASSD import ASSD
 from N_info import message, SUPERV
 
@@ -210,6 +210,10 @@ Causes possibles :
 
          CONTEXT.unset_current_step()
          if self.appli != None : self.appli.affiche_infos('')
+
+      except InterruptParsingError:
+         # interrupt the command file parsing used by FIN to ignore the end of the file
+         pass
 
       except EOFError:
         # Exception utilise pour interrompre un jeu
@@ -430,7 +434,7 @@ Causes possibles :
       ou a COMMANDE par COMMANDE
       en fonction de la valeur du mot cle PAR_LOT et
       du contexte : application maitre ou pas
-      
+
       En PAR_LOT='NON', il n'y a pas d'ambiguité.
       En PAR_LOT='OUI', E_SUPERV positionne l'attribut à 'NON' après la phase
       d'analyse et juste avant la phase d'exécution.
