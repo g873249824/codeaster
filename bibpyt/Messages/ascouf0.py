@@ -52,6 +52,10 @@ ANGL_COUDE et ANGL_SOUS_EPAI sont inutiles dans ce cas.
  la sous-épaisseur doit être dans la section médiane du coude !
 """),
 
+8: _(u"""
+Le bon fonctionnement de la commande BOL_P2 = GV n'est pas assuré.
+Son utilisation a par conséquent été interdite
+"""),
 
 9: _(u"""
  Valeur hors domaine :

@@ -1414,7 +1414,7 @@ def write_file_dgib_ASCFDO(nomFichierDATG,RM,RC,ALPHA,NBTRAN,EP1,EP2,EPI,TETA1,
 
   if TYPBOL!= None:
      if TYPBOL=='CUVE'     : TYPEMB = 'typcuv'
-     if TYPBOL=='GV'       : TYPEMB = 'typegv'
+     if TYPBOL=='GV'       : UTMESS('F','ASCOUF0_8')
      if TYPBOL=='ASP_MPP'  : TYPEMB = 'typapp'
   else:
      TYPEMB ='      '
