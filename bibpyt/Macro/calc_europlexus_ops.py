@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2014  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -30,6 +30,7 @@ debug = False
 
 import types,string
 import os
+import os.path as osp
 import numpy
 import math
 import copy
@@ -91,7 +92,7 @@ def calc_europlexus_ops(self,EXCIT,COMP_INCR,MODELE=None,CARA_ELEM=None,CHAM_MAT
     # Le nom de la variable doit etre obligatoirement le nom de la commande
 
     global _F,INFO_EXEC_ASTER,DETRUIRE,IMPR_RESU,DEFI_FICHIER,LIRE_RESU,CREA_MAILLAGE
-    global DEFI_GROUP,LIRE_MAILLAGE,CREA_TABLE,IMPR_TABLE,AFFE_MODELE,EXEC_LOGICIEL
+    global DEFI_GROUP,LIRE_MAILLAGE,CREA_TABLE,IMPR_TABLE,AFFE_MODELE
     global LIRE_CHAMP,CREA_CHAMP,CREA_RESU,FORMULE,MODI_REPERE
 
     INFO_EXEC_ASTER = self.get_cmd('INFO_EXEC_ASTER')
@@ -105,7 +106,6 @@ def calc_europlexus_ops(self,EXCIT,COMP_INCR,MODELE=None,CARA_ELEM=None,CHAM_MAT
     CREA_TABLE      = self.get_cmd('CREA_TABLE')
     IMPR_TABLE      = self.get_cmd('IMPR_TABLE')
     AFFE_MODELE     = self.get_cmd('AFFE_MODELE')
-    EXEC_LOGICIEL   = self.get_cmd('EXEC_LOGICIEL')
     LIRE_CHAMP      = self.get_cmd('LIRE_CHAMP')
     CREA_CHAMP      = self.get_cmd('CREA_CHAMP')
     CREA_RESU       = self.get_cmd('CREA_RESU')
@@ -203,6 +203,7 @@ class EUROPLEXUS:
 
     def __init__(self,ETAT_INIT,MODELE,CARA_ELEM,CHAM_MATER,COMP_INCR,FONC_PARASOL,EXCIT,DIME,OBSERVATION,ARCHIVAGE,COURBE,CALCUL,DOMAINES,INTERFACES,REPE,EXEC,INFO,REPE_epx,args):
 
+          import aster_core
           if debug: print 'args_key %s'%args.keys()
           # Mettre toutes les entrees en attributs
           self.ETAT_INIT = ETAT_INIT
@@ -234,10 +235,10 @@ class EUROPLEXUS:
           self.COMP_INCR = COMP_INCR
 
           self.REPE_epx = REPE_epx
-          self.pwd = os.getcwd()
 
           # Commande d'execution de Europlexus
-          self.EXEC   = EXEC
+          tooldir = aster_core.get_option('repout')
+          self.EXEC = EXEC or osp.join(tooldir, 'europlexus')
 
           if args.has_key('UNITE_COURBE'): self.UNITE_COURBE = args['UNITE_COURBE']
           else:                            self.UNITE_COURBE = None
@@ -1805,24 +1806,6 @@ class EUROPLEXUS:
          epx[MODULE].append(2*' '+'TERM')
 
 
-      # ecriture CAST2000
-      # __temp
-      fichier_cast2000 = 'fort.%i' %unite_cast2000
-      if unite_cast2000 and os.path.isfile(fichier_cast2000) :
-        # titre
-        epx[MODULE].append('\n*-- CAST2000')
-        fd = open(fichier_cast2000,'r')
-        lst = fd.readlines()
-        fd.close()
-        for st in lst :
-          st = string.replace(st,'\n','')
-          epx[MODULE].append(st)
-
-      # Une ligne de saut
-      epx[MODULE].append('\n')
-
-  #-----------------------------------------------------------------------
-
     def export_POST_COURBE(self):
 
       # Suite de postraitement permettant d'ecrire des fichiers ASCII
@@ -2559,19 +2542,12 @@ class EUROPLEXUS:
   #-----------------------------------------------------------------------
     def lancer_calcul(self,fichier_med='auto'):
 
-       fichier_epx = self.nom_fichiers['COMMANDE']
-  #     EXEC_LOGICIEL(LOGICIEL='cd %s ; unset TMPDIR ; %s -usetmpdir %s ; iret=$? ; cd %s ; echo "Code_Retour Europlexus : $iret" ; exit 0' % (self.pwd + self.REPE, self.EXEC, fichier_epx, self.pwd),
-  #                   CODE_RETOUR_MAXI=-1,
-  #                   INFO=2)
-
-#       EXEC_LOGICIEL(LOGICIEL='cd %s ; ls -al ; ls -alR .. ; unset TMPDIR ; unset PMI_RANK ; %s %s ; iret=$? ; cd %s ; echo "Code_Retour Europlexus : $iret" ; exit 0' % (self.REPE_epx, self.EXEC, fichier_epx, self.pwd),
-#                     CODE_RETOUR_MAXI=-1,
-#                    INFO=2)
-
-       EXEC_LOGICIEL(LOGICIEL='cd %s ; unset TMPDIR ; unset PMI_RANK ; %s %s ; iret=$? ; cd %s ; echo "Code_Retour Europlexus : $iret" ; exit 0' % (self.REPE_epx, self.EXEC, fichier_epx, self.pwd),
+        from Cata.cata import EXEC_LOGICIEL
+        fichier_epx = osp.abspath(self.nom_fichiers['COMMANDE'])
+        EXEC_LOGICIEL(LOGICIEL=self.EXEC,
+                      ARGUMENT=(fichier_epx, self.REPE_epx),
                       CODE_RETOUR_MAXI=-1,
                       INFO=2)
-
 
 
 #------------------------------------------------------------------------
