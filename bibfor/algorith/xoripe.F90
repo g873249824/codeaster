@@ -341,7 +341,13 @@ subroutine xoripe(modele)
                 call assert(he.eq.- 1.or.he.eq.1.or.he.eq.0.or.he.eq.99)
                 if (he .eq. 99) then
 !             VERIF QUE C'EST NORMAL
-                    call assert(nse.eq.1)
+                    if ( (typbo(1:4).eq.'TRIA') .or. (typbo(1:3).eq.'SEG') ) then
+                        call assert(nse.eq.1)
+                    elseif (typbo(1:4).eq.'QUAD') then
+                        call assert(nse.eq.2)
+                    else
+                        call assert(.false.)
+                    endif
 !             SIGNE LEVEL SET SUR LA MAILLE PRINCIPALE
                     nsignp=0
                     nsignm=0
