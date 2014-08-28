@@ -201,7 +201,7 @@ subroutine mdexcc(nofimd, idfimd, nochmd, nbcmpc, nomcmc,&
                     call u2mesg('F', 'DVP_97', 1, saux08, 1,&
                                 codret, 0, 0.d0)
                 endif
-                if (jaux .ne. mfloat) then
+                if (saux64 .eq. nochmd .and. jaux .ne. mfloat) then
                     vali (1) = jaux
                     call u2mesg('A+', 'MED_84', 0, ' ', 1,&
                                 vali, 0, 0.d0)
