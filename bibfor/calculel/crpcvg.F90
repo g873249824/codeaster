@@ -2,7 +2,7 @@ subroutine crpcvg(ma1, ma2, gma1, gma2, tran,&
                   prec, lima1, lima2, linoeu)
     implicit   none
 #include "jeveux.h"
-!
+#include "asterc/getvtx.h"
 #include "asterfort/jedema.h"
 #include "asterfort/jelira.h"
 #include "asterfort/jemarq.h"
@@ -46,11 +46,12 @@ subroutine crpcvg(ma1, ma2, gma1, gma2, tran,&
     integer :: nbma1, nbma2, jtyma1, jtyma2, jgma1, jgma2, ima, ima1, ima2, ino
     integer :: ino1, ino2, nbnoma, nutyp1, numgl1, iamac1, ilmac1, nutyp2
     integer :: numgl2, iamac2, ilmac2, jcoor1, jcoor2, jnum1, jnum2, jma
+    integer :: ibid, iarg
     real(kind=8) :: x1, y1, z1, x2, y2, z2, v1, v2, v3
     real(kind=8) :: valr(3)
     logical :: erreur
-    character(len=8) :: k8b, noma1, noma2
-    character(len=24) :: valk(4)
+    character(len=8) :: k8b, noma1
+    character(len=24) :: valk(5), nom_gr1, nom_gr2
     character(len=24) :: grpma1, grpma2, coova1, coova2, typma1, typma2, conne1
     character(len=24) :: conne2
 !
@@ -99,11 +100,16 @@ subroutine crpcvg(ma1, ma2, gma1, gma2, tran,&
     call wkvect(lima1, 'V V I', nbma1, jnum1)
     call wkvect(lima2, 'V V I', nbma1, jnum2)
 !
-    do 10 ima = 1, nbma1
+!   boucle sur les mailles de GROUP_MA_INIT
+    do ima = 1, nbma1
 !
+!       numero et type de la maille courante de GROUP_MA_INIT
         ima1 = zi(jgma1+ima-1)
         nutyp1 = zi(jtyma1-1+ima1)
-        do 100 jma = 1, nbma1
+
+!       boucle sur les mailles de GROUP_MA_FINAL
+        do 100 jma = 1, nbma2
+
             ima2 = zi(jgma2+jma-1)
             nutyp2 = zi(jtyma2-1+ima2)
 !
@@ -123,6 +129,9 @@ subroutine crpcvg(ma1, ma2, gma1, gma2, tran,&
                 if (v1 .gt. prec) erreur = .true.
                 if (v2 .gt. prec) erreur = .true.
                 if (v3 .gt. prec) erreur = .true.
+
+!               en cas d'erreur, on passe a la maille suivante de
+!               GROUP_MA_FINAL (iteration suivante de la boucle 100)
                 if (erreur) then
                     goto 100
                 endif
@@ -131,6 +140,9 @@ subroutine crpcvg(ma1, ma2, gma1, gma2, tran,&
 !
 20          continue
 !
+!           a ce niveau, on a trouve la maille ima2 en
+!           correspondance avec la maille ima1
+!           on verifie leur type
             if (nutyp1 .ne. nutyp2) then
                 valk (1) = gma1
                 valk (2) = gma2
@@ -138,23 +150,31 @@ subroutine crpcvg(ma1, ma2, gma1, gma2, tran,&
                             0, 0, 0.d0)
             endif
 !
+!           on stocke ima1 et ima2
+!           et on passe a la maille suivante dans GROUP_MA_INIT
             zi(jnum1+ima-1) = ima1
             zi(jnum2+ima-1) = ima2
             goto 10
-100      continue
-!
+
+100     continue
+
+!       si on passe ici, c'est que l'on n'a trouve aucune maille de
+!       GROUP_MA_FINAL en correspondance avec la maille ima1 de GROUP_MA_INIT
+        call getvtx('PERM_CHAM','GROUP_MA_INIT' , 1, 1, iarg, nom_gr1, ibid)
+        call getvtx('PERM_CHAM','GROUP_MA_FINAL', 1, 1, iarg, nom_gr2, ibid)
         call jenuno(jexnum(ma1//'.NOMMAI', ima1 ), noma1)
-        call jenuno(jexnum(ma2//'.NOMMAI', ima2 ), noma2)
-        valk(1) = noma1
-        valk(2) = ma1
-        valk(3) = noma2
-        valk(4) = ma2
+        valk(1) = nom_gr1
+        valk(2) = nom_gr2
+        valk(3) = noma1
+        valk(4) = ma1
+        valk(5) = ma2
         valr(1) = tran(1)
         valr(2) = tran(2)
         valr(3) = tran(3)
-        call u2mesg('F', 'CALCULEL5_69', 4, valk, 0,&
-                    0, 1, valr)
-10  end do
+        call u2mesg('F', 'CALCULEL5_69', 5, valk, 0,&
+                    0, 3, valr)
+10  continue
+    end do
 !
     call jedema()
 end subroutine
