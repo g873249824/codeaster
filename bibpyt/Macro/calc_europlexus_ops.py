@@ -2543,7 +2543,7 @@ class EUROPLEXUS:
     def lancer_calcul(self,fichier_med='auto'):
 
         from Cata.cata import EXEC_LOGICIEL
-        fichier_epx = osp.abspath(self.nom_fichiers['COMMANDE'])
+        fichier_epx = osp.join(self.REPE_epx, self.nom_fichiers['COMMANDE'])
         EXEC_LOGICIEL(LOGICIEL=self.EXEC,
                       ARGUMENT=(fichier_epx, self.REPE_epx),
                       CODE_RETOUR_MAXI=-1,
