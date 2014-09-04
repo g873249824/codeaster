@@ -200,7 +200,7 @@ subroutine ctetax(basmod, numa, nbsec, teta, nbtet)
                         0, 0, 0.d0)
         endif
 !
-        nbdcou=0
+!        nbdcou=0
         iloci=0
         icomp=0
         do 60 j = 1, nta
