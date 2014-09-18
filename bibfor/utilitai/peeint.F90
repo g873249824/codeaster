@@ -28,7 +28,6 @@ subroutine peeint(resu, modele, nbocc)
 #include "asterfort/jexnom.h"
 #include "asterfort/nopar2.h"
 #include "asterfort/peecal.h"
-#include "asterfort/reliem.h"
 #include "asterfort/rsadpa.h"
 #include "asterfort/rsexch.h"
 #include "asterfort/rsorac.h"
@@ -67,18 +66,18 @@ subroutine peeint(resu, modele, nbocc)
     integer :: iret, nbcmp, nzero, ibid, nbordr, iocc, jnuma, nbma, ncmpm
     integer :: jcmp, n1, numa, nr, np, nc, im, ni, no, jno, jin, numo, i
     integer :: nbgma, jgma, nma, jma, igm, nbpa1, nbpa2, nn, inum, nli, nlo
-    integer :: nd, ib, jlicmp, jlicm2, jlicm1, nucmp, jcpini, iresma, nbmaf, vali
+    integer :: nd, ib, jlicmp, jlicm2, jlicm1, nucmp, jcpini
     parameter(nzero=0,nbpa1=4,nbpa2=2)
     real(kind=8) :: rbid, prec, inst
     complex(kind=8) :: cbid
-    character(len=8) :: k8b, kbid, mailla, resuco, crit, nopar, infoma
+    character(len=8) :: k8b, kbid, mailla, resuco, crit, nopar
     character(len=4) :: tych, ki, exirdm
     character(len=8) :: nomgd, tout, grpma, maille, typpa1(nbpa1), typpa2(nbpa2)
     parameter(tout='TOUT',grpma='GROUP_MA',maille='MAILLE')
     character(len=16) :: nompa1(nbpa1), nompa2(nbpa2), optio2
     character(len=19) :: knum, cham, kins, lisins, chamg, celmod, ligrel, tmpcha
     character(len=19) :: cham2, cham3, chamtm, ligtmp
-    character(len=24) :: nomcha, valk2(5), mesmai, mesmaf, mesmae
+    character(len=24) :: nomcha, valk2(5)
     logical :: exiord, toneut
     integer :: iarg
     data nompa1/'NOM_CHAM','NUME_ORDRE','INST','VOL'/
@@ -124,8 +123,6 @@ subroutine peeint(resu, modele, nbocc)
 !
     knum = '&&PEEINT.NUME_ORDRE'
     kins = '&&PEEINT.INST'
-    mesmai = '&&PEEINT.MES_MAILLES'
-    mesmaf = '&&PEEINT.MAILLES_FILTRE'
     exiord=.false.
     toneut=.false.
 !
@@ -317,34 +314,6 @@ subroutine peeint(resu, modele, nbocc)
             call getvtx('INTEGRALE', 'TOUT', iocc, iarg, nzero,&
                         k8b, iret)
             if (iret .ne. 0) then
-!             - MAILLES FILTREES EN FONCTION DE LA DIMENSION POUR
-!               ETRE HOMOGENE(2D OU 3D)(MOT CLE TYPE_MAILLE)
-
-!             - MAILLES FOURNIES PAR L'UTILISATEUR -
-                call reliem(modele, mailla, 'NU_MAILLE', 'INTEGRALE', iocc,&
-                        1, 'TOUT', 'TOUT', mesmai, nbma)
-!
-                call getvtx('INTEGRALE', 'TYPE_MAILLE', iocc, ibid,1, infoma,iret)
-!
-                if (iret .ne. 0) then
-                    iresma = 0
-                    if (infoma .eq. '1D') iresma=1
-                    if (infoma .eq. '2D') iresma=2
-                    if (infoma .eq. '3D') iresma=3
-                    call assert (iresma.ne.0)
-                    call utflmd(mailla, mesmai, nbma, iresma, ' ',nbmaf, mesmaf)
-                    if (nbmaf .gt. 0) then
-                        vali= nbma-nbmaf
-                        if (vali .ne.0) call u2mesi ('A','PREPOST2_7',1, vali)
-                        call jedetr(mesmai)
-                        nbma = nbmaf
-                        mesmae = mesmaf
-                    else
-                        call u2mess('F', 'PREPOST2_8')
-                    endif
-                else
-                    infoma='-'
-                endif
                 call peecal(tych, resu, nomcha, tout, tout,&
                             modele, nr, cham, nbcmp, zk8(jcmp),&
                             zk8(jcpini), numo, inst, iocc)
@@ -362,34 +331,6 @@ subroutine peeint(resu, modele, nbocc)
                     call jelira(jexnom(mailla//'.GROUPEMA', zk24(jgma+ igm-1)), 'LONMAX', nma,&
                                 k8b)
                     call jeveuo(jexnom(mailla//'.GROUPEMA', zk24(jgma+ igm-1)), 'L', jnuma)
-!                 - MAILLES FILTREES EN FONCTION DE LA DIMENSION POUR
-!                   ETRE HOMOGENE(2D OU 3D)(MOT CLE TYPE_MAILLE)
-
-!                 - MAILLES FOURNIES PAR L'UTILISATEUR -
-                    call reliem(modele, mailla, 'NU_MAILLE', 'INTEGRALE', iocc,&
-                            1, 'GROUP_MA', 'GROUP_MA', mesmai, nbma)
-!
-                    call getvtx('INTEGRALE', 'TYPE_MAILLE', iocc, ibid,1, infoma,iret)
-!
-                    if (iret .ne. 0) then
-                        iresma = 0
-                        if (infoma .eq. '1D') iresma=1
-                        if (infoma .eq. '2D') iresma=2
-                        if (infoma .eq. '3D') iresma=3
-                        call assert(iresma.ne.0)
-                        call utflmd(mailla, mesmai, nbma, iresma, ' ',nbmaf, mesmaf)
-                        if (nbmaf .gt. 0) then
-                            vali= nbma-nbmaf
-                            if (vali .ne.0) call u2mesi ('A','PREPOST2_7',1, vali)
-                            call jedetr(mesmai)
-                            nbma = nbmaf
-                            mesmae = mesmaf
-                        else
-                            call u2mess('F', 'PREPOST2_8')
-                        endif
-                    else
-                        infoma='-'
-                    endif
                     call peecal(tych, resu, nomcha, grpma, zk24(jgma+igm- 1),&
                                 modele, nr, cham, nbcmp, zk8(jcmp),&
                                 zk8(jcpini), numo, inst, iocc)
@@ -407,34 +348,6 @@ subroutine peeint(resu, modele, nbocc)
                             zk8(jma), n1)
                 do 30 im = 1, nma
                     call jenonu(jexnom(mailla//'.NOMMAI', zk8(jma+im-1) ), numa)
-!                 - MAILLES FILTREES EN FONCTION DE LA DIMENSION POUR
-!                   ETRE HOMOGENE(2D OU 3D)(MOT CLE TYPE_MAILLE)
-
-!                 - MAILLES FOURNIES PAR L'UTILISATEUR -
-                    call reliem(modele, mailla, 'NU_MAILLE', 'INTEGRALE', iocc,&
-                            1, 'MAILLE', 'MAILLE', mesmai, nbma)
-!
-                    call getvtx('INTEGRALE', 'TYPE_MAILLE', iocc, ibid,1, infoma,iret)
-!
-                    if (iret .ne. 0) then
-                        iresma = 0
-                        if (infoma .eq. '1D') iresma=1
-                        if (infoma .eq. '2D') iresma=2
-                        if (infoma .eq. '3D') iresma=3
-                        call assert (iresma.ne.0)
-                        call utflmd(mailla, mesmai, nbma, iresma, ' ',nbmaf, mesmaf)
-                        if (nbmaf .gt. 0) then
-                            vali= nbma-nbmaf
-                        if (vali .ne.0) call u2mesi ('A','PREPOST2_7',1, vali)
-                        call jedetr(mesmai)
-                        nbma = nbmaf
-                        mesmae = mesmaf
-                    else
-                        call u2mess('F', 'PREPOST2_8')
-                        endif
-                    else
-                        infoma='-'
-                    endif
                     call peecal(tych, resu, nomcha, maille, zk8(jma+im-1),&
                                 modele, nr, cham, nbcmp, zk8(jcmp),&
                                 zk8(jcpini), numo, inst, iocc)
@@ -443,8 +356,6 @@ subroutine peeint(resu, modele, nbocc)
             endif
 !
             call jedetr('&&PEEINT.CMP')
-            call jedetr('&&PEEINT.MES_MAILLES')
-            call jedetr('&&PEEINT.MAILLES_FILTRE')
             call jedetr('&&PEEINT.CMP_INIT')
 !
 !
