@@ -129,7 +129,10 @@ subroutine pebpct(modele, nbma, lma, cham, nomcmp,&
 !
     call jelira(chams//'.CESC', 'LONMAX', ncmpm, k8b)
     nucmp=indik8(zk8(jcesc),nomcmp,1,ncmpm)
-    call assert(nucmp.ge.0)
+!
+    if (nucmp.le.0) then
+        call u2mesk('F','CHAMPS_3',1,nomcmp)
+    endif
 !
 !     MAILLES A CONSIDERER
     call jeveuo(lma, 'L', jnuma)

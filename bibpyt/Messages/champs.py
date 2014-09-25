@@ -33,7 +33,8 @@ cata_msg={
 """),
 
 3: _(u"""
- La composante %(k1)s du champ  n'existe pas.
+Erreur utilisateur :
+ La composante demandée %(k1)s n'est pas trouvée dans le champ.
 """),
 
 4 : _(u"""
@@ -98,6 +99,11 @@ Conseil:
     Vérifiez que le champ n'existe pas déjà.
     Il est possible que cette structure de donnée n'accepte pas ce type de champ.
 
+"""),
+
+19: _(u"""
+Erreur utilisateur :
+ La composante demandée %(k1)s n'est pas trouvée dans le champ %(k2)s.
 """),
 
 }

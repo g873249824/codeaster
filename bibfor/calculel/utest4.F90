@@ -104,7 +104,7 @@ subroutine utest4(chamgd, typtes, typres, nbref, tbtxt,&
                     goto 10
                 endif
 12          continue
-            call u2mesk('F', 'CALCULEL6_88', 1, noddl)
+            call u2mesk('F', 'CHAMPS_3', 1, noddl)
 10      continue
         call jelira(cnsinr//'.CNSV', 'TYPE', ibid, type)
         call jelira(cnsinr//'.CNSV', 'LONMAX', neq, type)
@@ -142,7 +142,7 @@ subroutine utest4(chamgd, typtes, typres, nbref, tbtxt,&
                     goto 20
                 endif
 22          continue
-            call u2mesk('F', 'CALCULEL6_88', 1, noddl)
+            call u2mesk('F', 'CHAMPS_3', 1, noddl)
 20      continue
         call jelira(cnsinr//'.CESV', 'TYPE', ibid, type)
         call jelira(cnsinr//'.CESV', 'LONMAX', neq, type)

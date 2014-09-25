@@ -270,7 +270,7 @@ subroutine pevolu(resu, modele, nbocc)
                             nomcha, iret)
                 if (iret .eq. 0) call u2mess('F', 'POSTELEM_4')
 !
-                call rsexch(' ', resuco, nomcha, numo, cham2,&
+                call rsexch('F', resuco, nomcha, numo, cham2,&
                             iret)
 !
             else

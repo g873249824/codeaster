@@ -43,7 +43,7 @@ subroutine prcoch(noche8, nochs8, nocmp, ktype, itopo,&
     character(len=24) :: group(ngroup)
 !
     character(len=24) :: litrou
-    character(len=24) :: valk
+    character(len=24) :: valk(2)
     character(len=19) :: celz, cesz
     character(len=8) :: nomma, k8bid, nogd, tsca
     integer :: jcesd, jcesl, jcesc, jcesv, jcesk, ncmpmx, icmp, numcmp
@@ -120,8 +120,8 @@ subroutine prcoch(noche8, nochs8, nocmp, ktype, itopo,&
             do 13 igr = 1, ngroup
                 call jeexin(jexnom(nomma//'.GROUPEMA', group(igr)), iret)
                 if (iret .eq. 0) then
-                    valk = group(igr)
-                    call u2mesg('A', 'PREPOST5_31', 1, valk, 0,&
+                    valk(1) = group(igr)
+                    call u2mesg('A', 'PREPOST5_31', 1, valk(1), 0,&
                                 0, 0, 0.d0)
                 else
                     call jelira(jexnom(nomma//'.GROUPEMA', group(igr)), 'LONMAX', nbn, k8bid)
@@ -181,18 +181,20 @@ subroutine prcoch(noche8, nochs8, nocmp, ktype, itopo,&
         nbval=0
         nbma = zi(jcesd-1+1)
 !
-        do 10 ima = 1, nbma
+        do ima = 1, nbma
 !
 !
             nbpt=zi(jcesd-1+5+4*(ima-1)+1)
             nbsp=zi(jcesd-1+5+4*(ima-1)+2)
 !
-            do 10 ipt = 1, nbpt
-                do 10 isp = 1, nbsp
+            do ipt = 1, nbpt
+                do isp = 1, nbsp
                     call cesexi('C', jcesd, jcesl, ima, ipt,&
                                 isp, numcmp, iad)
                     if (iad .gt. 0) nbval=nbval+1
-10              continue
+                end do
+            end do
+        end do
 !
 !
         if (nbval .eq. 0) then
@@ -214,14 +216,14 @@ subroutine prcoch(noche8, nochs8, nocmp, ktype, itopo,&
 !
 ! -- 4EME ETAPE : REMPLISSAGE DES VECTEURS
         ival=0
-        do 20 ima = 1, nbma
+        do ima = 1, nbma
 !
 !
             nbpt=zi(jcesd-1+5+4*(ima-1)+1)
             nbsp=zi(jcesd-1+5+4*(ima-1)+2)
 !
-            do 20 ipt = 1, nbpt
-                do 20 isp = 1, nbsp
+            do ipt = 1, nbpt
+                do isp = 1, nbsp
                     call cesexi('C', jcesd, jcesl, ima, ipt,&
                                 isp, numcmp, iad)
                     if (iad .gt. 0) then
@@ -239,7 +241,9 @@ subroutine prcoch(noche8, nochs8, nocmp, ktype, itopo,&
                             zi(jsp-1+ival)=isp
                         endif
                     endif
-20              continue
+                end do
+            end do
+        end do
 !
 !
 !
@@ -267,8 +271,8 @@ subroutine prcoch(noche8, nochs8, nocmp, ktype, itopo,&
             do 130 igr = 1, ngroup
                 call jeexin(jexnom(nomma//'.GROUPENO', group(igr)), iret)
                 if (iret .eq. 0) then
-                    valk = group(igr)
-                    call u2mesg('A', 'PREPOST5_31', 1, valk, 0,&
+                    valk(1) = group(igr)
+                    call u2mesg('A', 'PREPOST5_31', 1, valk(1), 0,&
                                 0, 0, 0.d0)
                 else
                     call jelira(jexnom(nomma//'.GROUPENO', group(igr)), 'LONMAX', nbn, k8bid)

@@ -141,7 +141,7 @@ subroutine w155m2(chin, carele, ligrel, chextr, nomsym,&
     10 end do
     valk(1)=nocmp
     valk(2)=nomsym
-    call u2mesk('F', 'CALCULEL2_18', 2, valk)
+    call u2mesk('F', 'CHAMPS_19', 2, valk)
 !
 20  continue
     do 60,kma=1,nbma
