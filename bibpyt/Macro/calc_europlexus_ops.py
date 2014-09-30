@@ -1668,51 +1668,56 @@ class EUROPLEXUS:
       epx[MODULE].append('opti K2GP')
       # Entete de la commande Europlexus courante
       epx[MODULE].append('ECRITURE')
+      dcles_entite = {'POINT':'GROUP_NO', 'ELEM':'GROUP_MA'}
+      cles_entite = dcles_entite.keys()
 
 
       # Traitement du mot-cle facteur OBSERVATION (EPX = LISTING)
   # AA    listing_fact = self.ECRITURE['LISTING']
-      listing_fact = self.OBSERVATION
-      nom_cham = string2list(listing_fact['NOM_CHAM'])
+      if self.OBSERVATION is not None:
+          listing_fact = self.OBSERVATION.List_F()[0]
+          nom_cham = string2list(listing_fact['NOM_CHAM'])
 
-      cle_freq_listing, vale_freq_listing = get_freq(listing_fact)
-  # AA   cles_entite = ['POINTS','ELEMEMTS']
-      dcles_entite = {'POINT':'GROUP_NO', 'ELEM':'GROUP_MA'}
-  # AA    dcles_tout   = {'POINTS':'TOUT_GROUP_NO', 'ELEMEMTS':'GROUP_MA'}
-      cles_entite = dcles_entite.keys()
-
-      # Ecriture format Europlexus
-
-      # Ecriture LISTING
-      st = 2*' '
-      for cham_aster in nom_cham:
-        cham_epx = self.dic_champ[cham_aster]
-        st +=  '%s ' % cham_epx
-      st += ' %s %s' % (cle_freq_listing,vale_freq_listing)
-      st += ' NOPO NOEL \n'
-      epx[MODULE].append(st)
-      for cle in cles_entite:
-
-         entite_geo = string2list(listing_fact[dcles_entite[cle]])
-         # if listing_fact['TOUT_%s' % dcles_entite[cle]] == 'OUI': epx[MODULE].append(2*' ' +'%s TOUS ' % cle)
-         # elif entite_geo is None:                                 epx[MODULE].append(2*' ' +'NO%s' % cle)
-         # else:
-            # epx[MODULE].append(2*' ' +'%s LECT' %cle)
-            # for group in entite_geo :
-               # epx[MODULE].append(6*' '+group)
-            # epx[MODULE].append(2*' '+'TERM')
-
-  #        if entite_geo is None :
-  #           epx[MODULE].append(2*' ' +'NO%s' %cle)
-  #        elif  entite_geo[0] == 'TOUS' :
-  #          epx[MODULE].append(2*' ' +'%s TOUS ' %cle)
-  #        else :
-  #           epx[MODULE].append(2*' ' +'%s LECT' %cle)
-  #           for group in entite_geo :
-  #              epx[MODULE].append(6*' '+group)
-  #           epx[MODULE].append(2*' '+'TERM')
-  #
-
+          cle_freq_listing, vale_freq_listing = get_freq(listing_fact)
+          
+          entite_geo={}
+          entite_geo['POINT'] = []
+          entite_geo['ELEM'] = []
+          # noeuds
+          if listing_fact.has_key('TOUT_GROUP_NO'):
+              # tous les noeuds du modèle
+              for model in ['T3GS','Q4GS','POUT','BR3D'] :
+                  if model in self.modelisations :
+                      entite_geo['POINT'].extend(self.dic_gma[model])
+          elif listing_fact.has_key('GROUP_NO'):
+              gr_no = tolist(listing_fact['GROUP_NO'])
+              entite_geo['POINT'].extend(gr_no)
+          
+          # mailles
+          if listing_fact.has_key('TOUT_GROUP_MA'):
+              # toutes les mailles du modèle
+              for model in ['T3GS','Q4GS','BR3D'] :
+                  if model in self.modelisations :
+                      entite_geo['ELEM'].extend(self.dic_gma[model])
+          elif listing_fact.has_key('GROUP_MA'):
+              gr_ma = tolist(listing_fact['GROUP_MA'])
+              entite_geo['ELEM'].extend(gr_ma)
+          
+          st = 2*' '
+          for cham_aster in nom_cham:
+            cham_epx = self.dic_champ[cham_aster]
+            st +=  '%s ' % cham_epx
+          st += ' %s %s' % (cle_freq_listing,vale_freq_listing)
+          epx[MODULE].append(st)
+           #ecriture des groupes
+          for cle in cles_entite:
+              if len(entite_geo[cle])>0:
+                  epx[MODULE].append(2*' ' +'%s LECT' %cle)
+                  for group in entite_geo[cle]:
+                      epx[MODULE].append(6*' '+group)
+                  epx[MODULE].append(2*' '+'TERM')
+              else:
+                  epx[MODULE].append(2*' '+'NO%s'%(cle[:2]))
       # Ecriture FICHIER ALICE UTILISE par le mot-cle facteur COURBE
   # AA    courbe_fact = self.ECRITURE['COURBE']
       courbe_fact = self.COURBE
