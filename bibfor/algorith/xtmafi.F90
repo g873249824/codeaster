@@ -24,6 +24,7 @@ subroutine xtmafi(noma, ndim, fiss, nfiss, lismai,&
 #include "jeveux.h"
 !
 #include "asterfort/assert.h"
+#include "asterfort/dismoi.h"
 #include "asterfort/jedema.h"
 #include "asterfort/jedetr.h"
 #include "asterfort/jeexin.h"
@@ -60,9 +61,9 @@ subroutine xtmafi(noma, ndim, fiss, nfiss, lismai,&
 !
 !
 !
-    integer :: ifiss, kk, jgrp, nmaenr, i, ima, jma, cpt, iret
+    integer :: ifiss, kk, jgrp, nmaenr, i, ima, jma, cpt, iret, ibid
     integer :: jtmdim, jtypma, ndime, jmad, jmai, mxstac
-    character(len=8) :: nomail, k8bid
+    character(len=8) :: nomail, k8bid, mofiss, mafiss
     character(len=24) :: nommai, grp(nfiss, 3)
 !
     parameter (mxstac=100)
@@ -82,6 +83,14 @@ subroutine xtmafi(noma, ndim, fiss, nfiss, lismai,&
 !     DIMENTIONNEMENT GROSSIER DE LA LISTE
     cpt = 0
     do 10 ifiss = 1, nfiss
+!
+!       verif coherence maillage in <-> maillage de definition de la fissure
+        call dismoi('F', 'NOM_MODELE', fiss(ifiss), 'FISS_XFEM',&
+                    ibid, mofiss, ibid)
+        call dismoi('F', 'NOM_MAILLA', mofiss, 'MODELE',&
+                    ibid, mafiss, ibid)
+        call assert(noma.eq.mafiss)
+!
         grp(ifiss,1) = fiss(ifiss)//'.MAILFISS.HEAV'
         grp(ifiss,2) = fiss(ifiss)//'.MAILFISS.CTIP'
         grp(ifiss,3) = fiss(ifiss)//'.MAILFISS.HECT'
