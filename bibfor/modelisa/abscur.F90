@@ -71,7 +71,7 @@ subroutine abscur(nomu, it)
     integer :: nbchm, nbnoma, nbpoi1, nbrma, nbrma1, nbrma2, nbseg2
     integer :: numno
     real(kind=8) :: s, stot, x1, x2, y1, y2, z1
-    real(kind=8) :: z2
+    real(kind=8) :: z2, abscis(2)
 !-----------------------------------------------------------------------
     call jemarq()
 !
@@ -183,7 +183,7 @@ subroutine abscur(nomu, it)
     endif
 !
     call i2sens(zi(iach), 2*nbseg2, zi(iagm), nbseg2, conseg,&
-                typseg)
+                typseg, abscis)
 !
 !     CREATION D'UNE CARTE
 !
