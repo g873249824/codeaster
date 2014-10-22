@@ -110,7 +110,7 @@ subroutine flust2(melflu, typflu, base, noma, nuor,&
     if (icoupl .eq. 1) then
         lnul = .false.
         lneg = .false.
-        do 10 iv = 1, npv
+        do iv = 1, npv
             if (dble(abs(vite(iv))) .lt. vlim) then
                 lnul = .true.
                 goto 11
@@ -118,7 +118,7 @@ subroutine flust2(melflu, typflu, base, noma, nuor,&
                 lneg = .true.
                 goto 11
             endif
-10      continue
+        end do
 11      continue
         if (lnul .or. lneg) then
             call u2mess('F', 'ALGELINE_43')
@@ -153,7 +153,19 @@ subroutine flust2(melflu, typflu, base, noma, nuor,&
         lwork(1) = 2*nt*nt + 10*nt + 2
         call wkvect('&&FLUST2.TEMP.WORK', 'V V R', lwork(1), iwork)
 !
-!-------5.2.OPERATIONS SIMULTANEES :
+!-------5.2.TYPE DE CONFIGURATION GRAPPE --> VARIABLE INDIC ---
+!           RECUPERATION DU DIAMETRE EXTERIEUR DU TUBE
+!           RECUPERATION DES GRANDEURS GEOMETRIQUES CARACTERISTIQUES
+!           DEDUCTION DE COEFFICIENTS DE DIMENSIONNEMENT
+!           CALCUL DES PONDERATIONS DUES AUX DEFORMEES MODALES
+!           CALCUL DES MASSES MODALES EN EAU
+!
+        call mdconf(typflu, base, noma, nbm, ibid,&
+                    nuor, 0, igrap, lwork, masg,&
+                    zr(icodim), zr(ipoids), phie, rbid)
+!
+!
+!-------5.3.OPERATIONS SIMULTANEES :
 !           - RECUPERATION DES MASSES MODALES INITIALES
 !           - RECUPERATION DES FREQUENCES INITIALES
 !           - CALCUL DES AMORTISSEMENTS MODAUX INITIAUX
@@ -161,7 +173,7 @@ subroutine flust2(melflu, typflu, base, noma, nuor,&
 !
         pi = r8pi()
 !
-        do 30 imod = 1, nbm
+        do imod = 1, nbm
 !
             numod = nuor(imod)
 !
@@ -180,18 +192,7 @@ subroutine flust2(melflu, typflu, base, noma, nuor,&
             fact(3*(imod-1)+2) = zr(lfact+1) * masg(imod)
             fact(3*(imod-1)+3) = zr(lfact+2) * masg(imod)
 !
-30      continue
-!
-!-------5.3.TYPE DE CONFIGURATION GRAPPE --> VARIABLE INDIC ---
-!           RECUPERATION DU DIAMETRE EXTERIEUR DU TUBE
-!           RECUPERATION DES GRANDEURS GEOMETRIQUES CARACTERISTIQUES
-!           DEDUCTION DE COEFFICIENTS DE DIMENSIONNEMENT
-!           CALCUL DES PONDERATIONS DUES AUX DEFORMEES MODALES
-!           CALCUL DES MASSES MODALES EN EAU
-!
-        call mdconf(typflu, base, noma, nbm, ibid,&
-                    nuor, 0, igrap, lwork, masg,&
-                    zr(icodim), zr(ipoids), phie, rbid)
+        end do
 !
 !
 !-------5.4.CALCUL DES PARAMETRES MODAUX SOUS ECOULEMENT
@@ -221,7 +222,7 @@ subroutine flust2(melflu, typflu, base, noma, nuor,&
 !
 !-------6.1.REMPLISSAGE DES OBJETS .MASG .FACT
 !
-        do 100 imod = 1, nbm
+        do imod = 1, nbm
             numod = nuor(imod)
             call rsadpa(base, 'L', 1, 'MASS_GENE', numod,&
                         0, lmasg, k8b)
@@ -231,18 +232,18 @@ subroutine flust2(melflu, typflu, base, noma, nuor,&
             fact(3*(imod-1)+1) = zr(lfact ) * masg(imod)
             fact(3*(imod-1)+2) = zr(lfact+1) * masg(imod)
             fact(3*(imod-1)+3) = zr(lfact+2) * masg(imod)
-100      continue
+        end do
 !
 !-------6.2.REMPLISSAGE DE L'OBJET .FREQ
 !
-        do 110 iv = 1, npv
-            do 120 imod = 1, nbm
+        do iv = 1, npv
+            do imod = 1, nbm
                 numod = nuor(imod)
                 ind = 2*nbm*(iv-1)+2*(imod-1)+1
                 freq(ind) = zr(ifreqi+numod-1)
                 freq(ind+1) = amor(imod)
-120          continue
-110      continue
+            end do
+        end do
 !
     endif
 !
