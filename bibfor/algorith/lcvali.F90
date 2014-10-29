@@ -25,6 +25,8 @@ subroutine lcvali(fami, kpg, ksp, imate, compor,&
 #include "blas/daxpy.h"
 #include "blas/dcopy.h"
 #include "blas/ddot.h"
+#include "blas/dscal.h"
+
     integer :: imate, kpg, ksp, iret1, iret2, iret3, codret, icodre(4), iret
     integer :: ndim
     integer :: ndimsi
@@ -42,10 +44,10 @@ subroutine lcvali(fami, kpg, ksp, imate, compor,&
     ndimsi=2*ndim
     if (compor(3) .eq. 'SIMO_MIEHE') goto 9999
 !
-    nomres(1)='EPSI_MAXI'
-    nomres(2)='VEPS_MAXI'
-    nomres(3)='TEMP_MINI'
-    nomres(4)='TEMP_MAXI'
+    nomres(1)='EPSI_MAXI'(1:8)
+    nomres(2)='VEPS_MAXI'(1:8)
+    nomres(3)='TEMP_MINI'(1:8)
+    nomres(4)='TEMP_MAXI'(1:8)
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'VERI_BORNE', 0, ' ', 0.d0,&
                 4, nomres, valres, icodre, 0)
@@ -65,8 +67,8 @@ subroutine lcvali(fami, kpg, ksp, imate, compor,&
     if (icodre(2) .eq. 0) then
         vepsm=valres(2)
         dt=instap-instam
-        call daxpy(ndimsi, 1.d0/dt, deps, 1, veps,&
-                   1)
+        call dcopy(ndimsi, deps, 1, veps, 1)
+        call dscal(ndimsi, 1.d0/dt, veps, 1)
         veps2=sqrt(ddot(ndimsi,veps,1,veps,1))
         if (veps2 .gt. vepsm) then
             iret2=4

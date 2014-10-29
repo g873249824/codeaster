@@ -110,7 +110,7 @@ subroutine abscur(nomu, it)
     nbseg2=0
     nbpoi1=0
     kseg=0
-    do 12 im = 1, nbrma
+    do im = 1, nbrma
         call jeveuo(typmai, 'L', itypm)
         call jenuno(jexnum('&CATA.TM.NOMTM', zi(itypm+im-1)), typm)
         if (typm .eq. 'SEG2') then
@@ -123,13 +123,13 @@ subroutine abscur(nomu, it)
         else
             call u2mess('F', 'MODELISA_2')
         endif
-12  end do
+    end do
     conseg='&&ABSCUR.CONNEX'
     typseg='&&ABSCUR.TYPMAI'
     call wkvect(typseg, 'V V I', nbrma, itym)
-    do 13 im = 1, nbrma
+    do im = 1, nbrma
         zi(itym-1+im)=kseg
-13  end do
+    end do
 !     IL FAUT CREER UNE TABLE DE CONNECTIVITE POUR LES SEG2
 !
 ! -     OBJET CONSEG    = FAMILLE CONTIGUE DE VECTEURS N*IS
@@ -141,23 +141,23 @@ subroutine abscur(nomu, it)
     call jecrec(conseg, 'V V I', 'NU', 'CONTIG', 'VARIABLE',&
                 nbseg2)
     call jeecra(conseg, 'LONT', nbnoma, ' ')
-    do 14 iseg2 = 1, nbseg2
+    do iseg2 = 1, nbseg2
         im=zi(ima2+iseg2-1)
         call jelira(jexnum(connex, im ), 'LONMAX', nbnoma, k8bid)
         call jeveuo(jexnum(connex, im ), 'L', iacnex)
         call jeecra(jexnum(conseg, iseg2), 'LONMAX', nbnoma, ' ')
         call jeveuo(jexnum(conseg, iseg2), 'E', jgcnx)
-        do 3 ino = 1, nbnoma
+        do ino = 1, nbnoma
             numno=zi(iacnex-1+ino)
             zi(jgcnx+ino-1)=numno
- 3      continue
-14  end do
+        end do
+    end do
 !     IL FAUT VERIFIER L'INCLUSION DES POI1
     do 15 ipoi1 = 1, nbpoi1
         im=zi(ima1+ipoi1-1)
         call jeveuo(jexnum(connex, im), 'L', adrm)
         n = zi(adrm)
-        do 16 iseg2 = 1, nbseg2
+        do iseg2 = 1, nbseg2
             call jeveuo(jexnum(conseg, iseg2), 'L', iadr2)
             n1 = zi(iadr2)
             n2 = zi(iadr2 + 1)
@@ -168,9 +168,9 @@ subroutine abscur(nomu, it)
                 zi(icor2+ipoi1-1)=-iseg2
                 goto 15
             endif
-16      continue
+        end do
         call u2mess('F', 'MODELISA_3')
-15  continue
+ 15 continue
 !
 !
     call i2vois(conseg, typseg, zi(iagm), nbseg2, zi(iav1),&
@@ -196,7 +196,7 @@ subroutine abscur(nomu, it)
 !
 !     CALCUL DE L'ABSCISSE CURVILIGNE
 !
-    do 10 iseg2 = 1, nbseg2
+    do iseg2 = 1, nbseg2
         isens = 1
         mi = zi(iach+iseg2-1)
         if (mi .lt. 0) then
@@ -228,9 +228,9 @@ subroutine abscur(nomu, it)
         zr(iab2+mi-1)= stot
         call nocart(nomu//'.ABS_CURV  ', 3, ' ', 'NUM', 1,&
                     ' ', ima, ' ', 2)
-10  end do
+    end do
 !     CAS DES POI1
-    do 20 ipoi1 = 1, nbpoi1
+    do ipoi1 = 1, nbpoi1
         ima=zi(ima1+ipoi1-1)
         mi=zi(icor2+ipoi1-1)
         if (mi .gt. 0) then
@@ -242,7 +242,7 @@ subroutine abscur(nomu, it)
         zr(iavalv+1) = s
         call nocart(nomu//'.ABS_CURV  ', 3, ' ', 'NUM', 1,&
                     ' ', ima, ' ', 2)
-20  end do
+    end do
 !
 ! --- MENAGE
 !
