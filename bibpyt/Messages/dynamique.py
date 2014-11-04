@@ -155,6 +155,15 @@ cata_msg={
     Intervalle des fréquences: %(r1)f
 """),
 
+24 : _(u"""
+ Les schémas dynamiques 'HHT', 'HHT_COMPLET', 'THETA_METHODE' et 'KRENK' ne peuvent pas être utilisé avec la méthode Laplace-temps.
+"""),
+
+25 : _(u"""
+ La fréquence d'actualisation de FORCE_SOL n'est pas cohérente avec la fréquence d'archivage des résultats dans
+ DYNA_NON_LINE.
+"""),
+
 30 : _(u"""
  La fréquence d'actualisation de FORCE_SOL dans le fichier des masses est incohérente avec
 celle choisie précédemment.
@@ -163,11 +172,6 @@ celle choisie précédemment.
 31 : _(u"""
  La fréquence d'actualisation de FORCE_SOL dans le fichier des amortissements est incohérente avec
 celle choisie précédemment.
-"""),
-
-25 : _(u"""
- La fréquence d'actualisation de FORCE_SOL n'est pas cohérente avec la fréquence d'archivage des résultats dans
- DYNA_NON_LINE.
 """),
 
 32: _(u"""

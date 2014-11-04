@@ -30,6 +30,7 @@ subroutine nminit(result, modele, numedd, numfix, mate,&
 ! aslint: disable=W1504
     implicit none
 #include "asterfort/accel0.h"
+#include "asterfort/u2mess.h"
 #include "asterfort/cetule.h"
 #include "asterfort/cfmxsd.h"
 #include "asterfort/cucrsd.h"
@@ -172,6 +173,10 @@ subroutine nminit(result, modele, numedd, numfix, mate,&
     lerrt = isfonc(fonact,'ERRE_TEMPS_THM')
     lreli = isfonc(fonact,'RECH_LINE' )
     lviss = ndynlo(sddyna,'VECT_ISS' )
+!
+    if (lmpas.and.lviss) then
+        call u2mess('F', 'DYNAMIQUE_24')
+    endif
 !
 ! --- CREATION DE LA STRUCTURE DE DONNEE RESULTAT DU CONTACT
 !
