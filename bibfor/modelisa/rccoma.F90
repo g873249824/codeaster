@@ -43,7 +43,7 @@ subroutine rccoma(jmat, pheno, iarret, phenom, icodre)
 !                 DONT LE NOM COMMENCE PAR LE NOM "COURT" (PHENO)
 !        ICODRE : = 0 SI ON A TROUVE 1 PHENOM UNIQUE
 !                 = 1 SI ON N'A TROUVE AUCUN PHENOM
-!                 = 2 SI ON A TROUVE PLUSIEURS PHENOM
+!                 = 2 SI ON A TROUVE PLUSIEURS PHENOM DIFFERENTS
 !
 ! ----------------------------------------------------------------------
 !
@@ -73,10 +73,12 @@ subroutine rccoma(jmat, pheno, iarret, phenom, icodre)
                     phenom=zk16(zi(imat)+icomp-1)
                     icodre = 0
                 else
-                    if (iarret .eq. 1) then
-                        call u2mesk('F', 'MODELISA6_56', 1, feno)
-                    else
-                        icodre = 2
+                    if (phenom.ne.zk16(zi(imat)+icomp-1)) then
+                        if (iarret .eq. 1) then
+                            call u2mesk('F', 'MODELISA6_56', 1, feno)
+                        else
+                            icodre = 2
+                        endif
                     endif
                 endif
             endif

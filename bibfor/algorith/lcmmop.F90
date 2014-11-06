@@ -83,9 +83,11 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
 !                        Fv et 3 angles par phase
 !           pour chaque monocristal différent
 !                 par famille de système de glissement
-!                    nb coef écoulement + coef,
-!                    nb coef écrou isot + coef,
-!                    nb coef ecou cine + coef
+!                    nb coef écoulement
+!                       numéro de la loi d'écoulement
+!                       + coef,
+!                    nb coef écrou isot + num_loi + coef,
+!                    nb coef ecou cine + num_loi + coef
 !                        puis 2 (ou plus) paramètres localisation
 !
 !
@@ -98,6 +100,7 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
 !                       Nom de la loi d'écoulement
 !                       Nom de la loi d'écrouissage isotrope
 !                       Nom de la loi d'écrouissage cinématique
+!                       Nom de la loi d'élasticité (ELAS ou ELAS_ORTH)
 !
 !           NBCOMM(*,3) :
 !                        Colonne 1      Colonne 2      Colonne3
@@ -143,13 +146,13 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
 !     ----------------------------------------------------------------
 ! --  VARIABLES INTERNES
 !
-    do 5 itens = 1, 6
+    do itens = 1, 6
         evi(itens) = vini(itens)
         devi(itens) = 0.d0
- 5  end do
-    do 55 i = 1, nsg
+    end do
+    do i = 1, nsg
         dy(i)=0.d0
-55  end do
+    end do
     iret=0
 !
     call calsig(fami, kpg, ksp, evi, mod,&
@@ -159,17 +162,18 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
 ! LOCALISATION
 !   RECUPERATION DU NOMBRE DE PHASES
 !      NBPHAS=NBCOMM(1,1)
-    loca=cpmono(1)
+    loca=cpmono(1)(1:16)
 !     CALCUL DE  B
-    do 53 i = 1, 6
+    do i = 1, 6
         granb(i)=0.d0
-53  continue
-    do 54 i = 1, 6
-        do 54 iphas = 1, nbphas
+    enddo
+    do i = 1, 6
+        do iphas = 1, nbphas
             indfv=nbcomm(1+iphas,3)
             fv=coeft(indfv)
             granb(i)=granb(i)+fv*vini(7+6*(iphas-1)+i)
-54      continue
+        enddo
+    enddo
 !
 !
 !     DEBUT DES VARIABLES INTERNES DES SYSTEMES DE GLISSEMENT
@@ -191,7 +195,7 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
 !
     nbsyst=0
 !
-    do 1 iphas = 1, nbphas
+    do iphas = 1, nbphas
 !        INDPHA indice debut phase IPHAS dans NBCOMM
         indpha=nbcomm(1+iphas,1)
         indfv=nbcomm(1+iphas,3)
@@ -206,17 +210,17 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
         indcp=nbcomm(1+iphas,2)
 !        Nombre de variables internes de la phase (=monocristal)
 !         NVIG=NBCOMM(INDPHA,3)
-        do 51 itens = 1, 6
+        do itens = 1, 6
             devg(itens) = 0.d0
             evg(itens) = 0.d0
-51      continue
+        enddo
         ihsr=numhsr(iphas)
 !
-        do 6 ifa = 1, nbfsys
+        do ifa = 1, nbfsys
 !
-            necoul=cpmono(indcp+5*(ifa-1)+3)
-            necris=cpmono(indcp+5*(ifa-1)+4)
-            necrci=cpmono(indcp+5*(ifa-1)+5)
+            necoul=cpmono(indcp+5*(ifa-1)+3)(1:16)
+            necris=cpmono(indcp+5*(ifa-1)+4)(1:16)
+            necrci=cpmono(indcp+5*(ifa-1)+5)(1:16)
 !
             nbsys=nint(toutms(iphas,ifa,1,7))
 !
@@ -226,12 +230,12 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
             ifl=nbcomm(indfa,1)
             nuecou=nint(coeft(ifl))
 !
-            do 7 is = 1, nbsys
+            do is = 1, nbsys
 !              VARIABLES INTERNES DU SYST GLIS
-                do 8 iv = 1, 3
+                do iv = 1, 3
                     nuvi=nuvi+1
                     vis(iv)=vini(nuvi)
- 8              continue
+                enddo
                 dvin(nuvi-2)=0.d0
                 dvin(nuvi-1)=0.d0
                 dvin(nuvi )=0.d0
@@ -239,14 +243,14 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
 !              CALCUL DE LA SCISSION REDUITE
 !              PROJECTION DE SIG SUR LE SYSTEME DE GLISSEMENT
 !              TAU      : SCISSION REDUITE TAU=SIG:MS
-                do 101 i = 1, 6
+                do i = 1, 6
                     ms(i)=toutms(iphas,ifa,is,i)
-101              continue
+                enddo
 !
                 taus=0.d0
-                do 10 i = 1, 6
+                do i = 1, 6
                     taus=taus+sigg(i)*ms(i)
-10              continue
+                enddo
 !
 !              ECROUISSAGE ISOTROPE
 !
@@ -290,16 +294,16 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
                         if (iret .ne. 0) goto 9999
                     endif
 !                 DEVG designe ici DEPSVPG
-                    do 9 itens = 1, 6
+                    do itens = 1, 6
                         devg(itens)=devg(itens)+ms(itens)*dgamma
- 9                  continue
+                    enddo
 !
 !                 EVG designe ici EPSVPG
                     if (loca .eq. 'BETA') then
                         gammas=vis(2)+dgamma
-                        do 19 itens = 1, 6
+                        do itens = 1, 6
                             evg(itens)=evg(itens)+ms(itens)*gammas
-19                      continue
+                        enddo
                     endif
 !
                     dvin(nuvi-2)=dalpha
@@ -311,48 +315,48 @@ subroutine lcmmop(fami, kpg, ksp, comp, nbcomm,&
                     dvin(nuvi )=0.d0
                 endif
                 nbsyst=nbsyst+1
- 7          continue
+            enddo
 !
- 6      continue
+        enddo
 !
         decal = nuvi
 !
 !         "homogenesisation" des déformations viscoplastiques
-        do 20 i = 1, 6
+        do i = 1, 6
             devi(i)=devi(i)+fv*devg(i)
-20      continue
+        enddo
         devgeq=lcnrts(devg)/1.5d0
 !         localisation BETA
         if (loca .eq. 'BETA') then
             dl=coeft(nbcomm((nbphas+2),1))
             da=coeft(nbcomm((nbphas+2),1)+1)
-            do 21 i = 1, 6
+            do i = 1, 6
                 beta=vini(7+6*(iphas-1)+i)
                 dbeta=devg(i)-dl*(beta-da*evg(i))*devgeq
                 dvin(7+6*(iphas-1)+i)=dbeta
-21          continue
+            enddo
         else
-            do 22 i = 1, 6
+            do i = 1, 6
                 dvin(7+6*(iphas-1)+i)=devg(i)
-22          continue
+            enddo
 !
         endif
 !
 ! fin boucle sur nombre de phases
- 1  continue
+    enddo
 !
 ! --    DERIVEES DES VARIABLES INTERNES
 !
-    do 30 itens = 1, 6
+    do itens = 1, 6
         dvin(itens)= devi(itens)
-30  end do
+    end do
 !     Norme de DEVP cumulée
     dvineq = lcnrts( devi ) / 1.5d0
 !
     dvin(7)= dvineq
-    do 66 itens = 1, 6*nbphas
+    do itens = 1, 6*nbphas
         dvin(nuvi+i)=0.d0
-66  end do
+    end do
     dvin(nvi) = 0
 9999  continue
 end subroutine
