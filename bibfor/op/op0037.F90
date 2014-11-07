@@ -81,15 +81,14 @@ subroutine op0037()
 !     PARAMETRES "MODE_FLAMB"
     parameter   ( nbpafi=1 , nbpafr=1  , nbpafk=1, nbpaft=3  )
     integer :: lmat(2), ibid, ifm, niv, lddl2
-    integer :: vali
-    integer :: iret, jadr
+    integer :: vali, iret
     integer :: l1, l2, l3, lmasse, lraide, lamor, lddl
     real(kind=8) :: r8b
     complex(kind=8) :: c16b
     logical :: lmasin, lrefe, lbasm, lamo, lcmplx, lparam
     character(len=1) :: typmod
     character(len=24) :: valk(4)
-    character(len=8) :: modeou, modein, nomcmp(7), k8b, cmp, noma, mat1, kbid
+    character(len=8) :: modeou, modein, nomcmp(7), k8b, cmp, noma, mat1
     character(len=8) :: mat2, mat3, noeud
     character(len=14) :: nume
     character(len=16) :: typcon, nomcmd, norm, nomsy
@@ -676,8 +675,14 @@ subroutine op0037()
 !
     else if (typmod .eq. 'C') then
 !
-        call wpnorm(norm, 'OUI', lmat, neq, nbmode,&
-                    zi(lddl), zc(lmod), zr(lvalr), zr(lcoef))
+        if (lparam) then
+            call wpnorm(norm, 'OUI', lmat, neq, nbmode,&
+                        zi(lddl), zc(lmod), zr(lvalr), zr(lcoef))
+        else
+            call wpnorm(norm, 'NON', lmat, neq, nbmode,&
+                        zi(lddl), zc(lmod), zr(lvalr), zr(lcoef))
+        endif
+
         call vpstor(-1, typmod, modeou, nbmode, neq,&
                     zr(1), zc(lmod), nbmode, nbpari, nbparr,&
                     nbpark, nopara, '    ', zi(lvali), zr(lvalr),&
