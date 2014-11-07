@@ -129,15 +129,15 @@ subroutine xprfon(noma, fiss, numfon, nvit, nbeta)
             2
 !   ON EXTRAIT LES COORDONNEES DU PREMIER POINT DU FOND DE FISSURE
             if (i .eq. 1) then
-                npoin=zi(jfmulo-1)
-                m1(1)=zr(jfonf-1+4*(npoin)+1)
-                m1(2)=zr(jfonf-1+4*(npoin)+2)
-                m1(3)=zr(jfonf-1+4*(npoin)+3)
+                npoin=zi(jfmulo-1+1)
+                m1(1)=zr(jfonf-1+4*(npoin-1)+1)
+                m1(2)=zr(jfonf-1+4*(npoin-1)+2)
+                m1(3)=zr(jfonf-1+4*(npoin-1)+3)
             else
-                npoin=zi(jfmulo-1+2*(i-1))
-                m1(1)=zr(jfonf-1+4*(npoin)+1)
-                m1(2)=zr(jfonf-1+4*(npoin)+2)
-                m1(3)=zr(jfonf-1+4*(npoin)+3)
+                npoin=zi(jfmulo-1+2*(i-1)+1)
+                m1(1)=zr(jfonf-1+4*(npoin-1)+1)
+                m1(2)=zr(jfonf-1+4*(npoin-1)+2)
+                m1(3)=zr(jfonf-1+4*(npoin-1)+3)
             endif
             coeffk=((b1(1)-a1(1))*(m1(1)-a1(1))+(b1(2)-a1(2))*&
             (m1(2)-a1(2))+(b1(3)-a1(3))*(m1(3)-a1(3)))/normab
