@@ -96,4 +96,9 @@ le mot-clé %(k2)s est obligatoire dans AFFE_CARA_ELEM.
            Ce mot-clé est indispensable à la loi GLRC_DAMAGE.
 """),
 
+45 : _(u"""
+Le mot-clé %(k1)s n'est pas autorisé dans CALC_EUROPLEXUS pour le mot-clé
+facteur %(k2)s d'AFFE_CARA_ELEM.
+"""),
+
 }
