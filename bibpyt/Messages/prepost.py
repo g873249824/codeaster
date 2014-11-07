@@ -32,7 +32,12 @@ Attention :
   pour que toutes les mailles aient le même nombre de composantes.
 
 """),
+3 : _(u"""
 
+Il n'a pas été possible de récupérer d'information concernant la 
+numérotation des champs du résultat dynamique %(k1)s.
+
+"""),
 4 : _(u"""
  La méthode  %(k1)s  est illicite
 """),

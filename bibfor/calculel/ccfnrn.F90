@@ -136,6 +136,14 @@ subroutine ccfnrn(option, resuin, resuou, lisord, nbordr,&
         if (zk24(jref) .ne. ' ') then
             call dismoi('F', 'NOM_NUME_DDL', zk24(jref), 'MATR_ASSE', ibid,&
                         numref, iret)
+        else if (zk24(jref+1) .ne. ' ') then
+            call dismoi('F', 'NOM_NUME_DDL', zk24(jref+1), 'MATR_ASSE', ibid,&
+                        numref, iret)
+        else if (zk24(jref+3) .ne. ' ') then
+            numref = zk24(jref+3)
+        else
+!           Impossible de trouver la numérotation de référence. Inutile de continuer.
+            call u2mesk('F', 'PREPOST_3', 1, [resuin])
         endif
     endif
     carac=' '
@@ -391,7 +399,7 @@ subroutine ccfnrn(option, resuin, resuou, lisord, nbordr,&
             call jeveuo(chdepl(1:19)//'.VALE', 'L', ldepl)
             call jelira(chdepl(1:19)//'.VALE', 'LONMAX', lonc2, k8bid)
             call wkvect('&&'//nompro//'.TRAV', 'V V R', lonc2, ltrav)
-            if (lmat .eq. 0) call u2mess('F', 'PREPOST3_81')
+            if (lmat .eq. 0) call u2mesk('F', 'PREPOST3_81', 1, [option])
             call mrmult('ZERO', lmat, zr(ldepl), zr(ltrav), 1,&
                         .true.)
             do 200 j = 0, lonch-1
@@ -431,7 +439,7 @@ subroutine ccfnrn(option, resuin, resuou, lisord, nbordr,&
 210                  continue
 220              continue
                 call wkvect('&&'//nompro//'.TRAV', 'V V R', lonc2, ltrav)
-                if (lmat .eq. 0) call u2mess('F', 'PREPOST3_81')
+                if (lmat .eq. 0) call u2mesk('F', 'PREPOST3_81', 1, [option])
                 call mrmult('ZERO', lmat, zr(jddr), zr(ltrav), 1,&
                             .true.)
                 do 230 j = 0, lonch-1
@@ -449,7 +457,7 @@ subroutine ccfnrn(option, resuin, resuou, lisord, nbordr,&
             if (iret .eq. 0) then
                 call jeveuo(chacce(1:19)//'.VALE', 'L', lacce)
                 call wkvect('&&'//nompro//'.TRAV', 'V V R', lonch, ltrav)
-                if (lmat .eq. 0) call u2mess('F', 'PREPOST3_81')
+                if (lmat .eq. 0) call u2mesk('F', 'PREPOST3_81', 1, [option])
                 call mrmult('ZERO', lmat, zr(lacce), zr(ltrav), 1,&
                             .true.)
                 do 240 j = 0, lonch-1
@@ -467,7 +475,7 @@ subroutine ccfnrn(option, resuin, resuou, lisord, nbordr,&
             if (iret .eq. 0) then
                 call jeveuo(chacce(1:19)//'.VALE', 'L', lacce)
                 call wkvect('&&'//nompro//'.TRAV', 'V V C', lonch, ltrav)
-                if (lmat .eq. 0) call u2mess('F', 'PREPOST3_81')
+                if (lmat .eq. 0) call u2mesk('F', 'PREPOST3_81', 1, [option])
                 call mcmult('ZERO', lmat, zc(lacce), zc(ltrav), 1,&
                             .true.)
                 do 250 j = 0, lonch-1
