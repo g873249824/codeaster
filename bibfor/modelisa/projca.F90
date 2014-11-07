@@ -208,10 +208,10 @@ subroutine projca(tablca, lirela, nmabet, nbmabe, mailla,&
 ! 2.2.2  TENTATIVE DE PROJECTION DU NOEUD CABLE SUR LES MAILLES
 ! .....  AUXQUELLES APPARTIENT LE NOEUD BETON LE PLUS PROCHE
 !
-        call projkm(nmabet, nbmabe, mailla, x3dca(1), noebe,&
-                    lnuma, licnx, numail, nbcnx, zi(jcxma),&
-                    zr(jxyzma), normal(1), itria, xbar(1), iproj,&
-                    excent)
+        call projkm(nmabet, nbmabe, nbnobe, mailla, x3dca(1),&
+                    noebe, lnuma, licnx, numail, nbcnx,&
+                    zi(jcxma), zr(jxyzma), normal(1), itria, xbar(1),&
+                    iproj, excent)
         if (iproj .ge. 0) encore = .false.
 !
 ! SI LA GEOMETRIE DU BETON N'EST PAS PLANE (PAR EXEMPLE UN CYLINDRE),
