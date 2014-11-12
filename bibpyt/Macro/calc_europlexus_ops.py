@@ -784,9 +784,10 @@ class EUROPLEXUS:
             epx[MODULE].append('\n')
             epx[MODULE].append('*--ELEMENTS COQUES')
             for elem in dic_elem[cle]:
-                excentrement = elem['EXCENTREMENT']
-                if excentrement != 0. :
-                    UTMESS('F','PLEXUS_45',valk=['EXCENTREMENT',cle])
+                if elem.has_key('EXCENTREMENT') :
+                    excentrement = elem['EXCENTREMENT']
+                    if excentrement != 0. :
+                        UTMESS('F','PLEXUS_45',valk=['EXCENTREMENT',cle])
                 group_ma = self.get_group_ma(elem)
                 epais = elem['EPAIS']
                 if self.ARCHIVAGE['CONT_GENER'] == 'OUI' :
