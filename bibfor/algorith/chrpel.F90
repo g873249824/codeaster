@@ -469,8 +469,10 @@ subroutine chrpel(champ1, repere, nbcmp, icham, type,&
         call jeveuo(ma//'.COORDO    .VALE', 'L', axyzm)
 !
         manoga='&&CHRPEL.MANOGA'
-!
-        if (nomch(1:4) .eq. 'SIEF' .or. nomch(1:4) .eq. 'SIGM') then
+        !
+        if ( nomch(1:9) .eq. 'SIGM_ELGA') then 
+            param = 'PSIEFR'
+        elseif  ((nomch(1:4) .eq. 'SIEF').or.(nomch(1:4) .eq. 'SIGM'))   then
             param='PCONTRR'
         else if (nomch(1:2).eq.'EP') then
             param='PDEFOPG'
