@@ -455,7 +455,12 @@ cata_msg = {
   -> Attention, il s'agit d'un maillage structuré
 """),
 
+82 : _(u"""
+  Le champ %(k1)s ne repose pas sur le groupe de maille sur lequel l'impression au format
+  MED est demandée.
 
+  Pour ce champ aucune impression ne sera faite.
+"""),
 
 
 
