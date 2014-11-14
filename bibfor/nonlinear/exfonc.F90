@@ -263,6 +263,9 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
         if (lfeti) call u2mess('F', 'MECANONLINE5_2')
         if (lproj) call u2mess('F', 'MECANONLINE5_6')
         if (lmatdi) call u2mess('F', 'MECANONLINE5_8')
+        if (leltc) then
+            call u2mess('F', 'MECANONLINE5_15')
+        endif
     endif
 !
     call jedema()
