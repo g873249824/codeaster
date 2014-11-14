@@ -195,11 +195,22 @@ subroutine nmflam(option, modele, numedd, numfix, carele,&
             freqm = freqa
             freqr = freqv
         endif
+        if (mod45 .eq. 'VIBR') then
+            call u2mesg('I', 'MECANONLINE6_10', 0, ' ', 1,&
+                    i, 1, freqv)
+        else if (mod45 .eq. 'FLAM') then
+            call u2mesg('I', 'MECANONLINE6_11', 0, ' ', 1,&
+                    i, 1, freqv)
+        else
+            call assert(.false.)
+        endif
 60  end do
     if (nsta .ne. 0) then
         call rsadpa(sdstab, 'L', 1, 'CHAR_STAB', 1,&
                     0, ljeve2, k16bid)
         csta = zr(ljeve2)
+        call u2mesg('I', 'MECANONLINE6_12', 0, ' ', 1,&
+                    1, 1, csta)
     endif
 !
 ! --- NOM DU MODE
@@ -232,14 +243,14 @@ subroutine nmflam(option, modele, numedd, numfix, carele,&
 ! --- AFFICHAGE DES MODES
 !
     if (mod45 .eq. 'VIBR') then
-        call u2mesg('I', 'MECANONLINE6_10', 0, ' ', 1,&
-                    numord, 1, freqr)
+        call u2mesg('I', 'MECANONLINE6_14', 0, ' ', 0,&
+                    ibid, 1, freqr)
     else if (mod45 .eq. 'FLAM') then
-        call u2mesg('I', 'MECANONLINE6_11', 0, ' ', 1,&
-                    numord, 1, freqr)
+        call u2mesg('I', 'MECANONLINE6_15', 0, ' ', 0,&
+                    ibid, 1, freqr)
         if (nsta .ne. 0) then
-            call u2mesg('I', 'MECANONLINE6_12', 0, ' ', 1,&
-                        1, 1, csta)
+            call u2mesg('I', 'MECANONLINE6_16', 0, ' ', 0,&
+                        ibid, 1, csta)
         endif
     else
         call assert(.false.)
