@@ -35,11 +35,15 @@ subroutine postsm(option, fm, df, sigm, sigp,&
 !-----------------------------------------------------------------------
     logical :: resi, rigi
     integer :: kl, p, q, i
-    real(kind=8) :: jm, dj, jp, tau(6), j, mat(6, 3, 3), id(3, 3)
+    real(kind=8) :: jm, dj, jp, tau(6), j, mat(6, 3, 3), id(3, 3), rc(6)
 !
     data    id   /1.d0, 0.d0, 0.d0,&
      &              0.d0, 1.d0, 0.d0,&
      &              0.d0, 0.d0, 1.d0/
+!
+     real(kind=8) :: rac2
+     parameter    (rac2 = sqrt(2.d0))
+     data    rc   /1.d0, 1.d0, 1.d0, rac2, rac2, rac2/
 !
 !
     resi = option(1:4).eq.'RAPH' .or. option(1:4).eq.'FULL'
@@ -75,9 +79,11 @@ subroutine postsm(option, fm, df, sigm, sigp,&
                     do 400 i = 1, 3
                         dsidep(kl,p,q) = dsidep(kl,p,q) + mat(kl,p,i)* df(q,i)
 400                  continue
+                     dsidep(kl,p,q) = dsidep(kl,p,q)*rc(kl)
 300              continue
 200          continue
 100      continue
     endif
 !
+    call dscal(3, rac2, sigp(4), 1)
 end subroutine
