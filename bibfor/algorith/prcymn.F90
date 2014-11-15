@@ -420,11 +420,12 @@ subroutine prcymn(nomres, soumat, repmat)
     call daxpy(nbddr*nbddr, -1.d0, zr(ltflex), 1, zr(ltmat),&
                1)
     k = 0
-    do 110 j = 1, nbddr
-        do 110 i = j, 1, -1
+    do j = 1, nbddr
+        do  i = j, 1, -1
             zr(ldk0jj+k) = zr(ltmat-1+(j-1)*nbddr+i)
             k = k + 1
-110      continue
+        enddo
+    enddo
 !
     call flexib(basmod, nbmod, zr(ltflex), nbddr, nbddr,&
                 numg, numg)
@@ -438,11 +439,12 @@ subroutine prcymn(nomres, soumat, repmat)
     call daxpy(nbddr*nbddr, -1.d0, zr(ltflex), 1, zr(ltmat),&
                1)
     k = 0
-    do 120 j = 1, nbddr
-        do 120 i = j, 1, -1
+    do j = 1, nbddr
+        do i = j, 1, -1
             zr(ldk0jj+k) = zr(ldk0jj+k)+zr(ltmat-1+(j-1)*nbddr+i)
             k = k + 1
-120      continue
+        enddo
+    enddo
 !
 ! --- POUR KPLUSJJ
 !

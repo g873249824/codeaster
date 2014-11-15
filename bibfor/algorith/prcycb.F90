@@ -697,12 +697,13 @@ subroutine prcycb(nomres, soumat, repmat)
                nbddr)
 !
     k = 0
-    do 107 j = 1, nbddr
-        do 107 i = j, 1, -1
+    do j = 1, nbddr
+        do i = j, 1, -1
             zr(ldk0jj+k) = zr(ldk0jj+k)+zr(ltkgg-1+(j-1)*nbddr+i)
             zr(ldm0jj+k) = zr(ldm0jj+k)+zr(ltmgg-1+(j-1)*nbddr+i)
             k = k + 1
-107      continue
+        enddo
+    enddo
 !
 !
 ! --- SAUVEGARDE ET DESTRUCTION
