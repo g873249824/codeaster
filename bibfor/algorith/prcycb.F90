@@ -77,6 +77,8 @@ subroutine prcycb(nomres, soumat, repmat)
 #include "asterfort/zerlag.h"
 #include "blas/dcopy.h"
 #include "blas/ddot.h"
+#include "asterfort/matimp.h"
+!
 !
 !
     character(len=6) :: pgc
@@ -111,8 +113,8 @@ subroutine prcycb(nomres, soumat, repmat)
 !
     call jemarq()
     call jeveuo(nomres//'.CYCL_REFE', 'L', llref1)
-    intf  =zk24(llref1+1)
-    basmod=zk24(llref1+2)
+    intf  =zk24(llref1+1)(1:8)
+    basmod=zk24(llref1+2)(1:8)
     call jelibe(nomres//'.CYCL_REFE')
     call jeveuo(basmod//'           .REFD', 'L', llref2)
     raid=zk24(llref2)
@@ -361,6 +363,7 @@ subroutine prcycb(nomres, soumat, repmat)
         call jelibe(chamva)
         call zerlag('R', zr(ltvecb+(i-1)*neq), cbid, neq, zi(iddeeq))
 667  end do
+
     do 668 i = 1, nbddr
         iord=zi(ltorg+i-1)
         call dcapno(basmod, 'DEPL    ', iord, chamva)
@@ -369,6 +372,7 @@ subroutine prcycb(nomres, soumat, repmat)
         call jelibe(chamva)
         call zerlag('R', zr(ltvecc+(i-1)*neq), cbid, neq, zi(iddeeq))
 668  end do
+
     if (nbdax .gt. 0) then
         do 669 i = 1, nbdax
             iord=zi(ltora+i-1)
@@ -409,6 +413,8 @@ subroutine prcycb(nomres, soumat, repmat)
     call jeveuo(raid(1:19)//'.&INT', 'L', lmatk)
     call mtdscr(mass)
     call jeveuo(mass(1:19)//'.&INT', 'L', lmatm)
+!    call matimp(raid,11,'MATLAB')
+!    call matimp(mass,12,'MATLAB')
 !
 ! --- PROJECTION MODES-MATRICE-MODES
 !     PAS INDISPENSABLE MAIS LA METHODE RESTE EXACTE SI LES
@@ -446,26 +452,6 @@ subroutine prcycb(nomres, soumat, repmat)
 !
 10  end do
 !
-! --- PRODUIT MATRICE DEFORMEES DROITES
-!
-! --- REQUETTES MATRICES A REMPLIR
-!
-    call jenonu(jexnom(repmat, 'K0JJ'), ibid)
-    call jeveuo(jexnum(soumat, ibid), 'E', ldk0jj)
-    call jenonu(jexnom(repmat, 'K0IJ'), ibid)
-    call jeveuo(jexnum(soumat, ibid), 'E', ldk0ij)
-    call jenonu(jexnom(repmat, 'M0JJ'), ibid)
-    call jeveuo(jexnum(soumat, ibid), 'E', ldm0jj)
-    call jenonu(jexnom(repmat, 'M0IJ'), ibid)
-    call jeveuo(jexnum(soumat, ibid), 'E', ldm0ij)
-    if (nbdax .gt. 0) then
-        call jenonu(jexnom(repmat, 'K0AJ'), ibid)
-        call jeveuo(jexnum(soumat, ibid), 'E', ldk0aj)
-        call jenonu(jexnom(repmat, 'M0AJ'), ibid)
-        call jeveuo(jexnum(soumat, ibid), 'E', ldm0aj)
-    endif
-!
-    ktrian = 0
 ! --- PRODUIT MATRICE DEFORMEES DROITES
 !
 ! --- REQUETTES MATRICES A REMPLIR
@@ -556,6 +542,14 @@ subroutine prcycb(nomres, soumat, repmat)
         call pmppr(zr(ldm0aj), nbdax, nbddr, -1, zr(ltetax),&
                    nbdax, nbdax, 1, zr(ldmpja), nbddr,&
                    nbdax)
+!-- reinitialisation de K0AJ et M0AJ --!
+        ntail=nbddr*nbdax
+        do i = 1, ntail
+          zr(ldk0aj + i-1)=0.D0
+          zr(ldm0aj + i-1)=0.D0
+        end do
+
+                   
     endif
 !
 ! --- PRODUIT MATRICE DEFORMEES GAUCHES
@@ -747,6 +741,14 @@ subroutine prcycb(nomres, soumat, repmat)
                    nbddr, 1, 1)
 !
         call jedetr('&&'//pgc//'.MAG')
+        
+        !-- reinitialiser Kpaj et Mpaj
+        ntail=nbddr*nbdax
+        do i = 1, ntail
+          zr(ldkpaj + i-1)=0.D0
+          zr(ldmpaj + i-1)=0.D0
+        end do
+        
 !
     endif
 !
@@ -804,8 +806,8 @@ subroutine prcycb(nomres, soumat, repmat)
 !
         call jenonu(jexnom(repmat, 'KPLUSIA'), ibid)
         call jeveuo(jexnum(soumat, ibid), 'E', ldkpia)
-        call amppr(zr(ldk0ia), nbmod, nbdax, zr(ltkia), nbmod,&
-                   nbdax, 1, 1)
+!       call amppr(zr(ldk0ia), nbmod, nbdax, zr(ltkia), nbmod,&
+!                  nbdax, 1, 1)
 !
         call pmppr(zr(ltkia), nbmod, nbdax, 1, zr(ltetax),&
                    nbdax, nbdax, 1, zr(ldkpia), nbmod,&
@@ -824,8 +826,9 @@ subroutine prcycb(nomres, soumat, repmat)
                    nbdax, nbdax, 1, zr(ldkpaa), nbdax,&
                    nbdax)
 !
-        call amppr(zr(ldk0aa), nbdax, nbdax, zr(ltkaa), nbdax,&
-                   nbdax, 1, 1)
+!
+!       call amppr(zr(ldk0aa), nbdax, nbdax, zr(ltkaa), nbdax,&
+!                  nbdax, 1, 1)
 !
         call pmppr(zr(ltetax), nbdax, nbdax, -1, zr(ldkpaa),&
                    nbdax, nbdax, 1, zr(ltkaa), nbdax,&
@@ -846,8 +849,8 @@ subroutine prcycb(nomres, soumat, repmat)
                    nbdax, nbdax, 1, zr(ldmpia), nbmod,&
                    nbdax)
 !
-        call amppr(zr(ldm0ia), nbmod, nbdax, zr(ltmia), nbmod,&
-                   nbdax, 1, 1)
+!       call amppr(zr(ldm0ia), nbmod, nbdax, zr(ltmia), nbmod,&
+!                  nbdax, 1, 1)
         call jedetr('&&'//pgc//'.MIA')
 !
 ! ----- POUR  M0AA
@@ -861,8 +864,9 @@ subroutine prcycb(nomres, soumat, repmat)
                    nbdax, nbdax, 1, zr(ldmpaa), nbdax,&
                    nbdax)
 !
-        call amppr(zr(ldm0aa), nbdax, nbdax, zr(ltmaa), nbdax,&
-                   nbdax, 1, 1)
+!
+!       call amppr(zr(ldm0aa), nbdax, nbdax, zr(ltmaa), nbdax,&
+!                  nbdax, 1, 1)
 !
         call pmppr(zr(ltetax), nbdax, nbdax, -1, zr(ldmpaa),&
                    nbdax, nbdax, 1, zr(ltmaa), nbdax,&
@@ -871,6 +875,13 @@ subroutine prcycb(nomres, soumat, repmat)
                    nbdax, 1, 1)
 !
         call jedetr('&&'//pgc//'.MAA')
+        
+        !-- reinitialiser Kpaa et Mpaa
+        do i = 1, nbdax**2
+          zr(ldkpaa + i-1) = 0.D0
+          zr(ldmpaa + i-1) = 0.D0
+        end do
+        
 !
     endif
 !

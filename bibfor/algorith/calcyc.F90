@@ -73,6 +73,7 @@ subroutine calcyc(nomres)
     integer :: nbdax0, nbdax1, nbddef, nbddg, nbddr, nbdia, nbdia1
     integer :: nbdia2, nblif, nbmcal, nbmobt, nbmos, nbnew, nbsec
     integer :: nbtmp, nmaxit, ntail, ntt, numa
+    integer :: i1, j1
     real(kind=8) :: beta, bid, omeg2, pi, pima, precaj, precse
 !
 !-----------------------------------------------------------------------
@@ -143,7 +144,7 @@ subroutine calcyc(nomres)
     nbdia=nbnew
 !
     icomp=0
-    do 30 i = 1, nbnew
+    do i = 1, nbnew
         idia=zi(ltnbd+i-1)
         if (idia .le. maxdia) then
             icomp=icomp+1
@@ -152,7 +153,7 @@ subroutine calcyc(nomres)
             call u2mesg('I', 'ALGORITH14_82', 0, ' ', 1,&
                         vali, 0, 0.d0)
         endif
-30  end do
+    end do
 !
     if (icomp .lt. nbdia) then
         vali (1) = maxdia
@@ -170,9 +171,9 @@ subroutine calcyc(nomres)
 !
     call wkvect(nomres//'.CYCL_DIAM', 'G V I', nbdia*2, ldnbd)
 !
-    do 40 i = 1, nbdia
+    do i = 1, nbdia
         zi(ldnbd+i-1)=zi(ltnbd+i-1)
-40  end do
+    end do
 !
     call jedetr('&&'//pgc//'.DIAM.TOUT')
 !
@@ -253,6 +254,24 @@ subroutine calcyc(nomres)
             call axacti(basmod, numa, 1, zi(ltlax1), nbdax1,&
                         ibid)
         endif
+        
+        write(6,*) ' -- Gestion des DDL d''axe --'
+        write(6,*) ' '
+        write(6,*) ' nbdax0=',nbdax0
+        write(6,*) ' nbdax1=',nbdax1
+        write(6,*) ' '
+        do i = 1, nbdax0
+          write(6,*) ' axe0(',i,')=',zi(ltlax0+i-1)
+        end do
+        write(6,*) ' '
+        write(6,*) ' '
+          
+        do i = 1, nbdax1
+          write(6,*) ' axe1(',i,')=',zi(ltlax1+i-1)
+        end do
+        
+        
+        
         ntt=max(nbmos,nbddr)
         call wkvect('&&'//pgc//'.LISTE.BIDON', 'V V I', ntt, ltlbid)
         do 5 i = 1, ntt
@@ -329,7 +348,8 @@ subroutine calcyc(nomres)
 !    DES EVENTUELS DDL AXE: AXOK,LLITMP,NBTMP
 !
 ! CAS CRAIG-BAMPTON
-        if (typint .eq. 'CRAIGB   ' .or. typint .eq. 'CB_HARMO') then
+        if ((typint .eq. 'CRAIGB   ') .or. (typint .eq. 'CB_HARMO') .or. &
+            (typint .eq. 'MNEAL   ')) then
             if (nbdax .gt. 0 .and. idiam .eq. 0) then
                 nbddef=nbmos+nbddr+nbdax0
                 axok=.true.
@@ -392,6 +412,17 @@ subroutine calcyc(nomres)
                         zc(ltzm2), zc(ltzv1), zc(ltzv2), zr(ltrv1), zr(ltrv2),&
                         rlome2(1), rlome2( 2), precse, imes)
 !
+        endif
+        
+        if (typint .eq. 'CRAIGB   ' .or. typint .eq. 'CB_HARMO') then
+        !-- correction "brutale" du mouvement des noeuds de l'axe
+        !-- moins chiant que de modifier la restitution complète
+          do i1 = 1, nbmobt
+            do j1= 1, nbdax
+              zc(iad + nbddg*(i1-1) + nbmos+nbddr+j1-1) = &
+                zc(iad + nbddg*(i1-1) + nbmos+nbddr+j1-1)/2.D0
+            end do
+          end do
         endif
 !
 !--------------RECUPERATION DES FREQUENCES PROPRES REELLES--------------
