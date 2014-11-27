@@ -24,7 +24,7 @@
 # unite associe au fichier ou le post-traitement CASTEM2000 est fait en commandes epx
 # unite_cast2000 = 0 # il ne fait pas le pos-traitement
 # __temp
-unite_cast2000 = 95
+#unite_cast2000 = 95
 
 debug = False
 
@@ -394,13 +394,13 @@ class EUROPLEXUS:
         epx[MODULE].append('\n')
 
         # __temp
-        fichier_cast2000 = 'fort.%i' %unite_cast2000
-        if unite_cast2000 and os.path.isfile(fichier_cast2000) :
-            sortie_cast2000 = os.path.join(self.REPE_epx, 'post.k2000')
-
-            epx[MODULE].append('OPNF 12')
-            epx[MODULE].append(2*' ' + "'%s'" %sortie_cast2000)
-            epx[MODULE].append('\n')
+        #fichier_cast2000 = 'fort.%i' %unite_cast2000
+        #if unite_cast2000 and os.path.isfile(fichier_cast2000) :
+            #sortie_cast2000 = os.path.join(self.REPE_epx, 'post.k2000')
+#
+            #epx[MODULE].append('OPNF 12')
+            #epx[MODULE].append(2*' ' + "'%s'" %sortie_cast2000)
+            #epx[MODULE].append('\n')
 
   #-----------------------------------------------------------------------
     def export_MAILLAGE(self,):
@@ -653,7 +653,7 @@ class EUROPLEXUS:
                                          CREA_GROUP_MA= (
                                          _F(NOM=gr4, GROUP_MA=gr,  TYPE_MAILLE='QUAD4'),
                                         ))
- 
+
                      # un des deux groupes est-il vide ?
                       MApyt.FromAster(concept_maillage)
                       for gr in gr_t3q4.keys() :
@@ -1683,7 +1683,7 @@ class EUROPLEXUS:
           nom_cham = string2list(listing_fact['NOM_CHAM'])
 
           cle_freq_listing, vale_freq_listing = get_freq(listing_fact)
-          
+
           entite_geo={}
           entite_geo['POINT'] = []
           entite_geo['ELEM'] = []
@@ -1696,7 +1696,7 @@ class EUROPLEXUS:
           elif listing_fact.has_key('GROUP_NO'):
               gr_no = tolist(listing_fact['GROUP_NO'])
               entite_geo['POINT'].extend(gr_no)
-          
+
           # mailles
           if listing_fact.has_key('TOUT_GROUP_MA'):
               # toutes les mailles du modèle
@@ -1706,7 +1706,7 @@ class EUROPLEXUS:
           elif listing_fact.has_key('GROUP_MA'):
               gr_ma = tolist(listing_fact['GROUP_MA'])
               entite_geo['ELEM'].extend(gr_ma)
-          
+
           st = 2*' '
           for cham_aster in nom_cham:
             cham_epx = self.dic_champ[cham_aster]
@@ -2054,11 +2054,11 @@ class EUROPLEXUS:
           if nc == 0 :
               para_abscisse = self.legend_courbes[icourbe][0]
               vale_abscisse = valeurs[0,:].tolist()
-              assert (len(para_abscisse)<17)
+              if len(para_abscisse ) > 16: para_abscisse  =  para_abscisse[:17]
               dico.append({'TYPE_K':'K16','LISTE_R' : vale_abscisse , 'PARA' : para_abscisse})
               para_ordonnee = self.legend_courbes[icourbe][1]
               vale_ordonnee = valeurs[1,:].tolist()
-              assert (len(para_ordonnee)<17)
+              if len(para_ordonnee) > 16: para_ordonnee =  para_ordonnee[:17]
               dico.append({'TYPE_K':'K16','LISTE_R' : vale_ordonnee , 'PARA' : para_ordonnee})
               nc=1
           else :
