@@ -26,6 +26,7 @@ subroutine chrpel(champ1, repere, nbcmp, icham, type,&
 #include "asterc/r8dgrd.h"
 #include "asterfort/angvxy.h"
 #include "asterfort/assert.h"
+#include "asterfort/calc_coor_elga.h"
 #include "asterfort/calcul.h"
 #include "asterfort/celces.h"
 #include "asterfort/cescel.h"
@@ -86,11 +87,11 @@ subroutine chrpel(champ1, repere, nbcmp, icham, type,&
     integer :: ibid, nbma, jcesk, iret, inot, inbno
     integer :: ndim, licmpu(6), nbm, idmail, nbmail, imai
     integer :: inoeu, iret0, iret1, nbgno, igno, nncp, i2
-    integer :: ierk, mnogak, mnogad, mnogal, mnogav, iadr, igaaxe
-    integer :: imaref, nbno, nbpg, nbno2, nbpg2, nuno, ipg
+    integer :: ierk, mnogav, igaaxe
+    integer :: nbno, nbpg, nuno, ipg
     logical :: test, exicar
     real(kind=8) :: angnot(3), pgl(3, 3), valer(6), valed(6)
-    real(kind=8) :: valr, valei(6), xx, yy, zz
+    real(kind=8) :: valr, valei(6)
     real(kind=8) :: valet(6), epsi, xnormr, prosca
     real(kind=8) :: orig(3), axez(3), axer(3), axet(3)
     real(kind=8) :: vectx(3), vecty(3), angrep(3)
@@ -99,14 +100,15 @@ subroutine chrpel(champ1, repere, nbcmp, icham, type,&
     complex(kind=8) :: valetc(6), cbid
     character(len=1) :: k1b
     character(len=3) :: tsca
-    character(len=8) :: ma, k8b, typmcl(2), nomgd, tych, param
+    character(len=8) :: ma, k8b, typmcl(2), nomgd, tych
     character(len=8) :: lpain(4), paout, licmp(3), kbid
-    character(len=16) :: option, motcle(2), nomch2
-    character(len=19) :: chams1, chams0, ligrel, manoga, canbsp
+    character(len=16) :: option, motcle(2)
+    character(len=19) :: chams1, chams0, ligrel, canbsp
     character(len=19) :: changl, carte
     character(len=24) :: mesmai, chgeom, lchin(4), chaout
     character(len=24) :: valk(3), chcara(18)
-    integer :: iarg
+    integer :: iarg, iexist, jcesd_gauss, jcesl_gauss
+    character(len=19) :: celgauss, cesgauss
 !
     call jemarq()
     epsi = 1.0d-6
@@ -468,23 +470,6 @@ subroutine chrpel(champ1, repere, nbcmp, icham, type,&
         call normev(axez, xnormr)
         call jeveuo(ma//'.COORDO    .VALE', 'L', axyzm)
 !
-        manoga='&&CHRPEL.MANOGA'
-        !
-        if ( nomch(1:9) .eq. 'SIGM_ELGA') then 
-            param = 'PSIEFR'
-        elseif  ((nomch(1:4) .eq. 'SIEF').or.(nomch(1:4) .eq. 'SIGM'))   then
-            param='PCONTRR'
-        else if (nomch(1:2).eq.'EP') then
-            param='PDEFOPG'
-        else if (nomch(1:4).eq.'VARI') then
-            param='PVARIGR'
-        else
-            call u2mesg('F', 'ALGORITH2_14', 1, nomch, 0,&
-                        0, 0, 0.d0)
-        endif
-!
-        nomch2 = nomch
-        call manopg(ligrel, nomch2, param, manoga)
 ! ----- TYPE DE COMPOSANTES
 !
         if (type(1:4) .eq. 'TENS') then
@@ -667,75 +652,82 @@ subroutine chrpel(champ1, repere, nbcmp, icham, type,&
 !
             else if (tych(1:4).eq.'ELGA') then
 !        ----------------------------
-                call jeveuo(manoga//'.CESK', 'L', mnogak)
-                call jeveuo(manoga//'.CESD', 'L', mnogad)
-                call jeveuo(manoga//'.CESL', 'L', mnogal)
-                call jeveuo(manoga//'.CESV', 'L', mnogav)
-                call assert(zk8(mnogak).eq.ma)
 !
-                do 120 inel = 1, nbmail
+! Si le champ est un champ 'ELGA', on a besoin des
+! coordonnées des points de Gauss dans chaque élément
+
+! On utilise calc_coor_elga qui retourne un champ par élément
+! contenant les coordonnées des points de Gauss
+                celgauss='&&CHRPEL.CEL_GAUSS'
+                call exisd('CHAMP', celgauss, iexist)
+                if (iexist .eq. 0) then
+                    call megeom(modele, chgeom)
+                    call calc_coor_elga(ligrel, chgeom, celgauss)
+                endif
+!
+! On transforme ce champ en champ simple
+!
+                cesgauss='&&CHRPEL.CES_GAUSS'
+                call celces( celgauss, 'V', cesgauss)
+                call jeveuo(cesgauss//'.CESD','L', jcesd_gauss)
+                call jeveuo(cesgauss//'.CESL','L', jcesl_gauss)
+                call jeveuo(cesgauss//'.CESV','L', mnogav)
+!
+! Boucle sur les mailles à transformer
+!
+                do inel = 1, nbmail
+! Récupération de :
+! - imai : indice de la maille courante, imai
                     if (nbm .ne. 0) then
                         imai = zi(idmail+inel-1)
                     else
                         imai = inel
                     endif
-!
-!  RECUP DE L'ADRESSE DE LA MATRICE DE PASSAGE NOEUDS ==> GAUSS
-!
-                    call cesexi('C', mnogad, mnogal, imai, 1,&
-                                1, 1, iad)
-                    if (iad .le. 0) goto 120
-                    if (nint(zr(mnogav-1+iad)) .gt. 0) then
-                        imaref=imai
-                    else
-                        imaref=-nint(zr(mnogav-1+iad))
-                    endif
-                    call cesexi('C', mnogad, mnogal, imaref, 1,&
-                                1, 1, iad)
-                    if (iad .le. 0) goto 120
-!
-                    nbno2 = nint(zr(mnogav-1+iad))
-                    nbpg2 = nint(zr(mnogav-1+iad+1))
-!
+! - nbno : nombre de noeuds de la maille courante
                     nbno = zi(jconx2+imai) - zi(jconx2-1+imai)
+! - nbpg : nombre de points de Gauss
                     nbpg = zi(jcesd-1+5+4* (imai-1)+1)
+! - nbsp : nombre de sous-points
                     nbsp = zi(jcesd-1+5+4* (imai-1)+2)
-                    ncmp = zi(jcesd-1+5+4* (imai-1)+3)
-                    call assert(nbno.eq.nbno2)
-                    call assert(nbpg.eq.nbpg2)
+! - nbcmp : nombre de composantes
+                    nbcmp = zi(jcesd-1+5+4* (imai-1)+3)
 !
 !  RECUP DES COORDONNEES DES NOEUDS
 !
+                    x(:)=0.0
+                    y(:)=0.0
+                    z(:)=0.0
                     do 130 ino = 1, nbno
                         nuno = zi(jconx1-1+zi(jconx2+imai-1)+ino-1)
                         x(ino) = zr(axyzm+3*(nuno-1) )
                         y(ino) = zr(axyzm+3*(nuno-1)+1)
-                        z(ino) = zr(axyzm+3*(nuno-1)+2)
+                        if (ndim ==3) then
+                            z(ino) = zr(axyzm+3*(nuno-1)+2)
+                        endif
 130                  continue
 !
 !  CALCUL DES COORDONNEES DES POINTS DE GAUSS DE LA MAILLE COURANTE
 !
                     do 140 ipg = 1, nbpg
-                        xx=0.d0
-                        yy=0.d0
-                        zz=0.d0
-                        iadr=mnogav-1+iad+1+nbno*(ipg-1)
-                        do 141 ino = 1, nbno
-                            xx = xx + x(ino)*zr(iadr+ino)
-                            yy = yy + y(ino)*zr(iadr+ino)
-                            zz = zz + z(ino)*zr(iadr+ino)
-141                      continue
-                        xpg(ipg) = xx
-                        ypg(ipg) = yy
-                        zpg(ipg) = zz
-140                  continue
+                        do ino = 1, nbno
+                                call cesexi('S', jcesd_gauss, jcesl_gauss, imai, ipg,&
+                                            1, 1, iad)
+                                xpg(ipg) = zr(mnogav-1+iad)
+                                call cesexi('S', jcesd_gauss, jcesl_gauss, imai, ipg,&
+                                            1, 2, iad)
+                                ypg(ipg) = zr(mnogav-1+iad)
+                                call cesexi('S', jcesd_gauss, jcesl_gauss, imai, ipg,&
+                                            1, 3, iad)
+                                zpg(ipg) = zr(mnogav-1+iad)
+                        enddo
+140                 continue
 !
                     do 121,ipg = 1,nbpg
                     do 122,isp = 1,nbsp
                     test = .true.
-                    do 123 ii = 1, ncmp
+                    do 123 ii = 1, 3
                         call cesexi('S', jcesd, jcesl, imai, ipg,&
-                                    isp, ii, iad)
+                                    1, ii, iad)
                         if (iad .gt. 0) then
                             test = .false.
                         endif
@@ -865,7 +857,8 @@ subroutine chrpel(champ1, repere, nbcmp, icham, type,&
                     endif
 122                  continue
 121                  continue
-120              continue
+                enddo
+120             continue
             endif
         else
 ! VECTEUR
