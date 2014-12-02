@@ -157,13 +157,13 @@ subroutine carbe3(charge)
                 if (nbnoeu .eq. 0) then
                     call u2mesk('F', 'MODELISA10_8', 1, zk24(jlises-1+ idxgro))
                 endif
-                maxesc = max(maxesc, nbnoeu)
+                maxesc = maxesc + nbnoeu
 100          continue
         else
             call getvtx(motfac, 'NOEUD_ESCL', idxrbe, iarg, 0,&
                         k8bid, nbnoeu)
             nbnoeu = -nbnoeu
-            maxesc = max(maxesc, nbnoeu)
+            maxesc = maxesc + nbnoeu
         endif
 !
         cntddl = 1
