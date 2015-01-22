@@ -70,7 +70,7 @@ subroutine rdtmai(noma, nomare, base, corrn, corrm,&
 ! ======================================================================
 !
     integer :: nbmaou, nbnoin, iret, jnuma, jwk1, jconx1, jconx2, ima, numa
-    integer :: nbno
+    integer :: nbno, lont
     integer :: ino, nuno, jdim, itypou, itypin, jadin, jadou, ibid, jcorin
     integer :: jcorou
     integer :: iad, ntgeo, nbnoou, nbnomx, jwk2, nbgma, jgma, igm, nbma, nbmain
@@ -197,7 +197,7 @@ subroutine rdtmai(noma, nomare, base, corrn, corrm,&
     ptngrn=nomare//'.PTRNOMNOE'
     ptngrm=nomare//'.PTRNOMMAI'
 !
-    connex=nomare//'.CONNEX         '
+    connex=nomare//'.CONNEX'
     typmai=nomare//'.TYPMAIL        '
     cooval=nomare//'.COORDO    .VALE'
     coodsc=nomare//'.COORDO    .DESC'
@@ -214,17 +214,17 @@ subroutine rdtmai(noma, nomare, base, corrn, corrm,&
 ! --- OBJET .NOMMAI
     call jecreo(nommai, base//' N K8')
     call jeecra(nommai, 'NOMMAX', nbmaou, ' ')
-    do 30 ima = 1, nbmaou
+    do ima = 1, nbmaou
         call jenuno(jexnum(noma//'.NOMMAI', zi(jnuma+ima-1)), nomma)
         call jecroc(jexnom(nommai, nomma))
-30  end do
+    end do
 !
 ! --- OBJET .TYPMAIL
     call wkvect(typmai, base//' V I', nbmaou, itypou)
     call jeveuo(noma//'.TYPMAIL', 'L', itypin)
-    do 40 ima = 1, nbmaou
+    do ima = 1, nbmaou
         zi(itypou-1+ima)=zi(itypin-1+zi(jnuma+ima-1))
-40  end do
+    end do
 !
 ! --- OBJET .CONNEX
     call jecrec(connex, base//' V I', 'NU', 'CONTIG', 'VARIABLE',&
@@ -232,24 +232,29 @@ subroutine rdtmai(noma, nomare, base, corrn, corrm,&
     call dismoi('F', 'NB_NO_MAX', '&CATA', 'CATALOGUE', nbnomx,&
                 k8b, iret)
 !
-    call jeecra(connex, 'LONT', nbnomx*nbmaou, ' ')
-    do 60 ima = 1, nbmaou
+    lont=0
+    do ima = 1, nbmaou
+        call jelira(jexnum(noma//'.CONNEX', zi(jnuma+ima-1)), 'LONMAX', nbno, k8b)
+        lont=lont+nbno
+    end do
+    call jeecra(connex, 'LONT', lont, ' ')
+    do ima = 1, nbmaou
         call jelira(jexnum(noma//'.CONNEX', zi(jnuma+ima-1)), 'LONMAX', nbno, k8b)
         call jeecra(jexnum(connex, ima), 'LONMAX', nbno, k8b)
         call jeveuo(jexnum(noma//'.CONNEX', zi(jnuma+ima-1)), 'L', jadin)
         call jeveuo(jexnum(connex, ima), 'E', jadou)
-        do 50 ino = 1, nbno
+        do ino = 1, nbno
             zi(jadou+ino-1)=zi(jwk1+zi(jadin+ino-1)-1)
-50      continue
-60  end do
+        end do
+    end do
 !
 ! --- OBJET .NOMNOE
     call jecreo(nomnoe, base//' N K8')
     call jeecra(nomnoe, 'NOMMAX', nbnoou, ' ')
-    do 70 ino = 1, nbnoou
+    do ino = 1, nbnoou
         call jenuno(jexnum(noma//'.NOMNOE', zi(jwk2+ino-1)), nomno)
         call jecroc(jexnom(nomnoe, nomno))
-70  end do
+    end do
 !
 ! --- OBJET .COORDO.VALE
     call jecreo(cooval, base//' V R')
@@ -258,13 +263,13 @@ subroutine rdtmai(noma, nomare, base, corrn, corrm,&
     call jeecra(cooval, 'DOCU', ibid, docu)
     call jeveuo(noma//'.COORDO    .VALE', 'L', jcorin)
     call jeveuo(cooval, 'E', jcorou)
-    do 80 ino = 1, nbnoin
+    do ino = 1, nbnoin
         if (zi(jwk1+ino-1) .ne. 0) then
             zr(jcorou+3*(zi(jwk1+ino-1)-1))=zr(jcorin+3*(ino-1))
             zr(jcorou+3*(zi(jwk1+ino-1)-1)+1)=zr(jcorin+3*(ino-1)+1)
             zr(jcorou+3*(zi(jwk1+ino-1)-1)+2)=zr(jcorin+3*(ino-1)+2)
         endif
-80  end do
+    end do
 !
 !
 ! --- OBJET COORDO.DESC
@@ -452,7 +457,7 @@ subroutine rdtmai(noma, nomare, base, corrn, corrm,&
     call jeecra(ptngrn, 'NOMMAX', nbgnnv, ' ')
     call jecrec(grpnoe, base//' V I', 'NO '//ptngrn, 'DISPERSE', 'VARIABLE',&
                 nbgnnv)
-    do 200 ign = 1, nbgnnv
+    do ign = 1, nbgnnv
         call jenuno(jexnum(noma//'.GROUPENO', zi(jgnonv+ign-1)), nomgno)
         call jecroc(jexnom(grpnoe, nomgno))
         call jelira(jexnom(noma//'.GROUPENO', nomgno), 'LONUTI', nbno, k8b)
@@ -468,7 +473,7 @@ subroutine rdtmai(noma, nomare, base, corrn, corrm,&
                 zi(jadou+k-1)=zi(jwk1+zi(jadin+ino-1)-1)
             endif
 190      continue
-200  end do
+     end do
 210  continue
 !
     call cargeo(nomare)

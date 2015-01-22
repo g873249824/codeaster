@@ -58,7 +58,7 @@ subroutine uimpba(clas, iunmes)
     call jelstc(clas, ' ', 0, nbobj, kbid,&
                 nbval)
     call assert(nbval.le.0)
-    if (nbval .eq. 0) goto 9999
+    if (nbval .eq. 0) goto 999
     nbobj=-nbval
     call wkvect('&&UIMPBA.LISTE_OBJ', 'V V K24', nbobj+1, jlobj)
     call jelstc(clas, ' ', 0, nbobj, zk24(jlobj),&
@@ -71,27 +71,27 @@ subroutine uimpba(clas, iunmes)
 !     --------------------------------------
     call wkvect('&&UIMPBA.TAILLE', 'V V R', nbobj, jtailo)
     call wkvect('&&UIMPBA.NBSVO', 'V V I', nbobj, jnbsvo)
-    do 1, i=1,nbobj
-    obj=zk24(jlobj-1+i)
-    call jelgdq(obj, rlong, nbsv)
-    call assert(rlong.gt.0.d0)
-    zr(jtailo-1+i)=rlong
-    zi(jnbsvo-1+i)=nbsv
-    1 end do
+    do i=1,nbobj
+        obj=zk24(jlobj-1+i)
+        call jelgdq(obj, rlong, nbsv)
+        call assert(rlong.gt.0.d0)
+        zr(jtailo-1+i)=rlong
+        zi(jnbsvo-1+i)=nbsv
+    end do
 !
 !
 !     -- 3 : .LCONK8 = LISTE DES CONCEPTS (K8) DE .LISTE_OBJ
 !     -----------------------------------------------------------
     call jecreo('&&UIMPBA.LCONK8', 'V N K8')
     call jeecra('&&UIMPBA.LCONK8', 'NOMMAX', nbobj, kbid)
-    do 2, i=1,nbobj
-    obj=zk24(jlobj-1+i)
-    k8=obj(1:8)
-    call jenonu(jexnom('&&UIMPBA.LCONK8', k8), iexi)
-    if (iexi .eq. 0) then
-        call jecroc(jexnom('&&UIMPBA.LCONK8', k8))
-    endif
-    2 end do
+    do i=1,nbobj
+        obj=zk24(jlobj-1+i)
+        k8=obj(1:8)
+        call jenonu(jexnom('&&UIMPBA.LCONK8', k8), iexi)
+        if (iexi .eq. 0) then
+            call jecroc(jexnom('&&UIMPBA.LCONK8', k8))
+        endif
+    end do
 !
 !
 !     -- 4 : .TAILCON = TAILLE DES CONCEPTS
@@ -102,18 +102,18 @@ subroutine uimpba(clas, iunmes)
     call wkvect('&&UIMPBA.NBOBJ', 'V V I', nbcon, jnbobj)
     taitot=0.d0
     nstot=0
-    do 3, i=1,nbobj
-    obj=zk24(jlobj-1+i)
-    k8=obj(1:8)
-    call jenonu(jexnom('&&UIMPBA.LCONK8', k8), iexi)
-    call assert(iexi.gt.0)
-    call assert(iexi.le.nbcon)
-    zr(jtailc-1+iexi)=zr(jtailc-1+iexi)+zr(jtailo-1+i)
-    taitot=taitot+zr(jtailo-1+i)
-    zi(jnbsvc-1+iexi)=zi(jnbsvc-1+iexi)+zi(jnbsvo-1+i)
-    zi(jnbobj-1+iexi)=zi(jnbobj-1+iexi)+1
-    nstot=nstot+zi(jnbsvo-1+i)
-    3 end do
+    do i=1,nbobj
+        obj=zk24(jlobj-1+i)
+        k8=obj(1:8)
+        call jenonu(jexnom('&&UIMPBA.LCONK8', k8), iexi)
+        call assert(iexi.gt.0)
+        call assert(iexi.le.nbcon)
+        zr(jtailc-1+iexi)=zr(jtailc-1+iexi)+zr(jtailo-1+i)
+        taitot=taitot+zr(jtailo-1+i)
+        zi(jnbsvc-1+iexi)=zi(jnbsvc-1+iexi)+zi(jnbsvo-1+i)
+        zi(jnbobj-1+iexi)=zi(jnbobj-1+iexi)+1
+        nstot=nstot+zi(jnbsvo-1+i)
+    end do
 !
 !
 !     -- 5 : IMPRESSION DU RESULTAT :
@@ -130,26 +130,26 @@ subroutine uimpba(clas, iunmes)
     write(iunmes,*) ' '
 !
 !     -- ON IMPRIME D'ABORD LES CONCEPTS UTILISATEUR :
-    do 4, i=1,nbcon
-    call jenuno(jexnum('&&UIMPBA.LCONK8', i), k8)
-    call gettco(k8, typcon)
-    if (typcon .eq. ' ') goto 4
-    write(iunmes,1000) k8,typcon,zr(jtailc-1+i)/mega, zi(jnbobj-1+&
+    do i=1,nbcon
+        call jenuno(jexnum('&&UIMPBA.LCONK8', i), k8)
+        call gettco(k8, typcon)
+        if (typcon .eq. ' ') cycle
+        write(iunmes,1000) k8,typcon,zr(jtailc-1+i)/mega, zi(jnbobj-1+&
         i),zi(jnbsvc-1+i)
-    4 end do
+    end do
 !     -- ON IMPRIME ENSUITE LES CONCEPTS CACHES  :
-    do 5, i=1,nbcon
-    call jenuno(jexnum('&&UIMPBA.LCONK8', i), k8)
-    call gettco(k8, typcon)
-    if (typcon .ne. ' ') goto 5
-    write(iunmes,1000) k8,typcon,zr(jtailc-1+i)/mega, zi(jnbobj-1+&
+    do i=1,nbcon
+        call jenuno(jexnum('&&UIMPBA.LCONK8', i), k8)
+        call gettco(k8, typcon)
+        if (typcon .ne. ' ') cycle
+        write(iunmes,1000) k8,typcon,zr(jtailc-1+i)/mega, zi(jnbobj-1+&
         i),zi(jnbsvc-1+i)
-    5 end do
+    end do
     write(iunmes,*) '-----------------------------------------------',&
      &                '----------------------------'
 !
 !
-9999  continue
+999   continue
     call jedetr('&&UIMPBA.LISTE_OBJ')
     call jedetr('&&UIMPBA.TAILLE')
     call jedetr('&&UIMPBA.LCONK8')
