@@ -395,4 +395,11 @@ du résultat %(k3)s
 Dans le cas d'un champ de type ELEM, l'utilisation des mots clés NOEUD, GROUP_NO
 n'a pas de sens, seul le mot clé MAILLE ou GROUP_MA est autorisé.
 """),
+
+    68 : _(u"""
+Erreur utilisateur dans la commande POST_RELEVE_T :
+  Pour les mots clés ACTION / RESULTANTE (et MOMENT), on ne peut utiliser que le repère
+ 'GLOBAL' ou le repère 'UTILISATEUR' (avec ANGL_NAUT).
+"""),
+
 }
