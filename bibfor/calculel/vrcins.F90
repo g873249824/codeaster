@@ -22,8 +22,11 @@ subroutine vrcins(modelz, chmatz, carelz, inst, chvarc,&
 #include "asterfort/assert.h"
 #include "asterfort/cescel.h"
 #include "asterfort/cesexi.h"
+#include "asterfort/dismoi.h"
 #include "asterfort/imprsd.h"
 #include "asterfort/jedema.h"
+#include "asterfort/jenuno.h"
+#include "asterfort/jexnum.h"
 #include "asterfort/jeexin.h"
 #include "asterfort/jelira.h"
 #include "asterfort/jemarq.h"
@@ -57,12 +60,15 @@ subroutine vrcins(modelz, chmatz, carelz, inst, chvarc,&
     integer :: jcvcmp, jcesc, nbcmp, kcmp, kcvrc
     integer :: nbma, ima, nbpt, nbsp, ipt, isp, iad, iad1
     integer :: jcvvar, jce1d, jce1l, jce1v, jcesvi, nncp, n1, k
-    real(kind=8) :: valeur, rundef
+    real(kind=8) :: valeur, rundef, rbid
     character(len=19) :: chvars, ligrmo, chs
-    character(len=8) :: kbid, valk(4)
+    character(len=8) :: kbid
+    character(len=24) :: valk(5)
+    character(len=16) :: nomte
     logical :: avrc, dbg
-    integer :: ibid, nbcvrc
-    character(len=8) :: modele, chmat, carele, varc1, varc2, nocmp1, nocmp2
+    integer :: ibid, nbcvrc, nute, jmaille, vali(2)
+    character(len=8) :: modele, chmat, carele, varc1, varc2, nocmp1, nocmp2, noma, nomail
+    logical :: exival
 ! ----------------------------------------------------------------------
 !
     call jemarq()
@@ -118,83 +124,102 @@ subroutine vrcins(modelz, chmatz, carelz, inst, chvarc,&
     call jeveuo(chvars//'.CESV', 'E', jce1v)
     call jelira(chvars//'.CESV', 'LONMAX', n1, kbid)
     do 5, k=1,n1
-    zr(jce1v-1+k)=rundef
+        zr(jce1v-1+k)=rundef
     5 end do
 !
     do 1, ichs=1,nbchs
-    chs=zk24(jlisch-1+ichs)(1:19)
-    varc1=zk16(jlissd-1+7*(ichs-1)+4)(1:8)
-    call jeveuo(chs//'.CESD', 'L', jcesd)
-    call jeveuo(chs//'.CESL', 'L', jcesl)
-    call jeveuo(chs//'.CESV', 'L', jcesv)
-    call jeveuo(chs//'.CESC', 'L', jcesc)
-    call jelira(chs//'.CESC', 'LONMAX', nbcmp, kbid)
+        chs=zk24(jlisch-1+ichs)(1:19)
+        varc1=zk16(jlissd-1+7*(ichs-1)+4)(1:8)
+        call jeveuo(chs//'.CESD', 'L', jcesd)
+        call jeveuo(chs//'.CESL', 'L', jcesl)
+        call jeveuo(chs//'.CESV', 'L', jcesv)
+        call jeveuo(chs//'.CESC', 'L', jcesc)
+        call jelira(chs//'.CESC', 'LONMAX', nbcmp, kbid)
 !
-    do 2,kcmp=1,nbcmp
-    nocmp1=zk8(jcesc-1+kcmp)
+        do 2,kcmp=1,nbcmp
+            nocmp1=zk8(jcesc-1+kcmp)
 !
 !         -- CALCUL DE KCVRC :
-    do 3,kcvrc=1,nbcvrc
-    varc2=zk8(jcvvar-1+kcvrc)
-    nocmp2=zk8(jcvcmp-1+kcvrc)
-    if ((varc1.eq.varc2) .and. (nocmp1.eq.nocmp2)) goto 4
- 3  continue
-    goto 2
+            do 3,kcvrc=1,nbcvrc
+                varc2=zk8(jcvvar-1+kcvrc)
+                nocmp2=zk8(jcvcmp-1+kcvrc)
+                if ((varc1.eq.varc2) .and. (nocmp1.eq.nocmp2)) goto 4
+ 3          continue
+            goto 2
 !
- 4  continue
-    call assert(kcvrc.ge.1 .and. kcvrc.le.nbcvrc)
+ 4          continue
+            call assert(kcvrc.ge.1 .and. kcvrc.le.nbcvrc)
 !
 !         -- BOUCLE SUR LES MAILLES :
-    nbma = zi(jcesd-1+1)
-    call assert(nbma.eq.zi(jce1d-1+1))
+            nbma = zi(jcesd-1+1)
+            call assert(nbma.eq.zi(jce1d-1+1))
 !
-    do 70,ima = 1,nbma
-    nbpt = zi(jcesd-1+5+4* (ima-1)+1)
-    if (nbpt .eq. 0) goto 70
-    call assert(nbpt.eq.zi(jce1d-1+5+4* (ima-1)+1))
-    nbsp = max(1,zi(jcesd-1+5+4* (ima-1)+2))
-    if (nbsp .ne. zi(jce1d-1+5+4* (ima-1)+2)) then
-        valk(1) = nocmp1
-        valk(2) = carele
-        valk(3) = chmat
-        call u2mesk('F', 'CALCULEL6_57', 3, valk)
-    endif
+            do 70,ima = 1,nbma
+                nbpt = zi(jcesd-1+5+4* (ima-1)+1)
+                nbsp = zi(jcesd-1+5+4* (ima-1)+2)
+                if (nbsp*nbsp .eq. 0) goto 70
+                call cesexi('C', jce1d, jce1l, ima, 1, 1, kcvrc, iad1)
+!               -- la maille n'est pas concernee par les variables de commande :
+                if (iad1 .eq. 0)  goto 70
 !
-    call cesexi('C', jce1d, jce1l, ima, 1,&
-                1, kcvrc, iad1)
-    if (iad1 .eq. 0) then
-!           -- L'ELEMENT FINI NE CONNAIT PAS LES VARIABLES DE COMMANDE
-        goto 70
-    endif
-!
-    if (iad1 .lt. 0) then
-!           -- LA MAILLE PORTE UN ELEMENT FINI QUI SAURAIT UTILISER
-!              LES VARIABLES DE COMMANDE MAIS ELLE N'EST PAS AFFECTEE.
-!              ON ESPERE QUE LES ROUTINES TE00IJ ARRETERONT EN <F>
-!              SI NECESSAIRE.
-        goto 70
-    endif
-!
-    do 60,ipt = 1,nbpt
-    do 50,isp = 1,nbsp
-    call cesexi('C', jcesd, jcesl, ima, ipt,&
-                isp, kcmp, iad)
-    if (iad .gt. 0) then
-        call cesexi('C', jce1d, jce1l, ima, ipt,&
-                    isp, kcvrc, iad1)
-        call assert(iad1.gt.0)
-        if (zi(jcesvi-1+iad1) .eq. ichs) then
-            valeur=zr(jcesv-1+iad)
-            zl(jce1l-1+iad1)=.true.
-            zr(jce1v-1+iad1)=valeur
-        endif
-    endif
-50  continue
-60  continue
-70  continue
-!
- 2  continue
-    1 end do
+!               -- la maille porte un element fini qui saurait utiliser
+!                  les variables de commande mais elle n'est pas affectee.
+!                  on espere que les routines te00ij arreteront en <f> si necessaire.
+                if (iad1 .lt. 0) goto 70
+
+!               -- controle du nombre de points :
+                call assert(nbpt.eq.zi(jce1d-1+5+4* (ima-1)+1))
+
+!               -- On regarde si le champ possede des valeurs sur la maille :
+                exival=.false.
+                do ipt = 1, nbpt
+                    do isp = 1, nbsp
+                        call cesexi('C', jcesd, jcesl, ima, ipt,&
+                                    isp, kcmp, iad)
+                        if (iad .gt. 0) exival=.true.
+                    enddo
+                enddo
+
+!               -- Controle du nombre de sous-points :
+                if (nbsp .ne. zi(jce1d-1+5+4* (ima-1)+2)) then
+!                   -- issue23456 : il peut arriver que nbsp=1 mais sans aucune valeur :
+                    if (nbsp.eq.1 .and. .not.exival) goto 70
+
+                    call dismoi('F','NOM_MAILLA', modele, 'MODELE', ibid, noma, iret)
+                    call jenuno(jexnum(noma//'.NOMMAI',ima), nomail)
+                    call jeveuo(modele//'.MAILLE', 'L', jmaille)
+                    nute=zi(jmaille-1+ima)
+                    call jenuno(jexnum('&CATA.TE.NOMTE', nute), nomte)
+                    valk(1) = nocmp1
+                    valk(2) = carele
+                    valk(3) = chmat
+                    valk(4) = nomail
+                    valk(5) = nomte
+                    vali(1) = zi(jce1d-1+5+4* (ima-1)+2)
+                    vali(2) = nbsp
+                    call u2mesg('F', 'CALCULEL6_57', 5, valk, 2, vali, 0, rbid)
+                endif
+
+
+                do 60,ipt = 1,nbpt
+                    do 50,isp = 1,nbsp
+                        call cesexi('C', jcesd, jcesl, ima, ipt,&
+                                    isp, kcmp, iad)
+                        if (iad .gt. 0) then
+                            call cesexi('C', jce1d, jce1l, ima, ipt,&
+                                        isp, kcvrc, iad1)
+                            call assert(iad1.gt.0)
+                            if (zi(jcesvi-1+iad1) .eq. ichs) then
+                                valeur=zr(jcesv-1+iad)
+                                zl(jce1l-1+iad1)=.true.
+                                zr(jce1v-1+iad1)=valeur
+                            endif
+                        endif
+50                  continue
+60              continue
+70          continue
+2       continue
+1   end do
 !
 !
 !     4. RECOPIE DU CHAMP SIMPLE DANS LE CHAMP CHVARC
