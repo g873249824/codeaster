@@ -9,6 +9,7 @@ subroutine focrr3(nomfon, resu, nopara, base, ier)
 #include "asterfort/jeveuo.h"
 #include "asterfort/lxlgut.h"
 #include "asterfort/rsadpa.h"
+#include "asterc/r8vide.h"
 #include "asterfort/rsnopa.h"
 #include "asterfort/rsutn1.h"
 #include "asterfort/u2mess.h"
@@ -44,7 +45,8 @@ subroutine focrr3(nomfon, resu, nopara, base, ier)
 ! OUT : IER    : CODE RETOUR, = 0 : OK
 !     ------------------------------------------------------------------
     integer :: nbordr, iret, kordr, lpro, lfon, lvar, iordr, lacce, nbacc, nbpar
-    integer :: iad1, iad2
+    integer :: iad1, iad2, nbpt
+    real(kind=8) :: rundf
     character(len=8) :: type
     character(len=16) :: nomacc
     character(len=19) :: knume
@@ -53,6 +55,7 @@ subroutine focrr3(nomfon, resu, nopara, base, ier)
     call jemarq()
     ier = 0
     knume = '&&FOCRR3.NUME_ORDR'
+    rundf = r8vide()
 !
 !     --- RECUPERATION DES NUME_ORDRE FOURNIS PAR L'UTILISATEUR ---
 !
@@ -83,28 +86,45 @@ subroutine focrr3(nomfon, resu, nopara, base, ier)
     zk24(lpro+3) = nopara(1:8)
     zk24(lpro+4) = 'EE      '
     zk24(lpro+5) = nomfon
+
+
+!   -- calcul du nombre de points de la fonction :
+    nbpt=0
+    do iordr = 1, nbordr
+        call rsadpa(resu, 'L', 1, nopara, zi(kordr+iordr-1),&
+                    1, iad2, type)
+        if (type(1:1) .ne. 'R') call u2mess('F', 'UTILITAI2_6')
+
+        if (zr(iad2).eq.rundf) cycle
+        nbpt=nbpt+1
+    end do
+
 !
 !     --- REMPLISSAGE DU .VALE ---
-    call wkvect(nomfon//'.VALE', base//' V R', 2*nbordr, lvar)
-    lfon = lvar + nbordr
-!
+    call wkvect(nomfon//'.VALE', base//' V R', 2*nbpt, lvar)
+    lfon = lvar + nbpt
+
+    nbpt =0
+
     do 20 iordr = 1, nbordr
 !
         call rsadpa(resu, 'L', 1, nomacc, zi(kordr+iordr-1),&
                     1, iad1, type)
-        if (type(1:1) .eq. 'R') then
-            zr(lvar+iordr-1) = zr(iad1)
-        else
+        if (type(1:1) .ne. 'R') then
             call u2mess('F', 'UTILITAI2_5')
         endif
 !
         call rsadpa(resu, 'L', 1, nopara, zi(kordr+iordr-1),&
                     1, iad2, type)
-        if (type(1:1) .eq. 'R') then
-            zr(lfon+iordr-1) = zr(iad2)
-        else
+        if (type(1:1) .ne. 'R') then
             call u2mess('F', 'UTILITAI2_6')
         endif
+
+        if (zr(iad2).eq.rundf) cycle
+
+        nbpt=nbpt+1
+        zr(lvar+nbpt-1) = zr(iad1)
+        zr(lfon+nbpt-1) = zr(iad2)
 !
 20  end do
 !

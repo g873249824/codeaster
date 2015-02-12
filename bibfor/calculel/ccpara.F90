@@ -17,6 +17,8 @@ subroutine ccpara(option, modele, resuin, resuou, numord,&
 #include "asterfort/rsexch.h"
 #include "asterfort/vrcins.h"
 #include "asterfort/vrcref.h"
+#include "asterc/isnnem.h"
+!
     integer :: numord, nordm1
     character(len=8) :: modele, resuin, resuou, mateco, carael
     character(len=16) :: option
@@ -39,7 +41,7 @@ subroutine ccpara(option, modele, resuin, resuou, numord,&
 ! ======================================================================
 ! person_in_charge: nicolas.sellenet at edf.fr
     integer :: nparin, iret, ibid, jainst, jfreq, iaopds, iaoplo, ipara
-    integer :: jnmo, opt, inume, iarg, jains2
+    integer :: jnmo, opt, inume, iarg, jains2, iundef
 !
     real(kind=8) :: rbid, tps(6), rundf, omega2, freq, time, zero
     parameter   (zero = 0.0d0)
@@ -64,6 +66,7 @@ subroutine ccpara(option, modele, resuin, resuou, numord,&
 !
     data nomcmp  /'INST    ','DELTAT  ','THETA   ','KHI     ',&
      &              'R       ','RHO     '/
+! ======================================================================
 !
     call jenonu(jexnom('&CATA.OP.NOMOPT', option), opt)
     call jeveuo(jexnum('&CATA.OP.DESCOPT', opt), 'L', iaopds)
@@ -71,6 +74,7 @@ subroutine ccpara(option, modele, resuin, resuou, numord,&
     nparin = zi(iaopds-1+2)
 !
     rundf = r8nnem()
+    iundef = isnnem()
 !
     call dismoi('F', 'NOM_MAILLA', modele, 'MODELE', ibid,&
                 mailla, iret)
@@ -137,9 +141,10 @@ subroutine ccpara(option, modele, resuin, resuou, numord,&
             if (iret .ne. 0) then
                 call rsadpa(resuin, 'L', 1, 'NUME_MODE', numord,&
                             0, jnmo, k8b)
-                call mecact('V', chharm, 'MAILLA', mailla, 'HARMON',&
-                            1, 'NH', zi(jnmo), rbid, cbid,&
-                            ' ')
+                if (zi(jnmo).ne.iundef) then
+                    call mecact('V', chharm, 'MAILLA', mailla, 'HARMON',&
+                                1, 'NH', zi(jnmo), rbid, cbid,' ')
+                endif
             endif
 !
         else if (curcha.eq.chmass) then
