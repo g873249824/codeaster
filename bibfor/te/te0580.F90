@@ -1,10 +1,14 @@
 subroutine te0580(nomopt, nomte)
     implicit none
+! aslint: disable=C1505
 #include "jeveux.h"
 #include "asterfort/u2mesk.h"
 #include "asterfort/jevech.h"
+#include "asterfort/rccoma.h"
+#include "asterfort/rcvalb.h"
 #include "asterfort/tecach.h"
 #include "asterfort/assert.h"
+#include "asterfort/elref4.h"
 !     ------------------------------------------------------------------
 ! COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -24,9 +28,15 @@ subroutine te0580(nomopt, nomte)
     character(len=16) :: nomte, nomopt
 
 !-----------------------------------------------------------------------
+ 
     character(len=1) :: code
-    integer :: jad, itab(8), nbv, iret, k,kpara
+    integer :: jad, itab(8), nbv, iret, k, kpara, mater, icodre(2)
+    integer :: imate, idimge, npara, nno, igeom, ndim, ino, ibid
+    real(kind=8) :: valres(2), valpar(3), vxyz
+    character(len=8) :: nompar(3)
+    character(len=16) :: nomres(2)
     character(len=24) :: valk(2)
+    character(len=32) :: phenom
     character(len=8) :: param
     character(len=8) :: lparam1(2)=(/ 'PPRESSR', 'PPRESSF' /)
     character(len=8) :: lparam2(6)
@@ -99,6 +109,44 @@ subroutine te0580(nomopt, nomte)
                 endif
             endif
         enddo
+
+
+    elseif (nomopt.eq.'AMOR_MECA' ) then
+!   ==========================================================================
+
+!       -- le resultat est nul si les coefficients d'amortissement sont nuls ou absents.
+        call jevech('PMATERC', 'L', imate)
+        mater=zi(imate)
+        call rccoma(mater, 'ELAS', 0, phenom, icodre(1))
+        if (icodre(1).ne.0) goto 999
+
+        nompar(1)='X'
+        nompar(2)='Y'
+        nompar(3)='Z'
+
+        call elref4(' ', 'RIGI', ndim, nno, ibid, ibid, ibid,&
+                    ibid, ibid, ibid)
+        call tecach('ONN', 'PGEOMER', 'L', 5, itab, iret)
+        igeom=itab(1)
+        idimge=itab(2)/nno
+
+        call assert(idimge.eq.2 .or. idimge.eq.3)
+
+        npara=idimge
+        do k = 1, npara
+            vxyz = 0.d0
+            do ino = 1, nno
+                vxyz = vxyz+zr(igeom + idimge*(ino-1) +k -1)
+            end do
+            valpar(k) = vxyz/nno
+        end do
+
+        nomres(1)='AMOR_ALPHA'
+        nomres(2)='AMOR_BETA'
+        call rcvalb('RIGI', 1, 1, '+', mater, ' ', phenom, npara, nompar, valpar, 2,&
+                    nomres, valres, icodre, 0)
+        if (icodre(1).ne.0 .and. icodre(2).ne.0) goto 999
+        if (valres(1).eq.0.d0 .and. valres(2).eq.0.d0) goto 999
 
     else
         call assert(.false.)
