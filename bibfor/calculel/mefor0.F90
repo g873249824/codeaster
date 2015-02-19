@@ -18,7 +18,6 @@ subroutine mefor0(nomo, chfor0, fonc)
     implicit none
 !
 #include "jeveux.h"
-#include "asterfort/fozerv.h"
 #include "asterfort/mecact.h"
     character(len=8) :: nomo
     character(len=*) :: chfor0
@@ -43,7 +42,7 @@ subroutine mefor0(nomo, chfor0, fonc)
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
     chfor0 = '&&MEFOR0.FORCE_NULLE'
-    zero = '&&MEFOR0'
+    zero = '&FOZERO'
     ligrmo = nomo//'.MODELE    '
     licmp(1) = 'FX'
     licmp(2) = 'FY'
@@ -52,7 +51,6 @@ subroutine mefor0(nomo, chfor0, fonc)
     rcmp(2) = 0.d0
     rcmp(3) = 0.d0
     if (fonc) then
-        call fozerv(zero)
         nomf(1) = zero
         nomf(2) = zero
         nomf(3) = zero

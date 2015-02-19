@@ -18,7 +18,6 @@ subroutine mepres(nomo, chpres, fonc)
     implicit none
 !
 #include "jeveux.h"
-#include "asterfort/fozerv.h"
 #include "asterfort/mecact.h"
     character(len=8) :: nomo
     character(len=*) :: chpres
@@ -42,14 +41,13 @@ subroutine mepres(nomo, chpres, fonc)
 !-----------------------------------------------------------------------
     integer :: ibid
 !-----------------------------------------------------------------------
-    zero = '&&MEPRES'
+    zero = '&FOZERO'
     ligrmo = nomo//'.MODELE    '
     licmp(1) = 'PRES'
     licmp(2) = 'CISA'
     rcmp(1) = 0.d0
     rcmp(2) = 0.d0
     if (fonc) then
-        call fozerv(zero)
         nomf(1) = zero
         nomf(2) = zero
         call mecact('V', chpres, 'MODELE', ligrmo, 'PRES_F',&
