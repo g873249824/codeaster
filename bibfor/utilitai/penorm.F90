@@ -20,6 +20,7 @@ subroutine penorm(resu, modele)
 #include "asterfort/detrsd.h"
 #include "asterfort/dismlg.h"
 #include "asterfort/dismoi.h"
+#include "asterfort/exlim1.h"
 #include "asterfort/infniv.h"
 #include "asterfort/jedema.h"
 #include "asterfort/jedetr.h"
@@ -350,9 +351,14 @@ subroutine penorm(resu, modele)
         else
             infoma='-'
         endif
-!
-!       - VERIFICATION SI ON VA TRAITER DES ELEMENTS DE STRUCTURE
-        call dismlg('EXI_RDM', mesmai, ibid, exirdm, iret)
+
+!       -- calcul de ligrel :
+!       ---------------------
+        call jeveuo(mesmai, 'L', jma)
+        call exlim1(zi(jma), nbma, modele, 'V', ligrel)
+
+!       -- verification si on va traiter des elements de structure
+        call dismlg('EXI_RDM', ligrel, ibid, exirdm, iret)
         if (exirdm .eq. 'OUI') then
             call u2mess('F', 'UTILITAI8_60')
         endif
@@ -382,7 +388,6 @@ subroutine penorm(resu, modele)
             zk8(jlicm2+i-1)='X'//ki(1:len(ki))
             zk8(jlicm1+i-1)=zk8(jlicmp+i-1)
 15      continue
-        ligrel = modele//'.MODELE'
         call chsut1(chamtm, 'NEUT_R', ncmpm, zk8(jlicm1), zk8(jlicm2),&
                     'V', chamtm)
 !
@@ -611,6 +616,7 @@ subroutine penorm(resu, modele)
 !
         call detrsd('CHAMP', cham1)
         call detrsd('CHAMP', cham2)
+        call detrsd('LIGREL',ligrel)
         call jedetr(valr)
         call jedetr(vali)
         call jedetr(valk)

@@ -47,7 +47,7 @@ subroutine lgphmo(ma, ligrel, pheno, modeli)
 !
     integer :: ibid, nbgrel, nbma, nbtm, jtyma, jlitm, ima, tm
     integer :: te, jliel, igr, ico, jphmod, kmod, jlgrf
-    integer :: nbel
+    integer :: nbel, jnbno
     character(len=8) :: kbid
     character(len=19) :: ligr19, phen1
 ! ----------------------------------------------------------------------
@@ -124,6 +124,11 @@ subroutine lgphmo(ma, ligrel, pheno, modeli)
     zk8(jlgrf-1+1)=ma
 !
 !
+!     -- OBJET .NBNO :
+!     ----------------
+    call wkvect(ligr19//'.NBNO', 'V V I', 1, jnbno)
+    zi(jnbno-1+1)=0
+
 !     -- ON "ADAPTE" LA TAILLE DES GRELS DU LIGREL :
     call adalig(ligr19)
 !
