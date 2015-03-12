@@ -232,7 +232,7 @@ subroutine op0109()
                 call u2mess('F', 'SEISME_12')
             else
                 call wkvect('&&OP0109.AMORTI', 'V V R8', nbamor*nbamor, jamog)
-                call copmat(amogen, numgec, zr(jamog))
+                call copmat(amogen, zr(jamog))
                 jamor = jamog
             endif
         endif

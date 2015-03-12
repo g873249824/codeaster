@@ -1,6 +1,10 @@
-subroutine copmat(matr, numddl, mat)
+subroutine copmat(mat_in, mat_out)
+    implicit none
+#include "jeveux.h"
+!
+!-----------------------------------------------------------------------
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -15,112 +19,105 @@ subroutine copmat(matr, numddl, mat)
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 !    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 ! ======================================================================
-    implicit none
-!
-!***********************************************************************
-! 15/03/91    G.JACQUART AMV/P61 47 65 49 41
-!***********************************************************************
-!
-!     FONCTION : COPIE MATR_ASSE DANS MATRICE PLEINE
-!
 !-----------------------------------------------------------------------
-!    MATR   /I/ : NOM DE LA MATRICE
-!    NUMDDL /I/ : NUMEROTATION SI MATRICE STOCKEE LIGNE DE CIEL
-!    MAT   /O/ : VECTEUR CONTENANT LA MATONALE DE MATR
-!-----------------------------------------------------------------------
+!                              Function
+!     _______________________________________________________________________
+!    | Extract, inside a temporary work vector, all terms of a given matrix  |
+!    |_______________________________________________________________________|
 !
-!
-!
-!
-!
-#include "jeveux.h"
+! person_in_charge: hassan.berro at edf.fr
 !
 #include "asterfort/assert.h"
+#include "asterfort/jelira.h"
 #include "asterfort/jedema.h"
-#include "asterfort/jelibe.h"
 #include "asterfort/jemarq.h"
 #include "asterfort/jeveuo.h"
 #include "asterfort/jexnum.h"
+#include "asterfort/matini.h"
 #include "asterfort/u2mesk.h"
-    character(len=8) :: kbid, matr
-    character(len=14) :: numddl
-    real(kind=8) :: mat(*), pij
+
+    character(len=8), intent(in) :: mat_in
+    real(kind=8), intent(out) :: mat_out(*)
+
+
     logical :: lsym
+    integer :: neq, jsmhc, nbnonz, nvale, jvale
+    integer :: nlong, jval2, kterm, jcoll, iligl
+    integer :: i, j, col, ibid
+
+    character(len=1)  :: ktyp
+    character(len=14) :: nonu
+    character(len=8) :: k8bid
+    character(len=19) :: mat19
+
+    integer :: jrefa
+    integer  :: jsmde
+    integer :: jsmdi 
 !
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-    integer :: i, ib, iscdi, ischc, j, jblo2, jbloc
-    integer :: jrefa, jscbl, jscde, n1bloc, n2bloc, nbbloc, neq
-!
-    real(kind=8) :: pji
-!-----------------------------------------------------------------------
-    data kbid /'        '/
-!-----------------------------------------------------------------------
+#define m_out(i,j) mat_out((i-1)*neq+j)
 !
     call jemarq()
-    if (numddl(1:8) .eq. kbid) then
-!
-        call u2mesk('F', 'UTILITAI_43', 1, matr)
-!
+
+    mat19 = mat_in
+
+    call jeveuo(mat19//'.REFA', 'L', jrefa)
+
+    nonu= zk24(jrefa-1+2)(1:14)
+
+    call jeveuo(nonu//'.SMOS.SMDE', 'L', jsmde)
+    neq = zi(jsmde-1+1)
+
+    call matini(neq, neq, 0.d0, mat_out)
+
+    call jeveuo(nonu//'.SMOS.SMDI', 'L', jsmdi)
+    call jeveuo(nonu//'.SMOS.SMHC', 'L', jsmhc)
+
+    nbnonz = zi(jsmdi-1+neq)
+
+    call jelira(mat19//'.VALM', 'NMAXOC', nvale, k8bid)
+    if (nvale .eq. 1) then
+        lsym=.true.
+    else if (nvale.eq.2) then
+        lsym=.false.
     else
-        call jeveuo(numddl(1:8)//'      .SLCS.SCDE', 'L', jscde)
-        neq = zi(jscde-1+1)
-        nbbloc = zi(jscde-1+3)
-        call jelibe(numddl(1:8)//'      .SLCS.SCDE')
-!
-!
-        call jeveuo(numddl(1:8)//'      .SLCS.SCBL', 'L', jscbl)
-        call jeveuo(numddl(1:8)//'      .SLCS.SCDI', 'L', iscdi)
-        call jeveuo(numddl(1:8)//'      .SLCS.SCHC', 'L', ischc)
-        call jeveuo(matr//'           .REFA', 'L', jrefa)
-        lsym=zk24(jrefa-1+9) .eq. 'MS'
-        if (lsym) then
-            do 20 ib = 1, nbbloc
-                call jeveuo(jexnum(matr//'           .VALM', ib), 'L', jbloc)
-                n1bloc=zi(jscbl+ib-1)+1
-                n2bloc=zi(jscbl+ib)
-!
-!           BOUCLE SUR LES COLONNES DU BLOC
-!
-                do 30 j = n1bloc, n2bloc
-!
-!           BOUCLE SUR LES LIGNES DANS LA COLONNE
-!
-                    do 30 i = (j-zi(ischc+j-1)+1), j
-                        pij = zr(jbloc+zi(iscdi+j-1)+i-j-1)
-                        mat(i+ (j-1)*neq) = pij
-                        mat(j+ (i-1)*neq) = pij
-30                  continue
-                call jelibe(jexnum(matr//'           .VALM', ib))
-20          continue
-        else
-            call assert(nbbloc.eq.1)
-!          TRIANGULAIRE SUPERIEURE
-            call jeveuo(jexnum(matr//'           .VALM', 1), 'L', jbloc)
-!          TRIANGULAIRE INFERIEURE
-            call jeveuo(jexnum(matr//'           .VALM', 2), 'L', jblo2)
-!            N1BLOC=ZI(JSCBL+IB-1)+1
-!            N2BLOC=ZI(JSCBL+IB)
-!
-!           BOUCLE SUR LES COLONNES DU BLOC
-!
-            do 50 j = 1, neq
-!
-!           BOUCLE SUR LES LIGNES DANS LA COLONNE
-!
-                do 50 i = (j-zi(ischc+j-1)+1), j
-                    pij = zr(jbloc+zi(iscdi+j-1)+i-j-1)
-                    pji = zr(jblo2+zi(iscdi+j-1)+i-j-1)
-                    mat(i+ (j-1)*neq) = pij
-                    mat(j+ (i-1)*neq) = pji
-50              continue
-            call jelibe(jexnum(matr//'           .VALM', 1))
-            call jelibe(jexnum(matr//'           .VALM', 2))
-        endif
-        call jelibe(numddl(1:8)//'      .SLCS.SCBL')
-        call jelibe(numddl(1:8)//'      .SLCS.SCDI')
-!
+        call assert(.false.)
     endif
-!
+
+    call jeveuo(jexnum(mat19//'.VALM', 1), 'L', jvale)
+    call jelira(jexnum(mat19//'.VALM', 1), 'LONMAX', nlong, k8bid)
+    call assert(nlong.eq.nbnonz)
+    if (.not.lsym) then
+        call jeveuo(jexnum(mat19//'.VALM', 2), 'L', jval2)
+        call jelira(jexnum(mat19//'.VALM', 2), 'LONMAX', nlong, k8bid)
+        call assert(nlong.eq.nbnonz)
+    endif
+
+    call jelira(jexnum(mat19//'.VALM', 1), 'TYPE', ibid, cval=ktyp)
+    call assert(ktyp.eq.'R')
+
+    jcoll=1
+    do  kterm = 1, nbnonz
+
+        if (zi(jsmdi-1+jcoll) .lt. kterm) jcoll = jcoll+1
+
+        iligl = zi4(jsmhc-1+kterm)
+
+        i = iligl
+        j = jcoll
+
+        if ((.not.lsym) .and. (i.ge.j)) then
+            col = j
+            j = i
+            i = col
+        endif
+
+        m_out(i,j) = zr(jvale-1+kterm)
+        m_out(j,i) = zr(jvale-1+kterm)
+
+        if ((.not.lsym) .and. (i.ne.j)) then
+            m_out(j,i) = zr(jval2-1+kterm)
+        endif
+      end do
+
     call jedema()
 end subroutine
