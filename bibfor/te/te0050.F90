@@ -52,7 +52,7 @@ subroutine te0050(option, nomte)
 !
     integer :: icodre(nbres)
     character(len=8) :: nomres(nbres), nompar(nbpar)
-    character(len=10) :: phenom
+    character(len=10) :: phenom, valk(2)
 !
 !
     call elref4(' ', 'RIGI', ndim, nno, nnos,&
@@ -105,9 +105,11 @@ subroutine te0050(option, nomte)
     call jevech('PMATERC', 'L', imate)
     mater=zi(imate)
     call rccoma(mater, 'ELAS', 0, phenom, icodre(1))
-    if(.not.(phenom .eq. 'ELAS' .or. phenom .eq. 'ELAS_ORTH'&
-        .or. phenom .eq. 'ELAS_COQMU')) then
-        call u2mesk('F', 'MODELISA10_18', 1, phenom)
+    if(.not.(phenom .eq. 'ELAS'      .or. phenom .eq. 'ELAS_COQMU'&
+        )) then
+        valk(1) = option
+        valk(2) = phenom
+        call u2mesk('F', 'MODELISA10_18', 1, valk)
     endif
 !
     if (ins .eq. 0) then

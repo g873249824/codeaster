@@ -101,7 +101,7 @@ La valeur du mot clé DEFORMATION='%(k1)s' et incompatible avec la modélisation
 """),
 
 18 : _(u"""
-On ne sait pas calculer l'option AMOR_MECA pour une élasticité de type %(k1)s
+On ne sait pas calculer l'option %(k1)s pour une élasticité de type %(k2)s.
 """),
 
 }
