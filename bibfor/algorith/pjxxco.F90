@@ -19,19 +19,19 @@ subroutine pjxxco(typcal, method, lcorre, isole, resuin,&
 !   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 ! ======================================================================
 !
-! COMMANDE:  PROJ_CHAMP
-! BUT : ROUTINE "CHAPEAU" CONCERNANT LA SD LCORRESP_2_MAILLA
+! commande:  PROJ_CHAMP
+! but : routine "chapeau" concernant la sd lcorresp_2_mailla
 !
-!  ON REGARDE LES TYPES DE CHAMPS A PROJETER
-!    ON EMET DES MESSAGES D'ALARME SI LA METHODE NE PEUT LES PROJETER
-!    (EX. : 'COLLOCATION' NE SAIT PAS TRAITER LES CHAM_ELEM ELGA)
+!  on regarde les types de champs a projeter
+!    on emet des messages d'alarme si la methode ne peut les projeter
+!    (ex. : 'collocation' ne sait pas traiter les cham_elem elga)
 !
-!  SI TOUT EST COHERENT, ON APPELLE :
-!    PJEFCO VIA LE 1ER ARGT DE LA SD LCORRESP_2_MAILLA ('COLLOCATION')
-!    PJELCO VIA LE 2ND ARGT DE LA SD LCORRESP_2_MAILLA ('ECLA_PG')
+!  si tout est coherent, on appelle :
+!    pjefco via le 1er argt de la sd lcorresp_2_mailla ('collocation')
+!    pjelco via le 2nd argt de la sd lcorresp_2_mailla ('ecla_pg')
 !
-!  LE CAS DE LA METHODE 'NUAGE_DEG' EST PLUS PARTICULIER :
-!    ON FAIT DONC UN TEST A PART
+!  le cas de la methode 'nuage_deg' est plus particulier :
+!    on fait donc un test a part
 !
     implicit   none
 !
@@ -67,7 +67,7 @@ subroutine pjxxco(typcal, method, lcorre, isole, resuin,&
 ! 0.3. ==> VARIABLES LOCALES
 !
 !
-    logical :: lnoeu, lelno, lelem, lelga
+    logical :: lnoeu, lelno, lelem, lelga, proj1
 !
 !
 ! DEB ------------------------------------------------------------------
@@ -142,20 +142,26 @@ subroutine pjxxco(typcal, method, lcorre, isole, resuin,&
             endif
 !
 !         -- ON UTILISE LCORRE(1) OU LCORRE(2) SUIVANT LE TYPE DE CHAMP
-!
+            proj1=.false.
             if ((lnoeu) .or. (lelno) .or. (lelem)) then
-!
-                if (method .eq. 'SOUS_POINT') then
+                if (method(1:10).eq.'SOUS_POINT') then
                     call pjspco(moa1, moa2, lcorre(1), 'V', noca)
                 else
                     call pjefco(moa1, moa2, lcorre(1), 'V')
                 endif
+                proj1=.true.
             endif
 !
-!
-            if (lelga .and. isole) then
-                if ((method.eq.'ECLA_PG') .or. (method.eq.'AUTO')) then
-                    call pjelco(moa1, moa2, cham1, lcorre(2), 'V')
+            if (lelga) then
+                if (isole) then
+                    if ((method.eq.'ECLA_PG') .or. (method.eq.'AUTO')) then
+                        call pjelco(moa1, moa2, cham1, lcorre(2), 'V')
+                    else
+                        valk(1)=method
+                        call u2mesk('F','CALCULEL5_62',1,valk)
+                    endif
+                else
+                    if (.not.proj1)  call u2mess('F','CALCULEL5_61')
                 endif
             endif
         endif

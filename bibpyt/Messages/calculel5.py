@@ -273,6 +273,19 @@ Risques et conseils :
  Veuillez plutôt utiliser un chargement de type 'force interne'.
 """),
 
+61 : _(u"""
+Erreur utilisateur dans la commande PROJ_CHAMP :
+  La structure de données résultat à projeter ne contient que des champs 'ELGA'.
+  La méthode de projection adaptée à ces champs est la méthode 'ECLA_PG' mais
+  elle ne fonctionne qu'avec un champ isolé (mot clé CHAM_GD).
+"""),
+
+62 : _(u"""
+Erreur utilisateur dans la commande PROJ_CHAMP :
+  On cherche à projeter un champ par éléments 'ELGA' isolé (mot clé CHAM_GD).
+  La méthode de projection doit être 'ECLA_PG' et non pas %(k1)s
+"""),
+
 65 : _(u"""
  composante non définie dans  la grandeur.  composante:  %(k1)s
 """),
