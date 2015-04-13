@@ -218,6 +218,10 @@ subroutine rcstoc(nommat, nomrc, nbobj, valr, valc,&
         if (zk8(jtypo+i-1)(1:3) .eq. 'CO ') then
             call getvid(nomrc, zk16(jnomo+i-1), 1, iarg, 1,&
                         valch, n)
+            call gettco(valch, typeco)
+            if (typeco == ' ') then
+                call u2mesk('F', 'FONCT0_71', 1, zk16(jnomo+i-1))
+            endif
             if (n .eq. 1) then
                 nbk = nbk + 1
                 if (zk16(jnomo+i-1) .eq. 'PROF_RHO_F_INT') then
