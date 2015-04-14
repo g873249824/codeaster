@@ -87,7 +87,7 @@ subroutine hmgazp(yachai, option, meca, thmc, ther,&
     real(kind=8) :: rbid27, rbid28, rbid29, rbid32
     real(kind=8) :: rbid33, rbid34, rbid35, rbid36, rbid37, rbid38
     real(kind=8) :: rbid39, rbid40, rbid41, rbid42, rbid43, rbid44
-    real(kind=8) :: rbid45, rbid46, rbid47, rbid48, rbid49, rbid50, rbid51
+    real(kind=8) :: rbid45, rbid46, rbid47, rbid48, rbid49, rbid50
     real(kind=8) :: r3bid(6)
     real(kind=8) :: signe, dp2, cliq, coeps, rho12, alp21, rho21, rho21m
     real(kind=8) :: cp21, p2, satm, rho22, cp11, cp22, m11m
@@ -115,8 +115,7 @@ subroutine hmgazp(yachai, option, meca, thmc, ther,&
                 mamolg, cp21, rbid32, rbid33, rbid34,&
                 rbid35, rbid36, rbid37, rbid38, rbid39,&
                 rbid45, rbid46, rbid47, rbid48, rbid49,&
-                em, rbid50, r3bid, rbid51, rinstp,&
-                retcom)
+                em, rbid50, r3bid, rinstp, retcom)
 ! ======================================================================
 ! --- POUR EVITER DES PB AVEC OPTIMISEUR ON MET UNE VALEUR DANS CES ----
 ! --- VARIABES POUR QU ELLES AIENT UNE VALEUR MEME DANS LES CAS OU -----

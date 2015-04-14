@@ -145,7 +145,6 @@ subroutine comthm(option, perman, vf, ifa, valfac,&
     real(kind=8) :: lambs, dlambs, viscl, dviscl, lambt
     real(kind=8) :: dlambt, viscg, dviscg, mamolg
     real(kind=8) :: fickad, dfadt, kh, lambct, alpha, isot(6)
-    real(kind=8) :: dficks
     real(kind=8) :: deltat
     character(len=16) :: meca, thmc, ther, hydr
 ! ======================================================================
@@ -250,8 +249,7 @@ subroutine comthm(option, perman, vf, ifa, valfac,&
                 dfickg, lambp, dlambp, unsurk, alpha,&
                 lambs, dlambs, viscl, dviscl, mamolg,&
                 lambt, dlambt, viscg, dviscg, mamovg,&
-                fickad, dfadt, lambct, isot, dficks,&
-                instap)
+                fickad, dfadt, lambct, isot, instap)
 !
 !
 ! CONDUCTIVITES EN VF
@@ -278,7 +276,7 @@ subroutine comthm(option, perman, vf, ifa, valfac,&
                     permgz, dperms, dpermp, fick, dfickt,&
                     dfickg, fickad, dfadt, kh, unsurk,&
                     alpha, viscl, dviscl, mamolg, viscg,&
-                    dviscg, mamovg, isot, dficks, vf,&
+                    dviscg, mamovg, isot, vf,&
                     ifa, valfac, valcen)
         if (retcom .ne. 0) then
             goto 9000

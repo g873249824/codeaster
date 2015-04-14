@@ -106,7 +106,7 @@ subroutine hmliva(yachai, option, meca, ther, hydr,&
     real(kind=8) :: rbid39, rbid40, rbid41, rbid42, rbid43
     real(kind=8) :: rbid50, rbid51, rbid52, rbid53, rbid54, rbid55
     real(kind=8) :: rbid45, rbid46, rbid47, rbid48, rbid49, rbid56
-    real(kind=8) :: rbid57, rbid58
+    real(kind=8) :: rbid57
     real(kind=8) :: r3bid(6)
     real(kind=8) :: m11m, m12m, coeps, pinf, dp2, cp21, cp22, rho21
     real(kind=8) :: rho22, dpad, signe
@@ -132,8 +132,7 @@ subroutine hmliva(yachai, option, meca, ther, hydr,&
                 rbid30, rbid31, rbid32, rbid33, rbid34,&
                 rbid35, mamolv, cp12, rbid38, rbid39,&
                 rbid45, rbid46, rbid47, rbid48, rbid49,&
-                em, rbid57, r3bid, rbid58, rinstp,&
-                retcom)
+                em, rbid57, r3bid, rinstp, retcom)
 ! ======================================================================
 ! --- POUR EVITER DES PB AVEC OPTIMISEUR ON MET UNE VALEUR DANS CES ----
 ! --- VARIABES POUR QU ELLES AIENT UNE VALEUR MEME DANS LES CAS OU -----
@@ -212,8 +211,7 @@ subroutine hmliva(yachai, option, meca, ther, hydr,&
                 rbid30, rbid31, rbid32, rbid33, rbid34,&
                 rbid35, rbid54, rbid55, rbid38, rbid39,&
                 rbid45, rbid46, rbid47, rbid48, rbid49,&
-                rbid56, rbid57, r3bid, rbid58, rinstp,&
-                retcom)
+                rbid56, rbid57, r3bid, rinstp, retcom)
     if ((option.eq.'RAPH_MECA') .or. (option.eq.'FORC_NODA') .or.&
         (option(1:9).eq.'FULL_MECA')) then
 ! =====================================================================

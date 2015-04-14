@@ -91,7 +91,7 @@ subroutine hmlgat(yachai, option, meca, ther, hydr,&
     real(kind=8) :: rbid27, rbid28, rbid29, rbid30, rbid31, rbid32
     real(kind=8) :: rbid33, rbid34, rbid35, rbid36, rbid37, rbid38
     real(kind=8) :: rbid39, rbid45, rbid46, rbid47, rbid48, rbid49
-    real(kind=8) :: rbid50, rbid51, r3bid(6)
+    real(kind=8) :: rbid50, r3bid(6)
     real(kind=8) :: dp2, signe, dpad, coeps, cp21, m11m, rho22, alp12, cp12
     real(kind=8) :: cp22
 !
@@ -113,8 +113,7 @@ subroutine hmlgat(yachai, option, meca, ther, hydr,&
                 rbid30, rbid31, rbid32, rbid33, rbid34,&
                 rbid35, rbid36, rbid37, rbid38, rbid39,&
                 rbid45, rbid46, rbid47, rbid48, rbid49,&
-                em, rbid50, r3bid, rbid51, rinstp,&
-                retcom)
+                em, rbid50, r3bid, rinstp, retcom)
 !
 ! ======================================================================
 ! --- POUR EVITER DES PB AVEC OPTIMISEUR ON MET UNE VALEUR DANS CES ----

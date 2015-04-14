@@ -8,7 +8,7 @@ subroutine calcfh(option, perman, thmc, ndim, dimdef,&
                   krel2, dkr2s, dkr2p, fick, dfickt,&
                   dfickg, fickad, dfadt, kh, cliq,&
                   alpliq, viscl, dviscl, mamolg, viscg,&
-                  dviscg, mamolv, isot, dficks, vf,&
+                  dviscg, mamolv, isot, vf,&
                   ifa, valfac, valcen)
 !     ------------------------------------------------------------------
 ! ======================================================================
@@ -898,6 +898,8 @@ subroutine calcfh(option, perman, thmc, ndim, dimdef,&
 !==============================================
     if (vf) then
 !
+! Aujourd'hui dficks est mis a zero par défaut
+        dficks = 0.
         if (ifa .eq. 0) then
             valcen(densit ,rhoga)=rho12+rho21
             valcen(densit ,rhoga1)=dr12p1+dr21p1

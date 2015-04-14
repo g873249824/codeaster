@@ -24,7 +24,7 @@ interface
                       dfickg, lambp, dlambp, unsurk, alpha,&
                       lambs, dlambs, viscl, dviscl, mamolg,&
                       lambt, dlambt, viscg, dviscg, mamolv,&
-                      fickad, dfadt, lambct, isot, dficks,&
+                      fickad, dfadt, lambct, isot,&
                       instap)
         integer :: imate
         character(len=16) :: thmc
@@ -70,7 +70,6 @@ interface
         real(kind=8) :: dfadt
         real(kind=8) :: lambct
         real(kind=8) :: isot(6)
-        real(kind=8) :: dficks
         real(kind=8) :: instap
     end subroutine thmlec
 end interface

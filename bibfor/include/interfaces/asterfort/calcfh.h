@@ -26,7 +26,7 @@ interface
                       krel2, dkr2s, dkr2p, fick, dfickt,&
                       dfickg, fickad, dfadt, kh, cliq,&
                       alpliq, viscl, dviscl, mamolg, viscg,&
-                      dviscg, mamolv, isot, dficks, vf,&
+                      dviscg, mamolv, isot vf,&
                       ifa, valfac, valcen)
         integer :: dimcon
         integer :: dimdef
@@ -81,7 +81,6 @@ interface
         real(kind=8) :: dviscg
         real(kind=8) :: mamolv
         real(kind=8) :: isot(6)
-        real(kind=8) :: dficks
         logical :: vf
         integer :: ifa
         real(kind=8) :: valfac(6, 14, 6)

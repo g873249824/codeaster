@@ -70,7 +70,6 @@ subroutine coeihm(option, perman, resi, rigi, imate,&
     real(kind=8) :: lambp, dlambp, unsurk, alpha, lambs, dlambs, viscl, dfickg
     real(kind=8) :: dviscl, mamolg, lambt, dlambt, viscg, dviscg
     real(kind=8) :: mamovg, fickad, dfadt, lambct, isot(6)
-    real(kind=8) :: dficks
     real(kind=8) :: dsde(dimcon, dimdef)
     real(kind=8) :: tlint, ouvh, deltat, unsurn
     real(kind=8) :: valcen(14, 6)
@@ -258,8 +257,7 @@ subroutine coeihm(option, perman, resi, rigi, imate,&
                 dfickg, lambp, dlambp, unsurk, alpha,&
                 lambs, dlambs, viscl, dviscl, mamolg,&
                 lambt, dlambt, viscg, dviscg, mamovg,&
-                fickad, dfadt, lambct, isot, dficks,&
-                instap)
+                fickad, dfadt, lambct, isot, instap)
 !
 ! ======================================================================
 ! --- CALCUL DES FLUX HYDRAULIQUES -------------------------------------
@@ -281,7 +279,7 @@ subroutine coeihm(option, perman, resi, rigi, imate,&
                     permgz, dperms, dpermp, fick, dfickt,&
                     dfickg, fickad, dfadt, kh, unsurk,&
                     alpha, viscl, dviscl, mamolg, viscg,&
-                    dviscg, mamovg, isot, dficks, vf,&
+                    dviscg, mamovg, isot, vf,&
                     ifa, valfac, valcen)
         if (retcom .ne. 0) then
             goto 9000

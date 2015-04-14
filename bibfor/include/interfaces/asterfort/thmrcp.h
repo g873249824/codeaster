@@ -28,7 +28,7 @@ interface
                       mamolg, cpg, lambt, dlambt, viscg,&
                       dviscg, mamolv, cpvg, viscvg, dvisvg,&
                       fickad, dfadt, cpad, kh, pad,&
-                      em, lambct, isot, dficks, instap,&
+                      em, lambct, isot, instap,&
                       retcom)
         character(len=8) :: etape
         integer :: imate
@@ -93,7 +93,6 @@ interface
         real(kind=8) :: em
         real(kind=8) :: lambct
         real(kind=8) :: isot(6)
-        real(kind=8) :: dficks
         real(kind=8) :: instap
         integer :: retcom
     end subroutine thmrcp

@@ -48,7 +48,7 @@ subroutine kitdec(kpi, yachai, yamec, yate, yap1,&
     real(kind=8) :: rbid33, rbid34, rbid35, rbid36, rbid37, rbid38
     real(kind=8) :: rbid39, rbid40, rbid41, rbid42, rbid43, rbid44
     real(kind=8) :: rbid45, rbid46, rbid47, rbid48, rbid49, rbid50, rbid51
-    real(kind=8) :: rbid52, rbid53, r3bid(6)
+    real(kind=8) :: rbid53, r3bid(6)
 ! ======================================================================
 ! --- INITIALISATION DE VARIABLES --------------------------------------
 ! ======================================================================
@@ -64,7 +64,7 @@ subroutine kitdec(kpi, yachai, yamec, yate, yap1,&
                 rbid35, rbid36, rbid37, rbid38, rbid39,&
                 rbid40, rbid41, rbid42, rbid43, rbid44,&
                 rbid45, rbid46, rbid47, rbid48, rbid49,&
-                rbid50, rbid51, r3bid, rbid52, rinstp,&
+                rbid50, rbid51, r3bid, rinstp,&
                 retcom)
 ! ======================================================================
 ! --- CALCUL DES VARIABLES ---------------------------------------------

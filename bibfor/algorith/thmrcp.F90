@@ -10,7 +10,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
                   mamolg, cpg, lambt, dlambt, viscg,&
                   dviscg, mamolv, cpvg, viscvg, dvisvg,&
                   fickad, dfadt, cpad, kh, pad,&
-                  em, lambct, isot, dficks, instap,&
+                  em, lambct, isot, instap,&
                   retcom)
 ! =====================================================================
 ! ======================================================================
@@ -51,7 +51,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
     real(kind=8) :: t0, p10, p20, phi0, pvp0, t, p1, p2, phi, pvp
     real(kind=8) :: rgaz, rhod, cpd, biot, satm, satur, dsatur, pesa(3)
     real(kind=8) :: permfh, permli, dperml, permgz, dperms, dpermp
-    real(kind=8) :: fick, dfickt, dficks, dfickg, lambp, dlambp, rhol
+    real(kind=8) :: fick, dfickt, dfickg, lambp, dlambp, rhol
     real(kind=8) :: alpha, cpl, lambs, dlambs, viscl, dviscl, cpg, pad
     real(kind=8) :: lambt, dlambt, viscg, dviscg, mamolg, cpvg, viscvg
     real(kind=8) :: dvisvg, fickad, dfadt, endo, mamolv, p1m, cpad, kh, em
@@ -96,7 +96,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
     parameter   ( dim22  = 26 )
     parameter   ( dim23  =  4 )
     parameter   ( dim24  =  3 )
-    parameter   ( dim25  = 33 )
+    parameter   ( dim25  = 32 )
     parameter   ( dim26  =  4 )
     parameter   ( dim27  =  3 )
     parameter   ( dim28  =  1 )
@@ -111,7 +111,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
     parameter   ( dim37  =  2 )
     parameter   ( dim38  =  2 )
     parameter   ( dim39  =  2 )
-    parameter   ( dim40  = 38 )
+    parameter   ( dim40  = 37 )
     parameter   ( dim41  =  4 )
     parameter   ( dim42  =  3 )
     parameter   ( dim43  =  1 )
@@ -260,8 +260,8 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &              'PERM_END' ,&
      &              'LAMB_T'   ,&
      &              'D_LB_T',&
-     &              'LAMB_P'   ,&
-     &              'D_LB_P',&
+     &              'LAMB_PHI'   ,&
+     &              'D_LB_PHI',&
      &              'LAMB_CT',&
      &              'PERMIN_X','PERMIN_Y',&
      &              'PERMIN_Z','PERMINXY',&
@@ -281,8 +281,8 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &              'PERM_END' ,&
      &              'LAMB_T'   ,&
      &              'D_LB_T',&
-     &              'LAMB_P'   ,&
-     &              'D_LB_P',&
+     &              'LAMB_PHI'   ,&
+     &              'D_LB_PHI',&
      &              'LAMB_CT',&
      &              'PERMIN_X','PERMIN_Y',&
      &              'PERMIN_Z','PERMINXY',&
@@ -300,8 +300,8 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &              'PERM_IN'  ,&
      &              'PERM_END' ,&
      &              'LAMB_T'   ,&
-     &              'D_LB_T' ,  'LAMB_P' ,&
-     &              'D_LB_P' ,'LAMB_S'   ,&
+     &              'D_LB_T' ,  'LAMB_PHI' ,&
+     &              'D_LB_PHI' ,'LAMB_S'   ,&
      &              'D_LB_S' ,'LAMB_CT'  ,&
      &              'SATU_PRE' ,'D_SATU_P'  ,&
      &              'PERM_LIQ' , 'D_PERM_L' ,&
@@ -324,7 +324,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &              'PESA_Y'   ,'PESA_Z'   ,&
      &              'PERM_IN'  ,'PERM_END' ,&
      &              'LAMB_T'   ,'D_LB_T' ,&
-     &              'LAMB_P'   ,'D_LB_P' ,&
+     &              'LAMB_PHI'   ,'D_LB_PHI' ,&
      &              'LAMB_S'   ,'D_LB_S' ,&
      &              'LAMB_CT'   ,&
      &              'SATU_PRE' ,'D_SATU_P' ,&
@@ -336,8 +336,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &              'D_FV_PG',&
      &              'PERMIN_X','PERMIN_Y',&
      &              'PERMIN_Z','PERMINXY',&
-     &              'PERMINYZ','PERMINZX',&
-     &              'D_FV_S'/
+     &              'PERMINYZ','PERMINZX'/
     data ncra26 / 'UN_SUR_K' ,&
      &              'VISC'     ,&
      &              'D_VISC_T' ,&
@@ -355,7 +354,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &              'PESA_Z'   ,&
      &              'PERM_IN'  ,'PERM_END' ,&
      &              'LAMB_T'   ,'D_LB_T' ,&
-     &              'LAMB_P'   ,'D_LB_P' ,&
+     &              'LAMB_PHI'   ,'D_LB_PHI' ,&
      &              'LAMB_S'   ,'D_LB_S' ,&
      &              'LAMB_CT'  ,'SATU_PRE' ,&
      &              'D_SATU_P' ,'PERM_LIQ' ,&
@@ -384,8 +383,8 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &              'PERM_END' ,&
      &              'LAMB_T'   ,&
      &              'D_LB_T',&
-     &              'LAMB_P',&
-     &              'D_LB_P' ,&
+     &              'LAMB_PHI',&
+     &              'D_LB_PHI' ,&
      &              'LAMB_S'   ,&
      &              'D_LB_S' ,&
      &              'LAMB_CT'   ,&
@@ -427,7 +426,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &               'PESA_Y'    , 'PESA_Z'  ,&
      &               'PERM_IN'   ,'PERM_END' ,&
      &               'LAMB_T'    ,'D_LB_T' ,&
-     &               'LAMB_P'    ,'D_LB_P' ,&
+     &               'LAMB_PHI'    ,'D_LB_PHI' ,&
      &               'LAMB_S'    ,'D_LB_S' ,&
      &               'LAMB_CT'    ,&
      &               'SATU_PRE' ,'D_SATU_P' ,&
@@ -441,8 +440,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &              'FICKA_S'  ,'D_FA_T' ,&
      &              'PERMIN_X','PERMIN_Y',&
      &              'PERMIN_Z','PERMINXY',&
-     &              'PERMINYZ','PERMINZX',&
-     &              'D_FV_S'/
+     &              'PERMINYZ','PERMINZX'/
     data ncra41 / 'UN_SUR_K' ,&
      &              'VISC'     ,&
      &              'D_VISC_T' ,&
@@ -479,7 +477,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &                'PESA_Y'    , 'PESA_Z'  ,&
      &                'PERM_IN'   ,'PERM_END' ,&
      &                'LAMB_T'    ,'D_LB_T' ,&
-     &                'LAMB_P'    ,'D_LB_P' ,&
+     &                'LAMB_PHI'    ,'D_LB_PHI' ,&
      &                'LAMB_S'    ,'D_LB_S' ,&
      &                'LAMB_CT'    ,&
      &                'SATU_PRE' ,'D_SATU_P' ,&
@@ -492,8 +490,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
      &                'FICKA_PA' , 'FICKA_PL' ,&
      &                'FICKA_S'  ,'D_FA_T' ,&
      &                'PERMIN_X','PERMIN_Y','PERMIN_Z','PERMINXY',&
-     &                'PERMINYZ','PERMINZX',&
-     &                'D_FV_S'/
+     &                'PERMINYZ','PERMINZX'/
     data crad41 / 'UN_SUR_K' ,&
      &              'VISC'     ,&
      &              'D_VISC_T' ,&
@@ -1636,13 +1633,6 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             valpar(2) = p2
             valpar(3) = val25(14)
 !
-!           DERIVEE PAR RAPPORT A S MISE 0 0 PAR DEFAUT
-!
-            val25(30) = 0.d0
-            call rcvala(imate, ' ', 'THM_DIFFU', 1, nompar(3),&
-                        valpar( 3), 1, ncra25(33), val25(33), icodre,&
-                        0)
-!
 ! INITIALISATION DES AUTRES COMPOSANTES FICKIENNES
 !
             val25(22) = 1.0d0
@@ -1697,7 +1687,6 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             fick = val25(21)*val25(22)*val25(23)*val25(24)
             dfickt = val25(25)*val25(22)*val25(23)*val25(24)
             dfickg = val25(26)*val25(21)*val25(22)*val25(24)
-            dficks = val25(21)*val25(22)*val25(23)*val25(33)
             unsurk = val26( 1)
             viscl = val26( 2)
             dviscl = val26( 3)
@@ -1859,12 +1848,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
 !
 !
-!           DERIVEE PAR RAPPORT A S MISE 0 0 PAR DEFAUT
-!
-            val40(35) = 0.d0
-            call rcvala(imate, ' ', 'THM_DIFFU', 1, nompar(3),&
-                        valpar( 3), 1, ncra40(38), val40(38), icodre,&
-                        0)
+
             call rcvala(imate, ' ', 'THM_DIFFU', 3, nompar,&
                         valpar, 3, ncra40(22), val40(22), icodre,&
                         0)
@@ -1938,7 +1922,6 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             fick = val40(21)*val40(22)*val40(23)*val40(24)
             dfickt= val40(25) * val40(22)*val40(23)*val40(24)
             dfickg = val40(26)* val40(21)*val40(22)*val40(24)
-            dficks = val40(21)*val40(22)*val40(23)*val40(38)
             fickad = val40(27)*val40(28)*val40(29)*val40(30)
             dfadt= val40(31)*val40(28)*val40(29)*val40(30)
 !
@@ -2148,7 +2131,6 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             fick = val40(21)*val40(22)*val40(23)*val40(24)
             dfickt= val40(25) * val40(22)*val40(23)*val40(24)
             dfickg = val40(26)* val40(21)*val40(22)*val40(24)
-            dficks = val40(21)*val40(22)*val40(23)*val40(38)
             fickad = val40(27)*val40(28)*val40(29)*val40(30)
             dfadt= val40(31)*val40(28)*val40(29)*val40(30)
 !
