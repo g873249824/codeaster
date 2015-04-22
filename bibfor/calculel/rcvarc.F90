@@ -101,15 +101,11 @@ subroutine rcvarc(arret, novrc, poum, fami, kpg,&
 !   -----------------------------------------------------------
     k=indik8(zk8(jfpgl),fami,1,nfpg)
     if (k .eq. 0) then
-        if (arret .eq. ' ') then
-            goto 9998
-        else
-            valk(1)=novrc
-            valk(2)=fami
-            valk(3)=option
-            valk(4)=nomte
-            call u2mesk('F', 'CALCULEL6_58', 4, valk)
-        endif
+        valk(1)=novrc
+        valk(2)=fami
+        valk(3)=option
+        valk(4)=nomte
+        call u2mesk('F', 'CALCULEL6_58', 4, valk)
     endif
     kpgmat=decala(k)+kpg
 
