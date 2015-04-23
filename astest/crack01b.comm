@@ -2,19 +2,19 @@
 #            CONFIGURATION MANAGEMENT OF EDF VERSION
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
-# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY  
-# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY  
-# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR     
-# (AT YOUR OPTION) ANY LATER VERSION.                                                    
-#                                                                       
-# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT   
-# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF            
-# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU      
-# GENERAL PUBLIC LICENSE FOR MORE DETAILS.                              
-#                                                                       
-# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE     
-# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,         
-#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.        
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 # ======================================================================
 # MODALISATION B : METHODE X-FEM (FISSURE NON MAILLEE) EN AXI-SYMETRIQUE
 
@@ -163,38 +163,77 @@ dict = NB_FOND.EXTR_TABLE().values()
 nb_fond = dict['NOMBRE'][0]
 DETRUIRE(CONCEPT=_F(NOM=NB_FOND),INFO=1)
 
-G1 = [None]*nb_fond
-G2 = [None]*nb_fond
+GK1 = [None]*nb_fond
+GK2 = [None]*nb_fond
+G1  = [None]*nb_fond
+G2  = [None]*nb_fond
 
 for i in range(nb_fond) :
-   
+
+#  ---
+#  option CALC_K_G
+#  ---
+
+   GK1[i]=CALC_G(THETA=_F(FISSURE=fiss_1,
+                          NUME_FOND=i+1,
+                          R_INF=2*h,
+                          R_SUP=5*h,),
+                 RESULTAT=RESU,
+                 OPTION='CALC_K_G')
+
+   IMPR_TABLE(TABLE=GK1[i])
+
+#  calcul sans R_INF et R_SUP
+   GK2[i]=CALC_G(THETA=_F(FISSURE=fiss_1,
+                         NUME_FOND=i+1,),
+                 RESULTAT=RESU,
+                 OPTION='CALC_K_G')
+
+#  ---
+#  option CALC_G
+#  ---
+
    G1[i]=CALC_G(THETA=_F(FISSURE=fiss_1,
                          NUME_FOND=i+1,
                          R_INF=2*h,
                          R_SUP=5*h,),
-                RESULTAT=RESU,
-                OPTION='CALC_K_G')
+                RESULTAT=RESU,)
 
-   IMPR_TABLE(TABLE=G1[i])
+   IMPR_TABLE(TABLE=GK1[i])
 
 #  calcul sans R_INF et R_SUP
    G2[i]=CALC_G(THETA=_F(FISSURE=fiss_1,
-                         NUME_FOND=i+1,),
-                RESULTAT=RESU,
-                OPTION='CALC_K_G')
+                        NUME_FOND=i+1,),
+                RESULTAT=RESU,)
 
 #----------------------------------------------------------------------
-#              TEST 
+#              TEST
 #----------------------------------------------------------------------
 
 # VALEUR DE REFERENCE MILIEU INFINI :
-G_REF=11.58648
+G_LOC=11.58648
 K1_REF=1.595769E6
+# POUR UN RADIAN
+G_REF=23.17296
+ 
+# pour G obtenu avec l'operateur CALC_G, la valeur de non regression 
+# doit etre identique (a la multiplication pres par la longueur "ray" de 
+# la fissure) entre les options CALC_G et CALC_K_G
+vale_calc_g1 = 11.246952124893
+vale_calc_g2 = 11.253590078761
 
 TEST_TABLE(REFERENCE='ANALYTIQUE',
            PRECISION=0.029999999999999999,
-           VALE_CALC=11.246952124893,
-           VALE_REFE=11.58648,
+           VALE_CALC=vale_calc_g1,
+           VALE_REFE=G_LOC,
+           NOM_PARA='G',
+           TABLE=GK1_0,)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           # VALE_CALC=ray*vale_calc_g1,     === 2. * vale_calc_g1
+           VALE_CALC= 22.493844710548,   #  === 1.9999947 * vale_calc_g1
+           VALE_REFE=G_REF,
            NOM_PARA='G',
            TABLE=G1_0,)
 
@@ -203,13 +242,21 @@ TEST_TABLE(REFERENCE='ANALYTIQUE',
            VALE_CALC=1.637343866876E+06,
            VALE_REFE=1.595769E6,
            NOM_PARA='K1',
-           TABLE=G1_0,)
+           TABLE=GK1_0,)
 
 #  sans R_INF et R_SUP
 TEST_TABLE(REFERENCE='ANALYTIQUE',
            PRECISION=0.029999999999999999,
-           VALE_CALC=11.253590078761,
-           VALE_REFE=11.58648,
+           VALE_CALC=vale_calc_g2,
+           VALE_REFE=G_LOC,
+           NOM_PARA='G',
+           TABLE=GK2_0,)
+
+TEST_TABLE(REFERENCE='ANALYTIQUE',
+           PRECISION=0.029999999999999999,
+           # VALE_CALC=ray*vale_calc_g2, === 2. * vale_calc_g2
+           VALE_CALC=22.507137397167, #  === 1.9999962 * vale_calc_g2
+           VALE_REFE=G_REF,
            NOM_PARA='G',
            TABLE=G2_0,)
 
@@ -218,5 +265,5 @@ TEST_TABLE(REFERENCE='ANALYTIQUE',
            VALE_CALC=1.6164043187414E+06,
            VALE_REFE=1.595769E6,
            NOM_PARA='K1',
-           TABLE=G2_0,)
+           TABLE=GK2_0,)
 FIN()
