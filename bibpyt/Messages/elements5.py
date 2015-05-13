@@ -239,4 +239,8 @@ OPTION MASS_INER : la masse volumique RHO doit être non nulle
   multiple de 3 (si le champ est complet).
 """),
 
+55 : _(u"""
+  On ne peut pas utiliser le modèle 3D_SI avec un comportement élastique de type %(k1)s.
+  """),
+
 }
