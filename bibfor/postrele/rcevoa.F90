@@ -1,7 +1,7 @@
 subroutine rcevoa(typtab, nommat)
 !
-! COPYRIGHT (C) 1991 - 2013  EDF R&D                WWW.CODE-ASTER.ORG
-!
+! ======================================================================
+! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -14,7 +14,9 @@ subroutine rcevoa(typtab, nommat)
 !
 ! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
-! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+!    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+! ======================================================================
+! person_in_charge: the-hiep.chau at edf.fr
 !
     implicit      none
 #include "jeveux.h"
@@ -65,8 +67,8 @@ subroutine rcevoa(typtab, nommat)
     complex(kind=8) :: cbid
     logical :: exist, trouve
     integer :: icodre(4)
-    character(len=8) :: k8b, nomres, crit(2), nompar, nomval(4)
-    character(len=16) :: motclf, valek(4), table, concep, nomcmd
+    character(len=8) :: k8b, nomres, crit(2), nompar, nomval(4), table
+    character(len=16) :: motclf, valek(4), concep, nomcmd
     character(len=19) :: nomf
     character(len=24) :: instan, ktheta, abscur, valk(7)
 !
@@ -153,7 +155,7 @@ subroutine rcevoa(typtab, nommat)
 !
 ! --- VERIFICATION DE LA DISTANCE D
 !
-    do 10 it = 1, nbteta-1
+    do  it = 1, nbteta-1
         theta = (zr(jteta+it) - zr(jteta+it-1)) * r8dgrd()
         d = zr(jabsc+it) - zr(jabsc+it-1)
         rcal = d / (2*sin(0.5d0*theta))
@@ -165,7 +167,7 @@ subroutine rcevoa(typtab, nommat)
             call u2mesg('A', 'POSTRCCM_33', 1, table, 0,&
                         0, 2, vale)
         endif
-10  end do
+    end do
 !
 ! --- DETERMINATION DU NOMBRE DE SITUATION
 !        = NOMBRE D'INSTANTS DES TRANSITOIRES
@@ -173,18 +175,18 @@ subroutine rcevoa(typtab, nommat)
     call jecrec('&&RCEVOA.SITUATION', 'V V R', 'NU', 'DISPERSE', 'VARIABLE',&
                 nbtran)
     nbitot = 0
-    do 20 ioc = 1, nbtran
+    do ioc = 1, nbtran
 !
         call getvid(motclf, 'TABL_SIGM_THETA', ioc, iarg, 1,&
                     table, n1)
         valk(1) = table
-        do 22 i1 = 1, 4
+        do i1 = 1, 4
             call tbexip(table, valek(i1), exist, k8b)
             if (.not. exist) then
                 valk(2) = valek(i1)
                 call u2mesk('F', 'POSTRCCM_1', 2, valk)
             endif
-22      continue
+        end do
 !
         call getvr8(motclf, 'INST', ioc, iarg, 0,&
                     r8b, n1)
@@ -211,13 +213,13 @@ subroutine rcevoa(typtab, nommat)
             call jeecra(jexnum('&&RCEVOA.SITUATION', ioc), 'LONMAX', nbins0, ' ')
             call jeecra(jexnum('&&RCEVOA.SITUATION', ioc), 'LONUTI', nbins0, ' ')
             call jeveuo(jexnum('&&RCEVOA.SITUATION', ioc), 'E', kinst)
-            do 24 i = 1, nbins0
+            do i = 1, nbins0
                 zr(kinst-1+i) = zr(jinst-1+i)
-24          continue
+            end do
             call jedetr(instan)
         endif
         nbitot = nbitot + nbins0
-20  end do
+    end do
 !
 ! --- CREATION DES OBJETS DE TRAVAIL
 !
@@ -226,7 +228,7 @@ subroutine rcevoa(typtab, nommat)
     call wkvect('&&RCEVOA.NBCY_T', 'V V I', nbitot, jnbcy)
 !
     ind = 0
-    do 30 ioc = 1, nbtran
+    do ioc = 1, nbtran
 !
         call jeveuo(jexnum('&&RCEVOA.SITUATION', ioc), 'L', kinst)
         call jelira(jexnum('&&RCEVOA.SITUATION', ioc), 'LONUTI', nbins0, k8b)
@@ -237,13 +239,13 @@ subroutine rcevoa(typtab, nommat)
         call getvid(motclf, 'TABL_SIGM_THETA', ioc, iarg, 1,&
                     table, n1)
 !
-        do 32 i = 1, nbins0
+        do i = 1, nbins0
             ind = ind + 1
             zk8(jtabl-1+ind) = table
             zr(jinst-1+ind) = zr(kinst-1+i)
             zi(jnbcy-1+ind) = nbcycl
-32      continue
-30  end do
+        end do
+    end do
 !
 ! --- CALCUL DU FACTEUR D'AMORCAGE
 !
@@ -252,14 +254,14 @@ subroutine rcevoa(typtab, nommat)
     call wkvect('&&RCEVFU.NB_CYCL', 'V V I', nbitot, jnocl)
     call wkvect('&&RCEVFU.NB_CYCK', 'V V I', nbitot, jnock)
 !
-    do 200 it = 1, nbteta
+    do it = 1, nbteta
         vale(1) = zr(jteta+it-1)
         if (niv .eq. 2) then
             write(ifm,*) '   '
             write(ifm,*) '--->> ANGLE: ', zr(jteta+it-1)
         endif
 !
-        do 210 i1 = 1, nbitot
+        do i1 = 1, nbitot
 !
             table = zk8(jtabl-1+i1)
             vale(2) = zr(jinst-1+i1)
@@ -278,9 +280,12 @@ subroutine rcevoa(typtab, nommat)
                 call u2mesg('F', 'POSTRCCM_2', 4, valk, 0,&
                             0, 2, vale)
             endif
-            sitt1 = abs(sitt1)
 !
-            do 220 i2 = i1+1, nbitot
+!  CORRECTION DE issue [23782] SUPPRESSION DES VALEURS ABOLUES sitt1 = abs(sitt1)
+!
+
+!
+            do i2 = i1+1, nbitot
 !
                 table = zk8(jtabl-1+i2)
                 vale(2) = zr(jinst-1+i2)
@@ -297,25 +302,38 @@ subroutine rcevoa(typtab, nommat)
                     call u2mesg('F', 'POSTRCCM_2', 4, valk, 0,&
                                 0, 2, vale)
                 endif
-                sitt2 = abs(sitt2)
+!
+!  CORRECTION DE issue [23782]
+!  SUPPRESSION DES VALEURS ABOLUES sitt2 = abs(sitt2)
 !
                 zr(jfaij-1+nbitot*(i1-1)+i2) = 0.d0
-                if (max(sitt1,sitt2) .gt. r8prem()) then
+
+!CALCUL DU FACTEUR R
+!EVOLUTION fiche [21804]  R = 0. si min(sitt1, sitt2) < 0.
+!   on ne calcule R que si sitt1 et sitt2 sont positifs
+!  d ou on n a plus besoin de valeur absolue ( issue [23782])
+
+                if ((sitt1 .gt. r8prem()) .and. (sitt2 .gt. r8prem())) then
 ! ------------calcul du rapport de charge
-                    rij = min(sitt1,sitt2) / max(sitt1,sitt2)
-! ------------calcul de DELTASIGTT efficace
-                    sittef = abs(sitt1-sitt2) / ( 1.d0 - ( rij / ramorc ))
-! ------------calcul du facteur d'amorcage elementaire
-                    fam = ( sittef / aamorc ) ** ( -1.d0 / bamorc )
-                    zr(jfaij-1+nbitot*(i1-1)+i2) = fam
+                     rij = min(sitt1,sitt2) / max(sitt1,sitt2)
+               else
+                 rij = 0.
                 endif
-220          continue
-210      continue
+
+! ------------calcul de DELTASIGTT efficace
+
+                    sittef = abs(sitt1-sitt2)/ ( 1.d0 - ( rij / ramorc ))
+
+! ------------calcul du facteur d amorcage elementaire
+                    fam = ( sittef / aamorc ) ** ( -1.d0 / bamorc )
+                    zr(jfaij-1+nbitot*(i1-1)+i2) = fam                
+            end do
+        end do
 !
         fatot = 0.d0
 !
         ind = 0
-100      continue
+100     continue
         ind = ind + 1
         if (niv .eq. 2) then
             if (ind .eq. 1) then
@@ -324,11 +342,11 @@ subroutine rcevoa(typtab, nommat)
                 write(ifm,*) 'MATRICE FACTEURS D''AMORCAGE MODIFIEE'
             endif
             write(ifm,1010) ( zi(jnocl-1+l),l=1,nbitot )
-            do 700 k = 1, nbitot
+            do k = 1, nbitot
                 i1 = nbitot*(k-1)
                 write(ifm,1000) zi(jnock-1+k), (zr(jfaij-1+i1+l),l=1,&
                 nbitot)
-700          continue
+            end do
         endif
 !
         fam = 0.d0
@@ -375,14 +393,14 @@ subroutine rcevoa(typtab, nommat)
             zi(jnock-1+is1) = zi(jnock-1+is1) - nbcycl
             zi(jnocl-1+is1) = zi(jnocl-1+is1) - nbcycl
             zi(jnock-1+is2) = zi(jnock-1+is2) - nbcycl
-            do 40 i = 1, nbitot
+            do i = 1, nbitot
                 if (zi(jnock-1+is1) .eq. 0) then
                     zr(jfaij-1+nbitot*(is1-1)+i) = 0.d0
                 endif
                 if (zi(jnocl-1+is2) .eq. 0) then
                     zr(jfaij-1+nbitot*(i-1)+is2) = 0.d0
                 endif
-40          continue
+            end do
 !
             goto 100
 !
@@ -400,7 +418,7 @@ subroutine rcevoa(typtab, nommat)
                         cbid, k8b, 0)
         endif
 !
-200  end do
+    end do
 !
     1000 format(1p,i10,'|',40(e10.3,'|'))
     1010 format(1p,' NB_OCCUR ','|',40(i10,'|'))
