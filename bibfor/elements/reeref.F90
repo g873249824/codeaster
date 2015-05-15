@@ -116,7 +116,7 @@ subroutine reeref(elrefp, axi, nnop, nnos, geom,&
 ! --- RECHERCHE DE XE PAR NEWTON-RAPHSON
 !
     call reereg('S', elrefp, nnop, geom, xg,&
-                ndim, xe, iret)
+                ndim, xe, 1.d-8, iret)
 !
 ! --- VALEURS DES FONCTIONS DE FORME EN XE: FF
 !

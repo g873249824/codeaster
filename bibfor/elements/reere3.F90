@@ -103,7 +103,7 @@ subroutine reere3(elrefp, nnop, igeom, xg, depl,&
 ! --- RECHERCHE DE XE PAR NEWTON-RAPHSON
 !
     call reereg('S', elrefp, nnop, zr(igeom), xg,&
-                ndim, xe, iret)
+                ndim, xe, 1.d-8, iret)
 !
 ! --- VALEURS DES FONCTIONS DE FORME EN XE: FF
 !

@@ -142,7 +142,7 @@ subroutine xjacff(elrefp, elrefc, elc, ndim, fpg,&
 !
 ! --- COORDONNEES DE REFERENCE 2D DU POINT DE GAUSS
     call reereg('S', elc, nnof, coor2d, xg,&
-                ndimf, ksig, ibid)
+                ndimf, ksig, 1.d-8, ibid)
 !
 ! --- CONSTRUCTION DE LA BASE AU POINT DE GAUSS
 !     CALCUL DES FF DE LA FACETTE EN CE POINT DE GAUSS

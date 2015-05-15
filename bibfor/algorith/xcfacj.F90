@@ -131,7 +131,7 @@ subroutine xcfacj(ptint, ptmax, ipt, ainter, lsn,&
             mp(1)=0.d0
             mp(2)=0.d0
             call reereg('C', alias, nnof, coorma, mp,&
-                        2, epsi, iret)
+                        2, epsi, 1.d-8, iret)
             if (iret .eq. 1) goto 110
 !         ON NE PREND PAS EN COMPTE LES POINTS QUI SORTENT DU DOMAINE
             if (alias .eq. 'QU4') then

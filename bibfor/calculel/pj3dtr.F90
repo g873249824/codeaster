@@ -304,7 +304,7 @@ subroutine pj3dtr(cortr3, corres, nutm3d, elrf3d, geom1,&
             enddo
         enddo
         call reereg('C', elrefa, nno, cooele, geom2(3*(ino2-1)+1),&
-                    ndim, xr2, iret)
+                    ndim, xr2, 1.d-8, iret)
 !
 !       -- on regarde si ino2 est exterieur a ima1 :
         call pjeflo(elrefa, ndim, iret, xr2, disprj)

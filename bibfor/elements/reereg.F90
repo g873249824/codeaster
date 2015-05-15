@@ -1,5 +1,5 @@
 subroutine reereg(stop, elrefp, nnop, coor, xg,&
-                  ndim, xe, iret)
+                  ndim, xe, toler, iret)
 !
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -34,6 +34,7 @@ subroutine reereg(stop, elrefp, nnop, coor, xg,&
     real(kind=8) :: coor(ndim*nnop)
     real(kind=8) :: xg(ndim)
     real(kind=8) :: xe(ndim)
+    real(kind=8), intent(in) :: toler
     integer :: iret
 !
 ! ----------------------------------------------------------------------
@@ -58,8 +59,7 @@ subroutine reereg(stop, elrefp, nnop, coor, xg,&
 ! ----------------------------------------------------------------------
 !
     integer :: nbnomx, itermx
-    real(kind=8) :: toler
-    parameter   (nbnomx = 27 , toler = 1.d-8 , itermx = 50)
+    parameter   (nbnomx = 27 , itermx = 50)
 !
     real(kind=8) :: zero
     integer :: iter, i, k, idim, ino, ipb

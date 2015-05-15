@@ -333,7 +333,7 @@ subroutine te0036(option, nomte)
                 call vecini(3, 0.d0, nd)
 !           COORDONNEES DE REFERENCE 1D DU POINT DE GAUSS
                 call reereg('S', elref, nno, seg, gloc,&
-                            ndime, ksig, ibid)
+                            ndime, ksig, 1.d-8, ibid)
 !           CALL ELRFDF(ELREF,KSIG,NDIME*NNO,DFF1,IB1,IB2)
                 dff(1,1) = ksig-5.d-1
                 dff(1,2) = ksig+5.d-1

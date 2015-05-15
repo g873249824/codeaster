@@ -143,7 +143,7 @@ subroutine xmilac(ndim, igeom, ptint, tabco, tabdir,&
 !
 !     CALCUL DES COORDONNEES DE REF DE 101
     call reereg('S', elrefp, nnop, zr(igeom), pint1,&
-                2, ksip, iret)
+                2, ksip, 1.d-8, iret)
 !
 !     CALCUL DES FONCTIONS DE FORME DE L'ELEMENT EN KSI
     call elrfvf(elrefp, ksip, nbnomx, ff, ibid)

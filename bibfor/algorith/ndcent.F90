@@ -53,7 +53,7 @@ subroutine ndcent(igeom, lsn, x, xlsn)
 !
 !     CALCUL DE LA LSN DU MILIEU DE [AB]
     call reereg('S', elp, nno, zr(igeom), x,&
-                ndim, xe, iret)
+                ndim, xe, 1.d-8, iret)
     call elrfvf(elp, xe, nbnomx, ff, nno)
 !
     xlsn = 0

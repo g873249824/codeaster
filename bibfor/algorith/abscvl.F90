@@ -101,7 +101,7 @@ subroutine abscvl(ndim, tabar, xg, s)
 !
 !     CALCUL COORDONNEES DE REF (ETA) DE XGG SUR L'ARETE
     call reereg('S', elp, 3, tabelt, xgg,&
-                1, xe, iret)
+                1, xe, 1.d-8, iret)
     call assert(xe.ge.-1 .and. xe.le.1)
 !
 !     CALCUL ABSCISSE CURVILIGNE (S) DE XGG

@@ -163,7 +163,7 @@ subroutine xjacf2(elrefp, elrefc, elc, ndim, fpg,&
 !
 ! --- COORDONNEES DE REFERENCE 1D DU POINT DE GAUSS
     call reereg('S', elc, nnof, seg, xg,&
-                ndimf, ksig1, ibid)
+                ndimf, ksig1, 1.d-8, ibid)
 !
 ! --- COORDONNEES REELLES 2D DU POINT DE GAUSS
     ksig2(1)=ksig1
