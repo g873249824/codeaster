@@ -673,7 +673,10 @@ subroutine lrcame(nrofic, nochmd, nomamd, nomaas, ligrel,&
             if (lgproa .eq. 0) then
                 do ima = 1, nbma
                     if (zi(jtypma+ima-1) .eq. ltyp(letype)) then
-                        if (jmaill .eq. 0 .or. (jmaill.ne.0.and.zi(jmaill+ ima-1).ne.0)) then
+                        if (jmaill .eq. 0) then
+                            k=k+1
+                            zi(jnumty+k-1)=ima
+                        else if( zi(jmaill+ ima-1).ne.0 ) then
                             k=k+1
                             zi(jnumty+k-1)=ima
                         endif
@@ -688,7 +691,10 @@ subroutine lrcame(nrofic, nochmd, nomamd, nomaas, ligrel,&
                 do ima = 1, nbma
                     if (zi(jtypma+ima-1) .eq. ltyp(letype)) then
                         if (zi(jntpro+k) .eq. cptyma) then
-                            if (jmaill .eq. 0 .or. (jmaill.ne.0.and.zi( jmaill+ima-1).ne.0)) then
+                            if (jmaill .eq. 0) then
+                                k=k+1
+                                zi(jnumty+k-1)=ima
+                            else if( zi(jmaill+ ima-1).ne.0 ) then
                                 k=k+1
                                 zi(jnumty+k-1)=ima
                             endif
