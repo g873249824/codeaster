@@ -106,7 +106,7 @@ subroutine alligr(char, oper, noma, fonree, ligrcz)
         call jecrec(ligrch//'.LIEL', 'G V I', 'NU', 'CONTIG', 'VARIABLE',&
                     nbgrel)
         lonlig = max(lonlig,1)
-        call jeecra(ligrch//'.LIEL', 'LONT', lonlig, ' ')
+        call jeecra(ligrch//'.LIEL', 'LONT', 2*lonlig, ' ')
         nbmata = max(nbmata,1)
         call jecrec(ligrch//'.NEMA', 'G V I', 'NU', 'CONTIG', 'VARIABLE',&
                     nbmata)
