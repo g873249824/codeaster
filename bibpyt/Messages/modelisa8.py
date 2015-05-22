@@ -187,8 +187,14 @@ cata_msg = {
    %(i2)d
 """),
 
-49 : _(u"""
+    48 : _(u"""
+Erreur utilisateur pour LIAISON_MAIL :
+   Il n'y a aucun noeud esclave à lier pour l'occurence %(i1)d du mot clé LIAISON_MAIL.
+   Peut-être que tous les noeuds esclaves ont déjà été éliminés dans des occurrences
+   précédentes.
+"""),
 
+49 : _(u"""
  la direction normale est calculée sur la face esclave. il faut donner des mailles
   de facettes, mots clés :  %(k1)s %(k2)s
 """),
