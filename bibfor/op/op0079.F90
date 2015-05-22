@@ -253,7 +253,7 @@ subroutine op0079()
 !
 ! ----- CALCUL DE TMODE*MODE
 !
-                do 20 imod = 1, nbmode
+                do imod = 1, nbmode
 !
 ! ----- RECOPIE DU IEME MODE
 !
@@ -265,7 +265,7 @@ subroutine op0079()
 !
 !-------- PRODUIT SCALAIRE MODE(IMOD)*MODE(JMOD)
 !
-                    do 20 jmod = imod, nbmode
+                    do jmod = imod, nbmode
 !
 ! ------- RECOPIE DU JEME MODE
 !
@@ -279,7 +279,8 @@ subroutine op0079()
                         pij = ddot(neq,zr(idvec1),1,zr(idvec2),1)
                         zr(iamatr+imod+ (jmod-1)*nbmode-1) = pij
                         zr(iamatr+jmod+ (imod-1)*nbmode-1) = pij
-20                  continue
+                    end do
+                end do
 !
 ! ----- CALCUL DE LA PROJECTION
 !
@@ -300,8 +301,8 @@ subroutine op0079()
 30              continue
 !
 ! ----- FACTORISATION ET RESOLUTION SYSTEME
-!
-                ind = ii-1+(iord-1)*nbmode+imod
+!                     
+                ind = ii+(iord-1)*nbmode
                 call trlds(zr(iamatr), nbmode, nbmode, icod)
                 if (icod .ne. 0) then
                     call u2mess('F', 'ALGORITH9_42')
