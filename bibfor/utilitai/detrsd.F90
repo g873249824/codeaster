@@ -390,7 +390,10 @@ subroutine detrsd(typesd, nomsd)
                 call apetsc('DETR_MAT', ' ', matas, rbid, ' ',&
                             0, ibid, iret)
             endif
-!
+#ifdef _HAVE_PETSC
+            call apetsc('FIN',  ' ', ' ', [0.d0], ' ',&
+                            0, 0 , iret)
+#endif
         endif
 !
         call jedetr(matas//'.CCID')
