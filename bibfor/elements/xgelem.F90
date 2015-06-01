@@ -84,7 +84,7 @@ subroutine xgelem(elrefp, ndim, coorse, igeom, jheavt,&
     real(kind=8) :: dgdpo(4, 2), dgdlo(4, 3)
     real(kind=8) :: grad(ndim, ndim), dudm(3, 4), poids, rbid2(4)
     real(kind=8) :: dtdm(3, 4), lsng, lstg, rbid3(4)
-    real(kind=8) :: rbid, divu
+    real(kind=8) :: rbid
     real(kind=8) :: tthe, r, ur
     real(kind=8) :: depla(3), theta(3), tgudm(3), tpn(27), tref
     real(kind=8) :: crit(3), dfdm(3, 4), dsidep(6,6)
@@ -117,6 +117,7 @@ subroutine xgelem(elrefp, ndim, coorse, igeom, jheavt,&
         irese=0
     endif
 !    
+    typmod(1) = ' '
     typmod(2) = ' '
     cp = .false.
     oprupt = 'RUPTURE'
@@ -233,26 +234,6 @@ subroutine xgelem(elrefp, ndim, coorse, igeom, jheavt,&
                                      rbid1, rbid2, poids)
 !
 !
-! -     CALCUL DE LA DISTANCE A L'AXE (AXISYMETRIQUE)
-        if (axi) then
-            r = 0.d0
-            ur = 0.d0
-            do ino = 1, nnop
-                r = r + ff(ino)*zr(igeom-1+2*(ino-1)+1)
-                ur = ur + ff(ino)*zr(idepl-1+ddls*(ino-1)+1)
-                do ig = 1, nfh
-                    ur = ur + ff(ino) *zr(idepl-1+ddls*(ino-1)+ndim* ig+1) *he(fisno(ino,ig))
-                end do
-                do ig = 1, nfe
-                    ur = ur + ff(ino) *zr(idepl-1+ddls*(ino-1)+ndim*( nfh+ig)+1) *fe(ig)
-                end do
-            end do
-!
-            poids= poids * r
-            call assert(r.gt.0d0)
-!
-        endif
-!
 !
 !       --------------------------------------
 !       1) COORDONNÉES POLAIRES ET BASE LOCALE
@@ -319,6 +300,25 @@ subroutine xgelem(elrefp, ndim, coorse, igeom, jheavt,&
 !
         call vecini(ndim, 0.d0, depla)
 !
+! -     CALCUL DE LA DISTANCE A L'AXE (AXISYMETRIQUE)
+        if (axi) then
+            r = 0.d0
+            ur = 0.d0
+            do ino = 1, nnop
+                r = r + ff(ino)*zr(igeom-1+2*(ino-1)+1)
+                ur = ur + ff(ino)*zr(idepl-1+ddls*(ino-1)+1)
+                do ig = 1, nfh
+                    ur = ur + ff(ino) *zr(idepl-1+ddls*(ino-1)+ndim* ig+1) *he(fisno(ino,ig))
+                end do
+                do ig = 1, nfe
+                    ur = ur + ff(ino) *zr(idepl-1+ddls*(ino-1)+ndim*( nfh+ig)+1) *fe(ig)
+                end do
+            end do
+!
+            poids= poids * r
+            call assert(r.gt.0d0)
+!
+        endif
 !       CALCUL DE L'APPROXIMATION DU DEPLACEMENT
         do in = 1, nnop
             if (in .le. nnops) then
