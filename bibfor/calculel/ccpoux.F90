@@ -70,7 +70,7 @@ subroutine ccpoux(resuin, typesd, nordre, nbchre, ioccur,&
 ! person_in_charge: nicolas.sellenet at edf.fr
     logical :: exif1d
 !
-    integer :: ltymo, ldepl, lfreq, neq, lvale, lacce, ii, i
+    integer :: ltymo, ldepl, lfreq, neq, lvale, lacce, ii, i, ldepl_c
     integer :: l1, l3, jlcha, jfcha, n1, ipara, ibid, ier, linst
 !
     real(kind=8) :: zero, un, coeff, valres
@@ -82,8 +82,9 @@ subroutine ccpoux(resuin, typesd, nordre, nbchre, ioccur,&
 !
     character(len=1) :: typcoe
     character(len=5) :: ch5
+    character(len=6) :: tsca
     character(len=8) :: k8b, curpar, ncmppe(4), tpf(11), charge, typcha
-    character(len=8) :: ncmpfo(11), modele, fmult
+    character(len=8) :: ncmpfo(11), modele, fmult, nomgd
     character(len=16) :: typemo
     character(len=19) :: chdynr, chacce
     character(len=24) :: chamgd, nochin, nochi1, chdepl, ligrmo
@@ -113,16 +114,25 @@ subroutine ccpoux(resuin, typesd, nordre, nbchre, ioccur,&
     calpha = czero
     chdynr = '&&MECALM.M.GAMMA'
     if ((typesd.eq.'MODE_MECA'.and.typemo(1:8).eq.'MODE_DYN' ) .or. (typesd.eq.'MODE_ACOU')) then
+        call dismoi('F','NOM_GD', chdynr, 'CHAMP', ibid ,nomgd, ibid)
+        call dismoi('F','TYPE_SCA', nomgd, 'GRANDEUR', ibid, tsca, ibid)
         call jeveuo(chdynr//'.VALE', 'E', lvale)
         call jelira(chdepl(1:19)//'.VALE', 'LONMAX', neq, k8b)
-        call rsexch('F', resuin, 'DEPL', nordre, chamgd,&
-                    ier)
-        call jeveuo(chamgd(1:19)//'.VALE', 'L', ldepl)
-        call rsadpa(resuin, 'L', 1, 'OMEGA2', nordre,&
-                    0, lfreq, k8b)
-        do 20 ii = 0, neq - 1
-            zr(lvale+ii) = -zr(lfreq)*zr(ldepl+ii)
-20      continue
+        call rsexch('F', resuin, 'DEPL', nordre, chamgd,ier)
+        call rsadpa(resuin, 'L', 1, 'OMEGA2', nordre,0, lfreq, k8b)
+        if ( tsca.eq.'R' ) then
+            call jeveuo(chamgd(1:19)//'.VALE', 'L', ldepl)
+            do ii = 0, neq - 1
+                zr(lvale+ii) = -zr(lfreq)*zr(ldepl+ii)
+            end do
+        elseif( tsca.eq.'C' ) then
+            call jeveuo(chamgd(1:19)//'.VALE', 'L', ldepl_c)
+            do ii = 0, neq - 1
+                zc(lvale+ii) = -zr(lfreq)*zc(ldepl_c+ii)
+            end do
+        else
+            call assert(.false.)
+        endif
         call jelibe(chamgd(1:19)//'.VALE')
     else if (typesd.eq.'DYNA_TRANS') then
         call jeveuo(chdynr//'.VALE', 'E', lvale)
