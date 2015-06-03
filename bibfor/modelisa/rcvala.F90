@@ -84,6 +84,13 @@ subroutine rcvala(jmat, nomat, phenom, nbpar, nompar,&
  5      continue
         call u2mesk('F', 'MODELISA6_92', 1, nomat)
     else
+        if (nbmat.gt.1) then
+            call tecael(iadzi, iazk24)
+            nomail = zk24(iazk24-1+3)(1:8)
+            valk(1) = nomail
+            valk(2) = nomres(1)
+            call u2mesk('A', 'MODELISA9_3', 2, valk)
+        endif
         imat = jmat+zi(jmat+nbmat+1)
     endif
 !

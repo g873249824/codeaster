@@ -1,22 +1,5 @@
 subroutine te0158(option, nomte)
-    implicit none
-#include "jeveux.h"
-#include "asterfort/elref4.h"
-#include "asterfort/jevech.h"
-#include "asterfort/jpd1ff.h"
-#include "asterfort/jsd1ff.h"
-#include "asterfort/matela.h"
-#include "asterfort/matrot.h"
-#include "asterfort/moytem.h"
-#include "asterfort/pmfdge.h"
-#include "asterfort/pmfpti.h"
-#include "asterfort/tecach.h"
-#include "asterfort/tecael.h"
-#include "asterfort/u2mesk.h"
-#include "asterfort/utpvgl.h"
-#include "asterfort/verifm.h"
-    character(len=*) :: option, nomte
-!     ------------------------------------------------------------------
+!
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -33,6 +16,26 @@ subroutine te0158(option, nomte)
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 !    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 ! ======================================================================
+! 
+   implicit none
+#include "jeveux.h"
+#include "asterfort/elref4.h"
+#include "asterfort/jevech.h"
+#include "asterfort/jpd1ff.h"
+#include "asterfort/jsd1ff.h"
+#include "asterfort/matela.h"
+#include "asterfort/matrot.h"
+#include "asterfort/moytem.h"
+#include "asterfort/pmfdge.h"
+#include "asterfort/pmfpti.h"
+#include "asterfort/tecach.h"
+#include "asterfort/tecael.h"
+#include "asterfort/u2mesk.h"
+#include "asterfort/utpvgl.h"
+#include "asterfort/verifm.h"
+#include "asterfort/pmfmats.h"
+    character(len=*) :: option, nomte
+!     ----------------------------------------------------
 !     ------------------------------------------------------------------
 ! IN  OPTION : K16 : NOM DE L'OPTION A CALCULER
 !      'DEGE_ELNO     : DEFORMATIONS GENERALISEES DE POUTRE
@@ -53,7 +56,7 @@ subroutine te0158(option, nomte)
     integer :: itemp, jtab(7), istrxr
 !
     character(len=4) :: fami
-    character(len=8) :: nomail
+    character(len=8) :: nomail, nomat
     character(len=16) :: ch16
     integer :: lsect2, ipos, in, iadzi, iazk24
     integer :: npg, ndim, nno, nnos, ipoids, ivf, iplouf
@@ -100,6 +103,7 @@ subroutine te0158(option, nomte)
     if (nomte .ne. 'MECA_POU_D_EM') then
 !     --- CARACTERISTIQUES MATERIAUX ---
         call jevech('PMATERC', 'L', lmater)
+        call pmfmats(lmater, nomat)
 !
         call verifm(fami, npg, 1, '+', zi(lmater),&
                     'ELAS', 1, epsthe, iret)
@@ -108,7 +112,7 @@ subroutine te0158(option, nomte)
 !
         call moytem(fami, npg, 1, '+', temp,&
                     iret)
-        call matela(zi(lmater), ' ', itemp, temp, e,&
+        call matela(zi(lmater), nomat, itemp, temp, e,&
                     xnu)
 !
         g = e / ( deux * ( un + xnu ) )

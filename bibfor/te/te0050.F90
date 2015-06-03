@@ -24,6 +24,8 @@ subroutine te0050(option, nomte)
 #include "asterfort/rcvalb.h"
 #include "asterfort/tecach.h"
 #include "asterfort/u2mesk.h"
+#include "asterfort/lteatt.h"
+#include "asterfort/pmfmats.h"
 !
     character(len=16) :: option, nomte
 ! ......................................................................
@@ -51,9 +53,9 @@ subroutine te0050(option, nomte)
     real(kind=8) :: alpha, beta, eta, valres(nbres), valpar(nbpar), vxyz
 !
     integer :: icodre(nbres)
-    character(len=8) :: nomres(nbres), nompar(nbpar)
+    character(len=8) :: nomres(nbres), nompar(nbpar), nomat
     character(len=10) :: phenom, valk(2)
-!
+!-----------------------------------------------------------------------------
 !
     call elref4(' ', 'RIGI', ndim, nno, nnos,&
                 npg1, ipoids, ivf, idfdx, jgano)
@@ -111,7 +113,15 @@ subroutine te0050(option, nomte)
         valk(2) = phenom
         call u2mesk('F', 'MODELISA10_18', 1, valk)
     endif
-!
+
+!   -- si l'element est multifibre, il faut prendre le materiau "section"
+!      pour recuperer les coefficients de dilatation :
+    if (lteatt(' ','TYPMOD2','PMF')) then
+        call pmfmats(mater, nomat)
+    else
+        nomat=' '
+    endif
+
     if (ins .eq. 0) then
         call tecach('ONN', 'PRIGIEL', 'L', 2, idrigi,&
                     iret)
@@ -143,7 +153,7 @@ subroutine te0050(option, nomte)
         nomres(2)='AMOR_BET'
         valres(1) = 0.d0
         valres(2) = 0.d0
-        call rcvalb('RIGI', 1, 1, '+', mater, ' ', phenom, npara, nompar, valpar, 2,&
+        call rcvalb('RIGI', 1, 1, '+', mater, nomat, phenom, npara, nompar, valpar, 2,&
                     nomres, valres, icodre, 0)
 !
     else if (option.eq.'RIGI_MECA_HYST') then
@@ -151,7 +161,7 @@ subroutine te0050(option, nomte)
 !         nomres(1)='AMOR_HYST'
         nomres(1)='AMOR_HYS'
         valres(1) = 0.d0
-        call rcvalb('RIGI', 1, 1, '+', mater, ' ', phenom, npara, nompar, valpar, 1,&
+        call rcvalb('RIGI', 1, 1, '+', mater, nomat, phenom, npara, nompar, valpar, 1,&
                     nomres, valres, icodre, 0)
     else
         call assert(.false.)

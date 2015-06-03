@@ -602,16 +602,31 @@ class CalcEssaiLogiciel(object):
 
         if isinstance(resultat, tuple) or isinstance(resultat, list):
             for resultat_i in resultat:
-                l_resultat.append(_F(RESULTAT=resultat_i,
-                                     **d_resu))
+                if self.impr_resu_format == 'MED':
+                    nom_resu = resultat_i.get_name()
+                    l_resultat.append(_F(RESULTAT=resultat_i,
+                                         NOM_CHAM_MED = "".join(['CALC_ESSAI_',nom_resu[1:len(nom_resu)],'DEPL']),
+                                         NOM_CHAM = 'DEPL',
+                                         **d_resu))
+                else:
+                    l_resultat.append(_F(RESULTAT=resultat_i,
+                                         **d_resu))
+
         else:
-            l_resultat.append(_F(RESULTAT=resultat,
+            if self.impr_resu_format == 'MED':
+                nom_resu = resultat.get_name()
+                l_resultat.append(_F(RESULTAT=resultat,
+                                     NOM_CHAM_MED = "".join(['CALC_ESSAI_',nom_resu[1:len(nom_resu)],'_DEPL']),
+                                     NOM_CHAM = 'DEPL',
+                                     **d_resu))
+            else:
+                l_resultat.append(_F(RESULTAT=resultat,
                                      **d_resu))
 
-        IMPR_RESU( UNITE   = self.unite_logique,
-                   FORMAT  = self.impr_resu_format,
-                   RESU    = l_resultat
-                   )
+        IMPR_RESU(UNITE=self.unite_logique,
+                  FORMAT=self.impr_resu_format,
+                  RESU=l_resultat,
+                  )
         pass
 
     # @param resultat (multitype): on peut imprimer un ou plusieurs resultats dans le meme fichier:
@@ -745,7 +760,7 @@ class CalcEssaiSalome(CalcEssaiLogiciel):
 
         EXEC_LOGICIEL(CODE_RETOUR_MAXI=-1,
                       INFO=2,
-                      SALOME=dSALOME
+                      SALOME=dSALOME,
                       );
 
         f=open('./fort.%s' % unite, 'r')
@@ -799,7 +814,7 @@ class CalcEssaiSalome(CalcEssaiLogiciel):
 
         EXEC_LOGICIEL(CODE_RETOUR_MAXI=-1,
                       INFO=2,
-                      SALOME=dSALOME
+                      SALOME=dSALOME,
                       );
 
         UTMESS('I','STANLEY_20')
@@ -896,7 +911,7 @@ class CalcEssaiSalomeCourbes(CalcEssaiSalome):
 
         EXEC_LOGICIEL(CODE_RETOUR_MAXI=-1,
                       INFO=2,
-                      SALOME=dSALOME
+                      SALOME=dSALOME,
                       );
 
         UTMESS('I','STANLEY_20')

@@ -73,7 +73,7 @@ subroutine meamme(optioz, modele, nchar, lchar, mate,&
 !
 !
     integer :: nbout, nbin
-    parameter    (nbout=3, nbin=13)
+    parameter    (nbout=3, nbin=14)
     character(len=8) :: lpaout(nbout), lpain(nbin)
     character(len=19) :: lchout(nbout), lchin(nbin)
 !
@@ -133,13 +133,13 @@ subroutine meamme(optioz, modele, nchar, lchar, mate,&
         if (iret .gt. 0) then
             call jeveuo(merigi(1:19)//'.RELR', 'L', ialir1)
             call jelira(merigi(1:19)//'.RELR', 'LONUTI', nbres1, k8b)
-            do 10 i = 1, nbres1
+            do i = 1, nbres1
                 rigich = zk24(ialir1-1+i)
                 ires1=i
                 call dismoi('F', 'NOM_LIGREL', rigich(1:19), 'RESUELEM', ibid,&
                             ligre1, ied)
                 if (ligre1(1:8) .eq. modele(1:8)) goto 20
-10          continue
+            end do
             call assert(.false.)
 20          continue
 !
@@ -156,12 +156,12 @@ subroutine meamme(optioz, modele, nchar, lchar, mate,&
         if (iret .gt. 0) then
             call jeveuo(memass(1:19)//'.RELR', 'L', ialir1)
             call jelira(memass(1:19)//'.RELR', 'LONUTI', nbres1, k8b)
-            do 30 i = 1, nbres1
+            do i = 1, nbres1
                 massch = zk24(ialir1-1+i)
                 call dismoi('F', 'NOM_LIGREL', massch(1:19), 'RESUELEM', ibid,&
                             ligre1, ied)
                 if (ligre1(1:8) .eq. modele(1:8)) goto 40
-30          continue
+            end do
             call assert(.false.)
 40          continue
         endif
@@ -251,7 +251,12 @@ subroutine meamme(optioz, modele, nchar, lchar, mate,&
         lpain(nop) = 'PVARIPG'
         lchin(nop) = varplu(1:19)
     endif
-!
+!   -- pour les PMF :
+    nop=nop+1
+    lpain(nop) = 'PCOMPOR'
+    lchin(nop) = mate(1:8)//'.COMPOR'
+    
+    
     call calcul('S', option, ligrmo, nop, lchin,&
                 lpain, 2, lchout, lpaout, base,&
                 'OUI')
