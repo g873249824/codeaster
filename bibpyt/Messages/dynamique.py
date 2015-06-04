@@ -178,4 +178,10 @@ celle choisie précédemment.
 La condition de stabilité n'a pas pu être calculée car il s'agit d'élasticité non-isotrope.
 """),
 
+52 : _(u"""
+Schéma multi-pas
+L'instant précédent et l'instant initial sont presque confondus.
+On ignore donc le calcul du second membre pour cet instant.
+"""), 
+
 }

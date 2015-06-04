@@ -4,27 +4,10 @@ subroutine nmchht(modele, numedd, mate, compor, carele,&
                   valinc, sddisc, parcon, solalg, veasse,&
                   sdnume)
 !
-! ======================================================================
-! COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
-! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
-! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
-! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
-! (AT YOUR OPTION) ANY LATER VERSION.
+implicit none
 !
-! THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
-! WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
-! MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
-! GENERAL PUBLIC LICENSE FOR MORE DETAILS.
-!
-! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
-! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
-!   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
-! ======================================================================
-! person_in_charge: mickael.abbas at edf.fr
-!
-! aslint: disable=W1504
-    implicit none
 #include "jeveux.h"
+#include "asterc/r8prem.h"
 #include "asterc/getres.h"
 #include "asterfort/diinst.h"
 #include "asterfort/infdbg.h"
@@ -44,6 +27,27 @@ subroutine nmchht(modele, numedd, mate, compor, carele,&
 #include "asterfort/nmvcex.h"
 #include "asterfort/rsadpa.h"
 #include "asterfort/rsorac.h"
+#include "asterfort/u2mess.h"
+!
+! ======================================================================
+! COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+! (AT YOUR OPTION) ANY LATER VERSION.
+!
+! THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+! WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+! MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+! GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+!
+! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+!   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+! ======================================================================
+! person_in_charge: mickael.abbas at edf.fr
+! aslint: disable=W1504
+!
     integer :: fonact(*)
     character(len=19) :: sddyna, sdnume
     character(len=19) :: lischa
@@ -72,8 +76,7 @@ subroutine nmchht(modele, numedd, mate, compor, carele,&
 !
 !
 !
-!
-    logical :: londe, llapl, ldidi, lreuse
+    logical :: londe, llapl, ldidi, lreuse, l_comp_mstp
     character(len=8) :: result, k8bid
     character(len=16) :: k16bla, k16bid
     character(len=19) :: matass
@@ -125,6 +128,20 @@ subroutine nmchht(modele, numedd, mate, compor, carele,&
     instap = diinst(sddisc,0)
     iterat = 0
     codere = '&&NMCHHT.CODERE'
+!
+! - Protection
+!
+    l_comp_mstp = .true.
+    if (abs(instap-instam).le.r8prem( )) then
+        l_comp_mstp = .false.
+        call u2mess('A','DYNAMIQUE_52')
+    endif
+!
+! - No computation
+!
+    if (.not.l_comp_mstp) then
+        goto 99
+    endif
 !
 ! --- CREATION PSEUDO CARTE INSTANT PLUS
 !
@@ -234,6 +251,8 @@ subroutine nmchht(modele, numedd, mate, compor, carele,&
                 compor, numedd, instam, instap, resoco,&
                 resocu, sddyna, sdtime, valinc, comref,&
                 matass, ' ', cncine)
+!
+ 99 continue
 !
     call jedema()
 end subroutine
