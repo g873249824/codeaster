@@ -381,7 +381,5 @@ if CHOIXF != 'COURBE':
 
     Render()
     ResetCamera()
-    if NB_ORDRE > 1:
-        anim.Play()
 
 #%==================FIN ================================%
