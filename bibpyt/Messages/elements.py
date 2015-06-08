@@ -105,6 +105,10 @@ Risque & Conseil : mettre un léger écrouissage peut permettre de passer cette 
  Seules sont considérées les natures : ELAS, ELAS_ISTR, ELAS_ORTH.
 """),
 
+16 : _(u"""
+On ne sait pas calculer les déformations avec des lois prenant en compte la métallurgie.
+"""),
+
 17 : _(u"""
  noeuds confondus pour un élément
 """),

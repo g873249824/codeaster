@@ -47,6 +47,7 @@ subroutine epstmc(fami, ndim, instan, poum, igau,&
 #include "asterfort/utpslg.h"
 #include "asterfort/utrcyl.h"
 #include "asterfort/verift.h"
+#include "asterfort/u2mess.h"
     character(len=*) :: fami, poum
     character(len=16) :: option
     real(kind=8) :: instan, epsth(6), xyzgau(3)
@@ -329,7 +330,7 @@ subroutine epstmc(fami, ndim, instan, poum, igau,&
             if (ndim .eq. 2) epsth(3)=epsthl(3)
         else if (phenom.eq.'ELAS_HYPER') then
         else
-            call u2mesk('F', 'ELEMENTS_15', 1, phenom)
+            call u2mess('F', 'ELEMENTS_16')
         endif
     endif
 !
