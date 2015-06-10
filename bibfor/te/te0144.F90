@@ -94,7 +94,7 @@ subroutine te0144(option, nomte)
 !
     call rcvalb('RIGI', 1, 1, '+', zi(lmater),&
                 ' ', 'ELAS', 1, 'TEMP', temp,&
-                2, nomres, valres, codres, 1)
+                2, nomres, valres, codres, 1, 'OUI')
     e = valres(1)
     xnu = valres(2)
 !

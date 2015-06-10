@@ -95,7 +95,7 @@ subroutine lceib1(fami, kpg, ksp, imate, compor,&
 !
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         call verift(fami, kpg, ksp, '-', imate,&
                     'ELAS', 1, epsthe(1), icodre)
         call verift(fami, kpg, ksp, '+', imate,&
@@ -112,7 +112,7 @@ subroutine lceib1(fami, kpg, ksp, imate, compor,&
         nomres(2)='K_DESSIC'
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 0)
+                    2, nomres, valres, icodre, 0, 'OUI')
         if (icodre(1) .ne. 0) valres(1) = 0.d0
         if (icodre(2) .ne. 0) valres(2) = 0.d0
         bendo=valres(1)
@@ -124,7 +124,7 @@ subroutine lceib1(fami, kpg, ksp, imate, compor,&
         nomres(3) = 'SYC'
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'BETON_ECRO_LINE', 0, ' ', 0.d0,&
-                    3, nomres, valres, icodre, 0)
+                    3, nomres, valres, icodre, 0, 'OUI')
         if ((icodre(1).ne.0) .or. (icodre(2).ne.0)) then
             call u2mess('F', 'ALGORITH4_51')
         endif

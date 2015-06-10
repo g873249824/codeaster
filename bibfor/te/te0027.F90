@@ -228,7 +228,7 @@ subroutine te0027(option, nomte)
         call rccoma(matcod, 'ELAS', 1, phenom, icodre)
         call rcvalb('RIGI', 1, 1, '+', matcod,&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
     endif
 !
 !
@@ -237,7 +237,7 @@ subroutine te0027(option, nomte)
         call rccoma(matcod, 'ELAS', 1, phenom, icodre)
         call rcvalb('RIGI', 1, 1, '+', matcod,&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
         if (ipesa .ne. 0) then
             do 150 i = 1, nno
                 do 140 j = 1, ndim
@@ -481,10 +481,10 @@ subroutine te0027(option, nomte)
             call rccoma(matcod, 'ELAS', 1, phenom, icodre)
             call rcvala(matcod, ' ', phenom, 1, ' ',&
                         rbid, 1, 'NU', nu, icodre,&
-                        1)
+                        1, 'OUI')
             call rcvala(matcod, ' ', phenom, 1, ' ',&
                         rbid, 1, 'E', e, icodre,&
-                        1)
+                        1, 'OUI')
 !
             mu = e/(2.d0*(1.d0+nu))
 !

@@ -61,7 +61,7 @@ subroutine te0015(option, nomte)
     call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
     call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                 ' ', phenom, 0, ' ', r8bid,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
     ndl = 3*nno
     do 10 i = 1, ndl

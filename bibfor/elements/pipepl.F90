@@ -98,10 +98,10 @@ subroutine pipepl(ndim, compor, typmod, tau, mate,&
         nomres(4) = 'D_SIGM_EPSI'
         call rcvalb(fami, kpg, spt, poum, mate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 2)
+                    2, nomres, valres, icodre, 2, 'OUI')
         call rcvalb(fami, kpg, spt, poum, mate,&
                     ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                    2, nomres(3), valres(3), icodre(3), 2)
+                    2, nomres(3), valres(3), icodre(3), 2, 'OUI')
         young = valres(1)
         nu = valres(2)
         sy = valres(3)
@@ -112,7 +112,7 @@ subroutine pipepl(ndim, compor, typmod, tau, mate,&
     else
         call rcvalb(fami, kpg, spt, poum, mate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, 'NU', nu, icodre, 2)
+                    1, 'NU', nu, icodre, 2, 'OUI')
         call rctrac(mate, 1, 'SIGM', 0.d0, jprol,&
                     jvale, nbvale, young)
         call rcfonc('V', 1, jprol, jvale, nbvale,&

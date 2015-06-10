@@ -101,7 +101,7 @@ subroutine dicorn(irmetg, nbt, neq, iterat, icodma,&
     poum='+'
     call rcvalb(fami, kpg, spt, poum, icodma,&
                 ' ', 'ASSE_CORN', nbpar, nompar, valpar,&
-                nbre1, nomre1, valre1, codre1, 1)
+                nbre1, nomre1, valre1, codre1, 1, 'OUI')
 !
     nu1 = valre1(1)
     mu1 = valre1(2)

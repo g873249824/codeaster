@@ -113,7 +113,7 @@ subroutine calcme(option, compor, thmc, meca, imate,&
     endif
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'ELAS', 1, 'TEMP', t,&
-                3, ncra1(1), elas(1), icodre, 1)
+                3, ncra1(1), elas(1), icodre, 1, 'OUI')
     young = elas(1)
     nu = elas(2)
     alpha0 = elas(3)

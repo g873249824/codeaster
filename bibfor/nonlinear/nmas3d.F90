@@ -261,7 +261,7 @@ subroutine nmas3d(fami, nno, nbpg1, ipoids, ivf,&
 !
         call rcvalb(fami, kpg, 1, '-', imate,&
                     ' ', compor(1), 0, ' ', 0.d0,&
-                    1, nomres(2), valres(2), icodre, 1)
+                    1, nomres(2), valres(2), icodre, 1, 'OUI')
         if (icodre .eq. 0) then
             nu = valres(2)
         else

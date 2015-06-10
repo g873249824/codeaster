@@ -173,7 +173,7 @@ subroutine te0101(option, nomte)
 !       -------------------------
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'THER_COQMU', nbvar, nompar, valpar,&
-                    nbres, nomres, valres, icodre, 1)
+                    nbres, nomres, valres, icodre, 1, 'OUI')
 !
 ! ---   VALEURS DES CARACTERISIQUES DU MATERIAU DANS LE REPERE
 ! ---   DE L'ELEMENT ( PARCE QUE C'EST DANS CE REPERE QUE LE
@@ -226,7 +226,7 @@ subroutine te0101(option, nomte)
         nomres(1) = 'LAMBDA'
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'THER', nbvar, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
 ! ---   CONDUCTIVITE  :
 !       ------------
@@ -326,7 +326,7 @@ subroutine te0101(option, nomte)
         nbv = 12
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', phenom, nbvar, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
 ! ---   DETERMINATION DE LA ROTATION FAISANT PASSER DU REPERE
 ! ---   DE REFERENCE AU REPERE DE L'ELEMENT :

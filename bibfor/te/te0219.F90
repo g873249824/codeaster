@@ -86,7 +86,7 @@ subroutine te0219(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THER', 1, 'INST', 0.d0,&
-                1, 'LAMBDA', valres, icodre, 1)
+                1, 'LAMBDA', valres, icodre, 1, 'OUI')
 !
     call connec(nomte, nse, nnop2, c)
 !

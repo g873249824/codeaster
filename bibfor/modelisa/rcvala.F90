@@ -1,16 +1,18 @@
 subroutine rcvala(jmat, nomat, phenom, nbpar, nompar,&
                   valpar, nbres, nomres, valres, icodre,&
-                  iarret)
+                  iarret, nan)
     implicit none
 #include "jeveux.h"
 #include "asterfort/fointa.h"
 #include "asterfort/rcvals.h"
 #include "asterfort/tecael.h"
 #include "asterfort/u2mesk.h"
+#include "asterc/r8nnem.h"
     integer :: imat, nbpar, nbres, iarret
     real(kind=8) :: valpar(nbpar), valres(nbres)
     integer :: icodre(nbres)
     character(len=*) :: nomat, phenom, nompar(nbpar), nomres(nbres)
+    character(len=3), intent(in) :: nan
 ! ----------------------------------------------------------------------
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -47,7 +49,8 @@ subroutine rcvala(jmat, nomat, phenom, nbpar, nompar,&
 !              = 1 : SI UN DES PARAMETRES N'EST PAS TROUVE, ON ARRETE
 !                       EN FATAL EN INDIQUANT LE NOM DE LA MAILLE.
 !              = 2 : IDEM QUE 1 MAIS ON N'INDIQUE PAS LA MAILLE.
-!
+!       nan    = 'OUI' (defaut) : pour les parametres non trouves, on retourne valres = NaN
+!              = 'NON' : pour les parametres non trouves, on ne modifie pas valres
 !     ARGUMENTS DE SORTIE:
 !     VALRES : VALEURS DES RESULTATS APRES RECUPERATION ET INTERPOLATION
 !     ICODRE : POUR CHAQUE RESULTAT, 0 SI ON A TROUVE, 1 SINON
@@ -63,11 +66,14 @@ subroutine rcvala(jmat, nomat, phenom, nbpar, nompar,&
     character(len=8) :: nomail, nomi
     character(len=10) :: nomphe
     character(len=24) :: valk(2)
+    real(kind=8) :: rundf
 ! DEB ------------------------------------------------------------------
 !
 !     -- ON EST OBLIGE DE RECOPIER PHENOM CAR IL FAUT LE TRONQUER
 !        PARFOIS A 10 AVANT DE LE COMPARER
     nomphe=phenom
+    rundf=r8nnem()
+    call assert (nan.eq.'OUI' .or. nan.eq.'NON')
 !
 !  ON EXPLORE L'ENTETE DE LA SD MATER_CODE POUR DETERMINER LE MATERIAU
 !  DE LA LA LISTE
@@ -100,6 +106,7 @@ subroutine rcvala(jmat, nomat, phenom, nbpar, nompar,&
 !
     do 10 ires = 1, nbres
         icodre(ires) = 1
+        if (nan .eq. 'OUI') valres(ires) = rundf
 10  end do
     do 20 icomp = 1, zi(imat+1)
         if (nomphe .eq. zk16(zi(imat)+icomp-1)(1:10)) then

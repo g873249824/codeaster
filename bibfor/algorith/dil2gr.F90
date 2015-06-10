@@ -50,10 +50,10 @@ subroutine dil2gr(imate, compor, ndim, regula, dimdef,&
 10      continue
         call rcvalb(fami, kpg, spt, poum, imate,&
                     ' ', 'ELAS_2NDG', 0, ' ', 0.0d0,&
-                    1, ncra(1), val(1), icodre(1), 1)
+                    1, ncra(1), val(1), icodre(1), 1, 'OUI')
         call rcvalb(fami, kpg, spt, poum, imate,&
                     ' ', 'ELAS_2NDG', 0, ' ', 0.0d0,&
-                    1, ncra(3), val(3), icodre(3), 1)
+                    1, ncra(3), val(3), icodre(3), 1, 'OUI')
         do 30 i = 1, ndim
             dsde2g(i,i)=(1+ndim)*(val(1)-val(3))
 30      continue

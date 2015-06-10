@@ -68,7 +68,7 @@ subroutine te0550(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                1, 'CELE_R', celer, icodre, 1)
+                1, 'CELE_R', celer, icodre, 1, 'OUI')
     if (celer .lt. 1.d-1) goto 110
 !
     call jevech('PVECTUR', 'E', ivectu)

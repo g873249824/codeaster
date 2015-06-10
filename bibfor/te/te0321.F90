@@ -88,7 +88,7 @@ subroutine te0321(option, nomte)
         nomres = 'MS0'
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'META_ACIER', 1, 'INST', 0.d0,&
-                    1, nomres, ms0, icodre, 1)
+                    1, nomres, ms0, icodre, 1, 'OUI')
 !
         do 50 kn = 1, nno
             tno0 = zr(itempe+kn-1)

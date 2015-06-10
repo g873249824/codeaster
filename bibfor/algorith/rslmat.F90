@@ -92,13 +92,13 @@ subroutine rslmat(fami, kpg, ksp, mod, imat,&
 !
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                5, nomc(1), materd(1, 1), cerr(1), 0)
+                5, nomc(1), materd(1, 1), cerr(1), 0, 'OUI')
     if (cerr(3) .ne. 0) materd(3,1) = 0.d0
     if (cerr(4) .ne. 0) materd(4,1) = 0.d0
     if (cerr(5) .ne. 0) materd(5,1) = 0.d0
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'ROUSSELIER', 0, ' ', 0.d0,&
-                9, nomc(6), materd(1, 2), cerr(6), 2)
+                9, nomc(6), materd(1, 2), cerr(6), 2, 'OUI')
 !
 !         RECUPERATION DE E(TEMPD) VIA LES COURBES DE TRACTION MONOTONES
 !         SIG = F(EPS,TEMPD) ENTREES POINT PAR POINT  (MOT CLE TRACTION)
@@ -116,13 +116,13 @@ subroutine rslmat(fami, kpg, ksp, mod, imat,&
 !
     call rcvalb(fami, kpg, ksp, '+', imat,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                5, nomc(1), materf(1, 1), cerr(1), 0)
+                5, nomc(1), materf(1, 1), cerr(1), 0, 'OUI')
     if (cerr(3) .ne. 0) materf(3,1) = 0.d0
     if (cerr(4) .ne. 0) materf(4,1) = 0.d0
     if (cerr(5) .ne. 0) materf(5,1) = 0.d0
     call rcvalb(fami, kpg, ksp, '+', imat,&
                 ' ', 'ROUSSELIER', 0, ' ', 0.d0,&
-                9, nomc(6), materf(1, 2), cerr(6), 2)
+                9, nomc(6), materf(1, 2), cerr(6), 2, 'OUI')
 !
 !         RECUPERATION DE E(TEMPF) VIA LES COURBES DE TRACTION MONOTONES
 !         SIG = F(EPS,TEMP) ENTREES POINT PAR POINT  (MOT CLE TRACTION)

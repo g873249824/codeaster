@@ -102,7 +102,7 @@ subroutine te0140(option, nomte)
     if ((nomte.ne.'MECA_POU_D_EM') .and. (nomte.ne.'MECA_POU_D_TGM')) then
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', opti, nbpar, nompar, valpar,&
-                    nbres, nomres, valres, codres, 1)
+                    nbres, nomres, valres, codres, 1, 'OUI')
         e = valres(1)
         xnu = valres(2)
         g = e/ (deux* (un+xnu))

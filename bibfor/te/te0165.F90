@@ -67,7 +67,7 @@ subroutine te0165(option, nomte)
     nomres(1) = 'E'
     call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                 ' ', 'ELAS', 0, '  ', r8bid,&
-                1, nomres, valres, icodre, 1)
+                1, nomres, valres, icodre, 1, 'OUI')
     call verift('RIGI', 1, 1, '+', zi(imate),&
                 'ELAS', 1, epsthe, iret)
     e = valres(1)

@@ -193,7 +193,7 @@ subroutine te0528(option, nomte)
 !
                 call rcvalb('RIGI', igau, 1, '+', zi(imate),&
                             ' ', 'ELAS', 1, nompar, valpar,&
-                            1, nomres, nu, icodre, 1)
+                            1, nomres, nu, icodre, 1, 'OUI')
 !
                 call calcgr(igau, nbsig, nbvari, zr(ivari), nu,&
                             epstmp)

@@ -86,7 +86,7 @@ subroutine tanbul(option, ndim, g, mate, compor,&
 !
     call rcvalb('RIGI', g, 1, '+', mate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
 !
     e = valres(1)
     nu = valres(2)

@@ -50,17 +50,17 @@ subroutine cdnfon(zimat, kfonc, xx, dn, fxx,&
     if (dn .eq. 0) then
         call rcvalb(fami, kpg, spt, poum, zimat,&
                     ' ', phenom, 1, 'X ', xx,&
-                    1, kfonc, fxx, codres, 0)
+                    1, kfonc, fxx, codres, 0, 'OUI')
     else if (dn .eq. 1) then
         write (kaux,'(A1,A7)') 'D',kfonc(1:7)
         call rcvalb(fami, kpg, spt, poum, zimat,&
                     ' ', phenom, 1, 'X ', xx,&
-                    1, kaux, fxx, codres, 0)
+                    1, kaux, fxx, codres, 0, 'OUI')
     else if (dn .eq. 2) then
         write (kaux,'(A2,A6)') 'DD',kfonc(1:6)
         call rcvalb(fami, kpg, spt, poum, zimat,&
                     ' ', phenom, 1, 'X ', xx,&
-                    1, kaux, fxx, codres, 0)
+                    1, kaux, fxx, codres, 0, 'OUI')
     else
         ier = 3
     endif

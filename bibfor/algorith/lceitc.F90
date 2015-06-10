@@ -118,7 +118,7 @@ subroutine lceitc(fami, kpg, ksp, mat, option,&
 !
     call rcvalb(fami, kpg, ksp, poum, mat,&
                 ' ', 'RUPT_FRAG', 0, ' ', 0.d0,&
-                4, nom, val, cod, 2)
+                4, nom, val, cod, 2, 'OUI')
 !
 !    PARAMETRE DU COMPORTEMENT DE LA LOI DE TALON-CURNIER
     gc = val(1)

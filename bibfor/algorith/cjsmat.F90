@@ -81,14 +81,14 @@ subroutine cjsmat(mod, imat, tempf, materf, ndt,&
 !
     call rcvala(imat, ' ', 'ELAS', 1, 'TEMP',&
                 tempf, 3, nomc(1), materf(1, 1), cerr(1),&
-                0)
+                0, 'OUI')
     if (cerr(3) .ne. 0) materf(3,1) = 0.d0
     call rcvala(imat, ' ', 'CJS', 1, 'TEMP',&
                 tempf, 12, nomc(4), materf(1, 2), cerr(4),&
-                2)
+                2, 'OUI')
     call rcvala(imat, ' ', 'CJS', 1, 'TEMP',&
                 tempf, 2, nomc(16), materf(13, 2), cerr(16),&
-                0)
+                0, 'OUI')
     if (cerr(16) .eq. 1) then
         materf(13,2) = 0.d0
     endif

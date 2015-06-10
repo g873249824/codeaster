@@ -263,10 +263,10 @@ subroutine te0096(option, nomte)
         call rccoma(matcod, 'ELAS', 1, phenom, icodre)
         call rcvalb(famil, kpg, spt, poum, matcod,&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
         call rcvalb(famil, kpg, spt, poum, matcod,&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'NU', nu, icodre, 1)
+                    1, 'NU', nu, icodre, 1, 'OUI')
     endif
 !
 ! CORRECTION DES FORCES VOLUMIQUES
@@ -274,7 +274,7 @@ subroutine te0096(option, nomte)
         call rccoma(matcod, 'ELAS', 1, phenom, icodre)
         call rcvalb(famil, kpg, spt, poum, matcod,&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
         if (ipesa .ne. 0) then
             do 95 i = 1, nno
                 ij = ndim*(i-1)
@@ -570,10 +570,10 @@ subroutine te0096(option, nomte)
             call rccoma(matcod, 'ELAS', 1, phenom, icodre)
             call rcvala(matcod, ' ', phenom, 1, ' ',&
                         rbid, 1, 'NU', nu, icodre,&
-                        1)
+                        1, 'OUI')
             call rcvala(matcod, ' ', phenom, 1, ' ',&
                         rbid, 1, 'E', e, icodre,&
-                        1)
+                        1, 'OUI')
 !
             mu = e/(2.d0*(1.d0+nu))
 !

@@ -240,7 +240,7 @@ subroutine te0110(option, nomte)
             nbvar = 1
             call rcvalb(fami, kpg, spt, poum, zi(imate),&
                         ' ', 'THER_COQMU', nbvar, nompar, valpar,&
-                        nbres, nomres, valres, icodre, 1)
+                        nbres, nomres, valres, icodre, 1, 'OUI')
 !
 ! ---   CONSTRUCTION DE LA MATRICE DE PASSAGE DU REPERE UTILISATEUR
 ! ---   AU REPERE ELEMENT :
@@ -312,7 +312,7 @@ subroutine te0110(option, nomte)
             nbvar = 1
             call rcvalb(fami, kpg, spt, poum, zi(imate),&
                         ' ', 'THER', nbvar, nompar, valpar,&
-                        nbv, nomres, valres, icodre, 1)
+                        nbv, nomres, valres, icodre, 1, 'OUI')
 !
 ! ---   INITIALISATION DES TENSEURS DE CONDUCTIVITE MEMBRANAIRE,
 ! ---   TRANSVERSE ET DU TENSEUR DE CAPACITE THERMIQUE :
@@ -456,7 +456,7 @@ subroutine te0110(option, nomte)
             nbvar = 1
             call rcvalb(fami, kpg, spt, poum, zi(imate),&
                         ' ', phenom, nbvar, nompar, valpar,&
-                        nbv, nomres, valres, icodre, 1)
+                        nbv, nomres, valres, icodre, 1, 'OUI')
 !
 ! ---   DETERMINATION DE LA ROTATION FAISANT PASSER DU REPERE
 ! ---   DE REFERENCE AU REPERE DE L'ELEMENT :

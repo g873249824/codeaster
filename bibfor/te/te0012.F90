@@ -99,7 +99,7 @@ subroutine te0012(option, nomte)
                     dfdx, dfdy, dfdz, poids)
         call rcvalb(fami, kp, 1, '+', zi(imate),&
                     ' ', phenom, 0, ' ', 0.d0,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
         do 80 i = 1, nno
             do 70 j = 1, i
                 a(1,1,i,j) = a(1,1,i,j) + rho*poids*zr(ivf+l+i-1)* zr(ivf+l+j-1)

@@ -108,10 +108,10 @@ subroutine dxmat1(fami, epais, df, dm, dmf,&
 !
         call rcvalb(fami, 1, 1, '+', zi(jmate),&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         call rcvalb(fami, 1, 1, '+', zi(jmate),&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    1, nomres(3), valres(3), icodre(3), 0)
+                    1, nomres(3), valres(3), icodre(3), 0, 'OUI')
         if ((icodre(3).ne.0) .or. (valres(3).eq.0.d0)) then
             indith = -1
             goto 90

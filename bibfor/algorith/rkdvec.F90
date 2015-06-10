@@ -129,7 +129,7 @@ subroutine rkdvec(fami, kpg, ksp, imat, matcst,&
 !
         call rcvalb(fami, 1, 1, '+', imat,&
                     ' ', 'VENDOCHAB', 2, nompar, vpar,&
-                    1, nomcoe, kd, icodre, 2)
+                    1, nomcoe, kd, icodre, 2, 'OUI')
     else
         kd = coeft(9)
     endif

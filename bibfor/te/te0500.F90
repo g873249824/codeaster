@@ -172,14 +172,14 @@ subroutine te0500(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THM_DIFFU', 1, nompar, valpar,&
-                nbre1, nomre1, valre1, codme1, 0)
+                nbre1, nomre1, valre1, codme1, 0, 'OUI')
 !
     if (codme1(1) .eq. 0) then
         permin = valre1(1)
     else if (codme1(1).eq.1) then
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'THM_DIFFU', 1, nompar, valpar,&
-                    nbrr1, nomrr1, valrr1, codmr1, 0)
+                    nbrr1, nomrr1, valrr1, codmr1, 0, 'OUI')
         if (( codmr1(1).eq.0 ) .and. ( codmr1(2).eq.0 ) .and. ( codmr1(3) .eq.0 )) then
             permin = sqrt(valrr1(1)**2+valrr1(2)**2+valrr1(3)**2)
         endif
@@ -192,7 +192,7 @@ subroutine te0500(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THM_LIQU', 1, nompar, valpar,&
-                nbre2, nomre2, valre2, codme2, 1)
+                nbre2, nomre2, valre2, codme2, 1, 'OUI')
 !
     if (codme2(1) .eq. 0 .and. codme2(2) .eq. 0) then
         rholiq = valre2(1)
@@ -205,7 +205,7 @@ subroutine te0500(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                nbre3, nomre3, valre3, codme3, 1)
+                nbre3, nomre3, valre3, codme3, 1, 'OUI')
 !
     if (codme3(1) .eq. 0) then
         myoung = valre3(1)

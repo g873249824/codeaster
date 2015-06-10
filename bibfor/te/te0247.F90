@@ -315,7 +315,7 @@ subroutine te0247(option, nomte)
             if (zk16(icompo) .eq. 'LMARC_IRRA') then
                 call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                             ' ', 'LMARC_IRRA', 0, ' ', 0.d0,&
-                            12, nomlma(1), coelma(1), codlma(1), 1)
+                            12, nomlma(1), coelma(1), codlma(1), 1, 'OUI')
                 call rcvarc(' ', 'IRRA', '-', 'RIGI', 1,&
                             1, irram, iret2)
                 if (iret2 .gt. 0) irram=0.d0
@@ -347,7 +347,7 @@ subroutine te0247(option, nomte)
             else if (zk16(icompo).eq.'LEMAITRE_IRRA') then
                 call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                             ' ', 'LEMAITRE_IRRA', 0, ' ', 0.d0,&
-                            7, nomlem(1), coelem(1), codlem(1), 1)
+                            7, nomlem(1), coelem(1), codlem(1), 1, 'OUI')
                 call rcvarc(' ', 'IRRA', '-', 'RIGI', 1,&
                             1, irram, iret2)
                 if (iret2 .gt. 0) irram=0.d0

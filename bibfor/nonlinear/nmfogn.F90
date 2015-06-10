@@ -86,7 +86,7 @@ subroutine nmfogn(ndim, nno1, nno2, npg, iw,&
 !
     call rcvalb(fami, kpg, spt, poum, mat,&
                 ' ', 'NON_LOCAL', 0, ' ', 0.d0,&
-                1, nom, val, k2, 2)
+                1, nom, val, k2, 2, 'OUI')
     c = val(1)
 !
     call nmgvdn(ndim, nno1, nno2, iu, ia)

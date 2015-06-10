@@ -105,7 +105,7 @@ subroutine te0281(option, nomte)
 !
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', 'THER_HYDR', 0, ' ', r8bid,&
-                    1, 'CHALHYDR', chal, icodre, 1)
+                    1, 'CHALHYDR', chal, icodre, 1, 'OUI')
     else
         lhyd = .false.
     endif

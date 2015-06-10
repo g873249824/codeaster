@@ -45,7 +45,7 @@ subroutine inithm(imate, yachai, yamec, phi0, em,&
     if ((yamec.eq.1) .or. yachai) then
         call rcvala(imate, ' ', 'ELAS', 1, 'TEMP',&
                     t, 3, ncra1(1), elas(1), icodre,&
-                    1)
+                    1, 'OUI')
         young = elas(1)
         nu = elas(2)
         alpha0 = elas(3)

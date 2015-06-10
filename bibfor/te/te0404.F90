@@ -106,7 +106,7 @@ subroutine te0404(option, nomte)
         nomres(2) = 'NU'
         call rcvalb(fami, 1, 1, '+', zi(imate),&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres, valres, codres, 1)
+                    2, nomres, valres, codres, 1, 'OUI')
         e = valres(1)
         nu = valres(2)
     else if (phenom.eq.'ELAS_COQUE') then
@@ -132,7 +132,7 @@ subroutine te0404(option, nomte)
 !
     call rcvalb(fami, 1, 1, '+', zi(imate),&
                 ' ', phenom, 0, ' ', 0.d0,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
 !     CALCUL DE LA CELERITE DES ONDES DANS LE MATERIAU
 !

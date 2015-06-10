@@ -278,7 +278,7 @@ subroutine assthm(nno, nnos, nnom, npg, npi,&
     loi = ' '
     call rcvala(imate, ' ', 'THM_INIT', 0, ' ',&
                 0.d0, 1, 'COMP_THM', rthmc, codmes,&
-                1)
+                1, 'OUI')
     thmc = compor(8)
     if ((rthmc-1.0d0) .lt. r8prem()) then
         loi = 'LIQU_SATU'

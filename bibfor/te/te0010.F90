@@ -64,7 +64,7 @@ subroutine te0010(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                1, nomres, valres, icodre, 1)
+                1, nomres, valres, icodre, 1, 'OUI')
     rho = valres(1)
 !
     call jevech('PIMPEDR', 'L', iimpe)

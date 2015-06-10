@@ -148,7 +148,7 @@ subroutine lceobg(ndim, typmod, imate, crit, epstm,&
     nomres(2) = 'NU'
     call rcvala(imate, ' ', 'ELAS', 0, ' ',&
                 0.d0, 2, nomres, valres, icodre,&
-                1)
+                1, 'OUI')
     e = valres(1)
     nu = valres(2)
     lambda = e * nu / (un+nu) / (un - deux*nu)
@@ -164,7 +164,7 @@ subroutine lceobg(ndim, typmod, imate, crit, epstm,&
     nomres(6) = 'ECROD'
     call rcvala(imate, ' ', 'ENDO_ORTH_BETON', 0, ' ',&
                 0.d0, 6, nomres, valres, icodre,&
-                1)
+                1, 'OUI')
     alpha = valres(1)
     rk = valres(2)
     rk1 = valres(3)

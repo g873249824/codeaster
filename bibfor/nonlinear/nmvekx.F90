@@ -66,7 +66,7 @@ subroutine nmvekx(imate, tp, xhi, kxhi, dkxidx)
 !
     call rcvala(imate, ' ', 'VENDOCHAB', 2, nompar,&
                 vpar, 1, nom, kxhi, ok,&
-                2)
+                2, 'OUI')
 !
 !-- 3. CREATION D'UNE FONCTION KT(XHI) EXTRAITE DE LA NAPPE
 !          A LA TEMPERATURE COURANTE

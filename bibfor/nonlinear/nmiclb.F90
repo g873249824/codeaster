@@ -114,13 +114,13 @@ subroutine nmiclb(fami, kpg, ksp, option, compor,&
 !
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                1, 'E', em, codres, 1)
+                1, 'E', em, codres, 1, 'OUI')
 !
 ! --- CARACTERISTIQUES ELASTIQUES A TPLUS
 !
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                1, 'E', ep, codres, 1)
+                1, 'E', ep, codres, 1, 'OUI')
 !
 !
     if (isot .and. (.not.impl)) then

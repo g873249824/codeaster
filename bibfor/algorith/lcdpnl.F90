@@ -78,7 +78,7 @@ subroutine lcdpnl(fami, kpg, ksp, typmod, ndim,&
 ! =====================================================================
     call rcvalb(fami, 1, 1, '+', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     young = valres(1)
     nu = valres(2)
     deuxmu = young / ( 1.0d0 + nu )

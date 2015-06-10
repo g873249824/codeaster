@@ -67,7 +67,7 @@ subroutine ef0142(nomte)
         absmoy=(zr(labsc-1+1)+zr(labsc-1+2))/2.d0
         call rcvalb('NOEU', 1, 1, '+', zi(lmater),&
                     ' ', 'ELAS_FLUI', 1, 'ABSC', absmoy,&
-                    nbref, nomref, valref, codref, 1)
+                    nbref, nomref, valref, codref, 1, 'OUI')
         e=valref(1)
         nu=valref(2)
         rhos=valref(3)
@@ -86,10 +86,10 @@ subroutine ef0142(nomte)
         if (nomte .ne. 'MECA_POU_D_EM') then
             call rcvalb('NOEU', 1, 1, '+', zi(lmater),&
                         ' ', 'ELAS', nbpar, nompar, valpar,&
-                        2, nomres, valres, codres, 1)
+                        2, nomres, valres, codres, 1, 'OUI')
             call rcvalb('NOEU', 1, 1, '+', zi(lmater),&
                         ' ', 'ELAS', nbpar, nompar, valpar,&
-                        1, nomres(3), valres(3), codres(3), 0)
+                        1, nomres(3), valres(3), codres(3), 0, 'OUI')
             if (codres(3) .ne. 0) valres(3)=zero
             e=valres(1)
             nu=valres(2)

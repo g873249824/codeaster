@@ -341,14 +341,14 @@ subroutine te0489(option, nomte)
                             nomres(2) = 'SY'
                             call rcvalb(fami, igau, 1, '+', zi(imate),&
                                         ' ', 'ECRO_LINE', ibid, ' ', 0.d0,&
-                                        2, nomres, valres, icodre, 2)
+                                        2, nomres, valres, icodre, 2, 'OUI')
                             dsde = valres(1)
                             rp0 = valres(2)
 !
                             nomres(1) = 'E'
                             call rcvalb(fami, igau, 1, '+', zi(imate),&
                                         ' ', 'ELAS', ibid, ' ', 0.d0,&
-                                        1, nomres, valres, icodre, 2)
+                                        1, nomres, valres, icodre, 2, 'OUI')
                             e = valres(1)
                             rp = dsde*e/(e-dsde)*pm+rp0
 !
@@ -356,7 +356,7 @@ subroutine te0489(option, nomte)
                             nomres(1) = 'E'
                             call rcvalb(fami, igau, 1, '+', zi(imate),&
                                         ' ', 'ELAS', ibid, ' ', 0.d0,&
-                                        1, nomres, valres, icodre, 2)
+                                        1, nomres, valres, icodre, 2, 'OUI')
                             e = valres(1)
 !
                             nomres(1)='SY'
@@ -364,7 +364,7 @@ subroutine te0489(option, nomte)
                             nomres(3)='N_PUIS'
                             call rcvalb(fami, igau, 1, '+', zi(imate),&
                                         ' ', 'ECRO_PUIS', ibid, ' ', 0.d0,&
-                                        3, nomres, valres, icodre, 2)
+                                        3, nomres, valres, icodre, 2, 'OUI')
                             sigy = valres(1)
                             alfafa = valres(2)
                             coco = e/alfafa/sigy
@@ -425,13 +425,13 @@ subroutine te0489(option, nomte)
                             nomres(1) = 'SY'
                             call rcvalb(fami, igau, 1, '+', zi(imate),&
                                         ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                                        1, nomres, valres, icodre, 2)
+                                        1, nomres, valres, icodre, 2, 'OUI')
                             rp0 = valres(1)
                         else if (compor(10:14) .eq. '_PUIS') then
                             nomres(1)='SY'
                             call rcvalb(fami, igau, 1, '+', zi(imate),&
                                         ' ', 'ECRO_PUIS', 0, ' ', 0.d0,&
-                                        1, nomres, valres, icodre, 2)
+                                        1, nomres, valres, icodre, 2, 'OUI')
                             rp0 = valres(1)
                         else if (compor(10:14) .eq. '_TRAC') then
                             call rcvarc(' ', 'TEMP', '-', fami, igau,&

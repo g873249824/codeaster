@@ -59,10 +59,10 @@ subroutine cavini(ndim, nno, geom, vim, npg,&
     poum='+'
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'ENDO_HETEROGENE', 0, ' ', 0.d0,&
-                5, nomres, valres, icodre, 1)
+                5, nomres, valres, icodre, 1, 'OUI')
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'NON_LOCAL', 0, ' ', 0.d0,&
-                1, 'LONG_CAR', lc, k2, 1)
+                1, 'LONG_CAR', lc, k2, 1, 'OUI')
 !  FACTEUR D ECHELLE
     echp = valres(1)
 !  MODULE DE WEIBULL

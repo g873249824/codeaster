@@ -71,7 +71,7 @@ subroutine matrc2(nbpar, nompar, valpar, kcis, matc,&
 !
         call rcvalb('RIGI', 1, 1, '+', zi(jmate),&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
 !     MATERIAU ISOTROPE
 !
@@ -95,7 +95,7 @@ subroutine matrc2(nbpar, nompar, valpar, kcis, matc,&
 !        -----------
         call rcvalb('RIGI', 1, 1, '+', zi(jmate),&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
         el = valres(1)
         et = valres(2)

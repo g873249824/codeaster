@@ -79,7 +79,7 @@ subroutine te0262(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'ELAS', nbpar, nompar, valpar,&
-                nbres, nomres, valres, codres, 1)
+                nbres, nomres, valres, codres, 1, 'OUI')
     e = valres(1)
     rho = valres(2)
     xnu = valres(3)

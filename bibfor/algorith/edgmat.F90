@@ -69,24 +69,24 @@ subroutine edgmat(fami, kpg, ksp, imat, c1,&
 !
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'ELAS_META', 0, ' ', 0.d0,&
-                2, nomc, valres, icodre, 2)
+                2, nomc, valres, icodre, 2, 'OUI')
     mum = valres(1)/(2.d0*(1.d0+valres(2)))
     troikm = valres(1)/(1.d0-2.d0*valres(2))
 !
     call rcvalb(fami, kpg, ksp, c1, imat,&
                 ' ', 'ELAS_META', 0, ' ', 0.d0,&
-                2, nomc, valres, icodre, 2)
+                2, nomc, valres, icodre, 2, 'OUI')
     mu = valres(1)/(2.d0*(1.d0+valres(2)))
     troisk = valres(1)/(1.d0-2.d0*valres(2))
 !
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'ELAS_META', 0, ' ', 0.d0,&
-                2, nomc(3), val, icodre(3), 2)
+                2, nomc(3), val, icodre(3), 2, 'OUI')
     alpham = val(1)*zalpha + val(2)*(1.d0-zalpha)
 !
     call rcvalb(fami, kpg, ksp, c1, imat,&
                 ' ', 'ELAS_META', 0, ' ', 0.d0,&
-                2, nomc(3), val, icodre(3), 2)
+                2, nomc(3), val, icodre(3), 2, 'OUI')
     alphap = val(1)*zalpha + val(2)*(1.d0-zalpha)
 !
 ! 2 - MATRICE D ANISOTROPIE
@@ -109,7 +109,7 @@ subroutine edgmat(fami, kpg, ksp, imat, c1,&
 !
     call rcvalb(fami, kpg, ksp, c1, imat,&
                 ' ', 'META_LEMA_ANI', 0, ' ', 0.d0,&
-                12, nomc(16), valres(16), icodre(16), 2)
+                12, nomc(16), valres(16), icodre(16), 2, 'OUI')
 !
     m11(1)=valres(16)
     m22(1)=valres(18)
@@ -207,7 +207,7 @@ subroutine edgmat(fami, kpg, ksp, imat, c1,&
 !
     call rcvalb(fami, kpg, ksp, c1, imat,&
                 ' ', 'META_LEMA_ANI', 0, ' ', 0.d0,&
-                12, nomc(4), valres(4), icodre(4), 2)
+                12, nomc(4), valres(4), icodre(4), 2, 'OUI')
 !
     do 20 k = 1, 3
         a(k)=valres(4+k-1)

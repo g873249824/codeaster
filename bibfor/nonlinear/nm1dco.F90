@@ -76,19 +76,19 @@ subroutine nm1dco(fami, kpg, ksp, option, imate,&
 ! --- CARACTERISTIQUES ECROUISSAGE LINEAIRE
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 materi, 'CORR_ACIER', 0, ' ', 0.d0,&
-                1, 'D_CORR', dc, codres, 1)
+                1, 'D_CORR', dc, codres, 1, 'OUI')
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 materi, 'CORR_ACIER', 0, ' ', 0.d0,&
-                1, 'ECRO_K', k, codres, 1)
+                1, 'ECRO_K', k, codres, 1, 'OUI')
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 materi, 'CORR_ACIER', 0, ' ', 0.d0,&
-                1, 'ECRO_M', m, codres, 1)
+                1, 'ECRO_M', m, codres, 1, 'OUI')
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 materi, 'CORR_ACIER', 0, ' ', 0.d0,&
-                1, 'SY', sy, codres, 1)
+                1, 'SY', sy, codres, 1, 'OUI')
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 materi, 'ELAS', 0, ' ', 0.d0,&
-                1, 'NU', v, codres, 1)
+                1, 'NU', v, codres, 1, 'OUI')
 !
 ! --- PARAMETRES DE CONVERGENCE
     resi = crildc(3)

@@ -145,10 +145,10 @@ subroutine lcmzcp(fami, kpg, ksp, ndim, imate,&
     nomres(3) = 'ALPHA'
     call rcvalb(fami, kpg, ksp, poum, imate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
     call rcvalb(fami, kpg, ksp, poum, imate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                1, nomres(3), valres(3), icodre(3), 0)
+                1, nomres(3), valres(3), icodre(3), 0, 'OUI')
     if ((iisnan(tp).eq.0) .and. (iisnan(tm).eq.0)) then
         if ((iisnan(tref).ne.0) .or. (icodre(3).ne.0)) then
             call u2mess('F', 'CALCULEL_15')
@@ -167,7 +167,7 @@ subroutine lcmzcp(fami, kpg, ksp, ndim, imate,&
     nomres(2)='K_DESSIC'
     call rcvala(imate, ' ', 'ELAS', 0, ' ',&
                 0.0d0, 2, nomres, valres, icodre,&
-                0)
+                0, 'OUI')
     if (icodre(1) .ne. 0) valres(1) = 0.0d0
     if (icodre(2) .ne. 0) valres(2) = 0.0d0
     bendo = valres(1)
@@ -179,7 +179,7 @@ subroutine lcmzcp(fami, kpg, ksp, ndim, imate,&
     call r8inir(nbval, 0.d0, valres, 1)
     call rcvalb(fami, kpg, ksp, poum, imate,&
                 ' ', 'MAZARS', 1, nompar, valpar,&
-                nbval, mazars, valres, icodre, 1)
+                nbval, mazars, valres, icodre, 1, 'OUI')
     if (icodre(7)+icodre(8) .ne. 0) then
         valkm(1)='MAZARS_GC'
         valkm(2)=mazars(7)

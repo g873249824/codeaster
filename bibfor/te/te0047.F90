@@ -392,7 +392,7 @@ subroutine te0047(optioz, nomtez)
         call r8inir(nbre2, zero, valre2, 1)
         call rcvalb(famil, kpg, spt, poum, zi(imate),&
                     ' ', 'DIS_VISC', nbpar, nompa, valpa,&
-                    nbre2, nomre2, valre2, codre2, 0)
+                    nbre2, nomre2, valre2, codre2, 0, 'OUI')
 !
 ! --- -- MATRICE EN REPERE GLOBAL ==> IREP = 1
         if (irep .eq. 1) then
@@ -480,7 +480,7 @@ subroutine te0047(optioz, nomtez)
         call r8inir(nbre3, zero, valre3, 1)
         call rcvalb(famil, kpg, spt, poum, zi(imate),&
                     ' ', 'DIS_ECRO_CINE', nbpar, nompa, valpa,&
-                    nbre3, nomre3, valre3, codre3, 0)
+                    nbre3, nomre3, valre3, codre3, 0, 'OUI')
 !
 ! --- -- MATRICE EN REPERE GLOBAL ==> IREP = 1
         if (irep .eq. 1) then
@@ -585,7 +585,7 @@ subroutine te0047(optioz, nomtez)
         nompa = 'TEMP'
         call rcvalb(famil, kpg, spt, poum, zi(imate),&
                     ' ', 'DIS_BILI_ELAS', nbpar, nompa, valpa,&
-                    nbre4, nomre4, valre4, codre4, 0)
+                    nbre4, nomre4, valre4, codre4, 0, 'OUI')
 !
 ! --- -- SI UN DDL N'EST PAS AFFECTE D'UN COMPORTEMENT NON-LINEAIRE
 !        IL EST DONC ELASTIQUE DANS CETTE DIRECTION. ==> DINONC

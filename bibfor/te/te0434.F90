@@ -188,7 +188,7 @@ subroutine te0434(option, nomte)
         else if (option.eq.'CHAR_MECA_PESA_R') then
             call rcvalb(fami, kpg, 1, '+', zi(imate),&
                         ' ', 'ELAS_MEMBRANE', 0, ' ', 0.d0,&
-                        1, 'RHO', rho, codres, 1)
+                        1, 'RHO', rho, codres, 1, 'OUI')
             do 300 n = 1, nno
                 do 300 i = 1, nddl
                     zr(ivectu+(n-1)*nddl+i-1) = zr(&

@@ -147,7 +147,7 @@ subroutine turigi(nomte, nbrddl, k)
     nompar = 'TEMP'
     call rcvala(zi(imate), ' ', 'ELAS', nbpar, nompar,&
                 valpar, 2, nomres, valres, icodre,&
-                1)
+                1, 'OUI')
     e = valres(1)
     nu = valres(2)
 ! DEFINITION DE LA MATRICE DE COMPORTEMENT C

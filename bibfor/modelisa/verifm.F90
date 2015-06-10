@@ -85,12 +85,12 @@ subroutine verifm(fami, npg, nspg, poum, imate,&
                     iret2)
         call rcvalb(fami, npg, nspg, '-', imate,&
                     nomat, compor, 1, 'TEMP', tm,&
-                    ndim, nomres, valrem, codrem, 0)
+                    ndim, nomres, valrem, codrem, 0, 'OUI')
         call moytem(fami, npg, nspg, '+', tp,&
                     iret3)
         call rcvalb(fami, npg, nspg, '+', imate,&
                     nomat, compor, 1, 'TEMP', tp,&
-                    ndim, nomres, valrep, codrep, 0)
+                    ndim, nomres, valrep, codrep, 0, 'OUI')
 !
         somire = iret2 + iret3
 !
@@ -128,7 +128,7 @@ subroutine verifm(fami, npg, nspg, poum, imate,&
                     iret2)
         call rcvalb(fami, npg, nspg, poum, imate,&
                     nomat, compor, 1, 'TEMP', tm,&
-                    ndim, nomres, valrem, codrem, 0)
+                    ndim, nomres, valrem, codrem, 0, 'OUI')
 !
         somire = iret2 + iret3
 !

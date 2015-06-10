@@ -132,7 +132,7 @@ subroutine nmvmpo(fami, npg, option, nomte, nc,&
                 iret)
     call rcvalb(fami, 1, 1, '+', icodma,&
                 ' ', 'ELAS', 1, 'TEMP', temp,&
-                2, nomres, valres, codres, 1)
+                2, nomres, valres, codres, 1, 'OUI')
     e = valres(1)
     nu = valres(2)
     g = e / (2.d0*(1.d0+nu))
@@ -144,7 +144,7 @@ subroutine nmvmpo(fami, npg, option, nomte, nc,&
                 iret)
     call rcvalb(fami, 1, 1, '-', icodma,&
                 ' ', 'ELAS', 1, 'TEMP', temm,&
-                2, nomres, valres, codres, 1)
+                2, nomres, valres, codres, 1, 'OUI')
     em = valres(1)
     num = valres(2)
     call nmvmpm(compor, icodma, itemp, temm, em,&

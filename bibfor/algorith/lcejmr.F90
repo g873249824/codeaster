@@ -125,7 +125,7 @@ subroutine lcejmr(fami, kpg, ksp, ndim, mate,&
 !
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'JOINT_MECA_RUPT', 0, ' ', 0.d0,&
-                5, nom, val, cod, 2)
+                5, nom, val, cod, 2, 'OUI')
 !
 ! CONTRAINTE CRITIQUE SANS PENALISATION
     sc = val(2)*(1.d0 + val(3))/val(3)
@@ -149,7 +149,7 @@ subroutine lcejmr(fami, kpg, ksp, ndim, mate,&
 ! PENTE TANGENTIELLE INITIAL (SI ELLE N'EST PAS DEFINI ALORS K_T=K_N)
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'JOINT_MECA_RUPT', 0, ' ', 0.d0,&
-                1, nom(6), val(6), cod(6), 0)
+                1, nom(6), val(6), cod(6), 0, 'OUI')
     if (cod(6) .eq. 0) then
         rt0 = val(6)
     else
@@ -173,7 +173,7 @@ subroutine lcejmr(fami, kpg, ksp, ndim, mate,&
 ! RECUPERATION DE LA PRESS FLUIDE (FONCTION DE L'ESPACE ET DU TEMPS)
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'JOINT_MECA_RUPT', ndim+1, nompar, valpar,&
-                1, nom(7), val(7), cod(7), 0)
+                1, nom(7), val(7), cod(7), 0, 'OUI')
 !
     if (cod(7) .eq. 0) then
         presfl = val(7)
@@ -184,7 +184,7 @@ subroutine lcejmr(fami, kpg, ksp, ndim, mate,&
 ! RECUPERATION DE LA PRESS CLAVAGE (FONCTION DE L'ESPACE ET DU TEMPS)
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'JOINT_MECA_RUPT', ndim+1, nompar, valpar,&
-                1, nom(8), val(8), cod(8), 0)
+                1, nom(8), val(8), cod(8), 0, 'OUI')
 !
     if (cod(8) .eq. 0) then
         prescl = val(8)
@@ -196,13 +196,13 @@ subroutine lcejmr(fami, kpg, ksp, ndim, mate,&
 !--------------------------------------------------------------------
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'JOINT_MECA_RUPT', 0, ' ', 0.d0,&
-                1, nom(9), val(9), cod(9), 0)
+                1, nom(9), val(9), cod(9), 0, 'OUI')
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'JOINT_MECA_RUPT', 0, ' ', 0.d0,&
-                1, nom(10), val(10), cod(10), 0)
+                1, nom(10), val(10), cod(10), 0, 'OUI')
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'JOINT_MECA_RUPT', 0, ' ', 0.d0,&
-                1, nom(11), val(11), cod(11), 0)
+                1, nom(11), val(11), cod(11), 0, 'OUI')
 !
     if (cod(9) .eq. 0) rhof = val(9)
     if (cod(10) .eq. 0) visf = val(10)

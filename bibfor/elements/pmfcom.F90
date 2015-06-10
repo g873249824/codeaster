@@ -124,18 +124,18 @@ subroutine pmfcom(kpg, option, compor, crit, nf,&
         nomres(2) = 'NU'
         call rcvalb(fami, 1, 1, '+', icdmat,&
                     materi, 'ELAS', 1, 'TEMP', tempp,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         ep = valres(1)
         nu = valres(2)
     else
         nomres(1) = 'E'
         call rcvalb(fami, 1, 1, '-', icdmat,&
                     materi, 'ELAS', 1, 'TEMP', tempm,&
-                    1, nomres, valres, icodre, 1)
+                    1, nomres, valres, icodre, 1, 'OUI')
         em = valres(1)
         call rcvalb(fami, 1, 1, '+', icdmat,&
                     materi, 'ELAS', 1, 'TEMP', tempp,&
-                    1, nomres, valres, icodre, 1)
+                    1, nomres, valres, icodre, 1, 'OUI')
         ep = valres(1)
     endif
 !     EVALUATION DU MODULE SECANT
@@ -160,7 +160,7 @@ subroutine pmfcom(kpg, option, compor, crit, nf,&
         call r8inir(nbval, 0.d0, valres, 1)
         call rcvalb(fami, 1, 1, '+', icdmat,&
                     materi, 'LABORD_1D', 0, ' ', 0.0d0,&
-                    9, noeclb, valres, icodre, 1)
+                    9, noeclb, valres, icodre, 1, 'OUI')
 ! ---    BOUCLE COMPORTEMENT SUR CHAQUE FIBRE
         do 250 i = 1, nf
             ivari = nbvalc*(i-1) + 1
@@ -178,7 +178,7 @@ subroutine pmfcom(kpg, option, compor, crit, nf,&
         call r8inir(nbval, 0.d0, valres, 1)
         call rcvalb(fami, 1, 1, '+', icdmat,&
                     materi, 'MAZARS', 0, ' ', 0.0d0,&
-                    8, mazars, valres, icodre, 1)
+                    8, mazars, valres, icodre, 1, 'OUI')
         if (icodre(7)+icodre(8) .ne. 0) then
             valkm(1)='MAZARS_GC'
             valkm(2)=mazars(7)
@@ -202,7 +202,7 @@ subroutine pmfcom(kpg, option, compor, crit, nf,&
         call r8inir(nbval, 0.d0, valres, 1)
         call rcvalb(fami, 1, 1, '+', icdmat,&
                     materi, 'ECRO_LINE', 0, ' ', 0.d0,&
-                    4, ecroli, valres, icodre, 1)
+                    4, ecroli, valres, icodre, 1, 'OUI')
         if (icodre(3)+icodre(4) .ne. 0) then
             valkm(1)='VMIS_CINE_GC'
             valkm(2)=ecroli(3)
@@ -225,7 +225,7 @@ subroutine pmfcom(kpg, option, compor, crit, nf,&
         call r8inir(nbval, 0.d0, valres, 1)
         call rcvalb(fami, 1, 1, '-', icdmat,&
                     materi, 'PINTO_MENEGOTTO', 0, ' ', 0.0d0,&
-                    12, nompim, valres, icodre, 0)
+                    12, nompim, valres, icodre, 0, 'OUI')
         if (icodre(7) .ne. 0) valres(7) = -1.0d0
         cstpm(1) = ep
         do 300 i = 1, 12

@@ -64,7 +64,7 @@ subroutine te0266(option, nomte)
     nbcmp=3
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THER', 1, 'INST', zr(itemp),&
-                1, 'LAMBDA', valres, icodre, 1)
+                1, 'LAMBDA', valres, icodre, 1, 'OUI')
 !
     do 101 kp = 1, npg
         k = (kp-1)*nno

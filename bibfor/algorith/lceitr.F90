@@ -71,7 +71,7 @@ subroutine lceitr(fami, kpg, ksp, mat, option,&
 !
     call rcvalb(fami, kpg, ksp, poum, mat,&
                 ' ', 'RUPT_DUCT', 0, ' ', 0.d0,&
-                nbpar, nom, val, cod, 2)
+                nbpar, nom, val, cod, 2, 'OUI')
 !
     gc = val(1)
     sc = val(2)

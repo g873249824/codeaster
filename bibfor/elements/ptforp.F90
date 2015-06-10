@@ -163,11 +163,11 @@ subroutine ptforp(itype, option, nomte, a, a2,&
             if (ist .eq. 1) then
                 call rcvala(zi(lmate), ' ', 'ELAS', 0, ' ',&
                             r8bid, 1, 'RHO', rho, icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call rcvala(zi(lmate), ' ', 'ELAS', 0, ' ',&
                             r8bid, 1, 'RHO', rho, icodre,&
-                            0)
+                            0, 'OUI')
                 if (icodre .ne. 0) rho = zero
             endif
 !          ---A CAUSE DES CHARGEMENTS VARIABLE ---

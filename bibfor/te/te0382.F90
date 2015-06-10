@@ -476,7 +476,7 @@ subroutine te0382(option, nomte)
         call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
         call rcvalb(famil, kpg, spt, poum, zi(imate),&
                     ' ', phenom, 1, ' ', r8bid,&
-                    2, nompar, valres, icodre, 1)
+                    2, nompar, valres, icodre, 1, 'OUI')
         e =valres(1)
         nu=valres(2)
 !

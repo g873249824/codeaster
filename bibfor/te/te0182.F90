@@ -70,7 +70,7 @@ subroutine te0182(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
     do 10 i = 1, ndi
 !*

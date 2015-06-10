@@ -177,12 +177,6 @@ Il faut vérifier les affectations sous AFFE_CARA_ELEM/DISCRET.
 31 :_(u"""      %(k1)8s   %(r1)12.5E   %(r2)12.5E   %(r3)12.5E
 """),
 
-35 :_(u"""
-Dans votre étude il existe un discret avec le comportement DIS_CHOC et un coefficient de COULOMB.
-Le champ de vitesse n'existe pas, il ne peut donc pas y avoir d'effort tangentiel.
-"""),
-
-
 40 :_(u"""
 L'utilisation des discrets non-symétriques n'est actuellement pas possible pour des calculs non-linéaires.
 """),

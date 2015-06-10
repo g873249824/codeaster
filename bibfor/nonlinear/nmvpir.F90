@@ -160,8 +160,8 @@ subroutine nmvpir(fami, kpg, ksp, ndim, typmod,&
 !
     if (typmod(1) .eq. 'C_PLAN') then
         iulmes = iunifi('MESSAGE')
-        write (iulmes,*) 'COMPORTEMENT ',compor(1)(1:10),' NON&
-     & PROGRAMME POUR DES ELEMENTS DE CONTRAINTES PLANES'
+        write (iulmes,*) 'comportement ',compor(1)(1:10),' non&
+     & programme pour des elements de contraintes planes'
         call u2mess('F', 'ALGORITH6_92')
         goto 299
     endif
@@ -241,7 +241,7 @@ subroutine nmvpir(fami, kpg, ksp, ndim, typmod,&
 !
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'LEMAITRE_IRRA', 0, ' ', 0.d0,&
-                    7, nomlem, coelem, codlem, 1)
+                    7, nomlem, coelem, codlem, 1, 'OUI')
 !
 !        RAJOUT DEMANDE PAR ROMEO FERNANDES (FICHE 17275)
         irrap = irrap - irram + vim(2)
@@ -283,7 +283,7 @@ subroutine nmvpir(fami, kpg, ksp, ndim, typmod,&
 !        PARAMETRES DE LA LOI DE FLUAGE
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'VISC_IRRA_', 1, 'TEMP', tschem,&
-                    5, nomvil(1), coevil(1), codvil, 1)
+                    5, nomvil(1), coevil(1), codvil, 1, 'OUI')
         a = coevil(1)
         b = coevil(2)
         ctps = coevil(3)
@@ -304,7 +304,7 @@ subroutine nmvpir(fami, kpg, ksp, ndim, typmod,&
 !        PARAMETRES DE LA LOI DE FLUAGE
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'GRAN_IRRA_', 1, ' ', 0.d0,&
-                    5, nomvil(1), coevil(1), codvil, 1)
+                    5, nomvil(1), coevil(1), codvil, 1, 'OUI')
         if (coevil(5) .ne. 1.d0) then
             fluphi=coevil(5)
             irrap = fluphi*instap
@@ -324,7 +324,7 @@ subroutine nmvpir(fami, kpg, ksp, ndim, typmod,&
     else if (compor(1)(1:10).eq.'LEMA_SEUIL') then
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'LEMA_SEUIL', 1, 'TEMP', tschem,&
-                    2, nomint(1), coeint(1), codint, 1)
+                    2, nomint(1), coeint(1), codint, 1, 'OUI')
         unsurm=0.d0
         valden=1.d0
         fluphi=(irrap-irram)/deltat

@@ -60,7 +60,7 @@ subroutine te0021(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'ELAS', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
     omega1 = zr(irota+1)*zr(irota)
     omega2 = zr(irota+2)*zr(irota)
     omega3 = zr(irota+3)*zr(irota)

@@ -133,7 +133,7 @@ subroutine te0470(option, nomte)
     tpg = 0.d0
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', phenom, 0, '   ', tpg,&
-                nbv, nomres, valres, icodre, 1)
+                nbv, nomres, valres, icodre, 1, 'OUI')
     rhopou = valres(1)
     call rccoma(zi(imate), 'FLUIDE', 1, phenom, icodre)
     if (phenom .eq. 'FLUIDE') then
@@ -145,7 +145,7 @@ subroutine te0470(option, nomte)
     tpg = 0.d0
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', phenom, 0, '   ', tpg,&
-                nbv, nomres, valres, icodre, 1)
+                nbv, nomres, valres, icodre, 1, 'OUI')
     rhoflu = valres(1)
 !     ----------------------------------------------------------------
 !     --- RECUPERATION DES CARACTERISTIQUES GENERALES DES SECTIONS ---

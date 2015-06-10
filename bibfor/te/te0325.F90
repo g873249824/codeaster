@@ -65,7 +65,7 @@ subroutine te0325(option, nomte)
     mater = zi(imate)
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'THER', 0, ' ', r8b,&
-                1, 'RHO_CP', rho, icodre, 1)
+                1, 'RHO_CP', rho, icodre, 1, 'OUI')
 !
     if (option(16:16) .eq. 'R') then
         call jevech('PACCELR', 'L', iacce)

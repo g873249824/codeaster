@@ -111,7 +111,7 @@ subroutine te0441(option, nomte)
     poum='+'
     call rcvalb(famil, kpg, spt, poum, zi(imate),&
                 ' ', phenom, 1, ' ', rbid,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !     CALCUL DE L'EFFORT VOLUMIQUE AUX NOEUDS DE L'ELEMENT PARENT : FNO
     call vecini(ndim*nnop, 0.d0, fno)
 !

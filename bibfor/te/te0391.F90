@@ -80,7 +80,7 @@ subroutine te0391(option, nomte)
     call jevech('PMATERC', 'L', imate)
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'ELAS', 0, ' ', r8bid,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
 !     --- RECUPERATION DES CARACTERISTIQUES GENERALES DES SECTIONS ---
     call jevech('PCAGNPO', 'L', lsect)

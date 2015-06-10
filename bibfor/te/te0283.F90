@@ -96,7 +96,7 @@ subroutine te0283(option, nomte)
             call jevech('PTEMPER', 'L', itempr)
             call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                         ' ', 'THER_HYDR', 0, ' ', r8bid,&
-                        1, 'CHALHYDR', chal, icodre, 1)
+                        1, 'CHALHYDR', chal, icodre, 1, 'OUI')
             do 150 kp = 1, npg2
                 l = nno*(kp-1)
                 hydrgm(kp)=0.d0

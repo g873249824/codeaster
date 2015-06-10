@@ -143,13 +143,13 @@ subroutine crgdm(imate, compor, lambda, deuxmu, lamf,&
         nomres(3) = 'ALPHA'
         call rcvala(imate, ' ', 'ELAS', 1, 'TEMP',&
                     tmoyp, 3, nomres, valres, icodre,&
-                    1)
+                    1, 'NON')
         alph = valres(3)
 !
     else
         call rcvala(imate, ' ', 'ELAS', 0, ' ',&
                     0.d0, 2, nomres, valres, icodre,&
-                    1)
+                    1, 'NON')
 !
     endif
     e = valres(1)
@@ -162,7 +162,7 @@ subroutine crgdm(imate, compor, lambda, deuxmu, lamf,&
 !
     call rcvala(imate, ' ', 'GLRC_DM   ', 0, ' ',&
                 0.d0, 2, nomres, valres, icodre,&
-                0)
+                0, 'NON')
 !
     if (icodre(1) .eq. 0) then
         ef = valres(1)
@@ -189,7 +189,7 @@ subroutine crgdm(imate, compor, lambda, deuxmu, lamf,&
     nomres(7) = 'ALPHA_C'
     call rcvala(imate, ' ', 'GLRC_DM', 0, ' ',&
                 0.d0, 7, nomres, valres, icodre,&
-                0)
+                0, 'NON')
 !
     gt = valres(1)
     gf = valres(3)

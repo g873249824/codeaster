@@ -68,7 +68,7 @@ subroutine te0555(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                1, nomres, valres, icodre, 1)
+                1, nomres, valres, icodre, 1, 'OUI')
     celer = valres(1)
     if (celer .lt. 1.d-1) goto 999
 !

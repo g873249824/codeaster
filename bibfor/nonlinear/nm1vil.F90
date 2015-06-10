@@ -138,7 +138,7 @@ subroutine nm1vil(fami, kpg, ksp, icdmat, materi,&
 !     RECUPERATION DES CARACTERISTIQUES DES LOIS DE FLUAGE
     call rcvalb(fami, kpg, ksp, '+', icdmat,&
                 materi, compo, 0, ' ', 0.d0,&
-                nbcgil, nomgil(1), coegil(1), codgil(1), 0)
+                nbcgil, nomgil(1), coegil(1), codgil(1), 0, 'OUI')
 !     TRAITEMENT DES PARAMETRES DE LA LOI DE FLUAGE
     if (codgil(1) .eq. 0) then
 !         LOI DE TYPE VISC_IRRA_LOG

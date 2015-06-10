@@ -111,7 +111,7 @@ subroutine dicrgr(fami, option, neq, nc, icodma,&
 ! recuperation des donnees materiau pour le discret
     call rcvalb(fami, 1, 1, '+', icodma,&
                 ' ', 'DIS_GRICRA', 0, ' ', 0.d0,&
-                4, nomre1, valre1, codre1, 0)
+                4, nomre1, valre1, codre1, 0, 'OUI')
 !
     knax=valre1(1)
     ktax=valre1(2)/4.d0
@@ -128,7 +128,7 @@ subroutine dicrgr(fami, option, neq, nc, icodma,&
 !
     call rcvalb(fami, 1, 1, '+', icodma,&
                 ' ', 'DIS_GRICRA', 0, ' ', 0.d0,&
-                2, nomre2, valre2, codre2, 0)
+                2, nomre2, valre2, codre2, 0, 'OUI')
 !
     if (codre2(1) .eq. 0) then
         fno=valre2(1)/4.d0
@@ -149,7 +149,7 @@ subroutine dicrgr(fami, option, neq, nc, icodma,&
 !
         call rcvalb(fami, 1, 1, '+', icodma,&
                     ' ', 'DIS_GRICRA', nbpar, nompar, valpar,&
-                    1, nomre3, valre3, codre3, 0)
+                    1, nomre3, valre3, codre3, 0, 'OUI')
         if (codre3 .eq. 0) then
             fno=valre3/4.d0
             muax=valre2(2)
@@ -158,7 +158,7 @@ subroutine dicrgr(fami, option, neq, nc, icodma,&
 !
     call rcvalb(fami, 1, 1, '+', icodma,&
                 ' ', 'DIS_GRICRA', 0, ' ', 0.d0,&
-                5, nomre4, valre4, codre4, 0)
+                5, nomre4, valre4, codre4, 0, 'OUI')
 !
     if (codre4(1) .eq. 0) then
         phic=valre4(1)
@@ -180,7 +180,7 @@ subroutine dicrgr(fami, option, neq, nc, icodma,&
         valpar(1)=temp
         call rcvalb(fami, 1, 1, '+', icodma,&
                     ' ', 'DIS_GRICRA', nbpar, nompar, valpar,&
-                    5, nomre5, valre5, codre5, 0)
+                    5, nomre5, valre5, codre5, 0, 'OUI')
         phic=valre5(1)
         thetac=valre5(2)
         ktheta=valre5(4)/2.d0

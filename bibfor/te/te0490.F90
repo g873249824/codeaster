@@ -390,7 +390,7 @@ subroutine te0490(option, nomte)
 !
             call rcvalb(fami, igau, 1, '+', zi(imate),&
                         ' ', 'ELAS', 0, ' ', 0.d0,&
-                        2, nomres, valres, icodre, 2)
+                        2, nomres, valres, icodre, 2, 'OUI')
 !
 !
             e = valres(1)
@@ -412,7 +412,7 @@ subroutine te0490(option, nomte)
 !
                 call rcvalb(fami, igau, 1, '+', zi(imate),&
                             ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                            2, nomres, valres, icodre, 2)
+                            2, nomres, valres, icodre, 2, 'OUI')
 !
                 dsde = valres(1)
                 sigy = valres(2)
@@ -624,7 +624,7 @@ subroutine te0490(option, nomte)
 !
                 call rcvalb(fami, igau, 1, '+', zi(imate),&
                             ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                            2, nomres, valres, icodre, 2)
+                            2, nomres, valres, icodre, 2, 'OUI')
 !
                 dsde = valres(1)
                 sigy = valres(2)
@@ -755,7 +755,7 @@ subroutine te0490(option, nomte)
 !
             call rcvalb(fami, igau, 1, '+', zi(imate),&
                         ' ', 'ELAS', 0, ' ', 0.d0,&
-                        2, nomres, valres, icodre, 2)
+                        2, nomres, valres, icodre, 2, 'OUI')
 !
             e = valres(1)
             nu = valres(2)
@@ -838,7 +838,7 @@ subroutine te0490(option, nomte)
                 nomres(2) = 'SY'
                 call rcvalb(fami, igau, 1, '+', zi(imate),&
                             ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                            2, nomres, valres, icodre, 2)
+                            2, nomres, valres, icodre, 2, 'OUI')
 !
                 dsde = valres(1)
                 sigy = valres(2)

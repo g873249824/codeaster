@@ -63,7 +63,7 @@ subroutine ef0154(nomte)
 !
     call rcvalb(fami, 1, 1, '+', zi(lmater),&
                 ' ', 'ELAS', 0, ' ', r8bid,&
-                1, 'E', e, codres, 1)
+                1, 'E', e, codres, 1, 'OUI')
     if (epsth .ne. 0.d0) lteimp=.true.
 !
 !     --- RECUPERATION DES COORDONNEES DES NOEUDS ---

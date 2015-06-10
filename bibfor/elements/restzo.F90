@@ -43,7 +43,7 @@ function restzo(zimat, nmnbn, bend, normm, normn)
 !
     call rcvalb('FPG1', 1, 1, '+', zimat,&
                 ' ', 'GLRC_DAMAGE', 0, ' ', 0.d0,&
-                1, nomres, valres, icodre, 1)
+                1, nomres, valres, icodre, 1, 'OUI')
 !
     if (valres(1) .eq. 0.d0) then
         nomres(1)='MAXMP1'
@@ -53,7 +53,7 @@ function restzo(zimat, nmnbn, bend, normm, normn)
 !
         call rcvalb('FPG1', 1, 1, '+', zimat,&
                     ' ', 'GLRC_DAMAGE', 0, ' ', 0.d0,&
-                    4, nomres, valres, icodre, 1)
+                    4, nomres, valres, icodre, 1, 'OUI')
 !
         if (bend .eq. 1) then
             mpcste(1)=valres(1)

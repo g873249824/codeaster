@@ -205,7 +205,7 @@ subroutine brag01(fami, kpg, ksp, ndim, typmod,&
     nomres(2)='NU'
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
 !
 !        MODULES INSTANTANES ISOTROPES
     e0 = valres(1)
@@ -269,7 +269,7 @@ subroutine brag01(fami, kpg, ksp, ndim, typmod,&
 !
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'BETON_RAG', 0, ' ', rbid,&
-                33, nomres, valres, icodre, 2)
+                33, nomres, valres, icodre, 2, 'OUI')
 !
     if (valres(1) .eq. 1.0d0) then
         fluage=.true.

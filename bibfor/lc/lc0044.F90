@@ -55,11 +55,11 @@ subroutine lc0044(fami, kpg, ksp, ndim, imate,&
     nomres(1)='ALPHA'
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ELAS', 0, ' ', [0.d0],&
-                1, nomres, valres, icodre, 2)
+                1, nomres, valres, icodre, 2, 'OUI')
     alpham = valres(1)
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 0, ' ', [0.d0],&
-                1, nomres, valres, icodre, 2)
+                1, nomres, valres, icodre, 2, 'OUI')
     alphap = valres(1)
     
     if ((option(1:9) .eq. 'RAPH_MECA') .or. (option(1:9) .eq. 'FULL_MECA')) then

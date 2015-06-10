@@ -115,10 +115,10 @@ subroutine te0338(option, nomte)
 !
     call rcvalb(fami, 1, 1, '+', zi(imate),&
                 ' ', phenom, 0, ' ', 0.d0,&
-                3, nomres, valres, icodre, 1)
+                3, nomres, valres, icodre, 1, 'OUI')
     call rcvalb(fami, 1, 1, '+', zi(imate),&
                 ' ', phenom, 0, ' ', 0.d0,&
-                1, nomres(3), valres(3), icodre(3), 1)
+                1, nomres(3), valres(3), icodre(3), 1, 'OUI')
     if (icodre(3) .ne. 0) valres(3) = 1.0d-6
     m = valres(1)
     vref = valres(2)
@@ -188,7 +188,7 @@ subroutine te0338(option, nomte)
             tmoy = tmoy/vkp
             call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                         ' ', phenom, 1, 'TEMP', tmoy,&
-                        1, nomres(4), valres(4), icodre(4), 1)
+                        1, nomres(4), valres(4), icodre(4), 1, 'OUI')
             sref = valres(4)
 !
 !           2.1.3 CALCUL DE SIGM_W
@@ -257,7 +257,7 @@ subroutine te0338(option, nomte)
             tmoy = tmoy/vkp
             call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                         ' ', phenom, 1, 'TEMP', tmoy,&
-                        1, nomres(4), valres(4), icodre(4), 1)
+                        1, nomres(4), valres(4), icodre(4), 1, 'OUI')
             sref = valres(4)
 !
 !           2.2.3 CALCUL DE SIGM_W
@@ -301,7 +301,7 @@ subroutine te0338(option, nomte)
                 call epdcp(sigm, epsg, sig1, eps1)
                 call rcvalb(fami, kp, 1, '+', zi(imate),&
                             ' ', phenom, 0, ' ', 0.d0,&
-                            1, nomres(4), valres(4), icodre(4), 1)
+                            1, nomres(4), valres(4), icodre(4), 1, 'OUI')
                 sref = valres(4)
                 signew = (sig1/sref)*exp(-eps1*0.5d0)
             endif
@@ -340,7 +340,7 @@ subroutine te0338(option, nomte)
                 sig1 = max(equi(3),equi(4),equi(5))
                 call rcvalb(fami, kp, 1, '+', zi(imate),&
                             ' ', phenom, 0, ' ', 0.d0,&
-                            1, nomres(4), valres(4), icodre(4), 1)
+                            1, nomres(4), valres(4), icodre(4), 1, 'OUI')
                 sref = valres(4)
                 sig1 = sig1/sref
             endif

@@ -249,7 +249,7 @@ subroutine te0378(option, nomte)
         nompar(1)='RHO'
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', phenom, 1, ' ', r8bid,&
-                    1, nompar, valres, icodre, 1)
+                    1, nompar, valres, icodre, 1, 'OUI')
         rho = valres(1)
 !GN        WRITE(IFM,1000) 'RHO', RHO
 !

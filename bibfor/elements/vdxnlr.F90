@@ -289,7 +289,7 @@ subroutine vdxnlr(option, nomte, xi, rig, nb1,&
 !
                 call rcvalb('MASS', intsn, ksp, '+', zi(imate),&
                             ' ', phenom, 0, ' ', 0.d0,&
-                            nbv, nomres, valres, valret, 1)
+                            nbv, nomres, valres, valret, 1, 'OUI')
 !
                 cisail = valres(1)/ (1.d0+valres(2))
 !

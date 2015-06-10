@@ -67,7 +67,7 @@ subroutine te0551(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, matos,&
                 ' ', 'DURT_META', 1, 'TEMP', 0.d0,&
-                5, nomres, valres, icodre, 2)
+                5, nomres, valres, icodre, 2, 'OUI')
 !
     do 10 kn = 1, nno
         zalpha = 0.d0

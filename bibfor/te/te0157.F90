@@ -64,7 +64,7 @@ subroutine te0157(option, nomte)
     nomres(2) = 'CELE_R'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'FLUIDE', 0, ' ', r8bid,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
     rho = valres(1)
     if (rho .le. r8prem()) then
         call u2mess('F', 'ELEMENTS5_45')

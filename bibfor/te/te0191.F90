@@ -60,7 +60,7 @@ subroutine te0191(option, nomte)
     call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', phenom, 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
     do 113 k = 1, 3
         do 113 l = 1, 3

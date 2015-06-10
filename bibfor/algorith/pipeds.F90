@@ -120,7 +120,7 @@ subroutine pipeds(ndim, typmod, tau, mate, vim,&
     poum='+'
     call rcvalb(fami, kpg, spt, poum, mate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
     e = valres(1)
     nu = valres(2)
     lambda = e * nu / (1.d0+nu) / (1.d0 - 2.d0*nu)
@@ -132,7 +132,7 @@ subroutine pipeds(ndim, typmod, tau, mate, vim,&
     nomres(3) = 'SYC'
     call rcvalb(fami, kpg, spt, poum, mate,&
                 ' ', 'BETON_ECRO_LINE', 0, ' ', 0.d0,&
-                nbres, nomres, valres, icodre, 0)
+                nbres, nomres, valres, icodre, 0, 'OUI')
     dsigm = valres(1)
     syt = valres(2)
     syc = valres(3)

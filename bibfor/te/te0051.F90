@@ -79,7 +79,7 @@ subroutine te0051(option, nomte)
         nomres(1) = 'LAMBDA'
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', phenom, 1, 'INST', valpar,&
-                    1, nomres, valres, icodre, 1)
+                    1, nomres, valres, icodre, 1, 'OUI')
         lambda = valres(1)
         aniso = .false.
     else if (phenom.eq.'THER_ORTH') then
@@ -88,7 +88,7 @@ subroutine te0051(option, nomte)
         nomres(3) = 'LAMBDA_N'
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', phenom, 1, 'INST', valpar,&
-                    3, nomres, valres, icodre, 1)
+                    3, nomres, valres, icodre, 1, 'OUI')
         lambor(1) = valres(1)
         lambor(2) = valres(2)
         lambor(3) = valres(3)

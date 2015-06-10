@@ -57,7 +57,7 @@ subroutine lcroma(fami, kpg, ksp, poum, mate)
 !
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                1, 'NU', nu, icodre(1), 2)
+                1, 'NU', nu, icodre(1), 2, 'OUI')
     call rcvarc(' ', 'TEMP', poum, fami, kpg,&
                 ksp, temp, iret)
     call rctype(mate, 1, 'TEMP', temp, resu,&
@@ -89,7 +89,7 @@ subroutine lcroma(fami, kpg, ksp, poum, mate)
 !
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'ROUSSELIER', 0, ' ', 0.d0,&
-                6, nomres, valres, icodre, 2)
+                6, nomres, valres, icodre, 2, 'OUI')
     rousd = valres(1)
     sig1 = valres(2)
     f0 = valres(3)

@@ -276,7 +276,7 @@ subroutine tuforc(option, nomte, nbrddl, b, f,&
         nompar = 'TEMP'
         call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                     ' ', 'ELAS', nbpar, nompar, valpar,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         e = valres(1)
         nu = valres(2)
         beta = e/ (1.d0-nu**2)

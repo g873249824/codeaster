@@ -40,7 +40,7 @@ subroutine fonoda(imate, perman, mecani, press1, press2,&
 ! ======================================================================
     call rcvalb('FPG1', 1, 1, '+', imate,&
                 ' ', 'THM_DIFFU', 0, ' ', 0.d0,&
-                nhom, ncra5, hom, icodre, 1)
+                nhom, ncra5, hom, icodre, 1, 'OUI')
     pesa(1)=hom(1)
     pesa(2)=hom(2)
     pesa(3)=hom(3)

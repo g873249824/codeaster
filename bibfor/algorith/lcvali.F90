@@ -50,7 +50,7 @@ subroutine lcvali(fami, kpg, ksp, imate, compor,&
     nomres(4)='TEMP_MAXI'(1:8)
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'VERI_BORNE', 0, ' ', 0.d0,&
-                4, nomres, valres, icodre, 0)
+                4, nomres, valres, icodre, 0, 'OUI')
 !
 !     TRAITEMENT DE EPSI_MAXI
     if (icodre(1) .eq. 0) then

@@ -98,14 +98,14 @@ subroutine nmcham(fami, kpg, ksp, imate, compor,&
 !      --------------------------------------
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres(1), matel(1), icodre(1), 1)
+                2, nomres(1), matel(1), icodre(1), 1, 'OUI')
 !
 ! ---  CARACTERISTIQUES A L'INSTANT ACTUEL :
 !      -----------------------------------
 !
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres(1), matel(3), icodre(1), 1)
+                2, nomres(1), matel(3), icodre(1), 1, 'OUI')
 !
 ! --- RECUPERATION DES CARACTERISTIQUES D'ECROUISSAGE :
 !     ===============================================
@@ -120,7 +120,7 @@ subroutine nmcham(fami, kpg, ksp, imate, compor,&
         nomres(7) = 'G_0'
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'CIN1_CHAB', 0, ' ', 0.d0,&
-                    8, nomres, valres, icodre, 1)
+                    8, nomres, valres, icodre, 1, 'OUI')
     else if (nbvar.eq.2) then
         nomres(4) = 'C1_I'
         nomres(7) = 'G1_0'
@@ -128,7 +128,7 @@ subroutine nmcham(fami, kpg, ksp, imate, compor,&
         nomres(10)= 'G2_0'
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'CIN2_CHAB', 0, ' ', 0.d0,&
-                    10, nomres, valres, icodre, 1)
+                    10, nomres, valres, icodre, 1, 'OUI')
     endif
 !
     r0 = valres(1)
@@ -173,7 +173,7 @@ subroutine nmcham(fami, kpg, ksp, imate, compor,&
         nomres(2) = 'DELTA2'
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'CIN2_NRAD', 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         delta1 = valres(1)
         delta2 = valres(2)
         mat(17) = delta1
@@ -223,7 +223,7 @@ subroutine nmcham(fami, kpg, ksp, imate, compor,&
         nomres(3) = 'UN_SUR_M'
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'LEMAITRE', 0, ' ', 0.d0,&
-                    3, nomres, valres, icodre, 1)
+                    3, nomres, valres, icodre, 1, 'OUI')
 !
         if (icodre(1) .eq. 0) then
             valden = valres(1)
@@ -261,7 +261,7 @@ subroutine nmcham(fami, kpg, ksp, imate, compor,&
         nomemo(4) = 'MU      '
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'MEMO_ECRO', 0, ' ', 0.d0,&
-                    4, nomemo, mat(13), icodre, 1)
+                    4, nomemo, mat(13), icodre, 1, 'OUI')
 !
     endif
 end subroutine

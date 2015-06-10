@@ -65,7 +65,7 @@ subroutine te0256(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
     do 10 i = 1, 2*nno
         zr(ivectu+i-1) = 0.0d0

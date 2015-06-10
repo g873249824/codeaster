@@ -176,7 +176,7 @@ subroutine te0095(option, nomte)
         call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
         call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
         if (ipesau .ne. 0) then
             do 160 i = 1, nno
                 do 161 j = 1, ndim
@@ -204,7 +204,7 @@ subroutine te0095(option, nomte)
         call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
         call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
         if (ipesav .ne. 0) then
             do 260 i = 1, nno
                 do 261 j = 1, ndim

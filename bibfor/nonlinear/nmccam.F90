@@ -145,7 +145,7 @@ subroutine nmccam(ndim, typmod, imate, compor, crit,&
 !
         call rcvala(imate, ' ', 'ELAS', 1, nompar,&
                     valpam, 1, nomres(1), valres(1), icodre(1),&
-                    0)
+                    0, 'OUI')
 !
         if ((iisnan(tp).eq.0) .and. (iisnan(tm).gt.0)) then
             if ((iisnan(tref).gt.0) .or. (icodre(1) .ne.0)) then
@@ -159,7 +159,7 @@ subroutine nmccam(ndim, typmod, imate, compor, crit,&
         endif
         call rcvala(imate, ' ', 'CAM_CLAY ', 1, nompar,&
                     valpam, 8, nomres(2), valres(2), icodre(2),&
-                    2)
+                    2, 'OUI')
         mu = valres(2)
         poro = valres(3)
         kapa = valres(4)
@@ -178,13 +178,13 @@ subroutine nmccam(ndim, typmod, imate, compor, crit,&
 !
         call rcvala(imate, ' ', 'ELAS', 1, nompar,&
                     valpam, 1, nomres(1), valres(1), icodre(1),&
-                    0)
+                    0, 'OUI')
         if (icodre(1) .ne. 0) valres(1) = 0.d0
         coef = valres(1)*(tp-tref) - valres(1)*(tm-tref)
 !
         call rcvala(imate, ' ', 'CAM_CLAY ', 1, nompar,&
                     valpam, 8, nomres(2), valres(2), icodre(2),&
-                    2)
+                    2, 'OUI')
         mu = valres(2)
         poro = valres(3)
         poro1 = poro
@@ -197,7 +197,7 @@ subroutine nmccam(ndim, typmod, imate, compor, crit,&
 !
         call rcvala(imate, ' ', 'THM_INIT', 1, nompar,&
                     valpam, 1, nomres(3), valres(3), icodre(3),&
-                    2)
+                    2, 'OUI')
         poro = valres(3)
         poro2 = poro
         diff = poro1-poro2

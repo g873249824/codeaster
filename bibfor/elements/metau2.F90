@@ -114,7 +114,7 @@ subroutine metau2(option, nomte, iret)
                     1, tpg, iret2)
         call rcvalb('RIGI', 1, 1, '+', mater,&
                     ' ', 'ELAS_META', 1, 'TEMP', tpg,&
-                    6, nomres, valres, icodre, 1)
+                    6, nomres, valres, icodre, 1, 'OUI')
         coef = valres(1)/ (1.d0-2.d0*valres(2))
         zalpha=0.d0
         do 25 i = 1, nz

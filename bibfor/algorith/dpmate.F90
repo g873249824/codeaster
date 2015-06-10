@@ -56,10 +56,10 @@ subroutine dpmate(mod, imat, materf, ndt, ndi,&
     materf(3,1) = 0.0d0
     call rcvala(imat, ' ', 'ELAS', 0, ' ',&
                 0.d0, 2, nomc(1), materf(1, 1), icodre,&
-                1)
+                1, 'OUI')
     call rcvala(imat, ' ', 'ELAS', 0, ' ',&
                 0.d0, 1, nomc(3), materf(3, 1), icodre,&
-                0)
+                0, 'OUI')
 ! ======================================================================
 ! --- DEFINITION PARAMETRES MATERIAU DRUCKER ---------------------------
 ! ======================================================================
@@ -72,7 +72,7 @@ subroutine dpmate(mod, imat, materf, ndt, ndi,&
     typed = r8vide()
     call rcvala(imat, ' ', 'DRUCK_PRAGER', 0, ' ',&
                 0.d0, 1, 'TYPE_DP', typed, icodre,&
-                0)
+                0, 'OUI')
     if (typed .eq. 1.0d0) then
 ! ======================================================================
 ! --- CAS LINEAIRE -----------------------------------------------------
@@ -81,7 +81,7 @@ subroutine dpmate(mod, imat, materf, ndt, ndi,&
         nomc(7) = 'H'
         call rcvala(imat, ' ', 'DRUCK_PRAGER', 0, ' ',&
                     0.d0, 4, nomc(4), tabtmp(1), icodre,&
-                    1)
+                    1, 'OUI')
 ! ======================================================================
 ! --- POUR DES COMMODITES DE PROGRAMMATION ON DEFINIT LES PARAMETRES ---
 ! --- MATERIAU DE LA FACON SUIVANTE ------------------------------------
@@ -103,7 +103,7 @@ subroutine dpmate(mod, imat, materf, ndt, ndi,&
         nomc(7) = 'SY_ULTM'
         call rcvala(imat, ' ', 'DRUCK_PRAGER', 0, ' ',&
                     0.d0, 4, nomc(4), tabtmp(1), icodre,&
-                    1)
+                    1, 'OUI')
 ! ======================================================================
 ! --- POUR DES COMMODITES DE PROGRAMMATION ON DEFINIT LES PARAMETRES ---
 ! --- MATERIAU DE LA FACON SUIVANTE ------------------------------------
@@ -122,7 +122,7 @@ subroutine dpmate(mod, imat, materf, ndt, ndi,&
         nomc(8) = 'DILAT'
         call rcvala(imat, ' ', 'DRUCK_PRAGER', 0, ' ',&
                     0.d0, 1, nomc(8), dilat, icodre,&
-                    1)
+                    1, 'OUI')
         psi = atan2 ( (trois*dilat / deux / sqrt(( deux*dilat + 1.0d0 )*(1.0d0-dilat))), 1.0d0 )
         materf(5,2) = psi
     endif

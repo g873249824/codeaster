@@ -94,16 +94,16 @@ subroutine hbrmat(mod, imat, nbmat, tempd, materd,&
     materf(11,2) = 0.0d0
     call rcvala(imat, ' ', 'ELAS', 0, ' ',&
                 0.d0, 2, nomc(1), materf(1, 1), cerr(1),&
-                1)
+                1, 'OUI')
     call rcvala(imat, ' ', 'ELAS', 0, ' ',&
                 0.d0, 1, nomc(3), materf(3, 1), cerr(3),&
-                0)
+                0, 'NON')
     call rcvala(imat, ' ', 'HOEK_BROWN', 0, ' ',&
                 0.d0, 10, nomc(4), materf(1, 2), cerr(4),&
-                1)
+                1, 'OUI')
     call rcvala(imat, ' ', 'HOEK_BROWN', 0, ' ',&
                 0.d0, 1, nomc(14), materf(11, 2), cerr(14),&
-                0)
+                0, 'NON')
 ! =================================================================
 ! - CALCUL DES MODULES DE CISAILLEMENT ET DE DEFORMATION VOLUMIQUE-
 ! =================================================================

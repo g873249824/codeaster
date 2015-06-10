@@ -145,7 +145,7 @@ subroutine coeime(meca, imate, nomail, option, resi,&
         else
             call rcvalb(fami, kpg, spt, poum, imate,&
                         ' ', 'THM_RUPT', 0, ' ', 0.d0,&
-                        2, ncra(1), para(1), icodre, 1)
+                        2, ncra(1), para(1), icodre, 1, 'OUI')
             ouvfic = para(1)
             unsurn = para(2)
         endif
@@ -213,7 +213,7 @@ subroutine coeime(meca, imate, nomail, option, resi,&
 !
         call rcvalb(fami, kpg, spt, poum, imate,&
                     ' ', 'THM_RUPT', 0, ' ', 0.d0,&
-                    2, ncra(1), para(1), icodre, 1)
+                    2, ncra(1), para(1), icodre, 1, 'OUI')
         ouvfic = para(1)
         unsurn = para(2)
 !

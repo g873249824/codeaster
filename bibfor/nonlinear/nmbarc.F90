@@ -143,13 +143,13 @@ subroutine nmbarc(ndim, imate, crit, sat, biot,&
 !
     call rcvala(imate, ' ', 'ELAS', 1, nompar,&
                 valpam, 1, nomres(1), valres(1), icodre(1),&
-                0)
+                0, 'OUI')
     if (icodre(1) .ne. 0) valres(1) = 0.d0
     alpha = valres(1)
 !
     call rcvala(imate, ' ', 'BARCELONE', 1, nompar,&
                 valpam, 13, nomres(2), valres(2), icodre(2),&
-                2)
+                2, 'OUI')
 !
     mu = valres(2)
     poro = valres(3)
@@ -167,7 +167,7 @@ subroutine nmbarc(ndim, imate, crit, sat, biot,&
     lambs = valres(14)
     call rcvala(imate, ' ', 'BARCELONE', 1, nompar,&
                 valpam, 1, nomres(15), valres(15), icodre(15),&
-                0)
+                0, 'OUI')
     if (icodre(15) .ne. 0) then
         valres(15) = m*(m-9.d0)*(m-3.d0)/9.d0/(6.d0-m) *(1.d0/(1.d0- kapa/lambda))
         alphab = valres(15)
@@ -176,7 +176,7 @@ subroutine nmbarc(ndim, imate, crit, sat, biot,&
     endif
     call rcvala(imate, ' ', 'THM_INIT', 1, nompar,&
                 valpam, 1, nomres(3), valres(3), icodre(3),&
-                2)
+                2, 'OUI')
     poro = valres(3)
     poro2 = poro
     diff = poro1-poro2

@@ -186,7 +186,7 @@ subroutine xmase3(elrefp, ndim, coorse, igeom, he,&
         call rccoma(imate, 'ELAS', 1, phenom, retour)
         call rcvalb('RIGI', kpg, 1, '+', imate,&
                     ' ', phenom, 0, ' ', 0.d0,&
-                    1, 'RHO', rho, retour, 1)
+                    1, 'RHO', rho, retour, 1, 'OUI')
 !
         do 230 n = 1, nnop
             do 231 i = 1, ddld

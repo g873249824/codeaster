@@ -129,7 +129,7 @@ subroutine xcgfvo(option, ndim, nnop, fno)
         call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
         call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', val, icodre, 1)
+                    1, 'RHO', val, icodre, 1, 'OUI')
         rhocst=val
 !
         if (ipesa .ne. 0) then

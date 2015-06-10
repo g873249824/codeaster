@@ -70,7 +70,7 @@ subroutine te0374(option, nomte)
     nomres(2) = 'CELE_R'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'FLUIDE', 0, ' ', rbid,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
     rho = valres(1)
     celer = valres(2)
 !

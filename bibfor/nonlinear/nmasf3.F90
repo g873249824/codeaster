@@ -161,7 +161,7 @@ subroutine nmasf3(nno, nbpg1, ipoids, ivf, idfde,&
 !
     call rcvalb('FPG1', 1, 1, '+', imate,&
                 ' ', phenom, 0, ' ', 0.d0,&
-                1, nomres(2), valres(2), codre, 1)
+                1, nomres(2), valres(2), codre, 1, 'OUI')
     if (codre .eq. 0) then
         nu = valres(2)
     else

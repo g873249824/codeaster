@@ -329,7 +329,7 @@ subroutine tufull(option, nomte, nbrddl, deplm, deplp,&
 !
                 call rcvalb('RIGI', igau, ksp, '+', zi(imate),&
                             ' ', phenom, 0, ' ', 0.d0,&
-                            nbv, nomres, valres, valret, 1)
+                            nbv, nomres, valres, valret, 1, 'OUI')
 !
                 cisail = valres(1)/ (1.d0+valres(2))
 !           COD=1 : ECHEC INTEGRATION LOI DE COMPORTEMENT

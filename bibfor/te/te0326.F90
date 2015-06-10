@@ -90,7 +90,7 @@ subroutine te0326(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THER', 0, ' ', r8b,&
-                1, 'RHO_CP', rho, icodre, 1)
+                1, 'RHO_CP', rho, icodre, 1, 'OUI')
 !
     do 1200 i = 1, nno
         acloc(1,i)=0.0d0

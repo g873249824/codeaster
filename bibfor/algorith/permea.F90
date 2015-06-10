@@ -65,7 +65,7 @@ subroutine permea(imate, hydr, phi, t, sat,&
         valpar(2)=t
         call rcvala(imate, ' ', 'THM_DIFFU', 2, nompar,&
                     valpar, nc, ncra1, conred, icodre,&
-                    1)
+                    1, 'OUI')
         cond(1)=conred(1)
         cond(2)=sat
         cond(3)=1.d0
@@ -77,17 +77,17 @@ subroutine permea(imate, hydr, phi, t, sat,&
         cond(9)=0.d0
         call rcvala(imate, ' ', 'THM_DIFFU', 2, nompar,&
                     valpar, nc, ncra2, conred, icodre,&
-                    1)
+                    1, 'OUI')
         cond(10)=conred(1)
         cond(11)=0.d0
         call rcvala(imate, ' ', 'THM_LIQU', 2, nompar,&
                     valpar, nc, ncra3, conred, icodre,&
-                    1)
+                    1, 'OUI')
         cond(12)=conred(1)
         cond(13)=0.d0
         call rcvala(imate, ' ', 'THM_GAZ', 2, nompar,&
                     valpar, nc, ncra4, conred, icodre,&
-                    1)
+                    1, 'OUI')
         cond(14)=conred(1)
         cond(15)=0.d0
     endif

@@ -54,7 +54,7 @@ subroutine te0245(option, nomte)
     if (phenom .eq. 'ELAS' .or. phenom .eq. 'ELAS_ISTR' .or. phenom .eq. 'ELAS_ORTH') then
         call rcvalb('FPG1', 1, 1, '+', zi(lmater),&
                     ' ', phenom, 0, ' ', r8b,&
-                    1, 'RHO', rho, codres, 1)
+                    1, 'RHO', rho, codres, 1, 'OUI')
         if (rho .le. r8prem()) then
             call u2mess('F', 'ELEMENTS5_45')
         endif

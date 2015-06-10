@@ -70,7 +70,7 @@ subroutine lceiou(fami, kpg, ksp, mat, option,&
 ! RECUPERATION DES PARAMETRES PHYSIQUES
     call rcvalb(fami, kpg, ksp, poum, mat,&
                 ' ', 'RUPT_FRAG', 0, ' ', 0.d0,&
-                4, nom, val, cod, 2)
+                4, nom, val, cod, 2, 'OUI')
 !
     gc = val(1)
     sc = val(2)

@@ -64,7 +64,7 @@ subroutine te0175(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'FLUIDE', 0, '   ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
     call jevech('PFREQR', 'L', ifreq)
     pi=r8pi()

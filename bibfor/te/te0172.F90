@@ -107,7 +107,7 @@ subroutine te0172(option, nomte)
 !
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'FLUIDE', 0, ' ', r8b,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
 !
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !       CALCUL DU TERME PHI*(U.N DS)       C

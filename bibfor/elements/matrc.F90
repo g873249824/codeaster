@@ -72,7 +72,7 @@ subroutine matrc(nno, kcis, matc, vectt)
 !
         call rcvala(zi(jmate), ' ', phenom, nbpar, nompar,&
                     valpar, nbv, nomres, valres, icodre,&
-                    1)
+                    1, 'OUI')
 !
         young = valres(1)
         nu = valres(2)
@@ -101,7 +101,7 @@ subroutine matrc(nno, kcis, matc, vectt)
 !        -----------
         call rcvala(zi(jmate), ' ', phenom, nbpar, nompar,&
                     valpar, nbv, nomres, valres, icodre,&
-                    1)
+                    1, 'OUI')
 !
         el = valres(1)
         et = valres(2)

@@ -73,7 +73,7 @@ subroutine te0556(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'ELAS', 0, ' ', r8b,&
-                3, nomres, valres, icodre, 1)
+                3, nomres, valres, icodre, 1, 'OUI')
     e = valres(1)
     if (e .lt. 1.d-1) goto 999
     nu = valres(2)

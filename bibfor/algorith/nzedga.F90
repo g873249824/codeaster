@@ -187,12 +187,12 @@ subroutine nzedga(fami, kpg, ksp, ndim, imat,&
 !
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'ELAS_META', 0, ' ', 0.d0,&
-                6, nomres, valres, icodre, 2)
+                6, nomres, valres, icodre, 2, 'OUI')
     deumum = valres(1)/(1.d0+valres(2))
 !
     call rcvalb(fami, kpg, ksp, c1, imat,&
                 ' ', 'ELAS_META', 0, ' ', 0.d0,&
-                6, nomres, valres, icodre, 2)
+                6, nomres, valres, icodre, 2, 'OUI')
     epsth = phase(nz)*(epsthe(1)-(1.d0-valres(5))*valres(6)) + zalpha*(epsthe(2) + valres(5)*valr&
             &es(6))
     e = valres(1)
@@ -221,14 +221,14 @@ subroutine nzedga(fami, kpg, ksp, ndim, imat,&
 !
         call rcvalb(fami, 1, 1, '+', imat,&
                     ' ', 'ELAS_META', 1, 'META', zalpha,&
-                    1, nomres(4), fmel, icodre(4), 0)
+                    1, nomres(4), fmel, icodre(4), 0, 'OUI')
         if (icodre(4) .ne. 0) fmel = zalpha
 !
 ! 2.3 - LIMITE D ELASTICITE
 !
         call rcvalb(fami, kpg, ksp, c1, imat,&
                     ' ', 'ELAS_META', 0, ' ', 0.d0,&
-                    3, nomres, sy, icodre, 2)
+                    3, nomres, sy, icodre, 2, 'OUI')
 !
         if (resi) then
 !
@@ -248,7 +248,7 @@ subroutine nzedga(fami, kpg, ksp, ndim, imat,&
 !
                 call rcvalb(fami, kpg, ksp, c1, imat,&
                             ' ', 'META_RE', 0, '  ', 0.d0,&
-                            4, nomres, theta, icodre, 2)
+                            4, nomres, theta, icodre, 2, 'OUI')
 !
             else
 !
@@ -280,11 +280,11 @@ subroutine nzedga(fami, kpg, ksp, ndim, imat,&
 !
                 call rcvalb(fami, kpg, ksp, c1, imat,&
                             ' ', 'META_VISC', 0, ' ', 0.d0,&
-                            6, nomres, valres, icodre, 2)
+                            6, nomres, valres, icodre, 2, 'OUI')
 !
                 call rcvalb(fami, kpg, ksp, c1, imat,&
                             ' ', 'META_VISC', 0, ' ', 0.d0,&
-                            6, nomres(7), valres(7), icodre(7), 0)
+                            6, nomres(7), valres(7), icodre(7), 0, 'OUI')
 !
                 do 25 k = 1, nz
                     eta(k) = valres(k)
@@ -384,7 +384,7 @@ subroutine nzedga(fami, kpg, ksp, ndim, imat,&
 !
                 call rcvalb(fami, kpg, ksp, c1, imat,&
                             ' ', 'META_PT', 0, ' ', 0.d0,&
-                            2, nomres, valres, icodre, 2)
+                            2, nomres, valres, icodre, 2, 'OUI')
 !
                 do 60 k = 1, nz-1
                     kpt (k) = valres(k)
@@ -395,7 +395,7 @@ subroutine nzedga(fami, kpg, ksp, ndim, imat,&
                         j = 2+k
                         call rcvalb(fami, 1, 1, '+', imat,&
                                     ' ', 'META_PT', 1, 'META', zalpha,&
-                                    1, nomres(j), valres(j), icodre( j), 2)
+                                    1, nomres(j), valres(j), icodre( j), 2, 'OUI')
                         trans = trans + kpt(k)*valres(j)*(zvarip- zvarim)
                     endif
 60              continue
@@ -420,7 +420,7 @@ subroutine nzedga(fami, kpg, ksp, ndim, imat,&
 !
             call rcvalb(fami, kpg, ksp, c1, imat,&
                         ' ', 'META_ECRO_LINE', 0, ' ', 0.d0,&
-                        3, nomres, h, icodre, 2)
+                        3, nomres, h, icodre, 2, 'OUI')
 !
             h(1)=h(1)*e/(e-h(1))
             h(2)=h(2)*e/(e-h(2))

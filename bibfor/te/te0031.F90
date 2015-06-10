@@ -157,7 +157,7 @@ subroutine te0031(option, nomte)
             nomres='C'//num//'_V'//val
             call rcvalb(fami, kpg, spt, poum, zi(jmate),&
                         ' ', 'ELAS_COQMU', 0, ' ', r8bid,&
-                        1, nomres, epi, codret, 0)
+                        1, nomres, epi, codret, 0, 'OUI')
             if (codret .eq. 0) then
                 eptot=eptot+epi
                 goto 10

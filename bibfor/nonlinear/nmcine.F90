@@ -91,7 +91,7 @@ subroutine nmcine(fami, kpg, ksp, ndim, imate,&
     nomres(3)='ALPHA'
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     em = valres(1)
     num = valres(2)
     deumum = em/(1.d0+num)
@@ -99,7 +99,7 @@ subroutine nmcine(fami, kpg, ksp, ndim, imate,&
 !
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     e = valres(1)
     nu = valres(2)
     lambda = e*nu/((1.d0-2.d0*nu)*(1.d0+nu))
@@ -112,7 +112,7 @@ subroutine nmcine(fami, kpg, ksp, ndim, imate,&
     nomres(2)='SY'
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     dsdem=valres(1)
     if ((em-dsdem) .lt. r8miem()) then
         valrm(1)=dsdem
@@ -127,7 +127,7 @@ subroutine nmcine(fami, kpg, ksp, ndim, imate,&
     nomres(2)='SY'
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     dsde=valres(1)
     sigy=valres(2)
     if ((e-dsde) .lt. r8miem()) then

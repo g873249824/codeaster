@@ -57,7 +57,7 @@ subroutine te0569(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'ELAS', 0, ' ', r8b,&
-                3, nomres, valres, icodre, 1)
+                3, nomres, valres, icodre, 1, 'OUI')
     e = valres(1)
     nu = valres(2)
     rho = valres(3)

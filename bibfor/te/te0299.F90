@@ -212,7 +212,7 @@ subroutine te0299(option, nomte)
         call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
         call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, ' ', rbid,&
-                    1, 'RHO', rhocst, icodre, 1)
+                    1, 'RHO', rhocst, icodre, 1, 'OUI')
         if (lpesa) then
             do i = 1, nno
                 do j = 1, ndim
@@ -314,7 +314,7 @@ subroutine te0299(option, nomte)
 !
         call rcvalb(fami, kp, 1, '+', zi(imate),&
                     ' ', phenom, 0, ' ', 0.d0,&
-                    3, nomres, valres, icodre, 0)
+                    3, nomres, valres, icodre, 0, 'OUI')
         call assert(icodre(1)+icodre(2).eq.0)
         if (icodre(3) .ne. 0) then
             valres(3) = 0.d0

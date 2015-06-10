@@ -164,7 +164,7 @@ subroutine te0432(option, nomte)
 !
         call rcvalb(fami, kpg, 1, '+', zi(imate),&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, 'RHO', rho, codres, 1)
+                    1, 'RHO', rho, codres, 1, 'OUI')
 !
 !
 ! - CALCUL DE LA MATRICE "B" : DEPL NODAL -> EPS11 ET DU JACOBIEN

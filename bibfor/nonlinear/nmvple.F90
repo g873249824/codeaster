@@ -107,8 +107,8 @@ subroutine nmvple(fami, kpg, ksp, ndim, imate,&
 !
     if (typmod(1) .eq. 'C_PLAN') then
         iulmes = iunifi('MESSAGE')
-        write (iulmes,*) 'COMPORTEMENT ',compor(1)(1:10),' NON PROGRAMME&
-     & POUR DES ELEMENTS DE CONTRAINTES PLANES'
+        write (iulmes,*) 'comportement ',compor(1)(1:10),' non programme&
+     & pour des elements de contraintes planes'
         call u2mess('F', 'ALGORITH6_92')
         goto 299
     endif
@@ -162,7 +162,7 @@ subroutine nmvple(fami, kpg, ksp, ndim, imate,&
     nomres(2)='NU'
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     em = valres(1)
     num = valres(2)
     deumum = em/(1.d0+num)
@@ -170,7 +170,7 @@ subroutine nmvple(fami, kpg, ksp, ndim, imate,&
     valpar(1)=instap
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     e = valres(1)
     nu = valres(2)
     deuxmu = e/(1.d0+nu)
@@ -184,7 +184,7 @@ subroutine nmvple(fami, kpg, ksp, ndim, imate,&
     valpar(1) = tschem
     call rcvalb(fami, 1, 1, '+', imate,&
                 ' ', 'LEMAITRE', 1, nompar, valpar,&
-                3, nomres, valres, icodre, 2)
+                3, nomres, valres, icodre, 2, 'OUI')
     valden = valres(1)
     unsurk = valres(2)
     unsurm = valres(3)

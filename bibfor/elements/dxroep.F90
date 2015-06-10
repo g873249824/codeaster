@@ -47,7 +47,7 @@ subroutine dxroep(rho, epais)
         nbv = 2
         call rcvala(zi(jmate), ' ', phenom, 0, ' ',&
                     r8bid, nbv, nomres, valres, icodre,&
-                    1)
+                    1, 'OUI')
         epais = valres(1)
         rho = valres(2)
         if (rho .eq. r8maem()) then
@@ -65,7 +65,7 @@ subroutine dxroep(rho, epais)
         nbv = 1
         call rcvala(zi(jmate), ' ', phenom, 0, ' ',&
                     r8bid, nbv, nomres, valres, icodre,&
-                    1)
+                    1, 'OUI')
         rho = valres(1)
         call jevech('PCACOQU', 'L', jcoqu)
         epais = zr(jcoqu)

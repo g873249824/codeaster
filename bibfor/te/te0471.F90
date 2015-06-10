@@ -141,7 +141,7 @@ subroutine te0471(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', phenom, 0, '   ', tpg,&
-                nbv, nomres, valres, icodre, 1)
+                nbv, nomres, valres, icodre, 1, 'OUI')
     e = valres(1)
     nu = valres(2)
     call rccoma(zi(imate), 'FLUIDE', 1, phenom, icodre)
@@ -154,7 +154,7 @@ subroutine te0471(option, nomte)
     tpg = 0.d0
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', phenom, 0, '   ', tpg,&
-                nbv, nomres, valres, icodre, 1)
+                nbv, nomres, valres, icodre, 1, 'OUI')
 !     ----------------------------------------------------------------
 !     --- RECUPERATION DES CARACTERISTIQUES GENERALES DES SECTIONS ---
 !     ----------------------------------------------------------------

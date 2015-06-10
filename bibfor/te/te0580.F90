@@ -144,7 +144,7 @@ subroutine te0580(nomopt, nomte)
         nomres(1)='AMOR_ALPHA'
         nomres(2)='AMOR_BETA'
         call rcvalb('RIGI', 1, 1, '+', mater, ' ', phenom, npara, nompar, valpar, 2,&
-                    nomres, valres, icodre, 0)
+                    nomres, valres, icodre, 0, 'OUI')
         if (icodre(1).ne.0 .and. icodre(2).ne.0) goto 999
         if (valres(1).eq.0.d0 .and. valres(2).eq.0.d0) goto 999
 

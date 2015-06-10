@@ -41,7 +41,7 @@ subroutine granac(fami, kpg, ksp, icdmat, materi,&
         if (irram .gt. 0.0d0) then
             call rcvalb(fami, kpg, ksp, '+', icdmat,&
                         materi, compo, nbpar, nompar, valpar,&
-                        1, nomgrd, valres, codret, 0)
+                        1, nomgrd, valres, codret, 0, 'OUI')
             depsgm = valres
         else
             depsgm = 0.0d0
@@ -53,7 +53,7 @@ subroutine granac(fami, kpg, ksp, icdmat, materi,&
         if (irrap .gt. 0.0d0) then
             call rcvalb(fami, kpg, ksp, '+', icdmat,&
                         materi, compo, nbpar, nompar, valpar,&
-                        1, nomgrd, valres, codret, 0)
+                        1, nomgrd, valres, codret, 0, 'OUI')
             depsgp = valres
         else
             depsgp = 0.0d0

@@ -243,7 +243,7 @@ subroutine te0583(option, nomte)
                     poum='+'
                     call rcvalb(fami, kpg, spt, poum, zi(lmater),&
                                 ' ', phenom, 0, ' ', r8b,&
-                                1, 'RHO', rho, codres, 1)
+                                1, 'RHO', rho, codres, 1, 'OUI')
                 else
                     call u2mess('F', 'ELEMENTS4_43')
                 endif

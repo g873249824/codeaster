@@ -139,7 +139,7 @@ subroutine te0292(option, nomte)
 !
         call rcvalb(fami, kp, 1, '+', mater,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         e = valres(1)
         nu = valres(2)
 !

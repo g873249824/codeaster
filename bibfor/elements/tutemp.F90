@@ -147,7 +147,7 @@ subroutine tutemp(option, nomte, nbrddl, f, b,&
 !
     call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                 ' ', phenom, nbpar, nompar, valpar,&
-                2, nomres, valres, codres, 1)
+                2, nomres, valres, codres, 1, 'OUI')
     e = valres(1)
     nu = valres(2)
 !

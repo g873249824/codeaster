@@ -95,7 +95,7 @@ subroutine te0078(option, nomte)
         aniso = .false.
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, 'INST', zr(itemps),&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         lambda = valres(1)
         cp = valres(2)
     else if (phenom .eq. 'THER_ORTH') then
@@ -105,7 +105,7 @@ subroutine te0078(option, nomte)
         aniso = .true.
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, 'INST', zr(itemps),&
-                    3, nomres, valres, icodre, 1)
+                    3, nomres, valres, icodre, 1, 'OUI')
         lambor(1) = valres(1)
         lambor(2) = valres(2)
         cp = valres(3)

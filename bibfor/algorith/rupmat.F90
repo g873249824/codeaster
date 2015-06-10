@@ -38,7 +38,7 @@ subroutine rupmat(fami, kpg, ksp, imat, vim,&
 !
     call rcvalb(fami, kpg, ksp, '+', imat,&
                 ' ', 'CRIT_RUPT', 0, ' ', 0.d0,&
-                1, 'COEF', coef, cerr, 1)
+                1, 'COEF', coef, cerr, 1, 'OUI')
 !
     e = e /coef
 !

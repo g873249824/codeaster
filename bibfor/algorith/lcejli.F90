@@ -80,7 +80,7 @@ subroutine lcejli(fami, kpg, ksp, ndim, mate,&
 !
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'RUPT_FRAG', 0, ' ', 0.d0,&
-                4, nom, val, cod, 2)
+                4, nom, val, cod, 2, 'OUI')
 !
     gc = val(1)
     sc = val(2)

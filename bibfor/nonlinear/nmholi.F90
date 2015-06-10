@@ -75,7 +75,7 @@ subroutine nmholi(ndim, axi, nno, npg, ipoids,&
     poum='+'
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                1, 'SY', sy, cod, 2)
+                1, 'SY', sy, cod, 2, 'OUI')
     m = 1 + 10**(1-inst)
     am = sy * rac23**m
 !

@@ -91,7 +91,7 @@ subroutine te0109(option, nomte)
         nomres(1) = 'LAMBDA'
         call rcvalb(fami, kpg, spt, poum, mater,&
                     ' ', 'THER', 1, 'INST', zr(itemps),&
-                    1, nomres, valres, icodre, 1)
+                    1, nomres, valres, icodre, 1, 'OUI')
         conduc = valres(1)
         h = zr(icacoq)/2.d0
         ord = 0.d0

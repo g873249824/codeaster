@@ -127,7 +127,7 @@ subroutine pipeed(nno, npg, ipoids, ivf, idfde,&
 !
     call rcvalb(fami, kpg, spt, poum, mate,&
                 ' ', 'RUPT_FRAG', 0, ' ', 0.d0,&
-                nbres, nomres, valres, icodre, 2)
+                nbres, nomres, valres, icodre, 2, 'OUI')
     gc = valres(1)
     sigmc = valres(2)
     kappam = vim(3,1)

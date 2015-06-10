@@ -66,15 +66,15 @@ subroutine vecmat(fami, kpg, ksp, mod, loi,&
     character(len=11) :: meting
     character(len=16) :: loi
     character(len=*) :: fami
-!       ----------------------------------------------------------------
+!   ----------------------------------------------------------------
     common /opti/   ioptio , idnr
     common /meti/   meting
-!       ----------------------------------------------------------------
+!   ----------------------------------------------------------------
     integer :: lmat, lfct, ipi, ipif, ik, imat, ivalk, i, j, jpro, il, jmat
     integer :: nbmat
-!
-!       ----------------------------------------------------------------
+    parameter  ( lmat = 7 , lfct = 9)
     data epsi       /1.d-15/
+!   ----------------------------------------------------------------
 !
 ! -     NB DE COMPOSANTES / VARIABLES INTERNES -------------------------
 !
@@ -128,7 +128,7 @@ subroutine vecmat(fami, kpg, ksp, mod, loi,&
 !            IFON = IPI+LMAT-1+LFCT*(IK-1)
 !            CALL FOINTA (IFON,NBPAR,NOMPAR,VALPAR,VALRES(IRES))
 !
-!            ET IPI=ZI(IMAT+2+ZI(IMAT+1)-1) LMAT=7 LFCT=9
+!            ET IPI=ZI(IMAT+2+ZI(IMAT+1)-1) 
 !            IK=(1..NBF) OU NBF=ZI(IPI+2)
 !            (NBF EST LE NOMBRE DE PARAMETRES MAIS ON PREND IK=NBF CAR
 !             C'EST LE COEFF NBMATK_D (LE DERNIER) QUI EST SUCEPTIBLE
@@ -138,8 +138,8 @@ subroutine vecmat(fami, kpg, ksp, mod, loi,&
 !
 ! --- DONC:
 !
-    lmat=7
-    lfct=9
+
+
 !
     matcst = 'OUI'
 !
@@ -147,11 +147,12 @@ subroutine vecmat(fami, kpg, ksp, mod, loi,&
 !     UTILISABLE SEULEMENT AVEC UN MATERIAU PAR MAILLE
     call assert(nbmat.eq.1)
 !
-    do 9 j = 1, 2
-        do 9 i = 1, nmat
+    do  j = 1, 2
+        do  i = 1, nmat
             materd(i,j) = 0.d0
             materf(i,j) = 0.d0
- 9      continue
+        enddo
+    enddo
 !
     if (loi .eq. 'VENDOCHAB') then
 !
@@ -205,44 +206,44 @@ subroutine vecmat(fami, kpg, ksp, mod, loi,&
 !
         call rcvalb(fami, kpg, ksp, '-', jmat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    3, nomc(1), materd(1, 1), cerr(1), 0)
+                    3, nomc(1), materd(1, 1), cerr(1), 0, 'OUI')
         if (cerr(3) .ne. 0) then
             materd(3,1) = 0.d0
         endif
         call rcvalb(fami, kpg, ksp, '-', jmat,&
                     ' ', 'LEMAITRE', 0, ' ', 0.d0,&
-                    3, nomc(4), materd(1, 2), cerr(4), 2)
+                    3, nomc(4), materd(1, 2), cerr(4), 2, 'OUI')
         call rcvalb(fami, kpg, ksp, '-', jmat,&
                     ' ', 'VENDOCHAB', 0, ' ', 0.d0,&
-                    5, nomc(7), materd(4, 2), cerr(7), 2)
+                    5, nomc(7), materd(4, 2), cerr(7), 2, 'OUI')
         if (matcst .eq. 'NAP') then
             materd(9,2)=0.0d0
         else
             call rcvalb(fami, kpg, ksp, '-', jmat,&
                         ' ', 'VENDOCHAB', 0, ' ', 0.d0,&
-                        1, nomc(12), materd(9, 2), cerr(12), 2)
+                        1, nomc(12), materd(9, 2), cerr(12), 2, 'OUI')
         endif
 !
 ! -      RECUPERATION MATERIAU A TEMPF (T+DT)
 !
         call rcvalb(fami, kpg, ksp, '+', jmat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    3, nomc(1), materf(1, 1), cerr(1), 0)
+                    3, nomc(1), materf(1, 1), cerr(1), 0, 'OUI')
         if (cerr(3) .ne. 0) then
             materf(3,1) = 0.d0
         endif
         call rcvalb(fami, kpg, ksp, '+', jmat,&
                     ' ', 'LEMAITRE', 0, ' ', 0.d0,&
-                    3, nomc(4), materf(1, 2), cerr(4), 2)
+                    3, nomc(4), materf(1, 2), cerr(4), 2, 'OUI')
         call rcvalb(fami, kpg, ksp, '+', jmat,&
                     ' ', 'VENDOCHAB', 0, ' ', 0.d0,&
-                    5, nomc(7), materf(4, 2), cerr(7), 2)
+                    5, nomc(7), materf(4, 2), cerr(7), 2, 'OUI')
         if (matcst .eq. 'NAP') then
             materf(9,2)=0.0d0
         else
             call rcvalb(fami, kpg, ksp, '+', jmat,&
                         ' ', 'VENDOCHAB', 0, ' ', 0.d0,&
-                        1, nomc(12), materf(9, 2), cerr(12), 2)
+                        1, nomc(12), materf(9, 2), cerr(12), 2, 'OUI')
         endif
 !
     else if (loi.eq.'VISC_ENDO_LEMA') then
@@ -261,31 +262,31 @@ subroutine vecmat(fami, kpg, ksp, mod, loi,&
 !
         call rcvalb(fami, kpg, ksp, '-', jmat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    3, nomc(1), materd(1, 1), cerr(1), 0)
+                    3, nomc(1), materd(1, 1), cerr(1), 0, 'OUI')
         if (cerr(3) .ne. 0) then
             materd(3,1) = 0.d0
         endif
         call rcvalb(fami, kpg, ksp, '-', jmat,&
                     ' ', 'LEMAITRE', 0, ' ', 0.d0,&
-                    3, nomc(4), materd(1, 2), cerr(4), 2)
+                    3, nomc(4), materd(1, 2), cerr(4), 2, 'OUI')
         call rcvalb(fami, kpg, ksp, '-', jmat,&
                     ' ', 'VISC_ENDO', 0, ' ', 0.d0,&
-                    3, nomc(7), materd(4, 2), cerr(7), 2)
+                    3, nomc(7), materd(4, 2), cerr(7), 2, 'OUI')
 !
 ! -     RECUPERATION MATERIAU A TEMPF (T+DT)
 !
         call rcvalb(fami, kpg, ksp, '+', jmat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    3, nomc(1), materf(1, 1), cerr(1), 0)
+                    3, nomc(1), materf(1, 1), cerr(1), 0, 'OUI')
         if (cerr(3) .ne. 0) then
             materf(3,1) = 0.d0
         endif
         call rcvalb(fami, kpg, ksp, '+', jmat,&
                     ' ', 'LEMAITRE', 0, ' ', 0.d0,&
-                    3, nomc(4), materf(1, 2), cerr(4), 2)
+                    3, nomc(4), materf(1, 2), cerr(4), 2, 'OUI')
         call rcvalb(fami, kpg, ksp, '+', jmat,&
                     ' ', 'VISC_ENDO', 0, ' ', 0.d0,&
-                    3, nomc(7), materf(4, 2), cerr(7), 2)
+                    3, nomc(7), materf(4, 2), cerr(7), 2, 'OUI')
 !
     endif
 !     NOMBRE DE COEF MATERIAU
@@ -303,12 +304,12 @@ subroutine vecmat(fami, kpg, ksp, mod, loi,&
                 goto 9999
             endif
 30      continue
-        do 40 i = 1, 9
+        do i = 1, 9
             if (abs ( materd(i,2) - materf(i,2) ) .gt. epsi) then
                 matcst = 'NON'
                 goto 9999
             endif
-40      continue
+        enddo
     endif
 !
 9999  continue

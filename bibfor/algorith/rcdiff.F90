@@ -68,7 +68,7 @@ subroutine rcdiff(imate, comp, temp, c, diff)
         nomres(4) = 'TEMP_0_C'
         call rcvalb(fami, kpg, spt, poum, imate,&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    4, nomres, valres, icodre, 1)
+                    4, nomres, valres, icodre, 1, 'OUI')
         diff = valres(1) * exp(valres(2)*c) *((temp+tz0)/(valres(4)+ tz0)) * exp(-valres(3) *(1.d&
                &0/(temp+tz0)-1.d0/(valres(4)+tz0)) )
 !
@@ -80,7 +80,7 @@ subroutine rcdiff(imate, comp, temp, c, diff)
         nomres(2) = 'B'
         call rcvalb(fami, kpg, spt, poum, imate,&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         diff = valres(1) * exp(valres(2)*c)
 !
     else if (phenom.eq.'SECH_BAZANT') then
@@ -93,7 +93,7 @@ subroutine rcdiff(imate, comp, temp, c, diff)
         nomres(4) = 'FONC_DES'
         call rcvalb(fami, kpg, spt, poum, imate,&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    4, nomres, valres, icodre, 1)
+                    4, nomres, valres, icodre, 1, 'OUI')
         rap = ((1.d0 - valres(4)) / 0.25d0) ** valres(3)
         diff = valres(1) * (valres(2)+ (1.d0 - valres(2))/(1.d0+rap))
 !
@@ -106,7 +106,7 @@ subroutine rcdiff(imate, comp, temp, c, diff)
         nomres(1) = 'FONCTION'
         call rcvalb(fami, kpg, spt, poum, imate,&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    1, nomres, valres, icodre, 1)
+                    1, nomres, valres, icodre, 1, 'OUI')
         diff = valres(1)
 !
     else

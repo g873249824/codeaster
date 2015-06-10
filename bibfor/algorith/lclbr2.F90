@@ -54,7 +54,7 @@ subroutine lclbr2(fami, kpg, ksp, imate, compor,&
     nomres(1) = 'E'
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                1, nomres, valres, icodre, 1)
+                1, nomres, valres, icodre, 1, 'OUI')
     e = valres(1)
 !    LECTURE DES CARACTERISTIQUES D'ENDOMMAGEMENT
     nomres(1) = 'D_SIGM_EPSI'
@@ -64,7 +64,7 @@ subroutine lclbr2(fami, kpg, ksp, imate, compor,&
     nomres(5) = 'N'
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'BETON_REGLE_PR', 0, ' ', 0.d0,&
-                5, nomres, valres, icodre, 1)
+                5, nomres, valres, icodre, 1, 'OUI')
     gamma = - e/valres(1)
     sigmt = valres(2)
     sigmc = -valres(3)

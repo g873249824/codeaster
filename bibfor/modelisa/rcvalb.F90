@@ -1,6 +1,6 @@
 subroutine rcvalb(fami, kpg, ksp, poum, jmat,&
                   nomat, phenom, nbpar, nompar, valpar,&
-                  nbres, nomres, valres, codret, iarret)
+                  nbres, nomres, valres, codret, iarret, nan)
     implicit none
 #include "jeveux.h"
 #include "asterfort/rcvala.h"
@@ -10,6 +10,7 @@ subroutine rcvalb(fami, kpg, ksp, poum, jmat,&
     integer :: codret(nbres)
     character(len=*) :: nomat, phenom, nompar(nbpar), nomres(nbres)
     character(len=*) :: poum, fami
+    character(len=3), intent(in) :: nan   
 ! person_in_charge: jacques.pellet at edf.fr
 ! ======================================================================
 ! COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
@@ -45,7 +46,7 @@ subroutine rcvalb(fami, kpg, ksp, poum, jmat,&
     if (nbcvrc .eq. 0) then
         call rcvala(jmat, nomat, phenom, nbpar, nompar,&
                     valpar, nbres, nomres, valres, codret,&
-                    iarret)
+                    iarret, nan)
         goto 9999
     endif
 !
@@ -73,7 +74,7 @@ subroutine rcvalb(fami, kpg, ksp, poum, jmat,&
 !     CALL ASSERT(NBPART.LE.NBPAMX)
     call rcvala(jmat, nomat, phenom, nbpart, nompa2,&
                 valpa2, nbres, nomres, valres, codret,&
-                iarret)
+                iarret, nan)
 !
 9999  continue
 end subroutine

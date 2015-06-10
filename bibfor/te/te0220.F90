@@ -69,7 +69,7 @@ subroutine te0220(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THER', nbpar, nompar, valpar,&
-                1, 'LAMBDA', valres, icodre, 1)
+                1, 'LAMBDA', valres, icodre, 1, 'OUI')
 !
     epot = 0.d0
     do 101 kp = 1, npg

@@ -141,7 +141,7 @@ subroutine tumass(nomte, nbrddl, mass)
     nomres(1) = 'RHO'
     call rcvala(zi(imate), ' ', 'ELAS', nbpar, nompar,&
                 valpar, 1, nomres, valres, icodre,&
-                1)
+                1, 'OUI')
     rho = valres(1)
     do 70 i = 1, nbrddl
         do 50 j = 1, nbrddl

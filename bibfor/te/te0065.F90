@@ -71,7 +71,7 @@ subroutine te0065(option, nomte)
         tpg = 0.d0
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 0, ' ', tpg,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
         rhopou = valres(1)
 !
 !        - DETERMINATION DU RHO 'FLUIDE': RHOFLU
@@ -85,7 +85,7 @@ subroutine te0065(option, nomte)
         tpg = 0.d0
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 0, ' ', tpg,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
         rhoflu = valres(1)
 !
 !        - DETERMINATION DU RHO 'EQUIVALENT' : RHO
@@ -110,7 +110,7 @@ subroutine te0065(option, nomte)
         if (phenom .eq. 'ELAS' .or. phenom .eq. 'ELAS_ISTR' .or. phenom .eq. 'ELAS_ORTH') then
             call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                         ' ', phenom, 0, ' ', r8b,&
-                        1, 'RHO', rho, icodre, 1)
+                        1, 'RHO', rho, icodre, 1, 'OUI')
             if (rho .le. r8prem()) then
                 call u2mess('F', 'ELEMENTS5_45')
             endif

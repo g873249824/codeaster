@@ -59,7 +59,7 @@ subroutine te0371(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
 !     INITIALISATION DE LA MATRICE
 !

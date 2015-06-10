@@ -72,7 +72,7 @@ subroutine te0227(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'ELAS', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
     if (rho .le. r8prem()) then
         call u2mess('F', 'ELEMENTS5_45')
     endif

@@ -306,10 +306,10 @@ subroutine te0039(option, nomte)
             nomres(4) = 'RHO'
             call rcvalb(fami, kpg, spt, poum, zi(lmater),&
                         ' ', 'ELAS', nbpar, nompar, valpar,&
-                        2, nomres, valres, codres, 1)
+                        2, nomres, valres, codres, 1, 'OUI')
             call rcvalb(fami, kpg, spt, poum, zi(lmater),&
                         ' ', 'ELAS', nbpar, nompar, valpar,&
-                        2, nomres(3), valres(3), codres(3), 0)
+                        2, nomres(3), valres(3), codres(3), 0, 'OUI')
             if (codres(3) .ne. 0) valres(3) = zero
             if (codres(4) .ne. 0) valres(4) = zero
             e = valres(1)

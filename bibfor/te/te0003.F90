@@ -503,7 +503,7 @@ subroutine te0003(option, nomte)
         lnonli = .false.
         call rcvala(zi(imate), ' ', phenom, 1, 'INST',&
                     inst, 1, 'RHO_CP', rhocp, icodre,&
-                    1)
+                    1, 'OUI')
         if (icodre(1) .ne. 0) call u2mess('F', 'ELEMENTS2_62')
     else if (phenom.eq.'THER_NL') then
         lnonli = .true.

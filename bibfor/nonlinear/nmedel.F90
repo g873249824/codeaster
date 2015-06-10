@@ -75,7 +75,7 @@ subroutine nmedel(ndim, typmod, imate, deps, sigm,&
 !
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres(1), valres(1), icodre(1), 2)
+                2, nomres(1), valres(1), icodre(1), 2, 'OUI')
     e = valres(1)
     nu = valres(2)
 !

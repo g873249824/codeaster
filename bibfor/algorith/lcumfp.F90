@@ -299,12 +299,12 @@ subroutine lcumfp(fami, kpg, ksp, ndim, typmod,&
 !
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'ELAS', 1, 'TEMP', 0.d0,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         call u2mess('I', 'COMPOR1_60')
 !
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'ELAS', 1, 'TEMP', 0.d0,&
-                    1, nomres(3), valres(3), icodre(3), 0)
+                    1, nomres(3), valres(3), icodre(3), 0, 'OUI')
         valres(4) = valres(3)
         icodre(4) = icodre(3)
 !
@@ -314,30 +314,30 @@ subroutine lcumfp(fami, kpg, ksp, ndim, typmod,&
 !
         call rcvalb(fami, 1, 1, '-', imate,&
                     ' ', 'ELAS', 1, 'TEMP', tmaxm,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         younm = valres(1)
         xnum = valres(2)
 !
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'ELAS', 1, 'TEMP', tmaxp,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         call rcvalb(fami, kpg, ksp, '-', imate,&
                     ' ', 'ELAS', 1, 'TEMP', tmaxm,&
-                    1, nomres(3), valres(3), icodre(3), 0)
+                    1, nomres(3), valres(3), icodre(3), 0, 'OUI')
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ELAS', 1, 'TEMP', tmaxp,&
-                    1, nomres(4), valres(4), icodre(4), 0)
+                    1, nomres(4), valres(4), icodre(4), 0, 'OUI')
         call u2mess('I', 'COMPOR1_61')
 !
     else
         call rcvalb(fami, kpg, ksp, '-', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         younm = valres(1)
         xnum = valres(2)
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
     endif
 !
     youn = valres(1)
@@ -379,7 +379,7 @@ subroutine lcumfp(fami, kpg, ksp, ndim, typmod,&
     nomres(2)='K_DESSIC'
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
     bendo=valres(1)
     kdess=valres(2)
 !
@@ -397,7 +397,7 @@ subroutine lcumfp(fami, kpg, ksp, ndim, typmod,&
 !
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'BETON_UMLV_FP', 0, ' ', rbid,&
-                7, nomres, valres, icodre, 2)
+                7, nomres, valres, icodre, 2, 'OUI')
     krs = valres(1)
     etars = valres(2)
     kis = valres(3)
@@ -412,7 +412,7 @@ subroutine lcumfp(fami, kpg, ksp, ndim, typmod,&
     nomres(8)='ETA_FD'
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'BETON_UMLV_FP', 0, ' ', rbid,&
-                8, nomres, valres, icodre, 0)
+                8, nomres, valres, icodre, 0, 'OUI')
 !     FLUAGE DE DESSICCATION NON ACTIVE
     if (icodre(8) .ne. 0) then
         cmat(14) = 0
@@ -430,14 +430,14 @@ subroutine lcumfp(fami, kpg, ksp, ndim, typmod,&
     nomres(1)='FONC_DES'
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ELAS', 0, ' ', rbid,&
-                1, nomres(1), valres(1), icodre(1), 2)
+                1, nomres(1), valres(1), icodre(1), 2, 'OUI')
     if (icodre(1) .ne. 0) then
         call u2mess('F', 'ALGORITH4_94')
     endif
     hygrm=valres(1)
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 0, ' ', rbid,&
-                1, nomres(1), valres(1), icodre(1), 2)
+                1, nomres(1), valres(1), icodre(1), 2, 'OUI')
     if (icodre(1) .ne. 0) then
         call u2mess('F', 'ALGORITH4_94')
     endif

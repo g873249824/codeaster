@@ -66,7 +66,7 @@ subroutine te0260(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THER', 1, 'INST', zr(itemps),&
-                1, 'LAMBDA', valres, icodre, 1)
+                1, 'LAMBDA', valres, icodre, 1, 'OUI')
 !
     do 101 kp = 1, npg1
         k = (kp-1)*nno

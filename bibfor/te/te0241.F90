@@ -80,7 +80,7 @@ subroutine te0241(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(lmater),&
                 ' ', 'ELAS', nbpar, nompar, valpar,&
-                nbres, nomres, valres, codres, 1)
+                nbres, nomres, valres, codres, 1, 'OUI')
     e = valres(1)
     nu = valres(2)
     g = e / (c2 *(c1+nu))
@@ -92,7 +92,7 @@ subroutine te0241(option, nomte)
     nomres(2) = 'CELE_R'
     call rcvalb(fami, kpg, spt, poum, zi(lmater),&
                 ' ', 'FLUIDE', nbpar, nompar, valpar,&
-                2, nomres, valres, codres, 1)
+                2, nomres, valres, codres, 1, 'OUI')
     rof = valres(1)
     celer = valres(2)
 !

@@ -62,7 +62,7 @@ subroutine te0174(option, nomte)
     mater = zi(imate)
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
     call jevech('PVECTUR', 'E', ivectu)
     call jevech('PSOURCF', 'L', ivnor)

@@ -38,7 +38,7 @@ subroutine dilpen(imate, rpena)
     val = 0.0d0
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'NON_LOCAL', 0, ' ', 0.0d0,&
-                1, ncra, val, icodre, 0)
+                1, ncra, val, icodre, 0, 'NON')
     rpena = val
 ! ======================================================================
 end subroutine

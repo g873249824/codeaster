@@ -46,7 +46,7 @@ subroutine lcmaec(fami, kpg, ksp, poum, nmater,&
         nomres(1)='D'
         call rcvalb(fami, kpg, ksp, poum, imat,&
                     nmater, necoul, 0, ' ', 0.d0,&
-                    nbval, nomres, vallue, icodre, 1)
+                    nbval, nomres, vallue, icodre, 1, 'OUI')
         call lceqvn(nbval, vallue, valres(2))
         nbval=nbval+1
 !         PAR CONVENTION ECRO_CINE1 A LE NUMERO 1
@@ -61,7 +61,7 @@ subroutine lcmaec(fami, kpg, ksp, poum, nmater,&
         nomres(4)='C'
         call rcvalb(fami, kpg, ksp, poum, imat,&
                     nmater, necoul, 0, ' ', 0.d0,&
-                    nbval, nomres, vallue, icodre, 1)
+                    nbval, nomres, vallue, icodre, 1, 'OUI')
         call lceqvn(nbval, vallue, valres(2))
         nbval=nbval+1
 !         PAR CONVENTION ECRO_CINE2 A LE NUMERO 2

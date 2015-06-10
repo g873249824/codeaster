@@ -115,7 +115,7 @@ subroutine pieigv(neps, tau, imate, vim, epsm,&
     nomres(2) = 'NU'
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
     e = valres(1)
     nu = valres(2)
     lambda = e * nu / (1.d0+nu) / (1.d0 - 2.d0*nu)
@@ -125,7 +125,7 @@ subroutine pieigv(neps, tau, imate, vim, epsm,&
     nomres(1) = 'PENA_LAGR'
     call rcvala(imate, ' ', 'NON_LOCAL', 0, ' ',&
                 0.d0, 1, nomres, valres, icodre,&
-                1)
+                1, 'OUI')
     r=valres(1)
 !
 !    LECTURE DES CARACTERISTIQUES D'ENDOMMAGEMENT
@@ -134,7 +134,7 @@ subroutine pieigv(neps, tau, imate, vim, epsm,&
     nomres(3) = 'SYC'
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'BETON_ECRO_LINE', 0, ' ', 0.d0,&
-                3, nomres, valres, icodre, 0)
+                3, nomres, valres, icodre, 0, 'OUI')
     gamma = -e/valres(1)
     k0=valres(2)**2 *(1.d0+gamma)/(2.d0*e)&
      &               *(1.d0+nu-2.d0*nu**2)/(1.d0+nu)

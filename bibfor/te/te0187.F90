@@ -68,7 +68,7 @@ subroutine te0187(option, nomte)
     mater=zi(imate)
     call rcvalb(fami, kpg, spt, poum, mater,&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
     pi=r8pi()
     call jevech('PFREQR', 'L', ifreq)

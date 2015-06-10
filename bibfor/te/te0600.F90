@@ -224,7 +224,7 @@ subroutine te0600(option, nomte)
         call rccoma(zi(imate), 'THM_DIFFU', 1, phenom, icodre)
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 0, ' ', r8bid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
         if (ndim .eq. 3) then
 ! =====================================================================
 ! --- CAS 3D ----------------------------------------------------------

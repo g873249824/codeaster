@@ -54,7 +54,7 @@ subroutine pipeba(ndim, mate, sup, sud, vim,&
     poum='+'
     call rcvalb(fami, kpg, spt, poum, mate,&
                 ' ', 'RUPT_FRAG', 0, ' ', 0.d0,&
-                3, nom, val, cod, 2)
+                3, nom, val, cod, 2, 'OUI')
     lc = val(1)/val(2)
     k0 = val(1)/val(2)*val(3)
     ka = max(vim,k0)

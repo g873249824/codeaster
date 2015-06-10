@@ -70,7 +70,7 @@ subroutine te0370(option, nomte)
 !
     call rcvalb(fami, kpg, spt, '+', zi(imate),&
                 ' ', 'FLUIDE', 0, ' ', r8b,&
-                2, nompar, valpar, codret, 1)
+                2, nompar, valpar, codret, 1, 'OUI')
     rho = valpar(1)
     pesa = valpar(2)
 !

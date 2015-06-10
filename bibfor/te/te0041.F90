@@ -192,7 +192,7 @@ subroutine te0041(option, nomte)
             call utpsgl(nno, nc, pgl, zr(jdr), matv1)
             call rcvala(zi(jma), ' ', 'DIS_CONTACT', 0, ' ',&
                         valpar, 3, nomres, valres, icodre,&
-                        0)
+                        0, 'OUI')
             if (icodre(1) .eq. 0 .and. valres(1) .ne. zero) then
                 if (icodre(2) .eq. 0) then
                     mata1(1)=matv1(1)*valres(2)/valres(1)
@@ -348,7 +348,7 @@ subroutine te0041(option, nomte)
             call utpsgl(nno, nc, pgl, zr(jdr), matv2)
             call rcvalb(fami, kpg, spt, poum, zi(jma),&
                         ' ', 'DIS_CONTACT', 0, ' ', valpar,&
-                        3, nomres, valres, icodre, 0)
+                        3, nomres, valres, icodre, 0, 'OUI')
             if (icodre(1) .eq. 0 .and. valres(1) .ne. zero) then
                 if (icodre(2) .eq. 0) then
                     mata3(1)=matv2(1)*valres(2)/valres(1)

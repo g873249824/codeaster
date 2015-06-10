@@ -97,7 +97,7 @@ subroutine d1macp(fami, mater, instan, poum, kpg,&
 !        -----------
         call rcvalb(fami, kpg, ksp, poum, mater,&
                     ' ', phenom, 1, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
         e = valres(1)
         nu = valres(2)
@@ -125,7 +125,7 @@ subroutine d1macp(fami, mater, instan, poum, kpg,&
 !        -----------
         call rcvalb(fami, kpg, ksp, '+', mater,&
                     ' ', phenom, 1, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
         e1 = valres(1)
         e2 = valres(2)
@@ -173,7 +173,7 @@ subroutine d1macp(fami, mater, instan, poum, kpg,&
 !        -----------
         call rcvalb(fami, kpg, ksp, '+', mater,&
                     ' ', phenom, 1, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
         e = valres(1)
         nu = valres(2)

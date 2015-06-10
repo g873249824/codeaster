@@ -55,7 +55,7 @@ function cgverho(imate)
         fami='RIGI'
     endif
     call rcvalb(fami, 1, 1, '+', zi(imate),' ', phenom, 0, ' ',&
-                0.d0, 1, 'RHO', rhobid, codrho, 0)
+                0.d0, 1, 'RHO', rhobid, codrho, 0, 'OUI')
 !
 !   rhoabs -> .true. si rho est absent
     rhoabs = codrho.ne.0

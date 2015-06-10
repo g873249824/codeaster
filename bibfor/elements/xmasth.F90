@@ -226,7 +226,7 @@ subroutine xmasth(ndim, elrefp, nnop, imate, itemps,&
 !         RECUPERER LES PARAMETRES MATERIAUX
             call rcvalb('XFEM', kpg, spt, poum, zi(imate),&
                         ' ', phenom, 1, 'INST', valpar,&
-                        1, 'RHO_CP', valres, icodre, 1)
+                        1, 'RHO_CP', valres, icodre, 1, 'OUI')
             rhocp = valres(1)
 !
 !         FFENR : TABLEAU DES FF ENRICHIES

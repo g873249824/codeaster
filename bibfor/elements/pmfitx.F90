@@ -79,23 +79,23 @@ subroutine pmfitx(icdmat, isw, casect, gto)
         if (isw .eq. 1) then
             call rcvalb('RIGI', 1, 1, '+', icdmat,&
                         materi, 'ELAS', 0, ' ', zero,&
-                        1, 'E', val, codres, 0)
+                        1, 'E', val, codres, 0, 'OUI')
             if (codres(1) .eq. 1) then
                 call rcvalb('RIGI', 1, 1, '+', icdmat,&
                             materi, 'ELAS_FLUI', 0, ' ', zero,&
-                            1, 'E', val, codres, 1)
+                            1, 'E', val, codres, 1, 'OUI')
             endif
         else if (isw.eq.2) then
             call rcvala(icdmat, materi, 'ELAS', 0, ' ',&
                         zero, 1, 'RHO', val, codres,&
-                        0)
+                        0, 'OUI')
             if (codres(1) .eq. 1) then
                 call jevech('PCAGEPO', 'L', lcage)
                 call jevech('PABSCUR', 'L', labsc)
                 absmoy = (zr(labsc-1+1)+zr(labsc-1+2))/deux
                 call rcvala(icdmat, materi, 'ELAS_FLUI', 1, 'ABSC',&
                             absmoy, 4, nomre4, valres, codres,&
-                            1)
+                            1, 'OUI')
                 rhos = valres(1)
                 rhofi = valres(2)
                 rhofe = valres(3)
@@ -112,7 +112,7 @@ subroutine pmfitx(icdmat, isw, casect, gto)
         else if (isw.eq.3) then
             call rcvala(icdmat, materi, 'ELAS', 0, ' ',&
                         zero, 1, 'RHO', val, codres,&
-                        0)
+                        0, 'OUI')
             if (codres(1) .ne. 0) val = zero
         endif
         do 20 i = 1, 6
@@ -131,12 +131,12 @@ subroutine pmfitx(icdmat, isw, casect, gto)
         nomres(2) = 'NU'
         call rcvalb('RIGI', 1, 1, '+', icdmat,&
                     materi, 'ELAS', 0, ' ', zero,&
-                    2, nomres, valres, codres, 0)
+                    2, nomres, valres, codres, 0, 'OUI')
 !
         if (codres(1) .eq. 1) then
             call rcvalb('RIGI', 1, 1, '+', icdmat,&
                         materi, 'ELAS_FLUI', 0, ' ', zero,&
-                        2, nomres, valres, codres, 1)
+                        2, nomres, valres, codres, 1, 'OUI')
         endif
         e = valres(1)
         nu = valres(2)

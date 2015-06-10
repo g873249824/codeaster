@@ -179,7 +179,7 @@ subroutine te0431(option, nomte)
             nomres(1) = 'E'
             call rcvalb(fami, kpg, 1, '+', zi(imate),&
                         ' ', 'ELAS', 0, ' ', 0.d0,&
-                        1, nomres, valres, codres, 1)
+                        1, nomres, valres, codres, 1, 'OUI')
             rig=valres(1)
 !
 ! --- RAPH_MECA, FULL_MECA*, RIGI_MECA_* : ON PASSE PAR LA LDC 1D

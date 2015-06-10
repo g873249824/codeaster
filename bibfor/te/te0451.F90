@@ -76,7 +76,7 @@ subroutine te0451(option, nomte)
     nomres='C'//num//'_V'//val
     call rcvala(zi(jmate), ' ', 'ELAS_COQMU', 0, ' ',&
                 r8bid, 1, nomres, epi, icodre,&
-                0)
+                0, 'OUI')
     if (icodre .eq. 0) lcoqmu=.true.
     if (lcoqmu) then
         call assert(nbcou.le.100)
@@ -85,7 +85,7 @@ subroutine te0451(option, nomte)
         nomres='C'//num//'_V'//val
         call rcvala(zi(jmate), ' ', 'ELAS_COQMU', 0, ' ',&
                     r8bid, 1, nomres, epi, icodre,&
-                    0)
+                    0, 'OUI')
         call assert(icodre.eq.0)
         call assert(epi.ge.0.d0)
         epcou(icou)=epi

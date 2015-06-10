@@ -53,7 +53,7 @@ subroutine te0166(option, nomte)
     call jevech('PMATERC', 'L', imate)
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'ELAS', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
     call jevech('PCACABL', 'L', lsect)
     a = zr(lsect)
 !

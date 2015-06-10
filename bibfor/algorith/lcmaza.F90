@@ -167,10 +167,10 @@ subroutine lcmaza(fami, kpg, ksp, ndim, typmod,&
     nomres(3) = 'ALPHA'
     call rcvalb(fami, kpg, ksp, poum, imate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
     call rcvalb(fami, kpg, ksp, poum, imate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                1, nomres(3), valres(3), icodre(3), 0)
+                1, nomres(3), valres(3), icodre(3), 0, 'OUI')
     if ((iisnan(tp).eq.0) .and. (iisnan(tm).eq.0)) then
         if ((iisnan(tref).ne.0) .or. (icodre(3).ne.0)) then
             call u2mess('F', 'CALCULEL_15')
@@ -192,12 +192,12 @@ subroutine lcmaza(fami, kpg, ksp, ndim, typmod,&
         nomres(2)='K_DESSIC'
         call rcvala(imate, ' ', 'ELAS', 0, ' ',&
                     0.d0, 1, nomres(1), valres(1), icodre(1),&
-                    0)
+                    0, 'OUI')
         if (icodre(1) .ne. 0) valres(1) = 0.d0
         bendo = valres(1)
         call rcvala(imate, ' ', 'ELAS', 0, ' ',&
                     0.d0, 1, nomres(2), valres(2), icodre(2),&
-                    0)
+                    0, 'OUI')
         if (icodre(2) .ne. 0) valres(2) = 0.d0
         kdess = valres(2)
     else
@@ -213,7 +213,7 @@ subroutine lcmaza(fami, kpg, ksp, ndim, typmod,&
     nomres(6) = 'K'
     call rcvalb(fami, kpg, ksp, poum, imate,&
                 ' ', 'MAZARS', 1, nompar, valpar,&
-                6, nomres, valres, icodre, 1)
+                6, nomres, valres, icodre, 1, 'OUI')
     epsd0 = valres(1)
     ac = valres(2)
     bc = valres(3)
@@ -225,7 +225,7 @@ subroutine lcmaza(fami, kpg, ksp, ndim, typmod,&
         nomres(7) = 'CHI'
         call rcvalb(fami, kpg, ksp, poum, imate,&
                     ' ', 'MAZARS', 0, ' ', 0.d0,&
-                    1, nomres(7), valres(7), icodre(7), 1)
+                    1, nomres(7), valres(7), icodre(7), 1, 'OUI')
         chi = valres(7)
         if (chi .eq. 0.d0) then
             call u2mess('I', 'COMPOR1_59')

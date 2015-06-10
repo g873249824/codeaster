@@ -281,7 +281,7 @@ subroutine te0497(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THM_DIFFU', 1, nompar, valres,&
-                nbre1, nomre1, valre1, codme1, 1)
+                nbre1, nomre1, valre1, codme1, 1, 'OUI')
 !
     if (codme1(1) .eq. 0 .and. codme1(2) .eq. 0) then
         rhohom = valre1(1)
@@ -297,14 +297,14 @@ subroutine te0497(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THM_DIFFU', 1, nompar, valres,&
-                nbr11, nomr11, valr11, codm11, 0)
+                nbr11, nomr11, valr11, codm11, 0, 'OUI')
 !
     if (codm11(1) .eq. 0) then
         permin = valr11(1)
     else if (codm11(1).eq.1) then
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'THM_DIFFU', 1, nompar, valres,&
-                    nbr12, nomr12, valr12, codm12, 0)
+                    nbr12, nomr12, valr12, codm12, 0, 'OUI')
         if (( codm12(1).eq.0 ) .and. ( codm12(2).eq.0 ) .and. ( codm12(3) .eq.0 )) then
             permin = sqrt(valr12(1)**2+valr12(2)**2+valr12(3)**2)
         endif
@@ -314,7 +314,7 @@ subroutine te0497(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THM_LIQU', 1, nompar, valres,&
-                nbre2, nomre2, valre2, codme2, 1)
+                nbre2, nomre2, valre2, codme2, 1, 'OUI')
 !
     if (( codme2(1).eq.0 ) .and. ( codme2(2).eq.0 )) then
         rholiq = valre2(1)
@@ -341,7 +341,7 @@ subroutine te0497(option, nomte)
 !
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'THM_INIT', 1, nompar, valres,&
-                    nbre3, nomre3, valre3, codme3, 1)
+                    nbre3, nomre3, valre3, codme3, 1, 'OUI')
 !
         if (codme3(1) .eq. 0) then
             porosi = valre3(1)
@@ -353,7 +353,7 @@ subroutine te0497(option, nomte)
 !
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'ELAS', 1, nompar, valres,&
-                    nbre4, nomre4, valre4, codme4, 1)
+                    nbre4, nomre4, valre4, codme4, 1, 'OUI')
 !
         if (( codme4(1).eq.0 ) .and. ( codme4(2).eq.0 )) then
             cyoung = valre4(1)

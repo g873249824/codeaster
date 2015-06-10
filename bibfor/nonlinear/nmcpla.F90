@@ -252,13 +252,13 @@ subroutine nmcpla(fami, kpg, ksp, ndim, typmod,&
 !
         call rcvalb(fami, 1, 1, '+', imat,&
                     ' ', 'ELAS', 1, nompar, valpad,&
-                    1, nomc(2), materd(2), cerr(1), 2)
+                    1, nomc(2), materd(2), cerr(1), 2, 'OUI')
 !
 ! -      RECUPERATION MATERIAU A TEMPF (T+DT)
 !
         call rcvalb(fami, 1, 1, '+', imat,&
                     ' ', 'ELAS', 1, nompar, valpaf,&
-                    1, nomc(2), materf(2), cerr(1), 2)
+                    1, nomc(2), materf(2), cerr(1), 2, 'OUI')
 !
         materd(1) = 1.d0
         materf(1) = 1.d0
@@ -332,7 +332,7 @@ subroutine nmcpla(fami, kpg, ksp, ndim, typmod,&
 !
         call rcvalb(fami, kpg, ksp, '-', imat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    5, nomc(1), materd(1), cerr(1), 2)
+                    5, nomc(1), materd(1), cerr(1), 2, 'OUI')
 !
         if (cerr(3) .ne. 0) materd(3) = 0.d0
         if (cerr(4) .ne. 0) materd(4) = 0.d0
@@ -342,7 +342,7 @@ subroutine nmcpla(fami, kpg, ksp, ndim, typmod,&
 !
         call rcvalb(fami, kpg, ksp, '+', imat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    5, nomc(1), materf(1), cerr(1), 2)
+                    5, nomc(1), materf(1), cerr(1), 2, 'OUI')
 !
         if (cerr(3) .ne. 0) materf(3) = 0.d0
         if (cerr(4) .ne. 0) materf(4) = 0.d0

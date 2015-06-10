@@ -108,11 +108,11 @@ subroutine nmco1d(fami, kpg, ksp, imate, compor,&
 ! --- CARACTERISTIQUES ELASTIQUES A TMOINS
         call rcvalb(fami, kpg, ksp, '-', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, 'E', em, codres, 1)
+                    1, 'E', em, codres, 1, 'OUI')
 ! --- CARACTERISTIQUES ELASTIQUES A TPLUS
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, 'E', ep, codres, 1)
+                    1, 'E', ep, codres, 1, 'OUI')
     endif
 !
     if (isot) then
@@ -139,7 +139,7 @@ subroutine nmco1d(fami, kpg, ksp, imate, compor,&
         call r8inir(nbval, 0.d0, valres, 1)
         call rcvalb(fami, 1, 1, '+', imate,&
                     ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                    4, ecroli, valres, icodre, 1)
+                    4, ecroli, valres, icodre, 1, 'OUI')
         if (icodre(3)+icodre(4) .ne. 0) then
             valkm(1)='VMIS_CINE_GC'
             valkm(2)=ecroli(3)

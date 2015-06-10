@@ -74,10 +74,10 @@ subroutine te0396(option, nomte)
     nomres(3) = 'RHO'
     call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                 ' ', 'ELAS', 0, '  ', r8bid,&
-                2, nomres, valres, icodre, 1)
+                2, nomres, valres, icodre, 1, 'OUI')
     call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                 ' ', 'ELAS', 0, '  ', r8bid,&
-                1, nomres(3), valres(3), icodre(3), 0)
+                1, nomres(3), valres(3), icodre(3), 0, 'OUI')
     e = valres(1)
     nu = valres(2)
     g = e/ (2.d0* (1.0d0+nu))

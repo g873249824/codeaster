@@ -84,7 +84,7 @@ subroutine te0062(option, nomte)
         nomres(1) = 'LAMBDA'
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, 'INST', zr(itemps),&
-                    1, nomres, lambda, icodre, 1)
+                    1, nomres, lambda, icodre, 1, 'OUI')
         aniso = .false.
     else if (phenom.eq.'THER_ORTH') then
         nomres(1) = 'LAMBDA_L'
@@ -92,7 +92,7 @@ subroutine te0062(option, nomte)
         nomres(3) = 'LAMBDA_N'
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, 'INST', zr(itemps),&
-                    3, nomres, valres, icodre, 1)
+                    3, nomres, valres, icodre, 1, 'OUI')
         lambor(1) = valres(1)
         lambor(2) = valres(2)
         lambor(3) = valres(3)
@@ -161,7 +161,7 @@ subroutine te0062(option, nomte)
 !
         if (phenom .eq. 'THER_NL') call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                                                ' ', phenom, 1, 'TEMP', tpg,&
-                                               1, 'LAMBDA', lambda, icodre, 1)
+                                               1, 'LAMBDA', lambda, icodre, 1, 'OUI')
 !
         if (.not.aniso) then
             fluglo(1) = lambda*fluxx

@@ -715,7 +715,7 @@ subroutine assvsu(nno, nnos, nface, geom, crit,&
     poum='+'
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'THM_INIT', 0, ' ', 0.d0,&
-                1, 'COMP_THM', rthmc, codmes, 1)
+                1, 'COMP_THM', rthmc, codmes, 1, 'OUI')
     thmc = compor(8)
     if ((rthmc-1.0d0) .lt. r8prem()) then
         loi = 'LIQU_SATU'

@@ -82,7 +82,7 @@ subroutine te0154(option, nomte)
 !
     call rcvalb(fami, 1, 1, '+', zi(lmater),&
                 ' ', 'ELAS', 0, ' ', r8bid,&
-                1, 'E', e, codres, 1)
+                1, 'E', e, codres, 1, 'OUI')
     if (epsth .ne. 0.d0) lteimp =.true.
 !
 !     --- RECUPERATION DES COORDONNEES DES NOEUDS ---
@@ -216,7 +216,7 @@ subroutine te0154(option, nomte)
     else if (option .eq. 'ECIN_ELEM') then
         call rcvalb(fami, 1, 1, '+', zi(lmater),&
                     ' ', 'ELAS', 0, ' ', r8bid,&
-                    1, 'RHO', rho, codres, 1)
+                    1, 'RHO', rho, codres, 1, 'OUI')
         call jevech('PENERCR', 'E', jende)
         call jevech('POMEGA2', 'L', jfreq)
         xmas = rho * a * xl / 6.d0

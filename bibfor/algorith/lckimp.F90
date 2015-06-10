@@ -88,7 +88,7 @@ subroutine lckimp(ndim, typmod, option, mat, epsm,&
 !
     call rcvala(mat, ' ', 'ELAS', 0, ' ',&
                 0.d0, 2, nom(1), val(1), k2,&
-                2)
+                2, 'OUI')
 !
     nu = val(2)
     e = val(1)
@@ -98,7 +98,7 @@ subroutine lckimp(ndim, typmod, option, mat, epsm,&
 !
     call rcvala(mat, ' ', 'ECRO_LINE', 0, ' ',&
                 0.d0, 1, nom(3), val(3), k2,&
-                2)
+                2, 'OUI')
 !
     sigm = val(3)
 !

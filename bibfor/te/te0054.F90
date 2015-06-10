@@ -70,7 +70,7 @@ subroutine te0054(option, nomte)
     deltat = zr(itemps+1)
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', phenom, 1, 'INST', valpar,&
-                1, 'RHO_CP', cp, icodre, 1)
+                1, 'RHO_CP', cp, icodre, 1, 'OUI')
 !
 !    BOUCLE SUR LES POINTS DE GAUSS
 !

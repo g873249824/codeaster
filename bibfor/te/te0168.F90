@@ -58,7 +58,7 @@ subroutine te0168(option, nomte)
 !
     call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                 ' ', 'ELAS', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
     call jevech('PCACABL', 'L', lsect)
     a = zr(lsect)
 !

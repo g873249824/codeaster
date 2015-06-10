@@ -63,7 +63,7 @@ function distfo(zimat, kfonc, xx, yy, normx,&
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zimat,&
                 ' ', phenom, 1, 'X ', xi,&
-                1, kfonc, yi, codres, 1)
+                1, kfonc, yi, codres, 1, 'OUI')
     call cdnfon(zimat, kfonc, xi, 1, dyi,&
                 ier)
     yi = yi/ normy
@@ -88,7 +88,7 @@ function distfo(zimat, kfonc, xx, yy, normx,&
 !
     call rcvalb(fami, kpg, spt, poum, zimat,&
                 ' ', phenom, 1, 'X ', xi,&
-                1, kfonc, yi, codres, 1)
+                1, kfonc, yi, codres, 1, 'OUI')
     call cdnfon(zimat, kfonc, xi, 1, dyi,&
                 ier)
 !

@@ -344,10 +344,10 @@ subroutine lcmmap(fami, kpg, ksp, comp, mod,&
 !
         call rcvalb(fami, kpg, ksp, '-', imat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomc(1), materd(1, 1), cerr(1), 1)
+                    2, nomc(1), materd(1, 1), cerr(1), 1, 'OUI')
         call rcvalb(fami, kpg, ksp, '-', imat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, nomc(3), materd(3, 1), cerr(3), 0)
+                    1, nomc(3), materd(3, 1), cerr(3), 0, 'OUI')
         if (cerr(3) .ne. 0) materd(3,1) = 0.d0
         materd(nmat,1)=0
 !
@@ -355,10 +355,10 @@ subroutine lcmmap(fami, kpg, ksp, comp, mod,&
 !
         call rcvalb(fami, kpg, ksp, '+', imat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomc(1), materf(1, 1), cerr(1), 1)
+                    2, nomc(1), materf(1, 1), cerr(1), 1, 'OUI')
         call rcvalb(fami, kpg, ksp, '+', imat,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, nomc(3), materf(3, 1), cerr(3), 0)
+                    1, nomc(3), materf(3, 1), cerr(3), 0, 'OUI')
         if (cerr(3) .ne. 0) materf(3,1) = 0.d0
         materf(nmat,1)=0
 !
@@ -408,7 +408,7 @@ subroutine lcmmap(fami, kpg, ksp, comp, mod,&
         nomc(3) = 'ALPHA_N'
         call rcvalb(fami, kpg, ksp, '-', imat,&
                     ' ', phenom, 0, ' ', 0.d0,&
-                    3, nomc, materd(73, 1), cerr, 0)
+                    3, nomc, materd(73, 1), cerr, 0, 'OUI')
         if (cerr(1) .ne. 0) materd(73,1) = 0.d0
         if (cerr(2) .ne. 0) materd(74,1) = 0.d0
         if (cerr(3) .ne. 0) materd(75,1) = 0.d0
@@ -448,7 +448,7 @@ subroutine lcmmap(fami, kpg, ksp, comp, mod,&
         materf(nmat,1)=1
         call rcvalb(fami, kpg, ksp, '+', imat,&
                     ' ', phenom, 0, ' ', 0.d0,&
-                    3, nomc, materf(73, 1), cerr, 0)
+                    3, nomc, materf(73, 1), cerr, 0, 'OUI')
         if (cerr(1) .ne. 0) materf(73,1) = 0.d0
         if (cerr(2) .ne. 0) materf(74,1) = 0.d0
         if (cerr(3) .ne. 0) materf(75,1) = 0.d0

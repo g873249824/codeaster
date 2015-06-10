@@ -66,7 +66,7 @@ subroutine te0226(option, nomte)
     poum='+'
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'ELAS', 0, ' ', r8b,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
     h = zr(icaco)
     rm = rho*h
     rf = rho*h**3/12.d0

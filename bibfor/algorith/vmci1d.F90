@@ -70,13 +70,13 @@ subroutine vmci1d(fami, kpg, ksp, imate, em,&
 !     INSTANT -
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 materi, 'ECRO_LINE', 0, ' ', 0.d0,&
-                1, nomecl, valres, icodre, 1)
+                1, nomecl, valres, icodre, 1, 'OUI')
     etm = valres(1)
     hm = em*etm/(em-etm)
 !     INSTANT +
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 materi, 'ECRO_LINE', 0, ' ', 0.d0,&
-                4, nomecl, valres, icodre, 1)
+                4, nomecl, valres, icodre, 1, 'OUI')
     etp = valres(1)
     sigy = valres(2)
     sgels = valres(3)

@@ -78,7 +78,7 @@ subroutine massup(option, ndim, dlns, nno, nnos,&
 !
     call rcvalb(fami, kpg, spt, poum, mate,&
                 ' ', phenom, 0, ' ', 0.d0,&
-                1, 'RHO', rho, icodre, 1)
+                1, 'RHO', rho, icodre, 1, 'OUI')
 !
     if (ndim .eq. 2) then
         do 90 kpg = 1, npg

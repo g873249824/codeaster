@@ -58,7 +58,7 @@ subroutine reg2gr(imate, compor, ndim, regula, dimdef,&
 30      continue
         call rcvalb(fami, kpg, spt, poum, imate,&
                     ' ', 'ELAS_2NDG', 0, ' ', 0.0d0,&
-                    5, ncra(1), val(1), icodre(1), 1)
+                    5, ncra(1), val(1), icodre(1), 1, 'OUI')
 !
         do 50 p = 1, ndim
             do 60 q = 1, ndim

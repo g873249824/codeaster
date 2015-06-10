@@ -77,7 +77,7 @@ subroutine lcpima(fami, kpg, ksp, poum, mate,&
 !
     call rcvalb(fami, kpg, ksp, poum, mate,&
                 ' ', 'ELAS', 0, kbid, r8bid,&
-                1, 'NU', nu, icodre(1), 2)
+                1, 'NU', nu, icodre(1), 2, 'OUI')
 !
     call verift(fami, kpg, ksp, poum, mate,&
                 'ELAS', 1, epsthe, iret1)
@@ -92,7 +92,7 @@ subroutine lcpima(fami, kpg, ksp, poum, mate,&
     else
         call rcvalb(fami, kpg, ksp, poum, mate,&
                     ' ', 'ELAS', 0, kbid, r8bid,&
-                    1, 'E', young, icodre(1), 2)
+                    1, 'E', young, icodre(1), 2, 'OUI')
     endif
 !
 !     CRIT_RUPT
@@ -127,7 +127,7 @@ subroutine lcpima(fami, kpg, ksp, poum, mate,&
         nomres(2)='SY'
         call rcvalb(fami, kpg, ksp, poum, mate,&
                     ' ', 'ECRO_LINE', 0, kbid, r8bid,&
-                    2, nomres, valres, icodre(1), 2)
+                    2, nomres, valres, icodre(1), 2, 'OUI')
         dsde=valres(1)
         sigy=valres(2)
         if ((young-dsde) .lt. r8miem()) then
@@ -147,7 +147,7 @@ subroutine lcpima(fami, kpg, ksp, poum, mate,&
         nomres(3)='N_PUIS'
         call rcvalb(fami, kpg, ksp, poum, mate,&
                     ' ', 'ECRO_PUIS', 0, kbid, r8bid,&
-                    3, nomres, valres, icodre, 2)
+                    3, nomres, valres, icodre, 2, 'OUI')
         sigy = valres(1)
         apui = valres(2)
         npui = valres(3)
@@ -164,7 +164,7 @@ subroutine lcpima(fami, kpg, ksp, poum, mate,&
         nomres(3)= 'M'
         call rcvalb(fami, kpg, ksp, poum, mate,&
                     ' ', 'VISC_SINH', 0, kbid, r8bid,&
-                    3, nomres, valres, icodre(1), 2)
+                    3, nomres, valres, icodre(1), 2, 'OUI')
         sigm0=valres(1)
         epsi0=valres(2)
         coefm= valres(3)

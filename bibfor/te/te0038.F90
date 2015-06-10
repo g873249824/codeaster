@@ -88,7 +88,7 @@ subroutine te0038(option, nomte)
             .or. phenom .eq. 'ELAS_ORTH') then
             call rcvalb('FPG1', 1, 1, '+', zi(lmater),&
                         ' ', phenom, 0, ' ', r8b,&
-                        1, 'RHO', rho, codres, 1)
+                        1, 'RHO', rho, codres, 1, 'OUI')
         else
             call u2mess('F', 'ELEMENTS_50')
         endif

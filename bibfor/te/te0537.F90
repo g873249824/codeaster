@@ -174,7 +174,7 @@ subroutine te0537(option, nomte)
             nomres(2) = 'NU'
             call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                         materi, 'ELAS', 0, ' ', 0.d0,&
-                        2, nomres, valres, codres, 1)
+                        2, nomres, valres, codres, 1, 'OUI')
             e = valres(1)
             nu = valres(2)
 ! ---    ON MULTIPLIE LES ZR(JCONT) (DEFORMATIONS) PAR E

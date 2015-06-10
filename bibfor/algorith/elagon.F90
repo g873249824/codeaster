@@ -81,12 +81,12 @@ subroutine elagon(ndim, imate, crit, sat, biot,&
     poum='+'
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'ELAS_GONF ', 1, nprefr, valpam,&
-                1, nomres(1), valres(1), icodre(1), 2)
+                1, nomres(1), valres(1), icodre(1), 2, 'OUI')
     betam=valres(1)
 !
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'ELAS_GONF ', 1, nprefr, valpam,&
-                1, nomres(2), valres(2), icodre(2), 2)
+                1, nomres(2), valres(2), icodre(2), 2, 'OUI')
     pref = valres(2)
 !
 !

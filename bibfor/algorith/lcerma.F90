@@ -57,13 +57,13 @@ subroutine lcerma(mat, fami, kpg, ksp, poum)
 !
     call rcvalb(fami, kpg, ksp, poum, mat,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                nbel, nomel, valel, iok, 2)
+                nbel, nomel, valel, iok, 2, 'OUI')
     call rcvalb(fami, kpg, ksp, poum, mat,&
                 ' ', 'NON_LOCAL', 0, ' ', 0.d0,&
-                nbnl, nomnl, valnl, iok, 2)
+                nbnl, nomnl, valnl, iok, 2, 'OUI')
     call rcvalb(fami, kpg, ksp, poum, mat,&
                 ' ', 'ENDO_SCALAIRE', 0, ' ', 0.d0,&
-                nber, nomer, valer, iok, 2)
+                nber, nomer, valer, iok, 2, 'OUI')
 !
     pc = valnl(1)
     pr = valnl(2)
@@ -95,7 +95,7 @@ subroutine lcerma(mat, fami, kpg, ksp, poum)
 !
     call rcvalb(fami, kpg, ksp, poum, mat,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                1, 'ALPHA', alpha, iok, 0)
+                1, 'ALPHA', alpha, iok, 0, 'OUI')
 !
     if (iok(1) .eq. 0) then
         call rcvarc('F', 'TEMP', 'REF', fami, kpg,&

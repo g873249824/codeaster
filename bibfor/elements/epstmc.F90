@@ -113,7 +113,7 @@ subroutine epstmc(fami, ndim, instan, poum, igau,&
 !     ----------------------------------------------------------
             call rcvalb(fami, igau, isgau, poum, mater,&
                         ' ', phenom, 1, nompar, valpar,&
-                        nbv, nomres, valres, icodre, 0)
+                        nbv, nomres, valres, icodre, 0, 'OUI')
 !
             if (icodre(1) .eq. 0) then
 !
@@ -147,7 +147,7 @@ subroutine epstmc(fami, ndim, instan, poum, igau,&
 !
             call rcvalb(fami, igau, isgau, poum, mater,&
                         ' ', phenom, 1, nompar, valpar,&
-                        nbv, nomres, valres, icodre, 0)
+                        nbv, nomres, valres, icodre, 0, 'OUI')
 !
             if (icodre(1) .ne. 0) valres(1)=0.d0
 !
@@ -163,7 +163,7 @@ subroutine epstmc(fami, ndim, instan, poum, igau,&
 !
             call rcvalb(fami, igau, isgau, poum, mater,&
                         ' ', phenom, 1, nompar, valpar,&
-                        nbv, nomres, valres, icodre, 0)
+                        nbv, nomres, valres, icodre, 0, 'OUI')
             e = valres(1)
             nu = valres(2)
             troisk = e/(1.d0-2.d0*nu)
@@ -188,7 +188,7 @@ subroutine epstmc(fami, ndim, instan, poum, igau,&
 !           ----------------------------------------------------------
         call rcvalb(fami, igau, isgau, poum, mater,&
                     ' ', phenom, 1, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 0)
+                    nbv, nomres, valres, icodre, 0, 'OUI')
 !
         if (icodre(1) .ne. 0) valres(1)=0.d0
 !

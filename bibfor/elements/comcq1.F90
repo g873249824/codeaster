@@ -86,12 +86,12 @@ subroutine comcq1(fami, kpg, ksp, mod, imate,&
             nompar = 'TEMP'
             call rcvalb('RIGI', kpg, 1, '-', imate,&
                         ' ', 'ELAS', 1, nompar, tempm,&
-                        1, 'E', em, codres, 1)
+                        1, 'E', em, codres, 1, 'OUI')
 !
 ! ---        CARACTERISTIQUES ELASTIQUES A TPLUS
             call rcvalb('RIGI', kpg, 1, '+', imate,&
                         ' ', 'ELAS', 1, nompar, tempp,&
-                        1, 'E', ep, codres, 1)
+                        1, 'E', ep, codres, 1, 'OUI')
             if (compor(1) .eq. 'ELAS') then
                 call verifg('RIGI', kpg, 3, 'T', imate,&
                             'ELAS', 1, depsth, iret)

@@ -80,7 +80,7 @@ subroutine te0082(option, nomte)
     call rccoma(zi(imate), 'ELAS', 1, phenom, icodre)
     call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                 ' ', phenom, 0, ' ', r8b,&
-                1, 'RHO', valres, icodre, 1)
+                1, 'RHO', valres, icodre, 1, 'OUI')
 !
     do 2 k = 1, nvec
         matv(k) = 0.0d0

@@ -137,7 +137,7 @@ subroutine te0392(option, nomte)
 !
     call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                 ' ', phenom, 0, ' ', 0.d0,&
-                1, nomres(2), valres(2), codre, 1)
+                1, nomres(2), valres(2), codre, 1, 'OUI')
     if (codre .eq. 0) then
         nu = valres(2)
     else

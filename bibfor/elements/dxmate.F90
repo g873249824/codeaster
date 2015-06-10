@@ -152,11 +152,11 @@ subroutine dxmate(fami, df, dm, dmf, dc,&
 !
         call rcvala(zi(jmate), ' ', phenom, 0, ' ',&
                     zero, 1, 'MEMB_L  ', valres(1), icodre,&
-                    0)
+                    0, 'OUI')
         if (icodre(1) .eq. 1) then
             call rcvala(zi(jmate), ' ', phenom, 0, ' ',&
                         zero, 1, 'M_LLLL  ', valres(1), icodre,&
-                        0)
+                        0, 'OUI')
             if (icodre(1) .eq. 1) then
                 call u2mess('F', 'ELEMENTS_41')
             else
@@ -234,7 +234,7 @@ subroutine dxmate(fami, df, dm, dmf, dc,&
 !
         call rcvalb(fami, 1, 1, '+', zi(jmate),&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
         young = valres(1)
         nu = valres(2)
@@ -288,7 +288,7 @@ subroutine dxmate(fami, df, dm, dmf, dc,&
     else if (phenom.eq.'ELAS_COQUE') then
         call rcvalb(fami, 1, 1, '+', zi(jmate),&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
         if (elasco .eq. 1) then
             multic = 0
 !
@@ -434,7 +434,7 @@ subroutine dxmate(fami, df, dm, dmf, dc,&
 !        ------ MATERIAU MULTICOUCHE -----------------------------------
         call rcvalb(fami, 1, 1, '+', zi(jmate),&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    18, nomres, valres, icodre, 1)
+                    18, nomres, valres, icodre, 1, 'OUI')
         dm(1,1) = valres(1)
         dm(1,2) = valres(2)
         dm(1,3) = valres(3)
@@ -464,7 +464,7 @@ subroutine dxmate(fami, df, dm, dmf, dc,&
         df(3,2) = df(2,3)
         call rcvalb(fami, 1, 1, '+', zi(jmate),&
                     ' ', phenom, nbpar, nompar, valpar,&
-                    6, nomres(21), valres(21), icodre(21), 1)
+                    6, nomres(21), valres(21), icodre(21), 1, 'OUI')
         dci(1,1) = valres(21)
         dci(2,2) = valres(22)
         dci(1,2) = valres(23)

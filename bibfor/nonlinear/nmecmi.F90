@@ -131,23 +131,23 @@ subroutine nmecmi(fami, kpg, ksp, ndim, typmod,&
     if (compor(1)(1:14) .eq. 'VMIS_ECMI_TRAC') then
         call rcvalb(fami, kpg, ksp, '-', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, nomres(2), valres(2), icodre(2), 2)
+                    1, nomres(2), valres(2), icodre(2), 2, 'OUI')
         num = valres(2)
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, nomres(2), valres(2), icodre(2), 2)
+                    1, nomres(2), valres(2), icodre(2), 2, 'OUI')
         nu = valres(2)
     else
         call rcvalb(fami, kpg, ksp, '-', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres(1), valres(1), icodre(1), 2)
+                    2, nomres(1), valres(1), icodre(1), 2, 'OUI')
         em = valres(1)
         num = valres(2)
         deumum = em/(1.d0+num)
         troikm = em/(1.d0-2.d0*num)
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    2, nomres(1), valres(1), icodre(1), 2)
+                    2, nomres(1), valres(1), icodre(1), 2, 'OUI')
         e = valres(1)
         nu = valres(2)
         deuxmu = e/(1.d0+nu)
@@ -161,11 +161,11 @@ subroutine nmecmi(fami, kpg, ksp, ndim, typmod,&
     nomres(1)='C'
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'PRAGER', 0, ' ', 0.d0,&
-                1, nomres, valres, icodre, 1)
+                1, nomres, valres, icodre, 1, 'OUI')
     prag=valres(1)
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'PRAGER', 0, ' ', 0.d0,&
-                1, nomres, valres, icodre, 1)
+                1, nomres, valres, icodre, 1, 'OUI')
     pragm=valres(1)
     line=0.d0
     if (compor(1)(10:14) .eq. '_LINE') then
@@ -174,7 +174,7 @@ subroutine nmecmi(fami, kpg, ksp, ndim, typmod,&
         nomres(2)='SY'
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ECRO_LINE', 0, ' ', 0.d0,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         dsde=valres(1)
         sigy=valres(2)
         rprim = dsde*e/(e-dsde)-1.5d0*prag

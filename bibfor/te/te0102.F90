@@ -150,7 +150,7 @@ subroutine te0102(option, nomte)
 !       -------------------------
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'THER_COQMU', nbvar, nompar, valpar,&
-                    nbres, nomres, valres, icodre, 1)
+                    nbres, nomres, valres, icodre, 1, 'OUI')
 !
 ! ---   TENSEUR DE CAPACITE THERMIQUE :
 !       -----------------------------
@@ -174,7 +174,7 @@ subroutine te0102(option, nomte)
         nomres(1) = 'RHO_CP'
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', 'THER', nbvar, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
 ! ---   CAPACITE THERMIQUE :
 !       ------------------
@@ -229,7 +229,7 @@ subroutine te0102(option, nomte)
         nbv = 4
         call rcvalb(fami, kpg, spt, poum, zi(imate),&
                     ' ', phenom, nbvar, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
         m(1,1) = valres(1)
         m(1,2) = valres(2)

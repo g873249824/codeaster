@@ -62,7 +62,7 @@ subroutine matrth(fami, npg, young, nu, alpha,&
                     iret)
         call rcvala(zi(jmate), ' ', phenom, 1, nompar,&
                     temp, 3, nomres, valres, icodre,&
-                    1)
+                    1, 'OUI')
         if (icodre(3) .ne. 0) then
             indith = -1
             goto 999
@@ -79,7 +79,7 @@ subroutine matrth(fami, npg, young, nu, alpha,&
         nomres(2)='ALPHA_T'
         call rcvalb(fami, 1, 1, '+', zi(jmate),&
                     ' ', phenom, 0, nompar, valpar,&
-                    2, nomres, valres, icodre, 1)
+                    2, nomres, valres, icodre, 1, 'OUI')
         if (icodre(1) .ne. 0) then
             indith = -1
             goto 999

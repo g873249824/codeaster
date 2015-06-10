@@ -58,7 +58,7 @@ subroutine lcjohm(imate, resi, rigi, kpi, npg,&
 !
     call rcvalb(fami, kpg, spt, poum, imate,&
                 ' ', 'JOINT_BANDIS', 0, ' ', 0.d0,&
-                4, ncra1(1), para(1), icodre, 1)
+                4, ncra1(1), para(1), icodre, 1, 'OUI')
     kni = para(1)
     umc = para(2)
     gamma = para(3)

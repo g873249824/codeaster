@@ -188,7 +188,7 @@ subroutine nmelru(fami, kpg, ksp, idecpg, poum, imate,&
 !
             call rcvalb(fami, kpg, ksp, poum, imate,&
                         ' ', 'ECRO_PUIS', 0, ' ', 0.d0,&
-                        1, nomres, valres, icodre, 1)
+                        1, nomres, valres, icodre, 1, 'OUI')
             sigy=valres(1)
             coco = e/alfafa/sigy
             rp = sigy *(coco*p)**unsurn+sigy

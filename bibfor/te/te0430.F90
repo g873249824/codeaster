@@ -150,7 +150,7 @@ subroutine te0430(option, nomte)
                 nomres(1) = 'E'
                 call rcvalb(fami, kpg, 1, '+', zi(imate),&
                             ' ', 'ELAS', 0, ' ', 0.d0,&
-                            1, nomres, valres, codres, 1)
+                            1, nomres, valres, codres, 1, 'OUI')
                 sig=valres(1)*zr(iepsin)
 !
 ! - CHAR_MECA_TEMP_R : SIG = E*EPSTHE
@@ -165,7 +165,7 @@ subroutine te0430(option, nomte)
                 nomres(1) = 'E'
                 call rcvalb(fami, kpg, 1, '+', zi(imate),&
                             ' ', 'ELAS', 0, ' ', 0.d0,&
-                            1, nomres, valres, codres, 1)
+                            1, nomres, valres, codres, 1, 'OUI')
                 sig=valres(1)*epsthe
             endif
 !
@@ -187,7 +187,7 @@ subroutine te0430(option, nomte)
             nomres(1) = 'E'
             call rcvalb(fami, kpg, 1, '+', zi(imate),&
                         ' ', 'ELAS', 0, ' ', 0.d0,&
-                        1, nomres, valres, codres, 1)
+                        1, nomres, valres, codres, 1, 'OUI')
             sig=valres(1)*epsref
 !
             do 110 n = 1, nno
@@ -201,7 +201,7 @@ subroutine te0430(option, nomte)
         else if (option.eq.'CHAR_MECA_PESA_R') then
             call rcvalb(fami, kpg, 1, '+', zi(imate),&
                         ' ', 'ELAS', 0, ' ', 0.d0,&
-                        1, 'RHO', rho, codres, 1)
+                        1, 'RHO', rho, codres, 1, 'OUI')
             do 130 n = 1, nno
                 do 130 i = 1, 3
                     zr(ivectu+(n-1)*nddl+i-1)=zr(ivectu+(n-1)*nddl+i-&

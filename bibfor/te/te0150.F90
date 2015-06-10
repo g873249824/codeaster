@@ -167,7 +167,7 @@ subroutine te0150(option, nomte)
         if (option(13:16) .ne. '1D1D' .and. .not.lrho) then
             call rcvalb(fami, 1, 1, '+', zi(lmater),&
                         materi, 'ELAS', nbpar, nompar, valpar,&
-                        nbres, nomres, valres, codres, 1)
+                        nbres, nomres, valres, codres, 1, 'OUI')
 !
             e = valres(1)
             nu = valres(2)

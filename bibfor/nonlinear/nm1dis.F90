@@ -79,10 +79,10 @@ subroutine nm1dis(fami, kpg, ksp, imate, em,&
     if ((compor(1).eq.'VMIS_ISOT_LINE') .or. (compor(1).eq.'GRILLE_ISOT_LINE')) then
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     materi, 'ECRO_LINE', 0, ' ', 0.d0,&
-                    1, nomecl, valres, icodre, 1)
+                    1, nomecl, valres, icodre, 1, 'OUI')
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     materi, 'ECRO_LINE', 0, ' ', 0.d0,&
-                    1, nomecl(2), valres(2), icodre(2), 0)
+                    1, nomecl(2), valres(2), icodre(2), 0, 'OUI')
         if (icodre(2) .ne. 0) valres(2) = 0.d0
         et = valres(1)
         sigy = valres(2)

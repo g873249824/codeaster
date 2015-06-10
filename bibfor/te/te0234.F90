@@ -130,7 +130,7 @@ subroutine te0234(option, nomte)
 !
         call rcvala(zi(imate), ' ', 'ELAS', 1, 'TEMP',&
                     tpg, 2, nomres, valres, icodre,&
-                    1)
+                    1, 'OUI')
         nu = valres(2)
         cisail = valres(1)/ (un+nu)
         if (nomte .eq. 'MECXSE3') jacp = jacp*r

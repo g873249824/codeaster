@@ -111,7 +111,7 @@ subroutine lceiab(fami, kpg, ksp, mat, option,&
 !
     call rcvalb(fami, kpg, ksp, poum, mat,&
                 ' ', 'CZM_LAB_MIX', 0, ' ', 0.d0,&
-                6, nom, val, cod, 2)
+                6, nom, val, cod, 2, 'OUI')
 !
     sc = val(1)
     dc = val(2)

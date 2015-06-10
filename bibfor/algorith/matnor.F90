@@ -57,13 +57,13 @@ subroutine matnor(fami, kpg, ksp, imat, nmat,&
 !
     call rcvalb(fami, kpg, ksp, poum, imat,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                3, nomc(1), coefel, cerr(1), 0)
+                3, nomc(1), coefel, cerr(1), 0, 'OUI')
 !
     if (cerr(3) .ne. 0) coefel(3) = 0.d0
 !
     call rcvalb(fami, kpg, ksp, poum, imat,&
                 ' ', 'LEMAITRE', 0, ' ', 0.d0,&
-                2, nomc(4), coefpl, cerr(4), 1)
+                2, nomc(4), coefpl, cerr(4), 1, 'OUI')
 !
 !     NOMBRE DE COEF MATERIAU
     coefpl(nmat)=2

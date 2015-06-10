@@ -75,11 +75,11 @@ subroutine te0077(option, nomte)
     if (phenom .eq. 'THER') then
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, 'INST', zr(itemps),&
-                    1, 'RHO_CP', cp, icodre, 1)
+                    1, 'RHO_CP', cp, icodre, 1, 'OUI')
     else if (phenom .eq. 'THER_ORTH') then
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', phenom, 1, 'INST', zr(itemps),&
-                    1, 'RHO_CP', cp, icodre, 1)
+                    1, 'RHO_CP', cp, icodre, 1, 'OUI')
     else
         call u2mess('F', 'ELEMENTS2_63')
     endif

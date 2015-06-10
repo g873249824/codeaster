@@ -100,7 +100,7 @@ subroutine te0436(option, nomte)
         call jevech('PMASSINE', 'E', imass)
         call rcvalb(fami, kpg, 1, '+', zi(imate),&
                     ' ', 'ELAS_MEMBRANE', 0, ' ', 0.d0,&
-                    1, 'RHO', rho, codres, 1)
+                    1, 'RHO', rho, codres, 1, 'OUI')
         if (rho .le. r8prem()) then
             call u2mess('F', 'ELEMENTS5_45')
         endif

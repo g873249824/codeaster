@@ -96,7 +96,7 @@ subroutine te0342(option, nomte)
 !
     call rcvalb('RIGI', npg, 1, '+', zi(lmater),&
                 ' ', 'ELAS', nbpar, nompar, valpar,&
-                nbres, nomres, valres, codres, 1)
+                nbres, nomres, valres, codres, 1, 'OUI')
 !
     e = valres(1)
     nu = valres(2)

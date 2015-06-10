@@ -71,7 +71,7 @@ subroutine mbrigi(fami, kpg, imate, rig)
 !
     call rcvalb(fami, kpg, 1, '+', zi(imate),&
                 ' ', phenom, 0, ' ', 0.d0,&
-                6, nomres, valres, codres, 1)
+                6, nomres, valres, codres, 1, 'OUI')
 !
 ! -  EN CAS DE PROBLEME AVEC LES VARIABLES DE COMMANDES
 !

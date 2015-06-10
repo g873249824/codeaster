@@ -67,7 +67,7 @@ subroutine dxdmul(lcalct, icou, iniv, t1ve, t2ve,&
 10  end do
     call rcvala(zi(jmate), ' ', 'ELAS_COQMU', 0, ' ',&
                 r8bid, 9, nomres, valres, icodre,&
-                1)
+                1, 'OUI')
     epi = valres(1)
     ordi = valres(3)
     h(1,1) = valres(4)
@@ -103,15 +103,15 @@ subroutine dxdmul(lcalct, icou, iniv, t1ve, t2ve,&
 60      continue
         call rcvala(zi(jmate), ' ', 'ELAS_COQMU', 0, ' ',&
                     r8bid, 1, nomres, valres, icodre,&
-                    1)
+                    1, 'OUI')
         epi = valres(1)
         call rcvala(zi(jmate), ' ', 'ELAS_COQMU', 0, ' ',&
                     r8bid, 1, nomres(3), valres(3), icodre(3),&
-                    1)
+                    1, 'OUI')
         ordi = valres(3)
         call rcvala(zi(jmate), ' ', 'ELAS_COQMU', 0, ' ',&
                     r8bid, 12, nomres(16), valres(16), icodre(16),&
-                    1)
+                    1, 'OUI')
 !
 !      RECUP MATRICE AI = H(Z).HF-1
 !

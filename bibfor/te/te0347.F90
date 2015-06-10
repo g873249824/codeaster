@@ -189,7 +189,7 @@ subroutine te0347(option, nomte)
                 nomres(2) = 'NU'
                 call rcvalb(fami, 1, 1, '+', zi(imate),&
                             ' ', 'ELAS', 1, 'TEMP', temp,&
-                            2, nomres, valres, iret, 1)
+                            2, nomres, valres, iret, 1, 'OUI')
                 e = valres(1)
                 nu = valres(2)
                 g = e / (2.d0*(1.d0+nu))

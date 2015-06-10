@@ -92,7 +92,7 @@ subroutine dmatcp(fami, mater, instan, poum, igau,&
 !        -----------
         call rcvalb(fami, igau, isgau, poum, mater,&
                     ' ', phenom, 1, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
         e = valres(1)
         nu = valres(2)
@@ -140,7 +140,7 @@ subroutine dmatcp(fami, mater, instan, poum, igau,&
 !        -----------
         call rcvalb(fami, igau, isgau, poum, mater,&
                     ' ', phenom, 1, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
 !
         e1 = valres(1)
@@ -193,7 +193,7 @@ subroutine dmatcp(fami, mater, instan, poum, igau,&
 !        -----------
         call rcvalb(fami, igau, isgau, poum, mater,&
                     ' ', phenom, 1, nompar, valpar,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
 !
         e = valres(1)
         nu = valres(2)

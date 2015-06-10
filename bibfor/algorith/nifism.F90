@@ -170,7 +170,7 @@ subroutine nifism(ndim, nno1, nno2, nno3, npg,&
         c=0.d0
         call rcvala(mate, ' ', 'NON_LOCAL', 0, ' ',&
                     0.d0, 1, 'C_GONF', c, k2ret,&
-                    0)
+                    0, 'OUI')
         nonloc = k2ret.eq.0 .and. c.ne.0.d0
 !
 ! - CALCUL DES DEFORMATIONS

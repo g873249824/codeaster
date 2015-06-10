@@ -102,7 +102,7 @@ subroutine nmmaba(icodma, compor, e, dsde, sigy,&
     nbres = 2
     call rcvalb(fami, 1, 1, '+', icodma,&
                 ' ', 'ELAS', nbpar, nompar, valpar,&
-                1, nomela, valres, codres, 1)
+                1, nomela, valres, codres, 1, 'OUI')
     e = valres(1)
 !
 ! --- CARACTERISTIQUES ECROUISSAGE LINEAIRE
@@ -118,10 +118,10 @@ subroutine nmmaba(icodma, compor, e, dsde, sigy,&
         valpar = 0.d0
         call rcvalb(fami, 1, 1, '+', icodma,&
                     ' ', 'ECRO_LINE', nbpar, nompar, valpar,&
-                    1, nomecl, valres, codres, 1)
+                    1, nomecl, valres, codres, 1, 'OUI')
         call rcvalb(fami, 1, 1, '+', icodma,&
                     ' ', 'ECRO_LINE', nbpar, nompar, valpar,&
-                    1, nomecl(2), valres(2), codres(2), 0)
+                    1, nomecl(2), valres(2), codres(2), 0, 'OUI')
         if (codres(2) .ne. 0) valres(2) = 0.d0
         dsde = valres(1)
         sigy = valres(2)
@@ -141,7 +141,7 @@ subroutine nmmaba(icodma, compor, e, dsde, sigy,&
 !
         call rcvalb(fami, 1, 1, '+', icodma,&
                     ' ', 'PINTO_MENEGOTTO', nbpar, nompar, valpar,&
-                    nbres, nompim, valres, codres, 0)
+                    nbres, nompim, valres, codres, 0, 'OUI')
         if (codres(7) .ne. 0) valres(7) = -1.d0
         cstpm(1) =e
         cstpm(2) =valres(1)

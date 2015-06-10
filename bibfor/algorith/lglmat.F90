@@ -106,10 +106,10 @@ subroutine lglmat(mod, imat, nbmat, tempd, materd,&
 ! =================================================================
     call rcvala(imat, ' ', 'ELAS', 1, 'TEMP',&
                 tempd, 3, nomc(1), materd(1, 1), cerr(1),&
-                0)
+                0, 'OUI')
     call rcvala(imat, ' ', 'LAIGLE', 1, 'TEMP',&
                 tempd, 14, nomc(4), materd(1, 2), cerr(4),&
-                0)
+                0, 'OUI')
 ! =================================================================
 ! - CALCUL DES MODULES DE CISAILLEMENT ET DE DEFORMATION VOLUMIQUE-
 ! =================================================================

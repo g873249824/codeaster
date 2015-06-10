@@ -93,7 +93,7 @@ subroutine te0153(option, nomte)
     if (option .eq. 'RIGI_MECA') then
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', 'ELAS', 0, ' ', r8b,&
-                    1, 'E', e, codres, 1)
+                    1, 'E', e, codres, 1, 'OUI')
         xrig = e * a / xl
         mat( 1) = xrig
         mat( 7) = -xrig
@@ -102,7 +102,7 @@ subroutine te0153(option, nomte)
     else if (option.eq.'MASS_MECA' .or. option.eq.'M_GAMMA') then
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', 'ELAS', 0, ' ', r8b,&
-                    1, 'RHO', rho, codres, 1)
+                    1, 'RHO', rho, codres, 1, 'OUI')
         do 40 i = 1, 21
             matr(i) = 0.d0
 40      continue
@@ -123,7 +123,7 @@ subroutine te0153(option, nomte)
     option.eq.'MASS_MECA_EXPLI')) then
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', 'ELAS', 0, ' ', r8b,&
-                    1, 'RHO', rho, codres, 1)
+                    1, 'RHO', rho, codres, 1, 'OUI')
         xmas = rho * a * xl / 2.d0
         mat( 1) = xmas
         mat( 3) = xmas

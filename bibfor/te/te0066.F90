@@ -72,7 +72,7 @@ subroutine te0066(option, nomte)
 !
     call rcvalb(fami, kpg, spt, poum, zi(imate),&
                 ' ', 'THER', nbpar, nompar, valpar,&
-                1, 'LAMBDA', lambda, icodre, 1)
+                1, 'LAMBDA', lambda, icodre, 1, 'OUI')
 !
     epot = 0.d0
     do 30 kp = 1, npg1

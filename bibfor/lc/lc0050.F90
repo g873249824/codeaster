@@ -162,7 +162,7 @@ subroutine lc0050(fami, kpg, ksp, ndim, typmod,&
 !     LECTURE DU PREMIER PARAMETRE NB, FACULTATIF
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'UMAT', 0, ' ', 0.d0,&
-                1, 'NB_VALE', propl(1), codrel, 0)
+                1, 'NB_VALE', propl(1), codrel, 0, 'OUI')
     if (codrel(1) .eq. 0) then
         nbcoef=nint(propl(1))
     else
@@ -171,7 +171,7 @@ subroutine lc0050(fami, kpg, ksp, ndim, typmod,&
 !     lecture des autres parametres
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'UMAT', 0, ' ', 0.d0,&
-                nbcoef, nomres, propl, codrel, 0)
+                nbcoef, nomres, propl, codrel, 0, 'OUI')
 !     COMPTAGE DU NOMBRE DE PROPRIETES
 !     CODREL(I)=0 SI LE PARAMETRE EXISTE, 1 SINON
     nprop2=0
@@ -223,11 +223,11 @@ subroutine lc0050(fami, kpg, ksp, ndim, typmod,&
         nomreb(1)='K_DESSIC'
         call rcvalb(fami, kpg, ksp, '-', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, nomreb, valreb, icodrb, 1)
+                    1, nomreb, valreb, icodrb, 1, 'OUI')
         kdessm = valreb(1)
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, nomreb, valreb, icodrb, 1)
+                    1, nomreb, valreb, icodrb, 1, 'OUI')
         kdessp = valreb(1)
         call rcvarc(' ', 'SECH', 'REF', fami, kpg,&
                     ksp, sref, iret2)
@@ -253,11 +253,11 @@ subroutine lc0050(fami, kpg, ksp, ndim, typmod,&
         nomreb(1)='B_ENDOGE'
         call rcvalb(fami, kpg, ksp, '-', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, nomreb, valreb, icodrb, 1)
+                    1, nomreb, valreb, icodrb, 1, 'OUI')
         bendom = valreb(1)
         call rcvalb(fami, kpg, ksp, '+', imate,&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, nomreb, valreb, icodrb, 1)
+                    1, nomreb, valreb, icodrb, 1, 'OUI')
         bendop = valreb(1)
         hydrm=predef(2)
         hydrp=predef(2)+dpred(2)

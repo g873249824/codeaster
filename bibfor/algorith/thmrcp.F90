@@ -520,13 +520,13 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
     zero=0.d0
 !
     if (etape .eq. 'INITIALI') then
-        do 10 ii = 1, dim1
+        do ii = 1, dim1
             val1(ii) = 0.0d0
-10      continue
+        end do
         val1(1) = r8vide()
         call rcvala(imate, ' ', 'THM_INIT', 0, ' ',&
                     0.d0, dim1, ncra1, val1, icodre,&
-                    0)
+                    0, 'NON')
         t0 = val1(1)
         p10 = val1(2)
         p20 = val1(3)
@@ -562,29 +562,29 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_SATU -------------------------------
 ! =====================================================================
-            do 20 ii = 1, dim2
+            do ii = 1, dim2
                 val2(ii) = 0.0d0
-20          continue
-            do 30 ii = 1, dim3
+            end do
+            do ii = 1, dim3
                 val3(ii) = 0.0d0
-30          continue
+            end do
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 2, ncra2, val2, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_LIQU', 0, ' ',&
                         0.0d0, 2, ncra3, val3, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra2(3), val2(3), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 2, ncra3(3), val3(3), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 1, ncra2(4), val2(4), icodre,&
-                        0)
+                        0, 'NON')
             rhod = val2(1)
             biot = val2(2)
             cpd = val2(3)
@@ -598,29 +598,29 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE GAZ -------------------------------------
 ! =====================================================================
-            do 41 ii = 1, dim4
+            do ii = 1, dim4
                 val4(ii) = 0.0d0
-41          continue
-            do 50 ii = 1, dim5
+            end do
+            do ii = 1, dim5
                 val5(ii) = 0.0d0
-50          continue
+            end do
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 3, ncra4, val4, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_GAZ', 0, ' ',&
                         0.0d0, 1, ncra5, val5, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra4(4), val4(4), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                             t, 1, ncra5(2), val5(2), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 1, ncra4(5), val4(5), icodre,&
-                        0)
+                        0, 'NON')
             rgaz = val4(1)
             rhod = val4(2)
             biot = val4(3)
@@ -633,36 +633,36 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_VAPE -------------------------------
 ! =====================================================================
-            do 60 ii = 1, dim6
+            do ii = 1, dim6
                 val6(ii) = 0.0d0
-60          continue
-            do 70 ii = 1, dim7
+            end do
+            do ii = 1, dim7
                 val7(ii) = 0.0d0
-70          continue
-            do 80 ii = 1, dim8
+            end do
+            do ii = 1, dim8
                 val8(ii) = 0.0d0
-80          continue
+            end do
             call rcvala(imate, ' ', 'THM_DIFFU', 0, 'TEMP',&
                         0.0d0, 3, ncra6, val6, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_LIQU', 0, ' ',&
                         0.0d0, 2, ncra7, val7, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_VAPE_GAZ', 0, ' ',&
                         0.0d0, 2, ncra8, val8, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra6(4), val6(4), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 2, ncra7(3), val7(3), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -671,13 +671,13 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1m, 1, ncra6(5), val6(5), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1m, val6(5), rbid1)
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 1, ncra6(6), val6(6), icodre,&
-                        0)
+                        0, 'NON')
             rgaz = val6(1)
             rhod = val6(2)
             biot = val6(3)
@@ -698,45 +698,45 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_VAPE_GAZ ---------------------------
 ! =====================================================================
-            do 90 ii = 1, dim9+1
+            do ii = 1, dim9+1
                 val9(ii) = 0.0d0
-90          continue
-            do 100 ii = 1, dim10
+            end do
+            do ii = 1, dim10
                 val10(ii) = 0.0d0
-100          continue
-            do 110 ii = 1, dim11
+            end do
+            do ii = 1, dim11
                 val11(ii) = 0.0d0
-110          continue
-            do 120 ii = 1, dim12
+            end do
+            do ii = 1, dim12
                 val12(ii) = 0.0d0
-120          continue
+            end do
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 3, ncra9, val9, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_LIQU', 0, ' ',&
                         0.0d0, 2, ncra10, val10, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_GAZ', 0, ' ',&
                         0.0d0, 1, ncra11, val11, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_VAPE_GAZ', 0, ' ',&
                         0.0d0, 2, ncra12, val12, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra9(4), val9(4), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 2, ncra10(3), val10(3), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                             t, 1, ncra11(2), val11(2), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -747,17 +747,17 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1m, 1, ncra9(5), val9(5), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, ncra9(5), val9(6), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1m, val9(5), rbid1)
                 call satura(hydr, p1, val9(6), val9(7))
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 1, ncra9(7), val9(8), icodre,&
-                        0)
+                        0, 'NON')
             rgaz = val9(1)
             rhod = val9(2)
             biot = val9(3)
@@ -786,52 +786,52 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_AD_GAZ_VAPE   -----------
 ! =====================================================================
-            do 91 ii = 1, dim35+1
+            do ii = 1, dim35+1
                 val35(ii) = 0.0d0
-91          continue
-            do 101 ii = 1, dim36
+            end do
+            do ii = 1, dim36
                 val36(ii) = 0.0d0
-101          continue
-            do 111 ii = 1, dim37
+            end do
+            do ii = 1, dim37
                 val37(ii) = 0.0d0
-111          continue
-            do 121 ii = 1, dim38
+            end do
+            do ii = 1, dim38
                 val38(ii) = 0.0d0
-121          continue
-            do 131 ii = 1, dim39
+            end do
+            do ii = 1, dim39
                 val39(ii) = 0.0d0
-131          continue
+            end do
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 3, ncra35, val35, icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_LIQU', 0, ' ',&
                         0.0d0, 2, ncra36, val36, icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_GAZ', 0, ' ',&
                         0.0d0, 1, ncra37, val37, icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_VAPE_GAZ', 0, ' ',&
                         0.0d0, 2, ncra38, val38, icodre,&
-                        0)
+                        0, 'NON')
 !
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra35(4), val35(4), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 2, ncra36(3), val36(3), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                             t, 1, ncra37(2), val37(2), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -841,23 +841,23 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1m, 1, ncra35(5), val35(5), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, ncra35(5), val35(6), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1m, val35(5), rbid1)
                 call satura(hydr, p1, val35(6), val35(7))
             endif
             call rcvala(imate, ' ', 'THM_AIR_DISSOUS', 0, ' ',&
                         0.0d0, 1, ncra39(1), val39(1), icodre,&
-                        1)
+                        1, 'OUI')
             call rcvala(imate, ' ', 'THM_AIR_DISSOUS', 1, 'TEMP',&
                         t, 1, ncra39(2), val39(2), icodre,&
-                        1)
+                        1, 'OUI')
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 1, ncra35(7), val35(8), icodre,&
-                        0)
+                        0, 'NON')
             rgaz = val35(1)
             rhod = val35(2)
             biot = val35(3)
@@ -891,45 +891,45 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_AD_GAZ_VAPE   -----------
 ! =====================================================================
-            do 991 ii = 1, dim35+1
+            do ii = 1, dim35+1
                 val35(ii) = 0.0d0
-991          continue
-            do 9101 ii = 1, dim36
+            end do
+            do ii = 1, dim36
                 val36(ii) = 0.0d0
-9101          continue
-            do 9111 ii = 1, dim37
+            end do
+            do ii = 1, dim37
                 val37(ii) = 0.0d0
-9111          continue
-            do 9131 ii = 1, dim39
+            end do
+            do ii = 1, dim39
                 val39(ii) = 0.0d0
-9131          continue
+            end do
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 3, crad35, val35, icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_LIQU', 0, ' ',&
                         0.0d0, 2, crad36, val36, icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_GAZ', 0, ' ',&
                         0.0d0, 1, crad37, val37, icodre,&
-                        0)
+                        0, 'NON')
 !
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, crad35(4), val35(4), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 2, crad36(3), val36(3), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                             t, 1, crad37(2), val37(2), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -939,23 +939,23 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1m, 1, crad35(5), val35(5), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, crad35(5), val35(6), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1m, val35(5), rbid1)
                 call satura(hydr, p1, val35(6), val35(7))
             endif
             call rcvala(imate, ' ', 'THM_AIR_DISSOUS', 0, ' ',&
                         0.0d0, 1, crad39(1), val39(1), icodre,&
-                        1)
+                        1, 'OUI')
             call rcvala(imate, ' ', 'THM_AIR_DISSOUS', 1, 'TEMP',&
                         t, 1, crad39(2), val39(2), icodre,&
-                        1)
+                        1, 'OUI')
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 1, crad35(7), val35(8), icodre,&
-                        0)
+                        0, 'NON')
             rgaz = val35(1)
             rhod = val35(2)
             biot = val35(3)
@@ -987,39 +987,39 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_GAZ --------------------------------
 ! =====================================================================
-            do 130 ii = 1, dim13+1
+            do ii = 1, dim13+1
                 val13(ii) = 0.0d0
-130          continue
-            do 141 ii = 1, dim14
+            end do
+            do ii = 1, dim14
                 val14(ii) = 0.0d0
-141          continue
-            do 150 ii = 1, dim15
+            end do
+            do ii = 1, dim15
                 val15(ii) = 0.0d0
-150          continue
+            end do
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 3, ncra13, val13, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_LIQU', 0, ' ',&
                         0.0d0, 2, ncra14, val14, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_GAZ', 0, ' ',&
                         0.0d0, 1, ncra15, val15, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra13(4), val13(4), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 2, ncra14(3), val14(3), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                             t, 1, ncra15(2), val15(2), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -1029,17 +1029,17 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1m, 1, ncra13(5), val13(5), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, ncra13(5), val13(6), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1m, val13(5), rbid1)
                 call satura(hydr, p1, val13(6), val13(7))
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 1, ncra13(7), val13(8), icodre,&
-                        0)
+                        0, 'NON')
             rgaz = val13(1)
             rhod = val13(2)
             biot = val13(3)
@@ -1066,40 +1066,40 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_GAZ_ATM ----------------------------
 ! =====================================================================
-            do 160 ii = 1, dim16+1
+            do ii = 1, dim16+1
                 val16(ii) = 0.0d0
-160          continue
-            do 170 ii = 1, dim17
+            end do
+            do ii = 1, dim17
                 val17(ii) = 0.0d0
-170          continue
+            end do
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 2, ncra16, val16, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_LIQU', 0, ' ',&
                         0.0d0, 2, ncra17, val17, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra16(3), val16(3), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 2, ncra17(3), val17(3), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if (hydr .eq. 'HYDR_UTIL' .or. hydr .eq. 'HYDR_ENDO') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1m, 1, ncra16(4), val16(4), icodre,&
-                            1)
+                            1, 'OUI')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, ncra16(4), val16(5), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1m, val16(4), rbid1)
                 call satura(hydr, p1, val16(5), val16(6))
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 1, ncra16(6), val16(7), icodre,&
-                        0)
+                        0, 'NON')
             rhod = val16(1)
             biot = val16(2)
             cpd = val16(3)
@@ -1124,7 +1124,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
         if (hydr .eq. 'HYDR_UTIL' .or. hydr .eq. 'HYDR_ENDO') then
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                         p1, dimsat, nsat, valsat, icodre,&
-                        1)
+                        1, 'OUI')
             satur = valsat(1)
             dsatur = valsat(2)
         else if (hydr.eq.'HYDR') then
@@ -1142,17 +1142,17 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
         call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                     0.0d0, 1, 'BIOT_COE', biot, icodre,&
-                    1)
+                    1, 'NON')
         if (thmc .eq. 'LIQU_SATU') then
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_SATU -------------------------------
 ! =====================================================================
-            do 180 ii = 1, dim18
+            do ii = 1, dim18
                 val18(ii) = 0.0d0
-180          continue
-            do 190 ii = 1, dim19
+            end do
+            do ii = 1, dim19
                 val19(ii) = 0.0d0
-190          continue
+            end do
 !
 !       INITIALISATION POUR LA CONDUCTIVITE THERMIQUE
 !
@@ -1170,11 +1170,11 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 3, ncra18(1), val18(1), icodre,&
-                        0)
+                        0, 'NON')
             if ((hydr.eq.'HYDR_UTIL') .or. (hydr.eq.'HYDR_VGM') .or. ( hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 1, ncra18(4), val18(4), icodre,&
-                            0)
+                            0, 'NON')
             else if (hydr.eq.'HYDR_ENDO') then
                 if ((meca.eq.'MAZARS') .or. ( meca.eq.'ENDO_ISOT_BETON')) then
 ! =====================================================================
@@ -1182,40 +1182,40 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
                     call rcvala(imate, ' ', 'THM_DIFFU', 1, 'ENDO',&
                                 endo, 1, ncra18(5), val18(4), icodre,&
-                                1)
+                                1, 'OUI')
                 endif
             endif
             call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                         t, dim19-1, ncra19, val19, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra18(6), val18(6), icodre,&
-                            1)
+                            1, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra18(7), val18(7), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 2, ncra18(8), val18(8), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.d0, 1, ncra18(10), val18(10), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 1, ncra19(4), val19(4), icodre,&
-                            1)
+                            1, 'OUI')
             endif
 !
 !--- TENSEUR ISOTOPE LE CAS ECHEANT
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 6, ncra18(11), val18(11), icodre,&
-                        0)
+                        0, 'NON')
 !
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'INST',&
                         instap, 1, 'PESA_MUL', fpesa, icodre,&
-                        0)
+                        0, 'NON')
 ! COMME IL N'EST PAS POSSIBLE D'AFFECTER UNE VALEUR PAR DEFAUT
 ! A LA FONCTION PESA_MULT DANS LE FICHIER DE COMMANDE
 ! DEFI_MATERIAU.CAPY, ON UTILISE LE CODE RETOUR POUR LA METTRE
@@ -1252,12 +1252,12 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE GAZ -------------------------------------
 ! =====================================================================
-            do 200 ii = 1, dim20
+            do ii = 1, dim20
                 val20(ii) = 0.0d0
-200          continue
-            do 210 ii = 1, dim21
+            end do
+            do ii = 1, dim21
                 val21(ii) = 0.0d0
-210          continue
+            end do
 !
 !       INITIALISATION POUR LA CONDUCTIVITE THERMIQUE
 !
@@ -1275,11 +1275,11 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, dim20-7, ncra20(1), val20(1), icodre,&
-                        0)
+                        0, 'NON')
             if ((hydr.eq.'HYDR_UTIL') .or. (hydr.eq.'HYDR_VGM') .or. ( hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 1, ncra20(5), val20(5), icodre,&
-                            0)
+                            0, 'NON')
             else if (hydr.eq.'HYDR_ENDO') then
                 if ((meca.eq.'MAZARS') .or. ( meca.eq.'ENDO_ISOT_BETON')) then
 ! =====================================================================
@@ -1287,33 +1287,33 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
                     call rcvala(imate, ' ', 'THM_DIFFU', 1, 'ENDO',&
                                 endo, 1, ncra20(6), val20(5), icodre,&
-                                1)
+                                1, 'OUI')
                 endif
             endif
             call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                         t, dim21, ncra21, val21, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra20(7), val20(7), icodre,&
-                            1)
+                            1, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra20(8), val20(8), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 2, ncra20(9), val20(9), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.d0, 1, ncra20(11), val20(11), icodre,&
-                            0)
+                            0, 'NON')
             endif
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.d0, 6, ncra20(12), val20(12), icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'INST',&
                         instap, 1, 'PESA_MUL', fpesa, icodre,&
-                        0)
+                        0, 'NON')
 ! COMME IL N'EST PAS POSSIBLE D'AFFECTER UNE VALEUR PAR DEFAUT
 ! A LA FONCTION PESA_MULT DANS LE FICHIER DE COMMANDE
 ! DEFI_MATERIAU.CAPY, ON UTILISE LE CODE RETOUR POUR LA METTRE
@@ -1351,15 +1351,15 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_VAPE -------------------------------
 ! =====================================================================
-            do 220 ii = 1, dim22
+            do ii = 1, dim22
                 val22(ii) = 0.0d0
-220          continue
-            do 230 ii = 1, dim23
+            end do
+            do ii = 1, dim23
                 val23(ii) = 0.0d0
-230          continue
-            do 241 ii = 1, dim24
+            end do
+            do   ii = 1, dim24
                 val24(ii) = 0.0d0
-241          continue
+            end do
 !
 !       INITIALISATION POUR LA CONDUCTIVITE THERMIQUE
 !
@@ -1376,11 +1376,11 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             val22(26) = 0.d0
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 4, ncra22, val22, icodre,&
-                        0)
+                        0, 'NON')
             if ((hydr.eq.'HYDR_UTIL') .or. (hydr.eq.'HYDR_VGM') .or. ( hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 1, ncra22(5), val22(5), icodre,&
-                            0)
+                            0, 'NON')
             else if (hydr.eq.'HYDR_ENDO') then
                 if ((meca.eq.'MAZARS') .or. ( meca.eq.'ENDO_ISOT_BETON')) then
 ! =====================================================================
@@ -1388,36 +1388,36 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
                     call rcvala(imate, ' ', 'THM_DIFFU', 1, 'ENDO',&
                                 endo, 1, ncra22(6), val22(5), icodre,&
-                                1)
+                                1, 'OUI')
                 endif
             endif
             call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                         t, 3, ncra23, val23, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_VAPE_GAZ', 1, 'TEMP',&
                         t, 3, ncra24, val24, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra22(7), val22(7), icodre,&
-                            1)
+                            1, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra22(8), val22(8), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 2, ncra22(9), val22(9), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.d0, 1, ncra22(13), val22(13), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, dim23-3, ncra23(4), val23(4), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -1434,7 +1434,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             pvp-p1, 2, ncra22(14), val22(14), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, pvp-p1, val22(14), val22(15))
             endif
@@ -1445,19 +1445,19 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             if ((hydr.ne.'HYDR_VGM') .and. (hydr.ne.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 2, nompar,&
                             valpar, 5, ncra22(16), val22(16), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'SAT',&
                             valpar( 1), 2, ncra22(11), val22(11), icodre,&
-                            0)
+                            0, 'NON')
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.d0, 6, ncra22(21), val22(21), icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'INST',&
                         instap, 1, 'PESA_MUL', fpesa, icodre,&
-                        0)
+                        0, 'NON')
 ! COMME IL N'EST PAS POSSIBLE D'AFFECTER UNE VALEUR PAR DEFAUT
 ! A LA FONCTION PESA_MULT DANS LE FICHIER DE COMMANDE
 ! DEFI_MATERIAU.CAPY, ON UTILISE LE CODE RETOUR POUR LA METTRE
@@ -1506,18 +1506,18 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_VAPE_GAZ ---------------------------
 ! =====================================================================
-            do 250 ii = 1, dim25
+            do ii = 1, dim25
                 val25(ii) = 0.0d0
-250          continue
-            do 260 ii = 1, dim26
+            end do
+            do ii = 1, dim26
                 val26(ii) = 0.0d0
-260          continue
-            do 270 ii = 1, dim27
+            end do
+            do ii = 1, dim27
                 val27(ii) = 0.0d0
-270          continue
-            do 280 ii = 1, dim28
+            end do
+            do ii = 1, dim28
                 val28(ii) = 0.0d0
-280          continue
+            end do
 !
 !       INITIALISATION POUR LA CONDUCTIVITE THERMIQUE
 !
@@ -1536,11 +1536,11 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 4, ncra25, val25, icodre,&
-                        0)
+                        0, 'NON')
             if ((hydr.eq.'HYDR_UTIL') .or. (hydr.eq.'HYDR_VGM') .or. ( hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 1, ncra25(5), val25(5), icodre,&
-                            0)
+                            0, 'NON')
             else if (hydr.eq.'HYDR_ENDO') then
                 if ((meca.eq.'MAZARS') .or. ( meca.eq.'ENDO_ISOT_BETON')) then
 ! =====================================================================
@@ -1548,39 +1548,39 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
                     call rcvala(imate, ' ', 'THM_DIFFU', 1, 'ENDO',&
                                 endo, 1, ncra25(6), val25(5), icodre,&
-                                1)
+                                1, 'OUI')
                 endif
             endif
             call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                         t, 3, ncra26, val26, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                         t, 3, ncra27, val27, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_VAPE_GAZ', 0, ' ',&
                         0.0d0, 1, ncra28, val28, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra25(7), val25(7), icodre,&
-                            1)
+                            1, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra25(8), val25(8), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 2, ncra25(9), val25(9), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.d0, 1, ncra25(13), val25(13), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, 1, ncra26(4), val26(4), icodre,&
-                            1)
+                            1, 'NON')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -1597,7 +1597,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, ncra25(14), val25(14), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1, val25(14), val25(15))
             endif
@@ -1610,12 +1610,12 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             if ((hydr.ne.'HYDR_VGM') .and. (hydr.ne.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 3, nompar,&
                             valpar, 5, ncra25(16), val25(16), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'SAT',&
                             valpar( 1), 2, ncra25(11), val25(11), icodre,&
-                            0)
+                            0, 'NON')
             endif
 !
 !    RÉCUPÉRATION DES FONCTIONS FICKS ET LEUR DÉRIVÉES AU DESSUS PB
@@ -1625,7 +1625,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 1, nompar,&
                         valpar, 1, ncra25(21), val25(21), icodre,&
-                        1)
+                        1, 'OUI')
             nompar(1) = 'PVAP'
             nompar(2) = 'PGAZ'
             nompar(3) = 'SAT'
@@ -1640,22 +1640,22 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             val25(24) = 1.0d0
             call rcvala(imate, ' ', 'THM_DIFFU', 3, nompar,&
                         valpar, 3, ncra25(22), val25(22), icodre,&
-                        0)
+                        0, 'NON')
             nompar(1) = 'TEMP'
             nompar(2) = 'PGAZ'
             valpar(1) = t
             valpar(2) = p2
             call rcvala(imate, ' ', 'THM_DIFFU', 2, nompar,&
                         valpar, 2, ncra25(25), val25(25), icodre,&
-                        0)
+                        0, 'NON')
 !
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.d0, 6, ncra25(27), val25(27), icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'INST',&
                         instap, 1, 'PESA_MUL', fpesa, icodre,&
-                        0)
+                        0, 'NON')
 ! COMME IL N'EST PAS POSSIBLE D'AFFECTER UNE VALEUR PAR DEFAUT
 ! A LA FONCTION PESA_MULT DANS LE FICHIER DE COMMANDE
 ! DEFI_MATERIAU.CAPY, ON UTILISE LE CODE RETOUR POUR LA METTRE
@@ -1710,18 +1710,18 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_AD_GAZ_VAPE PROVISOIRE--------------
 ! =====================================================================
-            do 251 ii = 1, dim40
+            do ii = 1, dim40
                 val40(ii) = 0.0d0
-251          continue
-            do 261 ii = 1, dim41
+            end do
+            do ii = 1, dim41
                 val41(ii) = 0.0d0
-261          continue
-            do 271 ii = 1, dim42
+            end do
+            do ii = 1, dim42
                 val42(ii) = 0.0d0
-271          continue
-            do 281 ii = 1, dim43
+            end do
+            do ii = 1, dim43
                 val43(ii) = 0.0d0
-281          continue
+            end do
 !
 !       INITIALISATION POUR LA CONDUCTIVITE THERMIQUE
 !
@@ -1741,11 +1741,11 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 4, ncra40, val40, icodre,&
-                        0)
+                        0, 'NON')
             if (hydr .eq. 'HYDR_UTIL' .or. hydr .eq. 'HYDR_VGM' .or. hydr .eq. 'HYDR_VGC') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 1, ncra40(5), val40(5), icodre,&
-                            0)
+                            0, 'NON')
             else if (hydr.eq.'HYDR_ENDO') then
                 if ((meca.eq.'MAZARS') .or. ( meca.eq.'ENDO_ISOT_BETON')) then
 ! =====================================================================
@@ -1753,39 +1753,39 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
                     call rcvala(imate, ' ', 'THM_DIFFU', 1, 'ENDO',&
                                 endo, 1, ncra40(6), val40(5), icodre,&
-                                1)
+                                1, 'OUI')
                 endif
             endif
             call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                         t, 3, ncra41, val41, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                         t, 3, ncra42, val42, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_VAPE_GAZ', 0, ' ',&
                         0.0d0, 1, ncra43, val43, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra40(7), val40(7), icodre,&
-                            1)
+                            1, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra40(8), val40(8), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 2, ncra40(9), val40(9), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.d0, 1, ncra40(13), val40(13), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, dim41-3, ncra41(4), val41(4), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -1804,7 +1804,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, ncra40(14), val40(14), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1, val40(14), val40(15))
             endif
@@ -1817,12 +1817,12 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             if ((hydr.ne.'HYDR_VGM') .and. (hydr.ne.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 3, nompar,&
                             valpar, 5, ncra40(16), val40(16), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'SAT',&
                             valpar( 1), 2, ncra40(11), val40(11), icodre,&
-                            0)
+                            0, 'NON')
             endif
 !
 !    RECUPERATION DES FONCTIONS FICK VAPEUR ET LEURS DERIVEES
@@ -1831,7 +1831,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             valpar(1) = t
             call rcvala(imate, ' ', 'THM_DIFFU', 1, nompar,&
                         valpar, 1, ncra40(21), val40(21), icodre,&
-                        1)
+                        1, 'OUI')
 !
 ! INITIALISATION DES AUTRES COMPOSANTES FICKIENNES
 !
@@ -1851,14 +1851,14 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 
             call rcvala(imate, ' ', 'THM_DIFFU', 3, nompar,&
                         valpar, 3, ncra40(22), val40(22), icodre,&
-                        0)
+                        0, 'NON')
             nompar(1) = 'TEMP'
             nompar(2) = 'PGAZ'
             valpar(1) = t
             valpar(2) = p2
             call rcvala(imate, ' ', 'THM_DIFFU', 2, nompar,&
                         valpar, 2, ncra40(25), val40(25), icodre,&
-                        0)
+                        0, 'NON')
 !
 !
 !    RECUPERATION DES FONCTIONS FICK AIR DISSOUS ET LEURS DERIVEES
@@ -1879,18 +1879,18 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             val40(30) = 1.0d0
             call rcvala(imate, ' ', 'THM_DIFFU', 4, nompar,&
                         valpar, 4, ncra40(27), val40(27), icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                         t, 1, ncra40(31), val40(31), icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.d0, 6, ncra40(32), val40(32), icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'INST',&
                         instap, 1, 'PESA_MUL', fpesa, icodre,&
-                        0)
+                        0, 'NON')
 ! COMME IL N'EST PAS POSSIBLE D'AFFECTER UNE VALEUR PAR DEFAUT
 ! A LA FONCTION PESA_MULT DANS LE FICHIER DE COMMANDE
 ! DEFI_MATERIAU.CAPY, ON UTILISE LE CODE RETOUR POUR LA METTRE
@@ -1948,15 +1948,15 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_AD_GAZ--------------
 ! =====================================================================
-            do 9251 ii = 1, dim40
+            do ii = 1, dim40
                 val40(ii) = 0.0d0
-9251          continue
-            do 9261 ii = 1, dim41
+            end do
+            do ii = 1, dim41
                 val41(ii) = 0.0d0
-9261          continue
-            do 9271 ii = 1, dim42
+            end do
+            do ii = 1, dim42
                 val42(ii) = 0.0d0
-9271          continue
+            end do
 !
 !       INITIALISATION POUR LA CONDUCTIVITE THERMIQUE
 !
@@ -1976,11 +1976,11 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 4, crad40, val40, icodre,&
-                        0)
+                        0, 'NON')
             if ((hydr.eq.'HYDR_UTIL') .or. (hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 1, crad40(5), val40(5), icodre,&
-                            0)
+                            0, 'NON')
             else if (hydr.eq.'HYDR_ENDO') then
                 if ((meca.eq.'MAZARS') .or. ( meca.eq.'ENDO_ISOT_BETON')) then
 ! =====================================================================
@@ -1988,36 +1988,36 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
                     call rcvala(imate, ' ', 'THM_DIFFU', 1, 'ENDO',&
                                 endo, 1, crad40(6), val40(5), icodre,&
-                                1)
+                                1, 'OUI')
                 endif
             endif
             call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                         t, 3, crad41, val41, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                         t, 3, crad42, val42, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, crad40(7), val40(7), icodre,&
-                            1)
+                            1, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, crad40(8), val40(8), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 2, crad40(9), val40(9), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.d0, 1, crad40(13), val40(13), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, dim41-3, crad41(4), val41(4), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -2036,7 +2036,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, crad40(14), val40(14), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1, val40(14), val40(15))
             endif
@@ -2049,12 +2049,12 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             if ((hydr.ne.'HYDR_VGM') .and. (hydr.ne.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 3, nompar,&
                             valpar, 5, crad40(16), val40(16), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'SAT',&
                             valpar( 1), 2, crad40(11), val40(11), icodre,&
-                            0)
+                            0, 'NON')
             endif
 !
             nompar(1) = 'PVAP'
@@ -2088,18 +2088,18 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             val40(30) = 1.0d0
             call rcvala(imate, ' ', 'THM_DIFFU', 4, nompar,&
                         valpar, 4, crad40(27), val40(27), icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                         t, 1, crad40(31), val40(31), icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.d0, 6, crad40(32), val40(32), icodre,&
-                        0)
+                        0, 'NON')
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'INST',&
                         instap, 1, 'PESA_MUL', fpesa, icodre,&
-                        0)
+                        0, 'NON')
 ! COMME IL N'EST PAS POSSIBLE D'AFFECTER UNE VALEUR PAR DEFAUT
 ! A LA FONCTION PESA_MULT DANS LE FICHIER DE COMMANDE
 ! DEFI_MATERIAU.CAPY, ON UTILISE LE CODE RETOUR POUR LA METTRE
@@ -2157,15 +2157,15 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_GAZ --------------------------------
 ! =====================================================================
-            do 290 ii = 1, dim29
+            do ii = 1, dim29
                 val29(ii) = 0.0d0
-290          continue
-            do 300 ii = 1, dim30
+            end do
+            do ii = 1, dim30
                 val30(ii) = 0.0d0
-300          continue
-            do 310 ii = 1, dim31
+            end do
+            do ii = 1, dim31
                 val31(ii) = 0.0d0
-310          continue
+            end do
 !
 !       INITIALISATION POUR LA CONDUCTIVITE THERMIQUE
 !
@@ -2184,11 +2184,11 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 4, ncra29, val29, icodre,&
-                        0)
+                        0, 'NON')
             if ((hydr.eq.'HYDR_UTIL') .or. (hydr.eq.'HYDR_VGM') .or. ( hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 1, ncra29(5), val29(5), icodre,&
-                            0)
+                            0, 'NON')
             else if (hydr.eq.'HYDR_ENDO') then
                 if ((meca.eq.'MAZARS') .or. ( meca.eq.'ENDO_ISOT_BETON')) then
 ! =====================================================================
@@ -2196,36 +2196,36 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
                     call rcvala(imate, ' ', 'THM_DIFFU', 1, 'ENDO',&
                                 endo, 1, ncra29(6), val29(5), icodre,&
-                                1)
+                                1, 'OUI')
                 endif
             endif
             call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                         t, 3, ncra30, val30, icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_GAZ', 1, 'TEMP',&
                         t, 3, ncra31, val31, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra29(7), val29(7), icodre,&
-                            1)
+                            1, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra29(8), val29(8), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 2, ncra29(9), val29(9), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.d0, 1, ncra29(13), val29(13), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, dim30-3, ncra30(4), val30(4), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if ((hydr.eq.'HYDR_VGM') .or. (hydr.eq.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.0d0, 5, nvg(1), vg(1), icodre,&
-                            1)
+                            1, 'OUI')
                 if (icodre(1) .eq. 1) then
                     call u2mess('F', 'ALGORITH16_94')
                 endif
@@ -2242,7 +2242,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, ncra29(14), val29(14), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1, val29(14), val29(15))
             endif
@@ -2253,19 +2253,19 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             if ((hydr.ne.'HYDR_VGM') .and. (hydr.ne.'HYDR_VGC')) then
                 call rcvala(imate, ' ', 'THM_DIFFU', 2, nompar,&
                             valpar, 5, ncra29(16), val29(16), icodre,&
-                            1)
+                            1, 'OUI')
                 if (ther .ne. ' ') then
                 endif
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'SAT',&
                             valpar( 1), 2, ncra29(11), val29(11), icodre,&
-                            0)
+                            0, 'NON')
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.d0, 6, ncra29(21), val29(21), icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'INST',&
                         instap, 1, 'PESA_MUL', fpesa, icodre,&
-                        0)
+                        0, 'NON')
 ! COMME IL N'EST PAS POSSIBLE D'AFFECTER UNE VALEUR PAR DEFAUT
 ! A LA FONCTION PESA_MULT DANS LE FICHIER DE COMMANDE
 ! DEFI_MATERIAU.CAPY, ON UTILISE LE CODE RETOUR POUR LA METTRE
@@ -2314,12 +2314,12 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
 ! --- LOI DE COUPLAGE DE TYPE LIQU_GAZ_ATM ----------------------------
 ! =====================================================================
-            do 320 ii = 1, dim32
+            do ii = 1, dim32
                 val32(ii) = 0.0d0
-320          continue
-            do 330 ii = 1, dim33
+            end do
+            do ii = 1, dim33
                 val33(ii) = 0.0d0
-330          continue
+            end do
 !
 !       INITIALISATION POUR LA CONDUCTIVITE THERMIQUE
 !
@@ -2338,11 +2338,11 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.0d0, 3, ncra32, val32, icodre,&
-                        0)
+                        0, 'NON')
             if (hydr .eq. 'HYDR_UTIL') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 1, ncra32(4), val32(4), icodre,&
-                            0)
+                            0, 'NON')
             else if (hydr.eq.'HYDR_ENDO') then
                 if ((meca.eq.'MAZARS') .or. ( meca.eq.'ENDO_ISOT_BETON')) then
 ! =====================================================================
@@ -2350,7 +2350,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 ! =====================================================================
                     call rcvala(imate, ' ', 'THM_DIFFU', 1, 'ENDO',&
                                 endo, 1, ncra32(5), val32(4), icodre,&
-                                1)
+                                1, 'OUI')
                 endif
                 else if ((hydr.eq.'HYDR_VGM').or.(hydr.eq.'HYDR_VGC'))&
             then
@@ -2358,28 +2358,28 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             endif
             call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                         t, 3, ncra33, val33, icodre,&
-                        0)
+                        0, 'NON')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra32(6), val32(6), icodre,&
-                            1)
+                            1, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'TEMP',&
                             t, 1, ncra32(7), val32(7), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PORO',&
                             phi, 2, ncra32(8), val32(8), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                             0.d0, 1, ncra32(12), val32(12), icodre,&
-                            0)
+                            0, 'NON')
                 call rcvala(imate, ' ', 'THM_LIQU', 1, 'TEMP',&
                             t, dim33-3, ncra33(4), val33(4), icodre,&
-                            1)
+                            1, 'OUI')
             endif
             if (hydr .eq. 'HYDR_UTIL' .or. hydr .eq. 'HYDR_ENDO') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'PCAP',&
                             p1, 2, ncra32(13), val32(13), icodre,&
-                            1)
+                            1, 'OUI')
             else
                 call satura(hydr, p1, val32(13), val32(14))
             endif
@@ -2389,18 +2389,18 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
             valpar(2) = p2
             call rcvala(imate, ' ', 'THM_DIFFU', 2, nompar,&
                         valpar, 2, ncra32(15), val32(15), icodre,&
-                        1)
+                        1, 'OUI')
             if (ther .ne. ' ') then
                 call rcvala(imate, ' ', 'THM_DIFFU', 1, 'SAT',&
                             valpar( 1), 2, ncra32(11), val32(11), icodre,&
-                            0)
+                            0, 'NON')
             endif
             call rcvala(imate, ' ', 'THM_DIFFU', 0, ' ',&
                         0.d0, 6, ncra32(17), val32(17), icodre,&
-                        0)
+                        0, 'NON')
             call rcvala(imate, ' ', 'THM_DIFFU', 1, 'INST',&
                         instap, 1, 'PESA_MUL', fpesa, icodre,&
-                        0)
+                        0, 'NON')
 ! COMME IL N'EST PAS POSSIBLE D'AFFECTER UNE VALEUR PAR DEFAUT
 ! A LA FONCTION PESA_MULT DANS LE FICHIER DE COMMANDE
 ! DEFI_MATERIAU.CAPY, ON UTILISE LE CODE RETOUR POUR LA METTRE

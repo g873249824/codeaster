@@ -233,7 +233,7 @@ subroutine xvetth(ndim, elrefp, nnop, imate, itps,&
             nomres(2) = 'RHO_CP'
             call rcvalb('XFEM', kpg, spt, poum, zi(imate),&
                         ' ', phenom, 1, 'INST', valpar,&
-                        2, nomres, valres, icodre, 1)
+                        2, nomres, valres, icodre, 1, 'OUI')
             lambda = valres(1)
             rhocp = valres(2)
 !

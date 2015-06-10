@@ -59,7 +59,7 @@ subroutine crirup(fami, imat, ndim, npg, lgpg,&
 !
     call rcvalb(fami, 1, 1, '+', imat,&
                 ' ', 'CRIT_RUPT', 0, ' ', 0.d0,&
-                1, 'SIGM_C', sc, cerr, 1)
+                1, 'SIGM_C', sc, cerr, 1, 'OUI')
     call r8inir(6, 0.d0, sigmoy, 1)
 !
 !     CALCUL DU TENSEUR MOYEN

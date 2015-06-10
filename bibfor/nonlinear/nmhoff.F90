@@ -76,7 +76,7 @@ subroutine nmhoff(ndim, imate, inst, epsm, deps,&
 !
     call rcvala(imate, ' ', 'ECRO_LINE', 0, ' ',&
                 0.d0, 1, 'SY', sy, cod,&
-                2)
+                2, 'OUI')
     m = 1 + 10**(1-inst)
     am = sy * rac23**m
     if (line) then

@@ -79,7 +79,7 @@ subroutine te0484(option, nomte)
                     iret)
         call rcvalb(famil, kpg, spt, poum, zi(imate),&
                     ' ', 'ELAS', 1, 'TEMP', tempm,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
         e = valres(1)
         nu = valres(2)
 ! ----  PARAMETRES MATERIAUX
@@ -153,7 +153,7 @@ subroutine te0484(option, nomte)
         nbv = 2
         call rcvalb(famil, kpg, spt, poum, zi(imate),&
                     ' ', 'ELAS', 1, 'TEMP', tempm,&
-                    nbv, nomres, valres, icodre, 1)
+                    nbv, nomres, valres, icodre, 1, 'OUI')
         e = valres(1)
         nu = valres(2)
         para(1) = e

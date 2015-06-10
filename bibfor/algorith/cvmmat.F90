@@ -136,17 +136,18 @@ subroutine cvmmat(fami, kpg, ksp, mod, imat,&
     nomc(27) = 'G2_0    '
     nomc(28) = 'A_I     '
 !
-    do 9 j = 1, 2
-        do 9 i = 1, nmat
+    do  j = 1, 2
+        do  i = 1, nmat
             materd(i,j) = 0.d0
             materf(i,j) = 0.d0
- 9      continue
+        enddo
+    enddo
 !
 ! -     RECUPERATION MATERIAU A (T)
 !
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                3, nomc(1), materd(1, 1), cerr(1), 0)
+                3, nomc(1), materd(1, 1), cerr(1), 0, 'OUI')
 !
 !
     if (crit(11) .gt. 0.d0) then
@@ -159,7 +160,7 @@ subroutine cvmmat(fami, kpg, ksp, mod, imat,&
     if (cerr(3) .ne. 0) materd(3,1) = 0.d0
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'VISCOCHAB', 0, ' ', 0.d0,&
-                25, nomc(4), materd(1, 2), cerr(4), 2)
+                25, nomc(4), materd(1, 2), cerr(4), 2, 'OUI')
 !
 ! -     MISE A JOUR DU COMMUN COED POUR TRAITER LE CAS ANISOTHERME
 !
@@ -170,7 +171,7 @@ subroutine cvmmat(fami, kpg, ksp, mod, imat,&
 !
     call rcvalb(fami, kpg, ksp, '+', imat,&
                 ' ', 'ELAS', 0, ' ', 0.d0,&
-                3, nomc(1), materf(1, 1), cerr(1), 0)
+                3, nomc(1), materf(1, 1), cerr(1), 0, 'OUI')
 !
 !
     if (crit(11) .gt. 0.d0) then
@@ -182,7 +183,7 @@ subroutine cvmmat(fami, kpg, ksp, mod, imat,&
     if (cerr(3) .ne. 0) materf(3,1) = 0.d0
     call rcvalb(fami, kpg, ksp, '+', imat,&
                 ' ', 'VISCOCHAB', 0, ' ', 0.d0,&
-                25, nomc(4), materf(1, 2), cerr(4), 2)
+                25, nomc(4), materf(1, 2), cerr(4), 2, 'OUI')
 !
 ! -     PARAMETRES DES LOIS DE COMPORTEMENT A 2 SEUILS
 !

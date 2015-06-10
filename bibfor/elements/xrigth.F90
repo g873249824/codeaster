@@ -229,7 +229,7 @@ subroutine xrigth(ndim, elrefp, nnop, imate, itemps,&
 !         RECUPERER LES PARAMETRES MATERIAUX
             call rcvalb('XFEM', kpg, spt, poum, zi(imate),&
                         ' ', phenom, 1, 'INST', valpar,&
-                        1, 'LAMBDA', valres, icodre, 1)
+                        1, 'LAMBDA', valres, icodre, 1, 'OUI')
             lambda = valres(1)
 !
 !         DFFENR : TABLEAU DES DERIVEES DES FF ENRICHIES

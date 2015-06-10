@@ -183,7 +183,7 @@ subroutine te0239(option, nomte)
         nompar = 'TEMP'
         call rcvalb('RIGI', kp, 1, '-', zi(imate),&
                     ' ', 'ELAS', nbpar, nompar, tempm,&
-                    2, nomres, valres, valret, 1)
+                    2, nomres, valres, valret, 1, 'OUI')
 !
         nu = valres(2)
         cisail = valres(1)/ (un+nu)

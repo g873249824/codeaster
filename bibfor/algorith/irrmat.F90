@@ -128,7 +128,7 @@ subroutine irrmat(fami, kpg, ksp, model, imat,&
 !     CARACTERISTIQUES ELASTIQUES A TEMP- ET IRRA-
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'ELAS', 0, ' ', 0.0d0,&
-                3, nomcel, materd(1, 1), cerr, 1)
+                3, nomcel, materd(1, 1), cerr, 1, 'OUI')
 !
 !     TEMPERATURE A T-
     call rcvarc('F', 'TEMP', '-', fami, kpg,&
@@ -139,7 +139,7 @@ subroutine irrmat(fami, kpg, ksp, model, imat,&
 !     CARACTERISTIQUES MATERIAU A TEMP- ET IRRA-
     call rcvalb(fami, kpg, ksp, '-', imat,&
                 ' ', 'IRRAD3M', 0, ' ', 0.0d0,&
-                nbcara, nomcir, mat, cerr, 1)
+                nbcara, nomcir, mat, cerr, 1, 'OUI')
 !
 !     POUR PLUS DE CLARETE, JE RENOMME LES GRANDEURS
     if (cerr(10) .eq. 0) then
@@ -307,7 +307,7 @@ subroutine irrmat(fami, kpg, ksp, model, imat,&
 !     CARACTERISTIQUES ELASTIQUES A TEMP+ ET IRRA+
     call rcvalb(fami, kpg, ksp, '+', imat,&
                 ' ', 'ELAS', 0, ' ', 0.0d0,&
-                3, nomcel, materf(1, 1), cerr, 1)
+                3, nomcel, materf(1, 1), cerr, 1, 'OUI')
 !
 !     TEMPERATURE A T+
     call rcvarc('F', 'TEMP', '+', fami, kpg,&
@@ -330,7 +330,7 @@ subroutine irrmat(fami, kpg, ksp, model, imat,&
 !     CARACTERISTIQUES MATERIAU A TEMP+ ET IRRA+
     call rcvalb(fami, kpg, ksp, '+', imat,&
                 ' ', 'IRRAD3M', 0, ' ', 0.0d0,&
-                nbcara, nomcir, mat, cerr, 1)
+                nbcara, nomcir, mat, cerr, 1, 'OUI')
 !
 !     POUR PLUS DE CLARETE
     if (cerr(10) .eq. 0) then

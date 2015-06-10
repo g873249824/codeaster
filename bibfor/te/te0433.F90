@@ -97,7 +97,7 @@ subroutine te0433(option, nomte)
         call jevech('PMASSINE', 'E', imass)
         call rcvalb(fami, kpg, 1, '+', zi(imate),&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, 'RHO', rho, codres, 1)
+                    1, 'RHO', rho, codres, 1, 'OUI')
         if (rho .le. r8prem()) then
             call u2mess('F', 'ELEMENTS5_45')
         endif
@@ -181,7 +181,7 @@ subroutine te0433(option, nomte)
             nomres(1) = 'E'
             call rcvalb(fami, kpg, 1, '+', zi(imate),&
                         ' ', 'ELAS', 0, ' ', 0.d0,&
-                        1, nomres, valres, codres, 0)
+                        1, nomres, valres, codres, 0, 'OUI')
             epsm=epsm-epsthe
             sig = valres(1)*epsm
 !

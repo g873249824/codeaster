@@ -80,7 +80,7 @@ subroutine te0161(option, nomte)
         call jevech('PPESANR', 'L', ipesa)
         call rcvalb('FPG1', 1, 1, '+', zi(imate),&
                     ' ', 'ELAS', 0, ' ', r8bid,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
         if (nomte .eq. 'MECA_POU_D_T_GD') then
             call jevech('PCAGNPO', 'L', lsect)
         else

@@ -79,7 +79,7 @@ subroutine te0111(option, nomte)
         poids = poids*r
         call rcvalb(fami, kp, 1, '+', zi(imate),&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, 'RHO', rho, icodre, 1)
+                    1, 'RHO', rho, icodre, 1, 'OUI')
 !
         do 106 i = 1, nno
 !

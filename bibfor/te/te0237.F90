@@ -188,10 +188,10 @@ subroutine te0237(option, nomte)
                     nomres(3)='ALPHA'
                     call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                                 ' ', 'ELAS', nbpar, nompar, valpar,&
-                                2, nomres, valres, icodre, 1)
+                                2, nomres, valres, icodre, 1, 'OUI')
                     call rcvalb('RIGI', 1, 1, '+', zi(imate),&
                                 ' ', 'ELAS', nbpar, nompar, valpar,&
-                                1, nomres(3), valres(3), icodre( 3), 0)
+                                1, nomres(3), valres(3), icodre( 3), 0, 'OUI')
                     e=valres(1)
                     nu=valres(2)
                     if (iret4 .eq. 0) then

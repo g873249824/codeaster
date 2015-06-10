@@ -94,7 +94,7 @@ subroutine nmvpgm(fami, kpg, ksp, ndim, imate,&
     character(len=8) :: nomres(5), nompar(2)
 ! RMS
     real(kind=8) :: grain, tk, xr, xq1, xq2, dporo, poro, xm1, xm2, xe01, xe02
-    real(kind=8) :: FDEVPKK, grain0
+    real(kind=8) :: fdevpkk, grain0
 ! DEB ------------------------------------------------------------------
     data              kron/1.d0,1.d0,1.d0,0.d0,0.d0,0.d0/
     data epsa   / 'EPSAXX','EPSAYY','EPSAZZ','EPSAXY','EPSAXZ',&
@@ -121,8 +121,8 @@ subroutine nmvpgm(fami, kpg, ksp, ndim, imate,&
 !
     if (typmod(1) .eq. 'C_PLAN') then
         iulmes = iunifi('MESSAGE')
-        write (iulmes,*) 'COMPORTEMENT ',compor(1)(1:10),' NON PROGRAMME&
-     & POUR DES ELEMENTS DE CONTRAINTES PLANES'
+        write (iulmes,*) 'comportement ',compor(1)(1:10),' non programme&
+     & pour des elements de contraintes planes'
         call u2mess('F', 'ALGORITH6_92')
         goto 299
     endif
@@ -165,7 +165,7 @@ subroutine nmvpgm(fami, kpg, ksp, ndim, imate,&
     nomres(2)='NU'
     call rcvalb(fami, kpg, ksp, '-', imate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     em = valres(1)
     num = valres(2)
     deumum = em/(1.d0+num)
@@ -173,7 +173,7 @@ subroutine nmvpgm(fami, kpg, ksp, ndim, imate,&
     valpar(1)=instap
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'ELAS', 1, nompar, valpar,&
-                2, nomres, valres, icodre, 2)
+                2, nomres, valres, icodre, 2, 'OUI')
     e = valres(1)
     nu = valres(2)
     deuxmu = e/(1.d0+nu)
@@ -187,7 +187,7 @@ subroutine nmvpgm(fami, kpg, ksp, ndim, imate,&
     nomres(4) = 'EPSI_02'
     call rcvalb(fami, kpg, ksp, '+', imate,&
                 ' ', 'GATT_MONERIE', 1, nompar, valpar,&
-                4, nomres, valres, icodre, 2)
+                4, nomres, valres, icodre, 2, 'OUI')
     grain = valres(1)
     porom = vim(2)
     if (porom .eq. 0.d0) then
@@ -311,8 +311,8 @@ subroutine nmvpgm(fami, kpg, ksp, ndim, imate,&
     dporo = poro - porom
     sigh = sigh0 - (troisk/3.d0)*dporo/(1.d0-porom-dporo)
     call ggpgmo(sige, sigh, theta, deuxmu, fg,&
-                FDEVPKK, fdgdst, fdgdev, tschem)
-    epsmo = epsmo - FDEVPKK*deltat
+                fdevpkk, fdgdst, fdgdev, tschem)
+    epsmo = epsmo - fdevpkk*deltat
 !
 !-----------------------------------------
     if (sige .ne. 0.d0) then

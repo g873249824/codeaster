@@ -42,7 +42,7 @@ subroutine te0312(option, nomte)
     if (option.eq.'CHAR_MECA_HYDR_R') then
         call rcvalb(fami, kpg, spt, poum, zi(lmater),&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, 'B_ENDOGE', bendog, icodre, 0)
+                    1, 'B_ENDOGE', bendog, icodre, 0, 'OUI')
 !
         if ((icodre(1) .eq. 0).and. (bendog(1).ne.0.d0)) then
             call u2mesk('F', 'ELEMENTS_22', 1, nomte)
@@ -52,7 +52,7 @@ subroutine te0312(option, nomte)
     else if (option.eq.'CHAR_MECA_SECH_R') then
         call rcvalb(fami, kpg, spt, poum, zi(lmater),&
                     ' ', 'ELAS', 0, ' ', 0.d0,&
-                    1, 'K_DESSIC', kdessi, icodre, 0)
+                    1, 'K_DESSIC', kdessi, icodre, 0, 'OUI')
 !
         if ((icodre(1) .eq. 0).and. (kdessi(1).ne.0.d0)) then
             call u2mesk('F', 'ELEMENTS_23', 1, nomte)

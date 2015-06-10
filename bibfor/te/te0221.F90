@@ -98,7 +98,7 @@ subroutine te0221(option, nomte)
         if (test .ge. un) correc = zero
         call rcvala(zi(imate), ' ', 'ELAS', nbpar, nompar,&
                     valpar, 2, nomres, valres, icodre,&
-                    1)
+                    1, 'OUI')
 !
         nu = valres(2)
         coeff1 = valres(1)/ (un- (nu*nu))

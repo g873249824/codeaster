@@ -112,7 +112,7 @@ subroutine glrcmm(zimat, matr, ep, surfgp, p,&
 !
     call rcvalb(fami, kpg, spt, poum, zimat,&
                 ' ', phenom, 0, ' ', 0.d0,&
-                1, nomres, valres, codres, 1)
+                1, nomres, valres, codres, 1, 'OUI')
 !
     if (valres(1) .eq. 0.d0) then
         nomres(1) = 'MAXMP1'
@@ -121,7 +121,7 @@ subroutine glrcmm(zimat, matr, ep, surfgp, p,&
         nomres(4) = 'MINMP2'
         call rcvalb(fami, kpg, spt, poum, zimat,&
                     ' ', phenom, 0, ' ', r8bid,&
-                    4, nomres, valres, codres, 1)
+                    4, nomres, valres, codres, 1, 'OUI')
         maxmp(1) = valres(1)
         maxmp(2) = valres(3)
         minmp(1) = valres(2)
@@ -139,13 +139,13 @@ subroutine glrcmm(zimat, matr, ep, surfgp, p,&
         do 50, i=1,2
         call rcvalb(fami, kpg, spt, poum, zimat,&
                     ' ', phenom, 1, 'X ', 0.d0,&
-                    2, nomres(2*(i-1)+1), valres, codres, 1)
+                    2, nomres(2*(i-1)+1), valres, codres, 1, 'OUI')
         mp1n0 = valres(1)
         mp2n0 = valres(2)
 !
         call rcvalb(fami, kpg, spt, poum, zimat,&
                     ' ', phenom, 0, ' ', r8bid,&
-                    2, nomres(2*(i-1)+5), valres, codres, 1)
+                    2, nomres(2*(i-1)+5), valres, codres, 1, 'OUI')
         maxmp(i) = valres(1)
         minmp(i) = valres(2)
 !
@@ -159,7 +159,7 @@ subroutine glrcmm(zimat, matr, ep, surfgp, p,&
     nomres(2) = 'NORMN'
     call rcvalb(fami, kpg, spt, poum, zimat,&
                 ' ', phenom, 0, ' ', r8bid,&
-                2, nomres, valres, codres, 0)
+                2, nomres, valres, codres, 0, 'OUI')
     normm = valres(1)
     normn = valres(2)
 !

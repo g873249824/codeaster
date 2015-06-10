@@ -158,7 +158,7 @@ subroutine te0155(option, nomte)
         poum='+'
         call rcvalb('FPG1', kpg, spt, poum, zi(lmater),&
                     ' ', 'ELAS', 0, ' ', r8bid,&
-                    1, 'RHO', rho, codres, 1)
+                    1, 'RHO', rho, codres, 1, 'OUI')
 !
         call jevech('PPESANR', 'L', lpesa)
         do 20 i = 1, 3
@@ -452,7 +452,7 @@ subroutine te0155(option, nomte)
         call jevech('PMATERC', 'L', lmater)
         call rcvalb(fami, 1, 1, '+', zi(lmater),&
                     ' ', 'ELAS', 0, ' ', r8bid,&
-                    1, 'E', e, codres, 1)
+                    1, 'E', e, codres, 1, 'OUI')
 !
 !        TEMPERATURE DE REFERENCE
         call verift(fami, 1, 1, '+', zi(lmater),&
@@ -491,7 +491,7 @@ subroutine te0155(option, nomte)
         call jevech('PMATERC', 'L', lmater)
         call rcvalb(fami, 1, 1, '+', zi(lmater),&
                     ' ', 'ELAS', 0, ' ', r8bid,&
-                    1, 'E', e, codres, 1)
+                    1, 'E', e, codres, 1, 'OUI')
 !
         call tecach('ONN', 'PTEMPSR', 'L', 1, itemps,&
                     iret)
@@ -527,7 +527,7 @@ subroutine te0155(option, nomte)
 !           ----------------------------------------------------------
         call rcvalb('RIGI', 1, 1, '+', zi(lmater),&
                     ' ', 'ELAS', 3, nompar, valpa2,&
-                    1, 'K_DESSIC', kdessi, codres, 0)
+                    1, 'K_DESSIC', kdessi, codres, 0, 'OUI')
 !
         if (codres .ne. 0) kdessi=0.d0
 !
@@ -561,7 +561,7 @@ subroutine te0155(option, nomte)
         call jevech('PMATERC', 'L', lmater)
         call rcvalb('RIGI', 1, 1, '+', zi(lmater),&
                     ' ', 'ELAS', 0, ' ', r8bid,&
-                    1, 'E', e, codres, 1)
+                    1, 'E', e, codres, 1, 'OUI')
 !
 ! ---- RECUPERATION DE L'INSTANT
 !      -------------------------
@@ -597,7 +597,7 @@ subroutine te0155(option, nomte)
 !           ----------------------------------------------------------
         call rcvalb('RIGI', 1, 1, '+', zi(lmater),&
                     ' ', 'ELAS', 3, nompar, valpa2,&
-                    1, 'B_ENDOGE', kendog, codres, 0)
+                    1, 'B_ENDOGE', kendog, codres, 0, 'OUI')
 !
         if (codres .ne. 0) kendog=0.d0
 !

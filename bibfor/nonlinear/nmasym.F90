@@ -87,7 +87,7 @@ subroutine nmasym(fami, kpg, ksp, icodma, option,&
     poum='+'
     call rcvalb(famil, kpg1, spt, poum, icodma,&
                 ' ', 'ELAS', 0, nompar, valpar,&
-                1, nomela, valres, icodre, 1)
+                1, nomela, valres, icodre, 1, 'OUI')
     e = valres(1)
 !
 ! --- CARACTERISTIQUES ECROUISSAGE LINEAIRE ASYMETRIQUE
@@ -98,7 +98,7 @@ subroutine nmasym(fami, kpg, ksp, icodma, option,&
     nbpar = 0
     call rcvalb(fami, 1, 1, '+', icodma,&
                 ' ', 'ECRO_ASYM_LINE', nbpar, nompar, valpar,&
-                nbres, nomasl, valres, icodre, 1)
+                nbres, nomasl, valres, icodre, 1, 'OUI')
     syc = valres(1)
     etc = valres(2)
     syt = valres(3)
