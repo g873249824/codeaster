@@ -54,10 +54,8 @@ class Coeur(object):
         #Abscisses caracteristiques pour le profil de temperature des crayons
         'SXX2','SXX3',
         # paramètres de l'interpolation linéaire
-        #du coefficient de dilatation des internes de cuve
-        'ALPH1','ALPH2',
-        # Geometrie du coeur
-        'ALPHABET','ALPHAMAC','NumV',
+        # du coefficient de dilatation des internes de cuve
+        'ALPH1', 'ALPH2',
         # Post-traitement des lames
         'nomContactAssLame','nomContactCuve',
     ]
@@ -79,9 +77,6 @@ class Coeur(object):
         self._para          = {}
         self._keys          = {}.fromkeys(self.required_parameters)
         self._init_from_attrs()
-        self.dcorr1 = dict(zip(self.ALPHABET, self.ALPHAMAC))
-        self.dcorr2 = dict(zip(self.ALPHAMAC, self.ALPHABET))
-        self.dnume2 = dict(zip(self.ALPHAMAC, range(1, len(self.ALPHAMAC) + 1)))
 
     def _init_from_attrs(self):
         """Initialisation à partir des attributs de classe."""
@@ -101,33 +96,31 @@ class Coeur(object):
 
     def position_toaster(self, position):
         """Retourne la position Aster correspondant à la position DAMAC."""
-        lig, col = position[0], position[1:]
-        ind = int(col) - 1
-        try:
-          posi_aster = self.ALPHAMAC[ind] + "_" + self.dcorr1[lig]
-        except (IndexError, KeyError):
-            raise KeyError("invalid damac position : %s" % position)
-        return posi_aster
+        raise NotImplementedError
 
     def position_todamac(self,position):
         """Retourne la position DAMAC correspondant à la position Aster."""
-        col, lig = position.split("_")
-        try:
-           posi_damac = self.dcorr2[lig] + '%02d' %(self.dnume2[col])
-        except KeyError:
-            raise KeyError("invalid aster position : %s" % position)
-
-        return posi_damac
+        raise NotImplementedError
 
     def position_fromthyc(self, posX, posY):
         """Retourne la position Aster correspondant à la position Thyc."""
-        lig, col = position[0], position[1:]
-        ind = int(col) - 1
-        try:
-          posi_aster = self.ALPHAMAC[ind] + "_" + self.dcorr1[lig]
-        except (IndexError, KeyError):
-            raise KeyError("invalid damac position : %s" % position)
-        return posi_aster
+        raise NotImplementedError
+        
+    def get_length(self) :
+        return len(self.ALPHA_MAC)
+        
+    def get_letter(self,index) :
+        return self.ALPHA_MAC[index]
+        
+    def get_index(self,letter) :
+        return self.ALPHA_MAC.index(letter)
+        
+    def get_XY(self,position) :
+        raise NotImplementedError
+
+    def get_outGraceXY(self) :
+        return self.dAxeGrace
+
 
     def init_from_table(self, tab):
         """Initialise le coeur à partir d'une table."""
@@ -144,7 +137,7 @@ class Coeur(object):
             ac_def = {}
             for igr in range(0, ac._para['NBGR']):
                ac_def['DY'+str(igr+1)] =   rows['XG'+str(igr+1)]/1000.0
-               ac_def['DZ'+str(igr+1)] = - rows['YG'+str(igr+1)]/1000.0
+               ac_def['DZ'+str(igr+1)] =  rows['YG'+str(igr+1)]/1000.0
             ac.set_deforDAM(ac_def)
             ac.set_materiau(self._mateAC[typeAC])
             ac.check()
@@ -261,21 +254,29 @@ class Coeur(object):
         # Recuperation des efforts transverses sur les grilles
         mcf = []
         mcft= []
+        chThyc={}        
         for i in range(0,self.NBAC):
             line  = f.readline().split()
             line2 = f2.readline().split()
-            posi_aster1 = self.ALPHAMAC[len(self.ALPHAMAC)+2-string.atoi(line[1])-1]  + "_" + self.ALPHAMAC[string.atoi(line[0])-2]
-            posi_aster2 = self.ALPHAMAC[len(self.ALPHAMAC)+2-string.atoi(line2[1])-1] + "_" + self.ALPHAMAC[string.atoi(line2[0])-2]
+            posi_aster1 = self.position_fromthyc(int(line[0]),int(line[1]))
+            posi_aster2 = self.position_fromthyc(int(line2[0]),int(line2[1]))
             
             if (posi_aster1!=posi_aster2):
                 raise KeyError("position d assemblage avec ordre different")
     
             for j in range(0,len(pos_thyc)):
-               mtmp = (_F(GROUP_NO = 'G_'+posi_aster1+'_'+str(j+1), FY = string.atof(line[pos_thyc[j]])/4.0, FZ = - string.atof(line2[pos_thyc[j]])/4.0),)
-               mcf.extend(mtmp)
-        
-            _resu_fy = self.definir_chargement_transverse(cote,epaisseur,pos_thyc,line,1)
-            _resu_fz = self.definir_chargement_transverse(cote,epaisseur,pos_thyc,line2,-1)
+
+                chThyc['X']=string.atof(line[pos_thyc[j]])  / 4.0
+                chThyc['Y']=string.atof(line2[pos_thyc[j]]) / 4.0
+                chAsterY=self.coefFromThyc('Y')*chThyc[self.axeFromThyc('Y')]
+                chAsterZ=self.coefFromThyc('Z')*chThyc[self.axeFromThyc('Z')]
+                mtmp = (_F(GROUP_NO='G_' + posi_aster1 + '_' + str(j + 1), FY=chAsterY , FZ=chAsterZ),)
+                mcf.extend(mtmp)
+            chThyc['X']=self.definir_chargement_transverse(cote, epaisseur, pos_thyc, line, self.coefToThyc('X'))
+            chThyc['Y']=self.definir_chargement_transverse(cote, epaisseur, pos_thyc, line2, self.coefToThyc('Y'))
+            
+            _resu_fy = chThyc[self.axeFromThyc('Y')]
+            _resu_fz = chThyc[self.axeFromThyc('Z')]        
             mtmp = (_F(GROUP_MA = 'CR_'+posi_aster1, FY = _resu_fy, FZ = _resu_fz),)
             mcft.extend(mtmp)
         
@@ -292,7 +293,7 @@ class Coeur(object):
         mcpf = []
         for i in range(0,self.NBAC):
             line = f.readline().split()
-            posi_aster = self.ALPHAMAC[len(self.ALPHAMAC)+2-string.atoi(line[1])-1]+ "_" +self.ALPHAMAC[len(self.ALPHAMAC)+2-string.atoi(line[0])-1]
+            posi_aster=self.position_fromthyc(int(line[0]),int(line[1]))
             idAC=self.position_todamac(posi_aster)
 
             ac=self.collAC[idAC]

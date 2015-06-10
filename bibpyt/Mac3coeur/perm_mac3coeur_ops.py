@@ -119,12 +119,20 @@ def perm_mac3coeur_ops(self, **args):
                               SOLVEUR     = _F(METHODE='MUMPS',RENUM='AMF',GESTION_MEMOIRE='OUT_OF_CORE',ELIM_LAGR2='NON',PCENT_PIVOT=80,),
                               )
 
-    for nom in _coeurp1.nameAC.keys() :
-        if nom in _coeur.nameAC :
-           tran_z = _coeurp1.pas_assemblage * (_coeurp1.ALPHAMAC.index(_coeurp1.nameAC[nom][0]) - _coeurp1.ALPHAMAC.index(_coeur.nameAC[nom][0]))
-           tran_y = _coeurp1.pas_assemblage * (_coeurp1.ALPHAMAC.index(_coeurp1.nameAC[nom][2]) - _coeurp1.ALPHAMAC.index(_coeur.nameAC[nom][2]))
 
-           _coe[indice]  = MACRO_AC_PERMUTE(POS_INIT       = _coeur.nameAC[nom],
+
+    for nom in _coeurp1.nameAC.keys():
+        if nom in _coeur.nameAC:
+            tran_z = _coeurp1.pas_assemblage * \
+                (_coeurp1.get_index(_coeurp1.nameAC[nom][
+                 0]) - _coeurp1.get_index(_coeur.nameAC[nom][0]))
+            tran_y = _coeurp1.pas_assemblage * \
+                (_coeurp1.get_index(_coeurp1.nameAC[nom][
+                 2]) - _coeurp1.get_index(_coeur.nameAC[nom][2]))
+
+
+
+            _coe[indice]  = MACRO_AC_PERMUTE(POS_INIT       = _coeur.nameAC[nom],
                               POS_FIN        = _coeurp1.nameAC[nom],
                               RESU_INI       = RESUI,
                               RESU_FIN       = _BIDON,
@@ -133,33 +141,33 @@ def perm_mac3coeur_ops(self, **args):
                               MAILLAGE_FINAL = _MA_NP1,
                               MODELE_FINAL   = _MO_NP1,
                               TRAN       = (tran_x,tran_y,tran_z))
-           UTMESS('I','COEUR0_3',valk=(_coeur.position_todamac(_coeur.nameAC[nom]),_coeurp1.position_todamac(_coeurp1.nameAC[nom])))
+            UTMESS('I','COEUR0_3',valk=(_coeur.position_todamac(_coeur.nameAC[nom]),_coeurp1.position_todamac(_coeurp1.nameAC[nom])))
 
  
-           _dep[indice] = CREA_CHAMP(TYPE_CHAM = 'NOEU_DEPL_R',
+            _dep[indice] = CREA_CHAMP(TYPE_CHAM = 'NOEU_DEPL_R',
                            OPERATION = 'EXTR',
                            PRECISION =  1.0E-10,
                            RESULTAT  =  _coe[indice],
                            NOM_CHAM  = 'DEPL',
                            INST  =  0.0,);
 
-           _var[indice] = CREA_CHAMP(TYPE_CHAM = 'ELGA_VARI_R',
+            _var[indice] = CREA_CHAMP(TYPE_CHAM = 'ELGA_VARI_R',
                            OPERATION = 'EXTR',
                            PRECISION =  1.0E-10,
                            RESULTAT  =  _coe[indice],
                            NOM_CHAM  = 'VARI_ELGA',
                            INST  =  0.0,);
 
-           mtdep = (_F(TOUT = 'OUI', CHAM_GD = _dep[indice], CUMUL = 'OUI', COEF_R = 1.0),)
-           mtvar = (_F(TOUT = 'OUI', CHAM_GD = _var[indice], CUMUL = 'OUI', COEF_R = 1.0),)
-           lisdep.extend(mtdep)
-           lisvar.extend(mtvar)
+            mtdep = (_F(TOUT = 'OUI', CHAM_GD = _dep[indice], CUMUL = 'OUI', COEF_R = 1.0),)
+            mtvar = (_F(TOUT = 'OUI', CHAM_GD = _var[indice], CUMUL = 'OUI', COEF_R = 1.0),)
+            lisdep.extend(mtdep)
+            lisvar.extend(mtvar)
 
-           mtdet={}
-           mtdet["NOM"] =  (_coe[indice],_dep[indice],_var[indice])
-           lisdet.append(mtdet)
-
-           indice = indice + 1
+            mtdet={}
+            mtdet["NOM"] =  (_coe[indice],_dep[indice],_var[indice])
+            lisdet.append(mtdet)
+  
+            indice = indice + 1
 
     UTMESS('I','COEUR0_2',vali=(indice))
     _RES_DEP = CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',MODELE=_MO_NP1,OPERATION='ASSE',ASSE=lisdep)

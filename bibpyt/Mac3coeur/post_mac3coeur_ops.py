@@ -19,6 +19,30 @@
 import aster_core
 from mac3coeur_coeur import CoeurFactory
 
+def NodePos(coeur,k):
+    
+    return coeur.get_XYOut('%s_%s'%(k[0],k[1]))
+
+
+def makeXMGRACE_entete(coeur,xmgrfile) :
+    length   = coeur.get_length()
+    xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
+    xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
+    for val_abs in range(0, length):
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color '
+                       '(0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n'
+                       '@string def \"%s\"\n'
+                       % (val_abs - (length - 1) / 2., (length - 1) / 2. + 1.2,
+                          coeur.get_enumerateOut_X(val_abs)))
+    for val_ord in range(0, length):
+        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n'
+                       '@string char size 0.8\n@string just 2\n@string %f, %f\n'
+                       '@string def \"%s\"\n'
+                       % (-(length - 1) / 2. - 1.5,  val_ord - (length - 1) / 2. - 0.2,
+                          coeur.get_enumerateOut_Y(val_ord)))
+    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n'
+                   % (-(length - 1) / 2. - 1.02, -(length - 1) / 2. - 0.4,
+                      (length - 1) / 2. + 0.5, (length - 1) / 2. + 1.05))
 
 def makeXMGRACEjeu(unit,post,coeur,valjeuac,valjeucu):
     def computeColor(value):
@@ -45,26 +69,10 @@ def makeXMGRACEjeu(unit,post,coeur,valjeuac,valjeucu):
 
         return (redF,greenF,blueF,lame,size)
 
-    def NodePos(position):
-        pos2=position[0:1]
-        pos1=position[1:2]
-
-        x = coeur.ALPHAMAC.index(pos1) - (len(coeur.ALPHAMAC)-1)/2.
-        y = len(coeur.ALPHAMAC) - coeur.ALPHAMAC.index(pos2) - 1. - (len(coeur.ALPHAMAC)-1)/2.
-
-        return (x,y)
 
     def NodePosCu(position):
-        x = 0.
-        y = 0.
-        if (position=='W'):
-           x = -0.5
-        elif (position=='N'):
-           y = +0.5
-        elif (position=='E'):
-           x = +0.5
-        elif (position=='S'):
-           y = -0.5
+
+        (x,y) = coeur.get_bordXY(position)
 
         return (x,y)
 
@@ -72,37 +80,21 @@ def makeXMGRACEjeu(unit,post,coeur,valjeuac,valjeucu):
     filename = './fort.%d' %(unit)
 
     xmgrfile = open(filename, 'w')
-    xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
-    xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
-    for val_abs in range(0,len(coeur.ALPHABET)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color ' \
-                       '(0,0,0)\n@string char size 0.8\n@string just 2\n@string %f, %f\n' \
-                       '@string def \"%s\"\n' \
-                       % (val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2,
-                          coeur.ALPHABET[val_abs]))
-    for val_ord in range(0,len(coeur.NumV)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
-                       '@string char size 0.8\n@string just 2\n@string %f, %f\n' \
-                       '@string def \"%s\"\n' \
-                       % (-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2,
-                          coeur.NumV[len(coeur.NumV)-1-val_ord]))
-    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' \
-        %(-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,
-          (len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
+    
+    makeXMGRACE_entete(coeur,xmgrfile)
 
     ind=0
     for k in POSITION:
-       ind=ind+1
-       y=coeur.ALPHAMAC.index(k[0])-(len(coeur.ALPHAMAC)-1)/2.
-       x=coeur.ALPHAMAC.index(k[1])-(len(coeur.ALPHAMAC)-1)/2.
-       xmgrfile.write('@kill s%d\n@s%d symbol 2\n@s%d symbol pattern 1\n@s%d symbol size 0.4\n' \
-                      '@s%d symbol color 1\n@s%d symbol fill pattern 1\n@s%d symbol fill color 1\n' \
-                      '@type xy\n%10.8f %10.8f\n' %(ind,ind,ind,ind,ind,ind,ind,x,y))
+        ind = ind + 1
+        (x,y) = NodePos(coeur,k) 
+        xmgrfile.write('@kill s%d\n@s%d symbol 2\n@s%d symbol pattern 1\n@s%d symbol size 0.4\n'
+                       '@s%d symbol color 1\n@s%d symbol fill pattern 1\n@s%d symbol fill color 1\n'
+                       '@type xy\n%10.8f %10.8f\n' % (ind, ind, ind, ind, ind, ind, ind, x, y))
 
     for name in valjeucu.keys():
         position1 = name[3:5]
         position2 = name[6:7]
-        (x1,y1) = NodePos(position1)
+        (x1, y1) = NodePos(coeur,position1)
         (x2,y2) = NodePosCu(position2)
         if (post=='MAXI') :
            (redF,greenF,blueF,lame,size) = computeColor(max(valjeucu[name]))
@@ -119,8 +111,8 @@ def makeXMGRACEjeu(unit,post,coeur,valjeuac,valjeucu):
       for name in valjeuac.keys():
           position1 = name[4:6]
           position2 = name[6:8]
-          (x1,y1) = NodePos(position1)
-          (x2,y2) = NodePos(position2)
+          (x1, y1) = NodePos(coeur,position1)
+          (x2, y2) = NodePos(coeur,position2)
           if (post=='MAXI') :
               (redF,greenF,blueF,lame,size) = computeColor(max(valjeuac[name]))
           elif (post=='MINI') :
@@ -158,28 +150,12 @@ def makeXMGRACEdef_amp(unit,post,coeur,valdefac):
     filename = './fort.%d' %(unit)
 
     xmgrfile = open(filename, 'w')
-    xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
-    xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
-    for val_abs in range(0,len(coeur.ALPHABET)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
-            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
-            % (val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2,
-               coeur.ALPHABET[val_abs]))
-    for val_ord in range(0,len(coeur.NumV)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
-            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
-            % (-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2,
-             coeur.NumV[len(coeur.NumV)-1-val_ord]))
-    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' \
-        % (-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,
-            (len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
-    ind=0
+    makeXMGRACE_entete(coeur,xmgrfile)
+    ind = 0
     for name in valdefac.keys():
         ind=ind+1
-        position2 = name[0]
-        position1 = name[2]
-        x = coeur.ALPHAMAC.index(position1) - (len(coeur.ALPHAMAC)-1)/2.
-        y = len(coeur.ALPHAMAC) - coeur.ALPHAMAC.index(position2) - 1. - (len(coeur.ALPHAMAC)-1)/2.
+        position = name[0:3]
+        (x,y) = coeur.get_XYOut(position)
         if (post=='MAXI') :
             (redF,greenF,blueF,size) = computeColor(max(valdefac[name]))
             titre = 'maximale'
@@ -210,30 +186,14 @@ def makeXMGRACEdef_mod(unit,post,coeur,valdefac):
     filename = './fort.%d' %(unit)
 
     xmgrfile = open(filename, 'w')
-    xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
-    xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
-    for val_abs in range(0,len(coeur.ALPHABET)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
-            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
-            % (val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2,
-               coeur.ALPHABET[val_abs]))
-    for val_ord in range(0,len(coeur.NumV)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
-            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
-            % (-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2,
-               coeur.NumV[len(coeur.NumV)-1-val_ord]))
-    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' \
-        % (-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,
-           (len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
-    ind=0
+    makeXMGRACE_entete(coeur,xmgrfile)
+    ind = 0
     for name in valdefac.keys():
-        ind=ind+1
-        position2 = name[0]
-        position1 = name[2]
-        x = coeur.ALPHAMAC.index(position1) - (len(coeur.ALPHAMAC)-1)/2.
-        y = len(coeur.ALPHAMAC) - coeur.ALPHAMAC.index(position2) - 1. - (len(coeur.ALPHAMAC)-1)/2.
-        if (post=='MAXI') :
-            (redF,greenF,blueF,value) = computeColor(max(valdefac[name]))
+        ind = ind + 1
+        position = name[0:3]
+        (x,y) = coeur.get_XYOut(position)
+        if (post == 'MAXI'):
+            (redF, greenF, blueF, value) = computeColor(max(valdefac[name]))
             titre = 'maximales'
         elif (post=='MINI') :
             (redF,greenF,blueF,value) = computeColor(min(valdefac[name]))
@@ -254,42 +214,32 @@ def makeXMGRACEdef_mod(unit,post,coeur,valdefac):
         ' du Coeur (en mm)"\n@DEVICE \"JPEG\" PAGE SIZE 1200,1200\n@autoscale\n@redraw\n'%(titre))
     xmgrfile.close()
 
-def makeXMGRACEdef_vec(unit,post,coeur,valdefac,valdirYac,valdirZac):
-    def computeVector(value,Y,Z):
-        valmin =    0.
-        valmax =   20.
-        Rvec   =   value/20.
-        Xvec   =   1000.*Y/20.
-        Yvec   =  -1000.*Z/20.
 
-        return (Xvec,Yvec,Rvec)
+def makeXMGRACEdef_vec(unit, post, coeur, valdefac, valdirYac, valdirZac):
+  
+    outGraceXY = coeur.get_outGraceXY()
+  
+    def computeVector(value, Y, Z):
+        valmin = 0.
+        valmax = 20.
+        Rvec = value / 20.
+        
+        vec = {'X' : Y / 20., 'Y' : Z / 20.}
+        Xvec = vec[outGraceXY['X'][0]]*outGraceXY['X'][1]
+        Yvec = vec[outGraceXY['Y'][0]]*outGraceXY['Y'][1]
 
-    filename = './fort.%d' %(unit)
+        return (Xvec, Yvec, Rvec)
+
+    filename = './fort.%d' % (unit)
 
     xmgrfile = open(filename, 'w')
-    xmgrfile.write('@focus on\n@g0 on\n@with g0\n')
-    xmgrfile.write('@VIEW 0.1,0.1,0.85,0.85\n')
-    for val_abs in range(0,len(coeur.ALPHABET)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
-            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
-            % (val_abs - (len(coeur.ALPHAMAC)-1)/2., (len(coeur.ALPHAMAC)-1)/2.+1.2,
-                coeur.ALPHABET[val_abs]))
-    for val_ord in range(0,len(coeur.NumV)):
-        xmgrfile.write('@with string\n@string on\n@string loctype world\n@string color (0,0,0)\n' \
-            '@string char size 0.8\n@string just 2\n@string %f, %f\n@string def \"%s\"\n' \
-            % (-(len(coeur.ALPHAMAC)-1)/2.-1.5,  val_ord - (len(coeur.ALPHAMAC)-1)/2.-0.2,
-                coeur.NumV[len(coeur.NumV)-1-val_ord]))
-    xmgrfile.write('@kill s0\n@s0 line pattern 0\n@s0 symbol fill pattern 0\n%f %f\n%f %f\n' \
-        % (-(len(coeur.ALPHAMAC)-1)/2.-1.02, -(len(coeur.ALPHAMAC)-1)/2.-0.4,
-           (len(coeur.ALPHAMAC)-1)/2.+0.5,(len(coeur.ALPHAMAC)-1)/2.+1.05))
-    ind=0
+    makeXMGRACE_entete(coeur,xmgrfile)
+    ind = 0
     for name in valdefac.keys():
-        ind=ind+1
-        position2 = name[0]
-        position1 = name[2]
-        x = coeur.ALPHAMAC.index(position1) - (len(coeur.ALPHAMAC)-1)/2.
-        y = len(coeur.ALPHAMAC) - coeur.ALPHAMAC.index(position2) - 1. - (len(coeur.ALPHAMAC)-1)/2.
-        if (post=='MAXI') :
+        ind = ind + 1
+        position = name[0:3]
+        (x,y) = coeur.get_XYOut(position)
+        if (post == 'MAXI'):
             pos = valdefac[name].index(max(valdefac[name]))
             (Xvec,Yvec,Rvec) = computeVector(valdefac[name][pos],valdirYac[name][pos],valdirZac[name][pos])
             titre = 'maximale'
@@ -478,6 +428,8 @@ def post_mac3coeur_ops(self, **args):
        valdefac={}
        valdirYac={}
        valdirZac={}
+       val_deport_y = {}
+       val_deport_z = {}
 
        _formule = FORMULE(NOM_PARA=('DY','DZ'),VALE='1000.*sqrt(DY*DY+DZ*DZ)')
        _formuleY = FORMULE(NOM_PARA=('DY'),VALE='1000.*DY')
