@@ -120,8 +120,9 @@ subroutine refe99(nomres)
 !
     if (ioc3 .gt. 0) then
         noseul=.false.
-        call getvid('RITZ', 'MODE_MECA', 1, iarg, 999,&
+        call getvid('RITZ', 'MODE_MECA', 1, iarg, 0,&
                     k8bid, nbg)
+        nbg=-nbg
         call getvid('RITZ', 'MODE_INTF', 2, iarg, 0,&
                     k8bid, ibid)
         if ((ibid.gt.0) .or. (nbg.gt.1)) then
