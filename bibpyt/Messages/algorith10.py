@@ -143,6 +143,12 @@ cata_msg = {
  on ne sait pas post-traiter le champ de type:  %(k1)s
 """),
 
+59 : _(u"""
+ La restitution des champs aux éléments n'est disponible dans la version actuelle que 
+ dans un cas avec interaction fluide-structure. Cette fonctionnalité est disponible à  
+ partir de la version 12.4 pour toutes les modélisations.
+"""),
+
 60 : _(u"""
  taille vecteurs incompatible
 """),

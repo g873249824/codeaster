@@ -72,6 +72,13 @@ subroutine speph0(nomu, table)
 !-----------------------------------------------------------------------
     call jemarq()
 !
+!   --- Blindage CHAM_ELEM dans un cas sans IFS
+    call getvtx(' ', 'NOM_CHAM', 0, iarg, 1,&
+                optcha, ibid)
+    if (optcha(6:7) .eq. 'EL') then
+        call u2mess('F', 'ALGORITH10_59')
+    end if
+!
     call getvid(' ', 'MODE_MECA', 1, iarg, 1,&
                 modmec, ibid)
     call gettco(modmec, typmec)
@@ -184,8 +191,8 @@ subroutine speph0(nomu, table)
 !
 !     --- OPTION DE RECOMBINAISON ---
 !
-    call getvtx(' ', 'NOM_CHAM', 0, iarg, 1,&
-                optcha, ibid)
+!    call getvtx(' ', 'NOM_CHAM', 0, iarg, 1,&
+!                optcha, ibid)
 !
 !     --- VERIFICATION DES DONNEES INTERSPECTRE ---
 !
