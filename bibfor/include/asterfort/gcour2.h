@@ -21,7 +21,7 @@ interface
     subroutine gcour2(resu, noma, nomo, nomno, coorn,&
                       nbnoeu, trav1, trav2, trav3, chfond,&
                       fond, connex, stok4, thlagr, thlag2,&
-                      nbre, milieu, ndimte, pair)
+                      nbre, milieu, ndimte, pair, norfon)
         character(len=8) :: resu
         character(len=8) :: noma
         character(len=8) :: nomo
@@ -41,5 +41,6 @@ interface
         aster_logical :: milieu
         integer :: ndimte
         aster_logical :: pair
+        character(len=24) :: norfon
     end subroutine gcour2
 end interface

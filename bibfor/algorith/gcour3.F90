@@ -224,6 +224,14 @@ subroutine gcour3(resu, noma, coorn, lnoff, trav1,&
 !
             else if (thlagr) then
                 zr(iadrt3-1+(k-1)*lnoff+k) = 1.d0
+                if ((k .eq. 1) .and. connex) then
+                    iadrtt = iadrt3 + (k-1)*lnoff + lnoff - 1
+                    zr(iadrtt) = 1.d0
+                endif
+                if ((k .eq. ndimte) .and. connex) then
+                    iadrtt = iadrt3 + (k-1)*lnoff + 1 - 1
+                    zr(iadrtt) = 1.d0
+                endif
             endif
 !         BOUCLE SUR LES NOEUDS M COURANTS DU MAILLAGE
 !         POUR CALCULER PROJ(M)=N

@@ -1,7 +1,7 @@
 subroutine gcour2(resu, noma, nomo, nomno, coorn,&
                   nbnoeu, trav1, trav2, trav3, chfond,&
                   fond, connex, stok4, thlagr, thlag2,&
-                  nbre, milieu, ndimte, pair)
+                  nbre, milieu, ndimte, pair, norfon)
     implicit none
 !     ------------------------------------------------------------------
 ! ======================================================================
@@ -89,7 +89,7 @@ subroutine gcour2(resu, noma, nomo, nomno, coorn,&
     character(len=24) :: trav1, trav2, trav3, objor, objex, chfond, repk
     character(len=24) :: obj3, norm, numgam, chamno
     character(len=24) :: stok4, dire4, coorn, nomno, dire5, indicg
-    character(len=24) :: absgam
+    character(len=24) :: absgam, norfon
     character(len=16) :: k16b, nomcmd
     character(len=8) :: fond, resu, noma, nomo, k8b
     character(len=6) :: kiord
@@ -109,7 +109,7 @@ subroutine gcour2(resu, noma, nomo, nomno, coorn,&
     aster_logical :: thlagr, milieu, connex, thlag2, pair
 !
 !-----------------------------------------------------------------------
-    integer :: i, i1, idesc, idiri, idirs, ielsup
+    integer :: i, i1, idesc, idiri, idirs, ielsup, inorfon
     integer :: ienorm, irefe, j, jresu, k, nbel
     real(kind=8) :: s0, s1
 !-----------------------------------------------------------------------
@@ -267,7 +267,7 @@ subroutine gcour2(resu, noma, nomo, nomno, coorn,&
                 milieu = .false.
             endif
             call jeveuo(fond//'.BASEFOND', 'L', jvect)
-            do i = 1, nbnoff
+            do i = 1, nbnoeu
                 zr(in2+(i-1)*3+1-1) = zr(jvect-1+6*(i-1)+4)
                 zr(in2+(i-1)*3+2-1) = zr(jvect-1+6*(i-1)+5)
                 zr(in2+(i-1)*3+3-1) = zr(jvect-1+6*(i-1)+6)
@@ -311,11 +311,42 @@ subroutine gcour2(resu, noma, nomo, nomno, coorn,&
         zr(in2+(nbnoeu-1)*3+3-1) = zr(jvect-1+6*(nbnoeu-1)+6)
     endif
 !
+    norfon= '&&NORM.STOCK'
+    call wkvect(norfon, 'V V R', 3*nbnoeu, inorfon)
+!
+!   stockage des directions des normales au fond de fissure
+    call jeexin(fond//'.BASEFOND', iebas)
+!
+    if (iebas .ne. 0) then
+!       * cas general : la base du fond de fissure est definie et on
+!                       copie la normale
+        call jeveuo(fond//'.BASEFOND', 'L', jvect)
+        do i = 1, nbnoeu
+            zr(inorfon+(i-1)*3+1-1) = zr(jvect-1+(i-1)*6+4)
+            zr(inorfon+(i-1)*3+2-1) = zr(jvect-1+(i-1)*6+5)
+            zr(inorfon+(i-1)*3+3-1) = zr(jvect-1+(i-1)*6+6)
+        end do
+    else
+!   * cas particulier : la base locale n'est pas définie,
+!       e.g. si l'utilisateur donne le champ de normale dans
+!       DEFI_FOND_FISS
+!       on copie la direction du champ theta et on aura donc
+!       theta . n = 1, pour un champ theta norme
+        do i = 1, nbnoeu
+            zr(inorfon+(i-1)*3+1-1) = zr(in2+(i-1)*3+1-1)
+            zr(inorfon+(i-1)*3+2-1) = zr(in2+(i-1)*3+2-1)
+            zr(inorfon+(i-1)*3+3-1) = zr(in2+(i-1)*3+3-1)
+        end do
+    endif
+!
 ! ALLOCATION D UN OBJET INDICATEUR DU CHAMP THETA SUR GAMMO
 !
     call dismoi('NB_NO_MAILLA', noma, 'MAILLAGE', repi=nbel)
+
     indicg = '&&COURON.INDIC        '
+
     call wkvect(indicg, 'V V I', nbel, indic)
+!
 !
 ! ALLOCATION DES OBJETS POUR STOCKER LE CHAMP_NO THETA ET LA DIRECTION
 ! TYPE CHAM_NO ( DEPL_R) AVEC PROFIL NOEUD CONSTANT (3 DDL)
