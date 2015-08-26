@@ -15,6 +15,7 @@
 ! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 ! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 !
+! aslint: disable=W1504
 #include "asterf_types.h"
 !
 interface
@@ -23,7 +24,8 @@ interface
                       nnoff, iord, ndeg, thlagr, glagr, &
                       thlag2, milieu, ndimte, pair, extim, &
                       time, nbprup, noprup, chvite, chacce, &
-                      lmelas, nomcas, kcalc, fonoeu, lincr)
+                      lmelas, nomcas, kcalc, fonoeu, lincr, &
+                      norfon, connex)
         character(len=16) :: option
         character(len=8) :: result
         character(len=8) :: modele
@@ -54,5 +56,7 @@ interface
         character(len=16) :: nomcas
         character(len=8) :: kcalc
         character(len=24) :: fonoeu
+        character(len=24) :: norfon
+        aster_logical     :: connex
     end subroutine mecagl
 end interface

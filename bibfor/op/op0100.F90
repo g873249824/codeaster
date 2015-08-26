@@ -100,6 +100,7 @@ subroutine op0100()
     character(len=24) :: nomno, coorn, melord
     character(len=24) :: trav1, trav2, trav3, stok4
     character(len=24) :: trav4, courb, depla1, depla2
+    character(len=24) :: norfon
     parameter  ( resuc2 = '&&MECALG' )
 !
     aster_logical :: exitim, thlagr, connex, glagr, milieu, direc
@@ -325,7 +326,7 @@ subroutine op0100()
         call gcour2(thetai, noma, modele, nomno, coorn,&
                     lnoff, trav1, trav2, trav3, fonoeu,&
                     nomfis, connex, stok4, thlagr, thlag2,&
-                    ndeg, milieu, ndimte, pair)
+                    ndeg, milieu, ndimte, pair, norfon)
 !
     endif
 !
@@ -407,7 +408,7 @@ subroutine op0100()
                                 lnoff, ndeg, thlagr, glagr, thlag2,&
                                 milieu, ndimte, pair, exitim, timeu,&
                                 timev, i, j, nbpara, linopa,&
-                                lmelas, nomcas, fonoeu)
+                                lmelas, nomcas, fonoeu, connex)
                 else
                     call mebilg(optio2, table, modele, depla1, depla2,&
                                 theta, mate, lischa, symech, timeu,&
@@ -605,7 +606,8 @@ subroutine op0100()
                             lnoff, iord, ndeg, thlagr, glagr,&
                             thlag2, milieu, ndimte, pair, exitim,&
                             time, nbpara, linopa, chvite, chacce,&
-                            lmelas, nomcas, calsig, fonoeu, incr)
+                            lmelas, nomcas, calsig, fonoeu, incr, &
+                            norfon, connex)
 !
             else if (option(1:6).eq.'CALC_K'.and.cas.eq.'2D') then
 !

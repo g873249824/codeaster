@@ -156,10 +156,10 @@ subroutine cakg3d(option, result, modele, depla, thetai,&
 !
 !   RECUPERATION DU CHAMP GEOMETRIQUE
     call megeom(modele, chgeom)
-    
+
 
 !   Recuperation du LIGREL
-    ligrmo = modele//'.MODELE'    
+    ligrmo = modele//'.MODELE'
 !
     chvarc='&&CAKG3D.VARC'
     chvref='&&CAKG3D.VARC.REF'
@@ -219,7 +219,7 @@ subroutine cakg3d(option, result, modele, depla, thetai,&
         elseif (lxfem) then
 !         cas X-FEM : verif que le champ est ELGA (seul cas autorise)
           if (inga.eq.1) pbtype=1
-        endif            
+        endif
         if (pbtype.eq.1) call utmess('F', 'RUPTURE1_12')
 
 !       transformation si champ ELGA
@@ -263,7 +263,7 @@ subroutine cakg3d(option, result, modele, depla, thetai,&
 !       pour porter l'info du type de discontinuite
 !       Evite egalement l'ajout d'un test de sortie pour éléments XH
         opti='CALC_K_G_COHE'
-    else   
+    else
         chvolu = '&&CAKG3D.VOLU'
         ch1d2d = '&&CAKG3D.1D2D'
         ch2d3d = '&&CAKG3D.2D3D'
@@ -505,8 +505,7 @@ subroutine cakg3d(option, result, modele, depla, thetai,&
         else
             num = 3
             call gkmet3(nnoff, chfond, iadrgk, milieu, connex,&
-                        iadgks, iadgki, abscur, num, modele,&
-                        typdis)
+                        iadgks, iadgki, abscur, num, typdis)
         endif
     endif
 !
@@ -546,7 +545,7 @@ subroutine cakg3d(option, result, modele, depla, thetai,&
         call tbajvr(result, nbprup, 'G_IRWIN', zr(iadgks-1+6*(i-1)+5), livr)
         call tbajli(result, nbprup, noprup, livi, livr,&
                     livc, livk, 0)
-        if ((codret .eq. 'OK') .and. (zr(iadgks-1+6*(i-1)+1) .ne. 0.d0 )) then
+        if ((codret .eq. 'OK') .and. ( abs( zr(iadgks-1+6*(i-1)+1) ) .ge. 1.e-12 ) ) then
             difrel= abs((zr(iadgks-1+6*(i-1)+1)- zr(iadgks-1+6*(i-1)+5))/zr(iadgks-1+6*(i-1)+1))
             diff2g = diff2g + difrel
         endif
