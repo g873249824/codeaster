@@ -23,6 +23,7 @@ subroutine nmdocn(parcri, parcon)
 #include "jeveux.h"
 #include "asterc/r8nnem.h"
 #include "asterc/r8vide.h"
+#include "asterc/getexm.h"
 #include "asterfort/getvis.h"
 #include "asterfort/getvr8.h"
 #include "asterfort/getvtx.h"
@@ -92,43 +93,51 @@ subroutine nmdocn(parcri, parcon)
 !
     call getvis('CONVERGENCE', 'ITER_GLOB_MAXI', iocc=1, scal=iterat, nbret=iret)
     parcri(1) = iterat
-    call getvis('CONVERGENCE', 'ITER_GLOB_ELAS', iocc=1, scal=iterat, nbret=iret)
-    parcri(5) = iterat
+
+    if (getexm('CONVERGENCE','ITER_GLOB_ELAS') .eq. 1) then
+        call getvis('CONVERGENCE', 'ITER_GLOB_ELAS', iocc=1, scal=iterat, nbret=iret)
+        parcri(5) = iterat
+    endif
     call getvr8('CONVERGENCE', 'RESI_GLOB_RELA', iocc=1, scal=parcri(2), nbret=ire1)
     if (ire1 .le. 0) parcri(2) = r8vide()
     call getvr8('CONVERGENCE', 'RESI_GLOB_MAXI', iocc=1, scal=parcri(3), nbret=ire2)
     if (ire2 .le. 0) parcri(3) = r8vide()
-    call getvr8('CONVERGENCE', 'RESI_REFE_RELA', iocc=1, scal=parcri(6), nbret=ire3)
-    if (ire3 .le. 0) then
-        parcri(6) = r8vide()
-    else
-        call getvr8('CONVERGENCE', 'SIGM_REFE', iocc=1, scal=parcon(1), nbret=iret)
-        if (iret .le. 0) parcon(1)=r8nnem()
-        call getvr8('CONVERGENCE', 'EPSI_REFE', iocc=1, scal=parcon(2), nbret=iret)
-        if (iret .le. 0) parcon(2)=r8nnem()
-        call getvr8('CONVERGENCE', 'FLUX_THER_REFE', iocc=1, scal=parcon(3), nbret=iret)
-        if (iret .le. 0) parcon(3)=r8nnem()
-        call getvr8('CONVERGENCE', 'FLUX_HYD1_REFE', iocc=1, scal=parcon(4), nbret=iret)
-        if (iret .le. 0) parcon(4)=r8nnem()
-        call getvr8('CONVERGENCE', 'FLUX_HYD2_REFE', iocc=1, scal=parcon(5), nbret=iret)
-        if (iret .le. 0) parcon(5)=r8nnem()
-        call getvr8('CONVERGENCE', 'VARI_REFE', iocc=1, scal=parcon(6), nbret=iret)
-        if (iret .le. 0) parcon(6)=r8nnem()
-        call getvr8('CONVERGENCE', 'FORC_REFE', iocc=1, nbval=2, vect=parcon(7),&
-                    nbret=iret)
-        if (iret .le. 0) then
-            parcon(7) = r8nnem()
-            parcon(8) = r8nnem()
+    if (getexm('CONVERGENCE','RESI_REFE_RELA') .eq. 1) then
+        call getvr8('CONVERGENCE', 'RESI_REFE_RELA', iocc=1, scal=parcri(6), nbret=ire3)
+        if (ire3 .le. 0) then
+            parcri(6) = r8vide()
+        else
+            call getvr8('CONVERGENCE', 'SIGM_REFE', iocc=1, scal=parcon(1), nbret=iret)
+            if (iret .le. 0) parcon(1)=r8nnem()
+            call getvr8('CONVERGENCE', 'EPSI_REFE', iocc=1, scal=parcon(2), nbret=iret)
+            if (iret .le. 0) parcon(2)=r8nnem()
+            call getvr8('CONVERGENCE', 'FLUX_THER_REFE', iocc=1, scal=parcon(3), nbret=iret)
+            if (iret .le. 0) parcon(3)=r8nnem()
+            call getvr8('CONVERGENCE', 'FLUX_HYD1_REFE', iocc=1, scal=parcon(4), nbret=iret)
+            if (iret .le. 0) parcon(4)=r8nnem()
+            call getvr8('CONVERGENCE', 'FLUX_HYD2_REFE', iocc=1, scal=parcon(5), nbret=iret)
+            if (iret .le. 0) parcon(5)=r8nnem()
+            call getvr8('CONVERGENCE', 'VARI_REFE', iocc=1, scal=parcon(6), nbret=iret)
+            if (iret .le. 0) parcon(6)=r8nnem()
+            call getvr8('CONVERGENCE', 'FORC_REFE', iocc=1, nbval=2, vect=parcon(7),&
+                        nbret=iret)
+            if (iret .le. 0) then
+                parcon(7) = r8nnem()
+                parcon(8) = r8nnem()
+            endif
+            call getvr8('CONVERGENCE', 'DEPL_REFE', iocc=1, scal=parcon(9), nbret=iret)
+            if (iret .le. 0) parcon(9)=r8nnem()
+            call getvr8('CONVERGENCE', 'LAGR_REFE', iocc=1, scal=parcon(10), nbret=iret)
+            if (iret .le. 0) parcon(10)=r8nnem()
+            call getvr8('CONVERGENCE', 'PI_REFE', iocc=1, scal=parcon(11), nbret=iret)
+            if (iret .le. 0) parcon(11)=r8nnem()
         endif
-        call getvr8('CONVERGENCE', 'DEPL_REFE', iocc=1, scal=parcon(9), nbret=iret)
-        if (iret .le. 0) parcon(9)=r8nnem()
-        call getvr8('CONVERGENCE', 'LAGR_REFE', iocc=1, scal=parcon(10), nbret=iret)
-        if (iret .le. 0) parcon(10)=r8nnem()
-        call getvr8('CONVERGENCE', 'PI_REFE', iocc=1, scal=parcon(11), nbret=iret)
-        if (iret .le. 0) parcon(11)=r8nnem()
     endif
-    call getvr8('CONVERGENCE', 'RESI_COMP_RELA', iocc=1, scal=parcri(7), nbret=ire4)
-    if (ire4 .le. 0) parcri(7) = r8vide()
+    
+    if (getexm('CONVERGENCE','RESI_COMP_RELA') .eq. 1) then
+        call getvr8('CONVERGENCE', 'RESI_COMP_RELA', iocc=1, scal=parcri(7), nbret=ire4)
+        if (ire4 .le. 0) parcri(7) = r8vide()
+    endif
 !
 ! --- VALEURS PAR DEFAUT DES RESI_*
 !
@@ -137,10 +146,12 @@ subroutine nmdocn(parcri, parcon)
         parcri(2) = 1.d-6
     endif
 !
-    call getvtx('CONVERGENCE', 'ARRET', iocc=1, scal=rep, nbret=iret)
-    parcri(4) = 0
-    if (iret .gt. 0) then
-        if (rep .eq. 'NON') parcri(4) = 1
+    if (getexm('CONVERGENCE','ARRET') .eq. 1) then
+        call getvtx('CONVERGENCE', 'ARRET', iocc=1, scal=rep, nbret=iret)
+        parcri(4) = 0
+        if (iret .gt. 0) then
+            if (rep .eq. 'NON') parcri(4) = 1
+        endif
     endif
 !
 ! --- ALARMES RELATIVES A LA QUALITE DE LA CONVERGENCE
