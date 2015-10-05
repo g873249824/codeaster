@@ -297,6 +297,11 @@ Il faut pour cela l'autoriser avec le mot clef SUBD_METHODE de la commande STAT_
 """),
 
 
+    61: _(u"""
+Vous utilisez un comportement élastique non-linéaire avec un état initial.
+Cet état initial ne sera pas pris en compte. 
+"""),
+
     63 : _(u"""
    ATTENTION SR > 1    SR = %(r1)f
    SECHM %(r2)f    SECHP %(r3)f    W0 %(r4)f
