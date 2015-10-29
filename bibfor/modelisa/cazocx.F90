@@ -67,7 +67,7 @@ subroutine cazocx(char, nomo, motfac, izone)
     real(kind=8) :: coefff, reacsi, coef, tolj
     character(len=16) :: valk(2)
     integer :: iret
-    aster_logical :: lfrot
+    aster_logical :: lfrot, l_xfem_gg
     integer, pointer :: xfem_cont(:) => null()
 !
 ! ----------------------------------------------------------------------
@@ -92,6 +92,7 @@ subroutine cazocx(char, nomo, motfac, izone)
     algof = 'STANDARD'
     lfrot = .false.
     lfrot = cfdisl(defico,'FROTTEMENT')
+    l_xfem_gg   = cfdisl(defico,'CONT_XFEM_GG')
 !
 ! --- LECTURE DES STRUCTURES DE DONNEES DE CONTACT
 !
@@ -233,6 +234,23 @@ subroutine cazocx(char, nomo, motfac, izone)
         zr(jcmxf+zcmxf*(izone-1)+9-1) = 1.d0
     else if (algola.eq.'VERSION2') then
         zr(jcmxf+zcmxf*(izone-1)+9-1) = 2.d0
+    else if (algola.eq.'VERSION3') then
+!       Algorithme uniquement disponible pour des éléments quadratiques
+        if (xfem_cont(1).ne.3) call utmess('F', 'XFEM_90')
+!       Algorithme uniquement disponible en petits glissements
+        if (l_xfem_gg) call utmess('F', 'XFEM_91')
+
+        zr(jcmxf+zcmxf*(izone-1)+9-1) = 3.d0
+    else if (algola.eq.'AUTO') then
+!       cas 'AUTO' :
+!          - si quadratique et formulation petits glissements,
+!            on choisit l'algo P2/P1*
+!          - sinon, on choisit l'algo "version 2" (P1/P1 ou P2/P1-)
+        if (xfem_cont(1).eq.3.and..not.l_xfem_gg) then
+            zr(jcmxf+zcmxf*(izone-1)+9-1) = 3.d0
+        else
+            zr(jcmxf+zcmxf*(izone-1)+9-1) = 2.d0
+        endif
     else
         ASSERT(.false.)
     endif
