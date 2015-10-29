@@ -79,16 +79,16 @@ subroutine xappar(loptin, noma, modele, defico, resoco)
     integer :: ndim, ntmae, ntpc, nbpc
     integer :: iface, imae, izone, ifamin
     integer :: jcesd(10), jcesv(10), jcesl(10), iad
-    integer :: mmait, amait, nmait, group, statue, stamin
+    integer :: mmait, amait, nmait, statue, stamin
     integer :: nummae, nummin
-    integer :: npte, nface, nvit, naret
+    integer :: npte, nface, nvit
     real(kind=8) :: geom(3), ksipc1, ksipc2, wpc
     real(kind=8) :: t1min(3), t2min(3), ximin, yimin
     real(kind=8) :: jeumin, coor(3), norm(3), noor
     real(kind=8) :: rre, rrm
     character(len=8) :: alias
     character(len=19) :: chs(7)
-    character(len=24) :: xfimai, cncte
+    character(len=24) :: xfimai
     character(len=24) :: tabfin, maescx
     integer :: jtabf, jmaesx, ninter
     aster_logical :: projin, lcinit, lgliss
@@ -172,7 +172,6 @@ subroutine xappar(loptin, noma, modele, defico, resoco)
         tyco = mminfi(defico,'INTEGRATION' ,izone )
         lgliss = mminfl(defico,'GLISSIERE_ZONE',izone )
         lcinit = (mminfi(defico,'CONTACT_INIT' ,izone ).eq.1)
-        cncte = zk8(jfimai-1+izone)//'.CNCTE'
 !
 ! --- INFOS SUR LA MAILLE ESCLAVE COURANTE
 !
@@ -387,18 +386,16 @@ subroutine xappar(loptin, noma, modele, defico, resoco)
                     if (mod(tyco,10) .eq. 2) then
 !---- CAS DES SCHEMAS DE GAUSS OU LE PT N'EST PAS SUR UNE ARETE
                         nvit = 1
-                        group = 0
-                        naret = 0
                     else
-                        call xpivit(jcesd, jcesv, jcesl, ifiss, cncte,&
+                        call xpivit(jcesd, jcesv, jcesl, ifiss,&
                                     ndim, nummae, iface, ksipc1, ksipc2,&
-                                    nvit, group, naret)
+                                    nvit)
                         if (statue .lt. 0) nvit=0
                     endif
 !
                     zr(jtabf+ztabf*ntpc+ztabf*(ipc-1)+27) = nvit
-                    zr(jtabf+ztabf*ntpc+ztabf*(ipc-1)+4) = group
-                    zr(jtabf+ztabf*ntpc+ztabf*(ipc-1)+5) = naret
+!                    zr(jtabf+ztabf*ntpc+ztabf*(ipc-1)+4) = group
+!                    zr(jtabf+ztabf*ntpc+ztabf*(ipc-1)+5) = naret
 !
 ! --- CONTACT_INIT (13) ET MEMOIRE DE CONTACT (28) LA MEMO DE CONTACT
 ! --- EST INITIALISEE AVEC CONTACT_INI ET SERT POUR LE CONTACT GLISSIERE
