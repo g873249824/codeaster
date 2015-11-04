@@ -16,6 +16,6 @@
 ! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 !
 interface
-    subroutine rc32th()
-    end subroutine rc32th
+    subroutine rcZ2t()
+    end subroutine rcZ2t
 end interface

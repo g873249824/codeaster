@@ -54,8 +54,8 @@ subroutine rc32sn(typz, lieu, numsip, pi, mi,&
 ! VAR : SNIJ   : AMPLITUDE DE VARIATION DES CONTRAINTES LINEARISEES
 !     ------------------------------------------------------------------
 !
-    integer :: icmp, jsigu, icmps, nbinst, long, i1, nbthep, nbtheq, jther, ith
-    integer :: numth, jthun, indicp, indicq
+    integer :: icmp, jsigu, icmps, nbinst, long, i1, nbthep, nbtheq
+    integer :: jthun, indicp, indicq
     real(kind=8) :: pij, mij(12), sn, sij(6), sigu, sqma(6), sqmi(6), sn1, sn2
     real(kind=8) :: snth(6)
     character(len=4) :: typ2
@@ -117,13 +117,10 @@ subroutine rc32sn(typz, lieu, numsip, pi, mi,&
             endif
             snij = max( snij , sn )
         else
-            call jeveuo(jexnom('&&RC3200.SITU_THERMIQUE', knumes), 'L', jther)
-            do 100 ith = 1, nbthep
-                numth = zi(jther+ith-1)
                 knumet = 'T       '
-                call codent(numth, 'D0', knumet(2:8))
-                call jelira(jexnom('&&RC3200.THER_UNIT .'//lieu, knumet), 'LONUTI', long)
-                call jeveuo(jexnom('&&RC3200.THER_UNIT .'//lieu, knumet), 'L', jthun)
+                call codent(numsip, 'D0', knumet(2:8))
+                call jelira(jexnom('&&RC3200.T .'//lieu, knumet), 'LONUTI', long)
+                call jeveuo(jexnom('&&RC3200.T .'//lieu, knumet), 'L', jthun)
                 nbinst = 2
                 if (type .eq. 'SN_COMB') then
                     indicp = jthun + 6*nbinst
@@ -152,7 +149,6 @@ subroutine rc32sn(typz, lieu, numsip, pi, mi,&
                     endif
                 endif
                 snij = max( snij , sn )
-100         continue
         endif
     endif
 !
@@ -189,13 +185,10 @@ subroutine rc32sn(typz, lieu, numsip, pi, mi,&
                 snij = max( snij , sn )
             endif
         else
-            call jeveuo(jexnom('&&RC3200.SITU_THERMIQUE', knumes), 'L', jther)
-            do 110 ith = 1, nbtheq
-                numth = zi(jther+ith-1)
                 knumet = 'T       '
-                call codent(numth, 'D0', knumet(2:8))
-                call jelira(jexnom('&&RC3200.THER_UNIT .'//lieu, knumet), 'LONUTI', long)
-                call jeveuo(jexnom('&&RC3200.THER_UNIT .'//lieu, knumet), 'L', jthun)
+                call codent(numsiq, 'D0', knumet(2:8))
+                call jelira(jexnom('&&RC3200.T .'//lieu, knumet), 'LONUTI', long)
+                call jeveuo(jexnom('&&RC3200.T .'//lieu, knumet), 'L', jthun)
                 nbinst = 2
                 if (type .eq. 'SN_COMB') then
                     indicq = jthun + 6*nbinst
@@ -240,7 +233,6 @@ subroutine rc32sn(typz, lieu, numsip, pi, mi,&
                     endif
                 endif
                 snij = max( snij , sn )
-110         continue
         endif
     endif
 !
