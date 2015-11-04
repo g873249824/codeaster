@@ -11,7 +11,7 @@ waf install -p
 
 import os
 ASTER_ROOT = os.environ['ASTER_ROOT']
-YAMMROOT = ASTER_ROOT + '/public/V7_6_0_201506'
+YAMMROOT = ASTER_ROOT + '/public/v12'
 
 def configure(self):
     opts = self.options
@@ -22,18 +22,18 @@ def configure(self):
         '. ' + ASTER_ROOT + '/etc/codeaster/profile_gcc47.sh'])
 
     self.env.append_value('LIBPATH', [
-        YAMMROOT + '/prerequisites/Python-273/lib',
+        YAMMROOT + '/prerequisites/Python-2710/lib',
         YAMMROOT + '/prerequisites/Hdf5-1810/lib',
         YAMMROOT + '/tools/Medfichier-308/lib',
         YAMMROOT + '/prerequisites/Metis-40/lib',
         YAMMROOT + '/prerequisites/Mfront-TFEL202/lib',
-        YAMMROOT + '/prerequisites/Mumps-20151/lib',
+        YAMMROOT + '/prerequisites/Mumps4-4100_aster3/lib',
         YAMMROOT + '/prerequisites/Scotch-5111/lib',
         # for openblas
         ASTER_ROOT + '/public/lib',])
 
     self.env.append_value('INCLUDES', [
-        YAMMROOT + '/prerequisites/Python-273/include/python2.7',
+        YAMMROOT + '/prerequisites/Python-2710/include/python2.7',
         YAMMROOT + '/prerequisites/Hdf5-1810/include',
         YAMMROOT + '/tools/Medfichier-308/include',
         YAMMROOT + '/prerequisites/Metis-40/Lib',
