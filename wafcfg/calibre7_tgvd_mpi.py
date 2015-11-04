@@ -10,7 +10,7 @@ waf install -p
 """
 
 import calibre7
-YAMMROOT = calibre7.YAMMROOT + '_mpi'
+YAMMROOT = calibre7.YAMMROOT 
 
 def configure(self):
     opts = self.options
@@ -24,7 +24,7 @@ def configure(self):
         '. /home/aster/etc/codeaster/profile_impi.sh'])
 
     self.env.prepend_value('LIBPATH', [
-        YAMMROOT + '/prerequisites/Mumps_mpi-20151/lib',
+        YAMMROOT + '/prerequisites/Mumps4-4100_aster3/MPI/lib',
         YAMMROOT + '/prerequisites/Petsc_mpi-petsc_aster/lib'])
     self.env.prepend_value('INCLUDES', [
         YAMMROOT + '/prerequisites/Petsc_mpi-petsc_aster/include'])
