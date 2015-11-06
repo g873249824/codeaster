@@ -27,7 +27,7 @@ def configure(self):
         YAMMROOT + '/tools/Medfichier-308/lib',
         YAMMROOT + '/prerequisites/Metis-40/lib',
         YAMMROOT + '/prerequisites/Mfront-TFEL202/lib',
-        YAMMROOT + '/prerequisites/Mumps4-4100_aster3/lib',
+        YAMMROOT + '/prerequisites/Mumps4-4100_aster3/SEQ/lib',
         YAMMROOT + '/prerequisites/Scotch-5111/lib',
         # for openblas
         ASTER_ROOT + '/public/lib',])
