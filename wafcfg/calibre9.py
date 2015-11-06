@@ -24,14 +24,14 @@ def configure(self):
         YAMMROOT + '/prerequisites/Metis-40/lib',
         YAMMROOT + '/prerequisites/Mfront-TFEL202/lib',
         YAMMROOT + '/prerequisites/Mumps4-4100_aster3/SEQ/lib',
-        YAMMROOT + '/prerequisites/Scotch_aster-604_aster/lib'])
+        YAMMROOT + '/prerequisites/Scotch-5111/lib'])
 
     self.env.append_value('INCLUDES', [
         YAMMROOT + '/prerequisites/Hdf5-1810/include',
         YAMMROOT + '/tools/Medfichier-308/include',
         YAMMROOT + '/prerequisites/Metis-40/Lib',
         YAMMROOT + '/prerequisites/Mfront-TFEL202/include',
-        YAMMROOT + '/prerequisites/Scotch_aster-604_aster/include'])
+        YAMMROOT + '/prerequisites/Scotch-5111/include'])
 
     # to fail if not found
     opts.enable_hdf5 = True
