@@ -78,7 +78,7 @@ subroutine gcou2d(base, resu, noma, nomno, noeud,&
     integer :: nec, ibid, numfon, n1, n2, ndim, jgtl
     parameter     (ndim=2)
     real(kind=8) :: xm, ym, xi, yi, eps, d, norme, alpha, valx, valy
-    character(len=8) :: k8b, fiss
+    character(len=8) :: k8b, fiss, fonfis
     character(len=16) :: k16b, nomcmd
     character(len=19) :: grlt, chgrs
     character(len=24) :: chamno
@@ -88,6 +88,9 @@ subroutine gcou2d(base, resu, noma, nomno, noeud,&
 !
     call jemarq()
     eps = 1.d-06
+    chgrs=''
+    fiss=''
+    fonfis=''
 !
     call getres(k8b, k16b, nomcmd)
     n1=1
@@ -95,7 +98,7 @@ subroutine gcou2d(base, resu, noma, nomno, noeud,&
 !
     if (nomcmd .eq. 'CALC_G') then
 !       CAS CLASSIQUE (N1 NON NUL) OU CAS X-FEM (N2 NON NUL)
-        call getvid('THETA', 'FOND_FISS', iocc=1, scal=k8b, nbret=n1)
+        call getvid('THETA', 'FOND_FISS', iocc=1, scal=fonfis, nbret=n1)
         call getvid('THETA', 'FISSURE', iocc=1, scal=fiss, nbret=n2)
     endif
 !
@@ -220,7 +223,7 @@ subroutine gcou2d(base, resu, noma, nomno, noeud,&
         endif
     end do
 !
-    if (.not.ldirec) call detrsd('CHAM_NO_S', chgrs)
+    call detrsd('CHAM_NO_S', chgrs)
 !
     call jedema()
 end subroutine
