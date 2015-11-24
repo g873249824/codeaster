@@ -76,6 +76,7 @@ subroutine comp_meca_vari(rela_comp, defo_comp, type_cpla, nb_vari, kit_comp,&
     integer :: nb_vari_cg(2)
     character(len=16) :: rela_cg(2)
 !
+!
 ! --------------------------------------------------------------------------------------------------
 !
 !
