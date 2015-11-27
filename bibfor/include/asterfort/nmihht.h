@@ -20,7 +20,7 @@ interface
                       list_load  , comp_para, varc_refe, list_func_acti, sdstat     ,&
                       sddyna     , sdtime   , sdnume   , sdcont_defi   , sdcont_solv,&
                       sdunil_solv, hval_incr, sddisc   , crit_refe_para, hval_algo  ,&
-                      hval_veasse, result)
+                      hval_veasse, hval_measse, result)
         character(len=24), intent(in) :: model
         character(len=24), intent(in) :: mate
         character(len=24), intent(in) :: cara_elem
@@ -42,6 +42,7 @@ interface
         character(len=19), intent(in) :: hval_incr(*)
         character(len=19), intent(in) :: hval_algo(*)
         character(len=19), intent(in) :: hval_veasse(*)
+        character(len=19), intent(in) :: hval_measse(*)
         character(len=8), intent(in) :: result
     end subroutine nmihht
 end interface

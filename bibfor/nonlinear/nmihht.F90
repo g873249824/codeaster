@@ -2,7 +2,7 @@ subroutine nmihht(model      , nume_dof , mate     , compor        , cara_elem  
                   list_load  , comp_para, varc_refe, list_func_acti, sdstat     ,&
                   sddyna     , sdtime   , sdnume   , sdcont_defi   , sdcont_solv,&
                   sdunil_solv, hval_incr, sddisc   , crit_refe_para, hval_algo  ,&
-                  hval_veasse, result)
+                  hval_veasse, hval_measse, result)
 !
 implicit none
 !
@@ -50,6 +50,7 @@ implicit none
     character(len=19), intent(in) :: hval_incr(*)
     character(len=19), intent(in) :: hval_algo(*)
     character(len=19), intent(in) :: hval_veasse(*)
+    character(len=19), intent(in) :: hval_measse(*)
     character(len=8), intent(in) :: result
 !
 ! --------------------------------------------------------------------------------------------------
@@ -106,7 +107,7 @@ implicit none
                     list_load  , nume_dof   , varc_refe     , list_func_acti, sdstat     ,&
                     sddyna     , sdtime     , sddisc        , sdnume        , sdcont_defi,&
                     sdcont_solv, sdunil_solv, crit_refe_para, hval_incr     , hval_algo  ,&
-                    hval_veasse, result)
+                    hval_veasse, hval_measse, result)
     endif
 
 end subroutine

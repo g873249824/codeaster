@@ -2,7 +2,7 @@ subroutine nmchht(model      , mate       , cara_elem     , compor        , comp
                   list_load  , nume_dof   , varc_refe     , list_func_acti, sdstat     ,&
                   sddyna     , sdtime     , sddisc        , sdnume        , sdcont_defi,&
                   sdcont_solv, sdunil_solv, crit_refe_para, hval_incr     , hval_algo  ,&
-                  hval_veasse, result)
+                  hval_veasse, hval_measse, result)
 !
 implicit none
 !
@@ -19,6 +19,7 @@ implicit none
 #include "asterfort/nmcalv.h"
 #include "asterfort/nmchex.h"
 #include "asterfort/nmfint.h"
+#include "asterfort/nmmacv.h"
 #include "asterfort/nmvcaf.h"
 #include "asterfort/nmvcex.h"
 #include "asterfort/utmess.h"
@@ -64,6 +65,7 @@ implicit none
     character(len=19), intent(in) :: hval_incr(*)
     character(len=19), intent(in) :: hval_algo(*)
     character(len=19), intent(in) :: hval_veasse(*)
+    character(len=19), intent(in) :: hval_measse(*)
     character(len=8), intent(in) :: result
 !
 ! --------------------------------------------------------------------------------------------------
@@ -99,7 +101,7 @@ implicit none
 !
 ! --------------------------------------------------------------------------------------------------
 !
-    aster_logical :: londe, llapl, ldidi, lviss, lsstf, l_comp_mstp
+    aster_logical :: londe, llapl, ldidi, lviss, lsstf, l_comp_mstp, lmacr
     character(len=8) :: k8bid
     character(len=16) :: k16bla
     character(len=19) :: matass
@@ -108,7 +110,8 @@ implicit none
     character(len=19) :: cnfedo, cndidi, cnfint
     character(len=19) :: cndido, cncine, cnviss
     character(len=19) :: cnondp, cnlapl, cnsstf
-    character(len=24) :: codere
+    character(len=19) :: matr_sstr, disp_prev
+    character(len=24) :: cnsstr, codere
     character(len=19) :: varc_prev, varc_curr, time_prev, time_curr
     real(kind=8) :: time_init, time_prev_step
     integer :: iterat, ldccvg
@@ -128,6 +131,7 @@ implicit none
     lsstf  = isfonc(list_func_acti,'SOUS_STRUC')
     llapl  = isfonc(list_func_acti,'LAPLACE')
     ldidi  = isfonc(list_func_acti,'DIDI')
+    lmacr  = isfonc(list_func_acti,'MACR_ELEM_STAT')
 !
 ! - Initial time
 !
@@ -181,6 +185,15 @@ implicit none
     call ndynkk(sddyna, 'OLDP_CNCINE', cncine)
     call ndynkk(sddyna, 'OLDP_CNVISS', cnviss)
     call ndynkk(sddyna, 'OLDP_CNSSTF', cnsstf)
+    call nmchex(hval_veasse, 'VEASSE', 'CNSSTR', cnsstr(1:19))
+    call nmchex(hval_measse, 'MEASSE', 'MESSTR', matr_sstr)
+    call nmchex(hval_incr  , 'VALINC', 'DEPMOI', disp_prev)
+!
+! - Forces from macro-elements
+! 
+    if (lmacr) then
+        call nmmacv(disp_prev, matr_sstr, cnsstr)
+    endif  
 !
 ! - Internal forces
 !
