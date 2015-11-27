@@ -51,4 +51,12 @@ il est préférable d'utiliser EPSG_%(k2)s
 Les contributions de l'amortissement liées à la vitesse pour les 
 réactions nodales sont négligées dans la version actuelle du code.
 """),
+
+
+23: _(u"""Le modèle doit être le même sur tous les pas de temps pour ce post-traitement.
+      Conseil : il faut séparer le post-traitement en le découpant pour garder le même modèle"""),
+
+24: _(u"""Le chargement doit être le même sur tous les pas de temps pour ce post-traitement.
+      Conseil : il faut séparer le post-traitement en le découpant pour garder le même chargement"""),
+
 }
