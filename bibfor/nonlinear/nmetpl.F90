@@ -1,4 +1,4 @@
-subroutine nmetpl(sd_inout)
+subroutine nmetpl(ds_inout, sd_suiv, sd_obsv)
 !
 implicit none
 !
@@ -23,8 +23,10 @@ implicit none
 ! ======================================================================
 ! person_in_charge: mickael.abbas at edf.fr
 !
-    character(len=24), intent(in) :: sd_inout
+    character(len=24), intent(in) :: ds_inout
 !
+    character(len=24), intent(in) :: sd_suiv
+    character(len=19), intent(in) :: sd_obsv
 ! --------------------------------------------------------------------------------------------------
 !
 ! *_NON_LINE - Input/output datastructure
@@ -48,14 +50,26 @@ implicit none
     integer :: i_field
     character(len=24) :: field_algo_old, field_algo_new
     character(len=6) :: hat_type, hat_vari
+    
+    integer :: i_keyw_fact, nb_keyw_fact
+    character(len=24) :: algo_name_old, algo_name_new
+!    character(len=6) :: hat_type, hat_vari
+    character(len=24) :: field_type
+    character(len=14) :: sdextr_suiv, sdextr_obsv
+    character(len=24) :: extr_info
+    integer, pointer :: v_extr_info(:) => null()
+    character(len=24) :: extr_field
+    character(len=24), pointer :: v_extr_field(:) => null()
+    
+    
 !
 ! --------------------------------------------------------------------------------------------------
 !
 !
 ! - Access to datastructure
 !
-    io_lcha = sd_inout(1:19)//'.LCHA'
-    io_info = sd_inout(1:19)//'.INFO'
+    io_lcha = ds_inout(1:19)//'.LCHA'
+    io_info = ds_inout(1:19)//'.INFO'
     call jeveuo(io_lcha, 'E', vk24 = v_io_para)
     call jeveuo(io_info, 'L', vi   = v_io_info)
     nb_field = v_io_info(1)
@@ -75,6 +89,54 @@ implicit none
                 field_algo_new = field_algo_old
                 field_algo_new(16:18) = 'PLU'
                 v_io_para(zioch*(i_field-1)+6 ) = field_algo_new
+            endif
+        endif
+    end do
+!
+! - For DOF monitoring
+!
+    sdextr_suiv   = sd_suiv(1:14)
+    extr_info     = sdextr_suiv(1:14)//'     .INFO'
+    call jeveuo(extr_info, 'L', vi = v_extr_info)
+    nb_keyw_fact  = v_extr_info(1)
+    nb_field      = v_extr_info(6)
+    extr_field    = sdextr_suiv(1:14)//'     .CHAM'
+    if (nb_keyw_fact .ne. 0) then
+        call jeveuo(extr_field, 'E', vk24 = v_extr_field)
+    endif
+    do i_keyw_fact = 1, nb_keyw_fact
+        i_field     = v_extr_info(7+7*(i_keyw_fact-1)+7)
+        field_type  = v_extr_field(4*(i_field-1)+1)
+        if (field_type .ne. 'NONE') then
+            algo_name_old = v_extr_field(4*(i_field-1)+4)(1:19)
+            if (algo_name_old(13:15) .eq. 'MOI') then
+                algo_name_new = algo_name_old
+                algo_name_new(13:15) = 'PLU'
+                v_extr_field(4*(i_field-1)+4) = algo_name_new
+            endif
+        endif
+    end do
+!
+! - For observation
+!
+    sdextr_obsv   = sd_obsv(1:14)
+    extr_info     = sdextr_obsv(1:14)//'     .INFO'
+    call jeveuo(extr_info, 'L', vi = v_extr_info)
+    nb_keyw_fact  = v_extr_info(1)
+    nb_field      = v_extr_info(6)
+    extr_field    = sdextr_obsv(1:14)//'     .CHAM'
+    if (nb_keyw_fact .ne. 0) then
+        call jeveuo(extr_field, 'E', vk24 = v_extr_field)
+    endif
+    do i_keyw_fact = 1, nb_keyw_fact
+        i_field     = v_extr_info(7+7*(i_keyw_fact-1)+7)
+        field_type  = v_extr_field(4*(i_field-1)+1)
+        if (field_type .ne. 'NONE') then
+            algo_name_old = v_extr_field(4*(i_field-1)+4)(1:19)
+            if (algo_name_old(13:15) .eq. 'MOI') then
+                algo_name_new = algo_name_old
+                algo_name_new(13:15) = 'PLU'
+                v_extr_field(4*(i_field-1)+4) = algo_name_new
             endif
         endif
     end do
