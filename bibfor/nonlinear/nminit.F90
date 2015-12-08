@@ -42,6 +42,7 @@ implicit none
 #include "asterfort/nmdoet.h"
 #include "asterfort/nmdopi.h"
 #include "asterfort/nmetcr.h"
+#include "asterfort/nmetpl.h"
 #include "asterfort/nmexso.h"
 #include "asterfort/nmfonc.h"
 #include "asterfort/nmihht.h"
@@ -353,6 +354,10 @@ implicit none
 !NS   RECOPIER DE SD SANS FILTRER
 !
     call liscpy(lischa, lisch2, 'G')
+!
+! - Update name of fields
+!
+    call nmetpl(sd_inout, sd_suiv, sd_obsv)
 !
 ! --- CREATION DE LA TABLE DES GRANDEURS
 !

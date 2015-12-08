@@ -32,7 +32,6 @@ subroutine nmnoli(result, sddisc, sderro, carcri, sdimpr,&
 #include "asterfort/jemarq.h"
 #include "asterfort/jeveuo.h"
 #include "asterfort/nmarch.h"
-#include "asterfort/nmetpl.h"
 #include "asterfort/rscrsd.h"
 #include "asterfort/rsrusd.h"
 #include "asterfort/utmess.h"
@@ -141,7 +140,7 @@ subroutine nmnoli(result, sddisc, sderro, carcri, sdimpr,&
 !
 ! --- AU PROCHAIN ARCHIVAGE, SAUVEGARDE DES CHAMPS AU TEMPS T+
 !
-    call nmetpl(sdieto)
+!    call nmetpl(sdieto)
 !
     call jedema()
 !

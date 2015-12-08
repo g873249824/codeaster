@@ -16,7 +16,9 @@
 ! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 !
 interface
-    subroutine nmetpl(sd_inout)
-        character(len=24), intent(in) :: sd_inout
+    subroutine nmetpl(ds_inout, sd_suiv, sd_obsv)
+        character(len=24), intent(in) :: ds_inout
+        character(len=24), intent(in) :: sd_suiv
+        character(len=19), intent(in) :: sd_obsv
     end subroutine nmetpl
 end interface
