@@ -3,6 +3,8 @@ subroutine mdrevi(numddl, nbrevi, nbmode, bmodal, neq,&
     implicit none
 #include "jeveux.h"
 #include "asterc/gettco.h"
+#include "asterfort/dismoi.h"
+#include "asterfort/getvem.h"
 #include "asterfort/getvid.h"
 #include "asterfort/getvtx.h"
 #include "asterfort/jedema.h"
@@ -15,6 +17,7 @@ subroutine mdrevi(numddl, nbrevi, nbmode, bmodal, neq,&
 #include "asterfort/posddl.h"
 #include "asterfort/resmod.h"
 #include "asterfort/utmess.h"
+#include "asterfort/utnono.h"
 #include "asterfort/wkvect.h"
 #include "asterfort/as_deallocate.h"
 #include "asterfort/as_allocate.h"
@@ -67,8 +70,7 @@ subroutine mdrevi(numddl, nbrevi, nbmode, bmodal, neq,&
 !     ------------------------------------------------------------------
 !
 !-----------------------------------------------------------------------
-    integer :: ibid, iret, j,   nc, nf
-    integer :: nn, ns
+    integer :: ibid, iret, j, ns 
     real(kind=8), pointer :: dplcho(:) => null()
     character(len=24), pointer :: refe(:) => null()
 !-----------------------------------------------------------------------
@@ -85,10 +87,12 @@ subroutine mdrevi(numddl, nbrevi, nbmode, bmodal, neq,&
 !
     do 10 i = 1, nbrevi
 !
-        call getvtx('RELA_EFFO_VITE', 'NOEUD', iocc=i, scal=noeu, nbret=nn)
-        call getvtx('RELA_EFFO_VITE', 'NOM_CMP', iocc=i, scal=comp, nbret=nc)
-        call getvid('RELA_EFFO_VITE', 'RELATION', iocc=i, scal=fonc, nbret=nf)
-        call getvtx('RELA_EFFO_DEPL', 'SOUS_STRUC', iocc=i, scal=sst, nbret=ns)
+        call getvtx('RELA_EFFO_VITE', 'NOEUD', iocc=i, scal=noeu)
+        call getvtx('RELA_EFFO_VITE', 'NOM_CMP', iocc=i, scal=comp)
+        call getvid('RELA_EFFO_VITE', 'RELATION', iocc=i, scal=fonc)
+        call getvtx('RELA_EFFO_VITE', 'SOUS_STRUC', iocc=i, scal=sst, nbret=ns)
+!
+!
 !
         if (comp(1:2) .eq. 'DX') icomp = 1
         if (comp(1:2) .eq. 'DY') icomp = 2
@@ -130,20 +134,20 @@ subroutine mdrevi(numddl, nbrevi, nbmode, bmodal, neq,&
             goto 10
         endif
 !
-        do 11 j = 1, nbmode
+        do j = 1, nbmode
             dplrev(i,j,1) = 0.d0
             dplrev(i,j,2) = 0.d0
             dplrev(i,j,3) = 0.d0
             dplrev(i,j,4) = 0.d0
             dplrev(i,j,5) = 0.d0
             dplrev(i,j,6) = 0.d0
-11      continue
+        end do
 !
 ! ----- CALCUL DIRECT
         if (typnum .eq. 'NUME_DDL_SDASTER') then
-            do 13 j = 1, nbmode
+            do j = 1, nbmode
                 dplrev(i,j,icomp) = bmodal(nuddl,j)
-13          continue
+            end do
 !
 ! ----- CALCUL PAR SOUS-STRUCTURATION
         else if (typnum(1:13).eq.'NUME_DDL_GENE') then
@@ -153,9 +157,9 @@ subroutine mdrevi(numddl, nbrevi, nbmode, bmodal, neq,&
             noecho(3) = nume
             call resmod(bmodal, nbmode, neq, numero, mdgene,&
                         noecho,dplcho)
-            do 12 j = 1, nbmode
+            do j = 1, nbmode
                 dplrev(i,j,icomp) = dplcho(j+(icomp-1)*nbmode)
-12          continue
+            end do
             AS_DEALLOCATE(vr=dplcho)
         endif
 !
@@ -163,7 +167,7 @@ subroutine mdrevi(numddl, nbrevi, nbmode, bmodal, neq,&
         fonrev(i,2) = comp
         fonrev(i,3) = fonc
 !
-10  end do
+10  continue
 !
     call jedema()
 end subroutine
