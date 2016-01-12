@@ -38,14 +38,14 @@ subroutine rc3201(lpmpb, lsn, lsnet, lfatig, lrocht,&
 !
     integer :: ig, iocs, npass
     real(kind=8) :: snmax, snemax, spmax, kemax, samax, utot, sm, sigpm
-    real(kind=8) :: resuas(*), resuss(*), resuca(*), resucs(*), factus(*), pmmax
-    real(kind=8) :: pbmax, pmbmax
+    real(kind=8) :: resuas(*), resuss(*), resuca(*), resucs(*), factus(*)
+    real(kind=8) :: pmmax, pbmax, pmbmax, snpq, snpqs
     aster_logical :: lpmpb, lsn, lsnet, lfatig, lrocht, seisme, lbid
     character(len=4) :: lieu
     character(len=8) :: mater
 !     ------------------------------------------------------------------
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -450,46 +450,54 @@ subroutine rc3201(lpmpb, lsn, lsnet, lfatig, lrocht,&
             endif
 !
 ! ------- CALCUL DU SN(P,Q), ON A 4 COMBINAISONS + SN(P,P) et SN(Q,Q)
+            snpq = 0.d0
+            call rc32sn('SN_SITU', lieu, nsitup, ppi, mpi,&
+                        nsitup, ppj, mpj, .false._1, mse,&
+                        snpq)
             call rc32sn('SN_COMB', lieu, nsitup, ppi, mpi,&
                         nsituq, pqi, mqi, .false._1, mse,&
-                        sn)
+                        snpq)
             call rc32sn('SN_COMB', lieu, nsitup, ppi, mpi,&
                         nsituq, pqj, mqj, .false._1, mse,&
-                        sn)
+                        snpq)
             call rc32sn('SN_COMB', lieu, nsitup, ppj, mpj,&
                         nsituq, pqj, mqj, .false._1, mse,&
-                        sn)
+                        snpq)
             call rc32sn('SN_COMB', lieu, nsitup, ppj, mpj,&
                         nsituq, pqi, mqi, .false._1, mse,&
-                        sn)
+                        snpq)
             call rc32sn('SN_SITU', lieu, nsituq, pqi, mqi,&
                         nsituq, pqj, mqj, .false._1, mse,&
-                        sn)
+                        snpq)
             icss = icss + 1
-            resucs(icss) = sn
-            snmax = max(snmax,sn)
+            resucs(icss) = snpq
+            snmax = max(snmax,snpq)
             if (seisme) then
+                snpqs = 0.d0
+                call rc32sn('SN_SITU', lieu, nsitup, ppi, mpi,&
+                            nsitup, ppj, mpj, seisme, mse,&
+                            snpqs)
                 call rc32sn('SN_COMB', lieu, nsitup, ppi, mpi,&
                             nsituq, pqi, mqi, seisme, mse,&
-                            sns)
+                            snpqs)
                 call rc32sn('SN_COMB', lieu, nsitup, ppi, mpi,&
                             nsituq, pqj, mqj, seisme, mse,&
-                            sns)
+                            snpqs)
                 call rc32sn('SN_COMB', lieu, nsitup, ppj, mpj,&
                             nsituq, pqj, mqj, seisme, mse,&
-                            sns)
+                            snpqs)
                 call rc32sn('SN_COMB', lieu, nsitup, ppj, mpj,&
                             nsituq, pqi, mqi, seisme, mse,&
-                            sns)
+                            snpqs)
                 call rc32sn('SN_SITU', lieu, nsituq, pqi, mqi,&
                             nsituq, pqj, mqj, seisme, mse,&
-                            sns)
+                            snpqs)
                 icas = icas + 1
-                resuca(icas) = sns
-                snmax = max(snmax,sns)
+                resuca(icas) = snpqs
+                snmax = max(snmax,snpqs)
             endif
-            if (niv .ge. 2) write (ifm,1110) nsitup,nsituq,sn
-            if ((niv.ge.2) .and. seisme) write (ifm,1111) sns
+            if (niv .ge. 2) write (ifm,1110) nsitup,nsituq,snpq
+            if ((niv.ge.2) .and. seisme) write (ifm,1111) snpqs
             inds = nbsig2*(i1-1) + (i2-1)
             indi = nbsig2*(i2-1) + (i1-1)
 !
@@ -690,7 +698,7 @@ subroutine rc3201(lpmpb, lsn, lsnet, lfatig, lrocht,&
 !
 !
 ! - CALCUL DE SALT ASSOCIE A SP1 ET SP2
-            call rc32sa('COMB', mater, mat1, mat2, sn,&
+            call rc32sa('COMB', mater, mat1, mat2, snpq,&
                         sp12ma, typeke, spmeca, spther, kemeca,&
                         kether, saltij, smm, fuij)
             icss = icss + 1
@@ -715,7 +723,7 @@ subroutine rc3201(lpmpb, lsn, lsnet, lfatig, lrocht,&
                 matrice_fu_b(inds+1) = fuij(1)+fuij(2)
                 matrice_fu_b(indi+1) = fuij(1)+fuij(2)
 ! ON PREND SPTHES = SPTHER
-                call rc32sa('COMB', mater, mat1, mat2, sns,&
+                call rc32sa('COMB', mater, mat1, mat2, snpqs,&
                             sps, typeke, spmecs, spther, kemecs,&
                             kethes, salijs, smm, fuij)
                 icas = icas + 1
