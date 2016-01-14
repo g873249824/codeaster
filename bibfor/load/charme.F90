@@ -376,10 +376,6 @@ subroutine charme(load, vale_type)
 !
         call cagrou(load, mesh, vale_type)
 !
-! ----- LIAISON_SOLIDE
-!
-        call caliso(load, mesh, ligrmo, vale_type)
-!
 ! ----- LIAISON_COQUE
 !
         call calicp(load, mesh, ligrmo, vale_type)
