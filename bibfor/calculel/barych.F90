@@ -51,7 +51,7 @@ subroutine barych(ch1z, ch2z, r1, r2, chz,&
     character(len=4) :: docu, scal
     character(len=24) :: valk(2)
 !-----------------------------------------------------------------------
-    integer :: i, iach, iach1, iach2, ibid, ier, jrefe
+    integer :: i, iach, iach1, iach2, ibid, ier
     integer :: lon1, lon2, long
 !-----------------------------------------------------------------------
     call jemarq()
@@ -79,18 +79,18 @@ subroutine barych(ch1z, ch2z, r1, r2, chz,&
         call vrrefe(ch1, ch2, ier)
         if (ier .eq. 0) then
 !
-! ----- RECOPIE BRUTALE DES .VALE
+!           -- recopie brutale des .VALE
             call jeveuo(ch//vale, 'E', iach)
             call jeveuo(ch1//vale, 'L', iach1)
             call jeveuo(ch2//vale, 'L', iach2)
             if (scal(1:1) .eq. 'R') then
-                do 1,i = 1,lon1
+                do i = 1,lon1
                 zr(iach-1+i) = r1*zr(iach1-1+i) + r2*zr(iach2-1+i)
- 1              continue
+                enddo
             else if (scal(1:1).eq.'C') then
-                do 2,i = 1,lon1
+                do i = 1,lon1
                 zc(iach-1+i) = r1*zc(iach1-1+i) + r2*zc(iach2-1+i)
- 2              continue
+                enddo
             endif
         else
             call vtcopy(ch2, ch, ' ', ier)
@@ -102,15 +102,14 @@ subroutine barych(ch1z, ch2z, r1, r2, chz,&
             call jeveuo(ch//vale, 'E', iach)
             call jeveuo(ch1//vale, 'L', iach1)
             if (scal(1:1) .eq. 'R') then
-                do 3,i = 1,lon1
+                do i = 1,lon1
                 zr(iach-1+i) = r1*zr(iach1-1+i) + r2*zr(iach-1+i)
- 3              continue
+                enddo
             else if (scal(1:1).eq.'C') then
-                do 4,i = 1,lon1
+                do i = 1,lon1
                 zc(iach-1+i) = r1*zc(iach1-1+i) + r2*zc(iach-1+i)
- 4              continue
+                enddo
             endif
-            call jeveuo(ch2//'.REFE', 'L', jrefe)
         endif
 !
 !
@@ -129,13 +128,13 @@ subroutine barych(ch1z, ch2z, r1, r2, chz,&
             call jeveuo(ch1//vale, 'L', iach1)
             call jeveuo(ch2//vale, 'L', iach2)
             if (scal(1:1) .eq. 'R') then
-                do 5,i = 1,lon1
+                do i = 1,lon1
                 zr(iach-1+i) = r1*zr(iach1-1+i) + r2*zr(iach2-1+i)
- 5              continue
+                enddo
             else if (scal(1:1).eq.'C') then
-                do 6,i = 1,lon1
+                do i = 1,lon1
                 zc(iach-1+i) = r1*zc(iach1-1+i) + r2*zc(iach2-1+i)
- 6              continue
+                enddo
             endif
         else
             call utmess('F', 'CALCULEL_27')
