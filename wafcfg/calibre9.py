@@ -31,8 +31,6 @@ def configure(self):
         YAMMROOT + '/tools/Medfichier-308/include',
         YAMMROOT + '/prerequisites/Metis-40/Lib',
         YAMMROOT + '/prerequisites/Mfront-TFEL202/include',
-        YAMMROOT + '/prerequisites/Mumps4-4100_aster3/SEQ/include',
-        YAMMROOT + '/prerequisites/Mumps4-4100_aster3/SEQ/include_seq',
         YAMMROOT + '/prerequisites/Scotch-5111/include'])
 
     # to fail if not found
