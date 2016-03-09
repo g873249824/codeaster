@@ -26,7 +26,7 @@ implicit none
 #include "asterfort/wkvect.h"
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -117,6 +117,7 @@ implicit none
     indic = 0
     nexci = 0
     i_load_new = 0
+    typcha='FIXE_CST'
 !
 ! --- NOMBRE DE CHARGES
 !
@@ -203,7 +204,7 @@ implicit none
 !
             if (l_load_user) then
                 if (nomcmd .eq. 'DYNA_LINE_TRAN' .or. nomcmd .eq. 'DYNA_LINE_HARM') then
-                    typcha='FIXE'
+                    typcha='FIXE_CST'
                 else
                     call getvtx('EXCIT', 'TYPE_CHARGE', iocc=indic, scal=typcha)
                 endif
@@ -216,6 +217,8 @@ implicit none
                         typcha = 'FIXE_PIL'
                     else if (infc2(1+3*nb_load+2+i_load).eq.1) then
                         typcha = 'DIDI'
+                    else
+                        typcha = 'FIXE_CST'
                     endif
                 endif
             endif
