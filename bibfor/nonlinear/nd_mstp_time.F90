@@ -5,7 +5,6 @@ implicit none
 #include "asterf_types.h"
 #include "jeveux.h"
 #include "asterfort/isfonc.h"
-#include "asterc/isnnem.h"
 #include "asterc/r8vide.h"
 #include "asterfort/getvid.h"
 #include "asterfort/nmdoin.h"
@@ -14,7 +13,7 @@ implicit none
 #include "asterfort/rsadpa.h"
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2013  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -54,7 +53,7 @@ implicit none
     character(len=16) :: keywf
     aster_logical :: l_reuse, l_init_state, l_init_evol
     integer :: nocc, nume_init, nume_prev_step, nume_last
-    integer :: j_inst
+    integer :: jv_para
     real(kind=8) :: inst_init
     character(len=24) :: result_init
 !
@@ -94,11 +93,11 @@ implicit none
                 call utmess('I','DYNAMIQUE_50')
             else
                 call rsadpa(result_init, 'L', 1, 'INST_PREC', nume_prev_step,&
-                            0, sjv=j_inst, istop = 0)
-                if (j_inst.eq.isnnem()) then
+                            0, sjv=jv_para, istop = 0)
+                time_prev_step = zr(jv_para) 
+                if (time_prev_step .eq. r8vide()) then
                     call utmess('I','DYNAMIQUE_51')
                 else
-                    time_prev_step = zr(j_inst) 
                     l_comp_mstp    = .true.
                 endif
             endif
@@ -112,11 +111,11 @@ implicit none
     if (l_reuse) then
         call rs_getlast(result, nume_last)
         call rsadpa(result, 'L', 1, 'INST_PREC', nume_last,&
-                    0, sjv=j_inst)
-        if (j_inst.eq.isnnem()) then
+                    0, sjv=jv_para)
+        time_prev_step = zr(jv_para) 
+        if (time_prev_step .eq. r8vide()) then
             call utmess('I','DYNAMIQUE_51')
         else
-            time_prev_step = zr(j_inst)
             l_comp_mstp    = .true.
         endif
     endif
