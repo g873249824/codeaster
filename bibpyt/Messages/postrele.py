@@ -412,4 +412,8 @@ Erreur utilisateur dans la commande POST_RELEVE_T :
  'GLOBAL' ou le repère 'UTILISATEUR' (avec ANGL_NAUT).
 """),
 
+    69 : _(u"""
+Erreur utilisateur dans la commande POST_RELEVE_T :
+   Le mot clé RESULTANTE n'est autorisé que pour OPERATION='EXTRACTION'.
+"""),
 }
