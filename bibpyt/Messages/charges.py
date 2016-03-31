@@ -36,6 +36,7 @@ mot-clef facteur vide dans l'opérateur AFFE_CHAR_MECA, AFFE_CHAR_THER ou AFFE_C
 La charge %(k1)s  n'est pas compatible avec FONC_MULT.
 """),
 
+
     21 : _(u"""
 La charge %(k1)s n'est pas thermique.
 """),
@@ -69,6 +70,10 @@ La charge %(k1)s est de type cinématique (AFFE_CHAR_CINE):
 
     28 : _(u"""
 On ne peut pas piloter la charge %(k1)s car c'est une charge fonction du temps.
+"""),
+
+    32 : _(u"""
+La charge %(k1)s contient une condition de type ECHANGE et elle n'est pas compatible avec FONC_MULT. Pour appliquer une fonction (y compris en fonction du temps), il faut utiliser AFFE_CHAR_THER_F.
 """),
 
     34 : _(u"""
