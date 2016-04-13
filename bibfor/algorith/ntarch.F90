@@ -3,7 +3,7 @@ subroutine ntarch(numins, modele, mate, carele, lnonl,&
                   force)
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -54,14 +54,12 @@ subroutine ntarch(numins, modele, mate, carele, lnonl,&
 !
 ! ----------------------------------------------------------------------
 !
-    real(kind=8) :: instam, instan
+    real(kind=8) :: instan
     integer :: iret
-    integer :: numarc
-    integer :: jinst
+    integer :: nume_store
     character(len=19) :: k19bid
     character(len=16) :: k16b1, k16b2
     character(len=8) :: k8bid, result
-    integer :: ibid
     character(len=24) :: k24bla
 !
 ! ----------------------------------------------------------------------
@@ -79,9 +77,14 @@ subroutine ntarch(numins, modele, mate, carele, lnonl,&
         force = .true.
     endif
 !
+! --- NOM SD RESULTAT
+!
+      call getres(result, k16b1, k16b2)
+!
 ! --- NUMERO D'ARCHIVAGE
 !
-    call dinuar(sddisc, numins, force, numarc, ibid)
+    call dinuar(result    , sddisc    , numins, force,&
+                nume_store)
 !
 ! --- INSTANT COURANT
 !
@@ -89,20 +92,7 @@ subroutine ntarch(numins, modele, mate, carele, lnonl,&
 !
 ! ----------------------------------------------------------------------
 !
-    if (numarc .ge. 0) then
-!
-! ----- NOM SD RESULTAT
-!
-        call getres(result, k16b1, k16b2)
-!
-! ----- INSTANT DEJA ARCHIVE ?
-!
-        if (numarc .ge. 2) then
-            call rsadpa(result, 'L', 1, 'INST', numarc-1,&
-                        0, sjv=jinst, styp=k8bid)
-            instam = zr(jinst)
-            if (instan .le. instam) goto 999
-        endif
+    if (nume_store .ge. 0) then
 !
 ! ----- AFFICHAGE
 !
@@ -110,7 +100,7 @@ subroutine ntarch(numins, modele, mate, carele, lnonl,&
 !
 ! ----- EXTENSION DE RESULT SI TROP PETIT (DOUBLEMENT)
 !
-        call rsexch(' ', result, 'TEMP', numarc, k19bid,&
+        call rsexch(' ', result, 'TEMP', nume_store, k19bid,&
                     iret)
         if (iret .eq. 110) then
             call rsagsd(result, 0)
@@ -119,15 +109,13 @@ subroutine ntarch(numins, modele, mate, carele, lnonl,&
 ! ----- ARCHIVAGE DES PARAMETRES
 !
         call ntarc0(result, modele, mate, carele, sdcrit,&
-                    lisch2, lnonl, para, numarc, instan)
+                    lisch2, lnonl, para, nume_store, instan)
 !
 ! ----- ARCHIVAGE DES CHAMPS
 !
         call nmarce(sdieto, result, k24bla, sddisc, instan,&
-                    numarc, force)
+                    nume_store, force)
     endif
-!
-999 continue
 !
     call jedema()
 !
