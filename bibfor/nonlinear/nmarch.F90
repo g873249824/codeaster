@@ -4,7 +4,7 @@ subroutine nmarch(result, numins, modele, mate, carele,&
                   sdener, sdieto, sdcriq, lisch2)
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -23,7 +23,6 @@ subroutine nmarch(result, numins, modele, mate, carele,&
 !
     implicit none
 #include "asterf_types.h"
-#include "jeveux.h"
 #include "asterfort/diinst.h"
 #include "asterfort/dinuar.h"
 #include "asterfort/jedema.h"
@@ -35,7 +34,6 @@ subroutine nmarch(result, numins, modele, mate, carele,&
 #include "asterfort/nmleeb.h"
 #include "asterfort/nmtime.h"
 #include "asterfort/obgetb.h"
-#include "asterfort/rsadpa.h"
 #include "asterfort/rsagsd.h"
 #include "asterfort/rsexch.h"
 #include "asterfort/utmess.h"
@@ -83,15 +81,14 @@ subroutine nmarch(result, numins, modele, mate, carele,&
 !
 ! ----------------------------------------------------------------------
 !
-    integer :: jinst
     integer :: iret
-    integer :: numarc
-    real(kind=8) :: instam, instan
+    integer :: nume_store
+    real(kind=8) :: instan
     character(len=8) :: k8bid
     aster_logical :: force, lprint
     character(len=19) :: k19bid
     character(len=4) :: etcalc
-    integer :: numrep
+    integer :: nume_reuse
 !
 ! ----------------------------------------------------------------------
 !
@@ -121,7 +118,8 @@ subroutine nmarch(result, numins, modele, mate, carele,&
 !
 ! --- NUMERO D'ARCHIVAGE
 !
-    call dinuar(sddisc, numins, force, numarc, numrep)
+    call dinuar(result    , sddisc    , numins, force,&
+                nume_store, nume_reuse)
 !
 ! --- INSTANT COURANT
 !
@@ -129,7 +127,7 @@ subroutine nmarch(result, numins, modele, mate, carele,&
 !
 ! --- ARCHIVAGE DES PARAMETRES CALCULES DANS LA TABLE PARA_CALC
 !
-    call nmarpc(result, sdener, numrep, instan)
+    call nmarpc(result, sdener, nume_reuse, instan)
 !
 ! --- AFFICHAGE POUR CE PAS ?
 !
@@ -137,16 +135,7 @@ subroutine nmarch(result, numins, modele, mate, carele,&
 !
 ! ----------------------------------------------------------------------
 !
-    if (numarc .ge. 0) then
-!
-! ----- INSTANT DEJA ARCHIVE ?
-!
-        if (numarc .ge. 2) then
-            call rsadpa(result, 'L', 1, 'INST', numarc-1,&
-                        0, sjv=jinst, styp=k8bid)
-            instam = zr(jinst)
-            if (instan .le. instam) goto 999
-        endif
+    if (nume_store .ge. 0) then
 !
 ! ----- AFFICHAGE
 !
@@ -156,7 +145,7 @@ subroutine nmarch(result, numins, modele, mate, carele,&
 !
 ! ----- EXTENSION DE RESULT SI TROP PETIT (DOUBLEMENT)
 !
-        call rsexch(' ', result, 'DEPL', numarc, k19bid,&
+        call rsexch(' ', result, 'DEPL', nume_store, k19bid,&
                     iret)
         if (iret .eq. 110) call rsagsd(result, 0)
 !
@@ -164,15 +153,13 @@ subroutine nmarch(result, numins, modele, mate, carele,&
 !
         call nmarc0(result, modele, mate, carele, fonact,&
                     sdcrit, sddyna, sdpost, carcri, sdcriq,&
-                    sdpilo, lisch2, numarc, instan)
+                    sdpilo, lisch2, nume_store, instan)
 !
 ! ----- ARCHIVAGE DES CHAMPS
 !
         call nmarce(sdieto, result, sdimpr, sddisc, instan,&
-                    numarc, force)
+                    nume_store, force)
     endif
-!
-999 continue
 !
 ! --- FIN MESURE TEMPS
 !
