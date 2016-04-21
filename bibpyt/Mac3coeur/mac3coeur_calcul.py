@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -811,7 +811,8 @@ class Mac3CoeurLame(Mac3CoeurCalcul):
                                   ))
         _debug(_snl_lame, "result STAT_NON_LINE 1")
         # updated coeur
-        __resuf = PERM_MAC3COEUR(TYPE_COEUR=self.keyw['TYPE_COEUR'],
+        __resuf = PERM_MAC3COEUR(TYPE_COEUR_N=self.keyw['TYPE_COEUR'],
+                                 TYPE_COEUR_P=self.keyw['TYPE_COEUR'],
                                  RESU_N=_snl_lame,
                                  TABLE_N=self.keyw['TABLE_N'],
                                  TABLE_NP1=self.mcf['TABLE_NP1'],
