@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -354,17 +354,25 @@ def post_mac3coeur_ops(self, **args):
     FORMULE = self.get_cmd('FORMULE')
     DEFI_FICHIER = self.get_cmd('DEFI_FICHIER')
     IMPR_TABLE = self.get_cmd('IMPR_TABLE')
-
+    
+    datg = aster_core.get_option("repdex")
+    coeur_factory = CoeurFactory(datg)
+    
     self.set_icmd(1)
     _RESU = self['RESULTAT']
     _typ_coeur = self['TYPE_COEUR']
     POST_LAME = self['LAME']
     POST_DEF = self['DEFORMATION']
     _inst = self['INST']
+    _TAB_N = self['TABLE']
+     
+    _table = _TAB_N.EXTR_TABLE()
+    name = _table.para[0]
 
-    datg = aster_core.get_option("repdex")
-    coeur_factory = CoeurFactory(datg)
-    _coeur = coeur_factory.get(_typ_coeur)('post', _typ_coeur, self, datg)
+# et on renomme la colonne qui identifie les assemblages
+    _table.Renomme(name, 'idAC')
+    _coeur = coeur_factory.get(_typ_coeur)(name, _typ_coeur, self, datg)
+    _coeur.init_from_table(_table)
 
     # "
     #                                          MOT-CLE FACTEUR LAME
@@ -652,12 +660,15 @@ def post_mac3coeur_ops(self, **args):
                 l_T5 = []
                 l_T6 = []
 
-                for name in POSITION:
-                    name_AC_aster = name[0] + '_' + name[1]
+                #for name in POSITION:
+                for idAC in _coeur.collAC.keys() :
+                    AC = _coeur.collAC[idAC]
+                    name_AC_aster = AC.idAST
+                    #name_AC_aster = name[0] + '_' + name[1]
                     name_AC_damac = _coeur.position_todamac(name_AC_aster)
 
                     cycle = 1
-                    repere = 'non_renseigne'
+                    repere = AC.name
                     def_max = valrho[name_AC_aster]
                     XG1 = valdirYac[name_AC_aster][1 - 1]
                     XG2 = valdirYac[name_AC_aster][2 - 1]
@@ -679,7 +690,7 @@ def post_mac3coeur_ops(self, **args):
                     YG8 = valdirZac[name_AC_aster][8 - 1]
                     YG9 = valdirZac[name_AC_aster][9 - 1]
                     YG10 = valdirZac[name_AC_aster][10 - 1]
-                    Milieu = 'non_renseigne'
+                    Milieu = AC.typeAC
                     MinX = min(valdirYac[name_AC_aster])
                     MaxX = max(valdirYac[name_AC_aster])
                     CCX = MaxX - MinX
