@@ -77,14 +77,14 @@ subroutine lcmohr(ndim, typmod, imate, option, tmpp,&
 ! Declaration of real type variables
     real(kind=8) :: rprops(nmax), strait(nmax)
     real(kind=8) :: strest(nmax), young, poiss
-    real(kind=8) :: sinphi, cosphi, sinpsi
+    real(kind=8) :: sinphi, cosphi, sinpsi, phi(mmax)
     real(kind=8) :: cohe, eigprj(mmax, mmax), pstrs(mmax)
-    real(kind=8) :: gmodu, bulk, r2g, r4g
+    real(kind=8) :: gmodu, bulk, r2g, r4g, mat(mmax, mmax)
     real(kind=8) :: r2bulk, r2cphi, r2spsi, r1d3, eetv
     real(kind=8) :: pt, eetvd3, pstrs1, pstrs2, pstrs3, smct
-    real(kind=8) :: phia, phib, res, scaprd, sphsps
+    real(kind=8) :: phia, phib, phic, res, scaprd, sphsps
     real(kind=8) :: consta, r4c2ph, ddgama, dgama, delta, dmax1
-    real(kind=8) :: smcta, smctb, constb, drvaa
+    real(kind=8) :: smcta, smctb, smctc, constb, drvaa, dgamc
     real(kind=8) :: drvab, drvba, drvbb, r1ddet, ddgamb, dgamb
     real(kind=8) :: resnor, factor, aux1, aux2, aux3
     real(kind=8) :: cotphi, ddepv, s1, s2, s3, sttv
@@ -162,6 +162,7 @@ subroutine lcmohr(ndim, typmod, imate, option, tmpp,&
 ! Initialize some algorithmic and internal variables
     dgama =r0
     dgamb =r0
+    dgamc =r0
     ifplas=r0
     sufail=r0
     edge  =r0
@@ -388,43 +389,88 @@ subroutine lcmohr(ndim, typmod, imate, option, tmpp,&
 ! ==================================================================
         ifplas = r3
 !
-! Set initial guess for volumetric plastic strain increment DEPV
-        cotphi=cosphi/sinphi
-        res   =cotphi*cohe-pt
-! volumetric plastic strain
-        ddepv =-res/bulk
-! final volumetric stress
-        p     =pt-bulk*ddepv
-! residual
-        res   =cotphi*cohe-p
-!
 ! Check conditions for which return to apex does not make sense
         if (sinphi .eq. r0) then
-!            write(6,'(A)') '!(@_@)   ECHEC DANS LCMOHR :: SINPHI = 0  (@_@)'
             codret=1
             goto 999
         endif
 !
         if (sinpsi .eq. r0) then
-!            write(6,'(A)') '!(@_@)   ECHEC DANS LCMOHR :: SINPSI = 0  (@_@)'
             codret=1
             goto 999
         endif
 !
+        smcta =pstrs1-pstrs3+(pstrs1+pstrs3)*sinphi
+        smctb =pstrs1-pstrs2+(pstrs1+pstrs2)*sinphi
+        smctc =pstrs2-pstrs3+(pstrs2+pstrs3)*sinphi
+        phi(1)  =(smcta-r2cphi*cohe)/r2
+        phi(2)  =(smctb-r2cphi*cohe)/r2
+        phi(3)  =(smctc-r2cphi*cohe)/r2
+!  C =
+        consta=gmodu*r1d3+bulk
+!  B =
+        constb=-r2g*r1d3+bulk
+!  D =
+        drvaa=(consta+constb)*sinphi*sinpsi
+!  E =
+        drvbb=r2*(gmodu+consta*sinphi*sinpsi)
+!
+        mat(1,1)=drvbb
+        mat(2,2)=drvbb
+        mat(3,3)=drvbb
+        mat(1,2)=drvaa+gmodu*(r1+sinpsi+sinphi)
+        mat(1,3)=drvaa+gmodu*(r1-sinpsi-sinphi)
+        mat(2,3)=drvaa+gmodu*(-r1-sinpsi+sinphi)
+        mat(2,1)=drvaa+gmodu*(r1+sinpsi+sinphi)
+        mat(3,1)=drvaa+gmodu*(r1-sinpsi-sinphi)
+        mat(3,2)=drvaa+gmodu*(-r1+sinpsi-sinphi)
+!
+! Compute Plastic Multipliers
+        call mgauss('NFSP', mat, phi, 3, 3, 1, r1ddet, codret)
+        
+        if (codret .eq. 1) then
+            goto 999
+        endif
+!
+        dgama=phi(1)
+        dgamb=phi(2)
+        dgamc=phi(3)
+!
+! Compute new residual   
+        phia  =smcta- r2cphi*cohe &
+               - r2*drvbb*dgama &
+               - r2*(drvaa+gmodu*(r1+sinpsi+sinphi))*dgamb &
+               - r2*(drvaa+gmodu*(r1-sinpsi-sinphi))*dgamc
+!
+        phib  =smctb- r2cphi*cohe &
+               - r2*drvbb*dgamb &
+               - r2*(drvaa+gmodu*(r1+sinpsi+sinphi))*dgama &
+               - r2*(drvaa+gmodu*(-r1-sinpsi+sinphi))*dgamc
+!
+        phic  =smctc- r2cphi*cohe &
+               - r2*drvbb*dgamc &
+               - r2*(drvaa+gmodu*(r1-sinpsi-sinphi))*dgama &
+               - r2*(drvaa+gmodu*(-r1+sinpsi-sinphi))*dgamb
+!
 ! check for convergence
-        resnor=abs(res)
-        if (abs(pt) .gt. r1) resnor=resnor/abs(pt)
+        resnor=(abs(phia)+abs(phib)+abs(phic))
+        factor=(abs(smcta)+abs(smctb)+abs(smctc))
+        if (factor .ne. r0) resnor=resnor/factor
 !
-        if (resnor .le. small) then
-            apex =r1
-            dgama=ddepv
-            dgamb=r0
+        if (resnor .le. tol) then
 !
+! Set initial guess for volumetric plastic strain increment DEPV
+            cotphi=cosphi/sinphi
+            res   =cotphi*cohe-pt
+! volumetric plastic strain
+            ddepv =-res/bulk
+! final volumetric stress
+            p     =pt-bulk*ddepv
 ! update principal stresses
             s1=p
             s2=p
             s3=p
-!
+            apex =r1
 !
             goto 70
         endif
@@ -459,11 +505,54 @@ subroutine lcmohr(ndim, typmod, imate, option, tmpp,&
 !
 ! Update internal variables
         if (apex .eq. r1) then
-            vip(1)=vim(1)+p/bulk
-            vip(2)=vim(2)
-        else
+! return to apex
+            vip(1)=vim(1)+r2spsi*(dgama+dgamb+dgamc)
+!
+            aux1=r1d3*sinpsi+r1
+            aux2=r2*r1d3*sinpsi
+            aux3=r1d3*sinpsi-r1
+!
+            smcta =dgama*aux1+dgamb*aux1+dgamc*aux2
+            smctb =dgama*aux2+dgamb*aux3+dgamc*aux1
+            smctc =dgama*aux3+dgamb*aux2+dgamc*aux3
+!
+            vip(2)=vim(2)+ sqrt(r3/r2*(smcta*smcta+ &
+                           smctb*smctb+smctc*smctc))
+!
+        else if ((edge.eq.r1) .and. (right.eq.r1)) then
+! return to the right edge
             vip(1)=vim(1)+r2spsi*(dgama+dgamb)
-            vip(2)=vim(2)+sqrt(sinpsi*sinpsi+r3)*(dgama+dgamb)
+!
+            aux1=r1d3*sinpsi+r1
+            aux2=r2*r1d3*sinpsi
+            aux3=r1d3*sinpsi-r1
+!
+            smcta =dgama*aux1+dgamb*aux1
+            smctb =dgama*aux2+dgamb*aux3
+            smctc =dgama*aux3+dgamb*aux2
+!
+            vip(2)=vim(2)+ &
+            sqrt(r3/r2*(smcta*smcta+smctb*smctb+smctc*smctc))
+!
+        else if (edge.eq.r1) then
+! return to the left edge
+            vip(1)=vim(1)+r2spsi*(dgama+dgamb)
+!
+            aux1=r1d3*sinpsi+r1
+            aux2=r2*r1d3*sinpsi
+            aux3=r1d3*sinpsi-r1
+!
+            smcta =dgama*aux1+dgamb*aux2
+            smctb =dgama*aux2+dgamb*aux1
+            smctc =dgama*aux3+dgamb*aux3
+!
+            vip(2)=vim(2)+ &
+            sqrt(r3/r2*(smcta*smcta+smctb*smctb+smctc*smctc))
+!
+        else
+! return to plane
+            vip(1)=vim(1)+r2spsi*dgama
+            vip(2)=vim(2)+sqrt(sinpsi*sinpsi+r3)*dgama
         endif
 ! ------------------------------------------------------
 !
