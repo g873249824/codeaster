@@ -22,7 +22,7 @@ subroutine comp_meca_chck(model      , mesh          , full_elem_s, l_etat_init,
 #include "asterfort/utmess.h"
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -81,7 +81,7 @@ subroutine comp_meca_chck(model      , mesh          , full_elem_s, l_etat_init,
     character(len=8) :: typmcl(2), repons
     character(len=16) :: motcle(2)
     integer :: nt
-    aster_logical :: l_kit_thm
+    aster_logical :: l_kit_thm, l_mfront
 !
 ! --------------------------------------------------------------------------------------------------
 !
@@ -121,6 +121,7 @@ subroutine comp_meca_chck(model      , mesh          , full_elem_s, l_etat_init,
 ! ----- Detection of specific cases
 !
         call comp_meca_l(rela_comp, 'KIT_THM', l_kit_thm)
+        call comp_meca_l(rela_comp, 'MFRONT' , l_mfront)
 !
 ! ----- Warning if ELASTIC comportment and initial state
 !
@@ -139,6 +140,14 @@ subroutine comp_meca_chck(model      , mesh          , full_elem_s, l_etat_init,
         call nmdovm(model       , l_affe_all, list_elem_affe, nb_elem_affe  , full_elem_s,&
                     rela_comp_py, type_cpla , l_auto_elas   , l_auto_deborst, l_comp_erre)
         info_comp_valk(16*(iocc-1) + 4) = type_cpla
+!
+! ----- No DeBorst with MFront
+!
+        if (l_mfront) then
+            if (l_auto_deborst) then
+                call utmess('F', 'COMPOR1_15')
+            endif
+        endif    
 !
 ! ----- Check comportment/deformation with Comportement.py
 !
