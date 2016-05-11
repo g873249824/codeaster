@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -92,6 +92,10 @@ localement via ITER_INTE_PAS.
 
     14: _(u"""
  HUJEUX : erreur dans le calcul de la matrice tangente
+"""),
+
+   15 : _(u"""
+Les contraintes planes ou les modèles unidimensionnels avec la méthode DEBORST ne sont pas utilisables avec MFront.
 """),
 
     16 : _(u"""
