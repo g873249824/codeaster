@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -2135,7 +2135,7 @@ def post_k1_k2_k3_ops(self, MODELISATION, FOND_FISS, FISSURE, MATER, RESULTAT,
                 if FOND_FISS:
                     UTMESS('A+', 'RUPTURE0_47', valk=Lnofon[ino])
                 if FISSURE:
-                    UTMESS('A+', 'RUPTURE0_99', vali=ino)
+                    UTMESS('A+', 'RUPTURE0_99', vali=ino+1)
                 UTMESS('A', 'RUPTURE0_25')
                 kg1 = [0.] * 8
                 kg2 = [0.] * 8
