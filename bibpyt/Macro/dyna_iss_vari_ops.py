@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -18,7 +18,7 @@
 
 # person_in_charge: irmela.zentner at edf.fr
 import os
-
+from math import pi
 
 def dyna_iss_vari_ops(
     self, NOM_CMP, PRECISION, INTERF, MATR_COHE, UNITE_RESU_FORC,
@@ -251,19 +251,50 @@ def dyna_iss_vari_ops(
 
 #      si tous les point on été calculés: pas d'interpolation
         if FREQ_FIN == None:
+            inul = 0
             for k, freqk in enumerate(l_freq_sig):
+                omegk = 2.0 * pi * freqk
                 coef_a = (vale_re[k] + vale_im[k] * 1.j)
                 VEC_comp = VEC[k] * coef_a
-                tup_re = tuple(VEC_comp.real)
-                tup_im = tuple(VEC_comp.imag)
+                tup_re = VEC_comp.real
+                tup_im = VEC_comp.imag
+                if freqk > 1.e-6 :
+                  tup_re1 = (-1.0)*tup_re/(omegk*omegk)
+                  tup_im1 = (-1.0)*tup_im/(omegk*omegk)
+                  tup_re2 = tup_im/omegk
+                  tup_im2 = (-1.0)*tup_re/omegk
                 #                                     1         2         3
                 #                                   8901234567890123456789012
+                  aster.putvectjev(__dyge0.get_name() + '           .DEPL        ', nbmodt, tuple(
+                    range(nbmodt * k + 1, nbmodt * (k + 1) + 1)), tuple(tup_re1), tuple(tup_im1), 1)
+                  aster.putvectjev(__dyge0.get_name() + '           .VITE        ', nbmodt, tuple(
+                    range(nbmodt * k + 1, nbmodt * (k + 1) + 1)), tuple(tup_re2), tuple(tup_im2), 1)
+                  if inul == 1 :
+                    tup_re1a = tup_re1
+                    tup_im1a = tup_im1
+                    tup_re2a = tup_re2
+                    tup_im2a = tup_im2
+                    inul = 2
+                  elif inul == 2 :
+                    tup_re1b = (2.0)*tup_re1a-tup_re1
+                    tup_im1b = (2.0)*tup_im1a-tup_im1
+                    tup_re2b = (2.0)*tup_re2a-tup_re2
+                    tup_im2b = (2.0)*tup_im2a-tup_im2
+                    aster.putvectjev(__dyge0.get_name() + '           .DEPL        ', nbmodt, tuple(
+                      range(nbmodt * (k-2) + 1, nbmodt * (k-1) + 1)), tuple(tup_re1b), tuple(tup_im1b), 1)
+                    aster.putvectjev(__dyge0.get_name() + '           .VITE        ', nbmodt, tuple(
+                      range(nbmodt * (k-2) + 1, nbmodt * (k-1) + 1)), tuple(tup_re2b), tuple(tup_im2b), 1)
+                    inul = 0
+                else:
+                  inul = 1
                 aster.putvectjev(__dyge0.get_name() + '           .ACCE        ', nbmodt, tuple(
-                    range(nbmodt * k + 1, nbmodt * (k + 1) + 1)), tup_re, tup_im, 1)
-        else:
+                    range(nbmodt * k + 1, nbmodt * (k + 1) + 1)), tuple(tup_re), tuple(tup_im), 1)
 
+        else:
+            inul = 0
             for k, freqk in enumerate(l_freq_sig):
                 coef_a = (vale_re[k] + vale_im[k] * 1.j)
+                omegk = 2.0 * pi * freqk
    #  ------------ interpolation du vecteur POD  VEC (NB_FREQ, nbmodt)
                 if freqk >= FREQ_FIN:
                     VEC_real = VEC[-1] * 0.0
@@ -281,18 +312,48 @@ def dyna_iss_vari_ops(
                             VEC[vale_i - 1] + dfp * (VEC[vale_i] - VEC[vale_i - 1])) * coef_a
                         VEC_real = VEC_comp.real
                         VEC_imag = VEC_comp.imag
-                tup_re = tuple(VEC_real)
-                tup_im = tuple(VEC_imag)
+                tup_re = VEC_real
+                tup_im = VEC_imag
+                if freqk > 1.e-6 :
+                  tup_re1 = (-1.0)*tup_re/(omegk*omegk)
+                  tup_im1 = (-1.0)*tup_im/(omegk*omegk)
+                  tup_re2 = tup_im/omegk
+                  tup_im2 = (-1.0)*tup_re/omegk
                 #                                     1         2         3
                 #                                   8901234567890123456789012
+                  aster.putvectjev(__dyge0.get_name() + '           .DEPL        ', nbmodt, tuple(
+                    range(nbmodt * k + 1, nbmodt * (k + 1) + 1)), tuple(tup_re1), tuple(tup_im1), 1)
+                  aster.putvectjev(__dyge0.get_name() + '           .VITE        ', nbmodt, tuple(
+                    range(nbmodt * k + 1, nbmodt * (k + 1) + 1)), tuple(tup_re2), tuple(tup_im2), 1)
+                  if inul == 1 :
+                    tup_re1a = tup_re1
+                    tup_im1a = tup_im1
+                    tup_re2a = tup_re2
+                    tup_im2a = tup_im2
+                    inul = 2
+                  elif inul == 2 :
+                    tup_re1b = (2.0)*tup_re1a-tup_re1
+                    tup_im1b = (2.0)*tup_im1a-tup_im1
+                    tup_re2b = (2.0)*tup_re2a-tup_re2
+                    tup_im2b = (2.0)*tup_im2a-tup_im2
+                    aster.putvectjev(__dyge0.get_name() + '           .DEPL        ', nbmodt, tuple(
+                      range(nbmodt * (k-2) + 1, nbmodt * (k-1) + 1)), tuple(tup_re1b), tuple(tup_im1b), 1)
+                    aster.putvectjev(__dyge0.get_name() + '           .VITE        ', nbmodt, tuple(
+                      range(nbmodt * (k-2) + 1, nbmodt * (k-1) + 1)), tuple(tup_re2b), tuple(tup_im2b), 1)
+                    inul = 0
+                else:
+                  inul = 1
                 aster.putvectjev(__dyge0.get_name() + '           .ACCE        ', nbmodt, tuple(
-                    range(nbmodt * k + 1, nbmodt * (k + 1) + 1)), tup_re, tup_im, 1)
+                    range(nbmodt * k + 1, nbmodt * (k + 1) + 1)), tuple(tup_re), tuple(tup_im), 1)
+
 
         print 'REST_SPEC_TEMP'
 
         dyha = REST_SPEC_TEMP(RESU_GENE=__dyge0,
                               #                        METHODE = 'PROL_ZERO' ,
                               SYMETRIE='NON',
-                              NOM_CHAM='ACCE')
+                              TOUT_CHAM='OUI',
+                              #NOM_CHAM='ACCE'
+                              )
 
     return ier
