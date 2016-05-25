@@ -8,7 +8,7 @@ subroutine nmcpla(fami, kpg, ksp, ndim, typmod,&
     implicit none
 ! ----------------------------------------------------------------------
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -151,7 +151,7 @@ subroutine nmcpla(fami, kpg, ksp, ndim, typmod,&
     cmp3(1) = comp(10)
     mod = typmod(1)
 !
-    ASSERT(cmp1(1) .eq. 'GRANGER_FP')
+    ASSERT(cmp1(1)(1:10) .eq. 'GRANGER_FP')
 !
 !     TABLEAU DES VARIABLES INTERNES DIMENSIONNE AUX MAX I.E. 3D
     call granvi(mod3d, ibid, ibid2, nvi1)
