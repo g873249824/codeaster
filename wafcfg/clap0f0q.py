@@ -26,7 +26,7 @@ def configure(self):
         YAMMROOT + '/prerequisites/Hdf5-1814/lib',
         YAMMROOT + '/tools/Medfichier-320/lib',
         YAMMROOT + '/prerequisites/Metis-40/lib',
-        YAMMROOT + '/prerequisites/Mfront-TFEL202/lib',
+        YAMMROOT + '/prerequisites/Mfront_stable-TFEL202/lib',
         YAMMROOT + '/prerequisites/Mumps4-4100_aster3/SEQ/lib',
         YAMMROOT + '/prerequisites/Scotch-5111/lib',
         # for openblas
@@ -37,7 +37,7 @@ def configure(self):
         YAMMROOT + '/prerequisites/Hdf5-1814/include',
         YAMMROOT + '/tools/Medfichier-320/include',
         YAMMROOT + '/prerequisites/Metis-40/Lib',
-        YAMMROOT + '/prerequisites/Mfront-TFEL202/include',
+        YAMMROOT + '/prerequisites/Mfront_stable-TFEL202/include',
         YAMMROOT + '/prerequisites/Scotch-5111/include'])
 
     # openblas from $ASTER_ROOT/public/lib embeds lapack
