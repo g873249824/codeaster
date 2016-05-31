@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -189,9 +189,7 @@ class PARAMETRES:
         if __salome__:
             from_salome = False
             try:
-                largs = sys.argv
-                i = largs.index('-ORBInitRef')
-                ns = largs[i + 1]
+                ns = aster_core.get_option('ORBInitRef')
                 machine_salome = ns.split(':')[-2]
                 machine_salome_port = ns.split(':')[-1]
                 self.dparam['machine_salome']['val'] = machine_salome
@@ -3256,7 +3254,7 @@ class PRE_STANLEY:
 
        Methodes privees
         Action_evenement : actions consecutives au scan des evenements
-        Dessin     : creation des objets graphiques Tk de l'interface
+        Dessin     : creation des objets graphiques Tk
     """
 
     def __init__(self, FICHIER_VALID=None):
