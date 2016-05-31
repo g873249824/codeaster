@@ -176,6 +176,7 @@ implicit none
 ! ----- BOUCLE SUR LES CHARGES
 !
         do i_load = 1, nb_load
+
             if (l_load_user) then
                 indic = indic + 1
  30             continue
@@ -192,6 +193,7 @@ implicit none
                     goto 30
                 endif
             else
+                if ( lcha2(i_load).eq.' ' ) goto 10
                 load_name = lcha2(i_load)(1:8)
             endif
             zk8(jlisdb+i_load-1) = load_name
@@ -453,6 +455,7 @@ implicit none
                 call liscad('MECA'      , list_load     , i_load_new, load_name, nomfct, &
                             nb_info_type, list_info_type, i_neum_laplz = i_neum_lapl)
             endif
+ 10         continue
 !
         end do
 !
