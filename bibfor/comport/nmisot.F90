@@ -2,10 +2,9 @@ subroutine nmisot(fami, kpg, ksp, ndim, typmod,&
                   imate, compor, crit, deps, sigm,&
                   vim, option, sigp, vip, dsidep,&
                   demu, cinco, iret)
-! ----------------------------------------------------------------------
-! person_in_charge: jean-michel.proix at edf.fr
+!
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -400,8 +399,8 @@ subroutine nmisot(fami, kpg, ksp, ndim, typmod,&
         sigmp(k)=deuxmu/deumum*(sigm(k)-sigmmo*kron(k)) + troisk/troikm*sigmmo*kron(k)
     end do
 !
-!     -- 6 CALCUL DE SIGMMO, SIGMDV, SIGEL, SIELEQ ET SEUIL :
-!     -------------------------------------------------------
+!     -- 6-a CALCUL DE SIGMMO, SIGMDV, SIGEL, SIELEQ
+!     --------------------------------------------
     sigmmo = 0.d0
     do k = 1, 3
         sigmmo = sigmmo + sigmp(k)
@@ -414,6 +413,12 @@ subroutine nmisot(fami, kpg, ksp, ndim, typmod,&
         sieleq = sieleq + sigel(k)**2
     end do
     sieleq = sqrt(1.5d0*sieleq)
+!
+!     -- 6-b CALCUL DU SEUIL ET TRAITEMENT DU CAS DE LA QUASI-EGALITE
+!     ---------------------------------------------------------------
+    if (abs(sieleq-rp) .le. r8prem()*rp) then
+        sieleq = rp
+    endif
     seuil = sieleq - rp
 !
 !     -- 7 CALCUL DE SIGP,SIGPDV,VIP,DP,RP:
