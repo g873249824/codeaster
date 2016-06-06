@@ -7,6 +7,7 @@ subroutine ctcrtb(nomtb, tych, resu, nkcha, typac,&
 #include "asterfort/carces.h"
 #include "asterfort/celces.h"
 #include "asterfort/cnocns.h"
+#include "asterfort/indk16.h"
 #include "asterfort/jedema.h"
 #include "asterfort/jedetr.h"
 #include "asterfort/jemarq.h"
@@ -21,7 +22,7 @@ subroutine ctcrtb(nomtb, tych, resu, nkcha, typac,&
     character(len=24) :: nkcha, nkcmp
     aster_logical :: toucmp
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -58,6 +59,7 @@ subroutine ctcrtb(nomtb, tych, resu, nkcha, typac,&
     integer :: kk, i, j, jcmp, iret
     character(len=19) :: chamns, chames
     character(len=16), pointer :: table_parak(:) => null()
+    character(len=16) :: nomcmp
     character(len=8), pointer :: table_typek(:) => null()
     integer, pointer :: cnsd(:) => null()
     character(len=8), pointer :: cnsc(:) => null()
@@ -243,9 +245,14 @@ subroutine ctcrtb(nomtb, tych, resu, nkcha, typac,&
         endif
     else
         do 95 j = 1, n
-            table_parak(kk+1)=zk8(jcmp+j-1)
-            table_typek(kk+1)='R'
-            kk=kk+1
+            nomcmp = zk8(jcmp+j-1)
+            if ( indk16(table_parak, nomcmp, 1, kk) .eq. 0 ) then
+                table_parak(kk+1) = nomcmp
+                table_typek(kk+1) = 'R'
+                kk=kk+1
+            else
+                nbpara = nbpara - 1
+            endif
  95     continue
     endif
 !
