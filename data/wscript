@@ -27,6 +27,7 @@ def options(self):
                     help='do not create legacy files')
 
 def configure(self):
+    self.add_os_flags('ADDMEM')
     self.env.legacy = self.options.legacy
     dict_conv = self.env2dict(osp.dirname(self.path.abspath()))
     self.env['ASTER_ENVIRON'] = cPickle.dumps(dict_conv)
@@ -81,7 +82,14 @@ def env2dict(self, src):
     flags = [' '.join(env[i]) for i in env.keys() if i.startswith('FCFLAGS')]
     dico['FCFLAGS'] = ' '.join(flags)
     dico['OPT_ENV'] = env['OPT_ENV'] and os.linesep.join(env['OPT_ENV']) or ''
-    dico['ADDMEM'] = env['ADDMEM'] or 250
+    try:
+        addmem = env['ADDMEM']
+        if addmem and type(addmem) in (list, tuple):
+            addmem = addmem[0]
+        env['ADDMEM'] = int(addmem)
+    except TypeError:
+        env['ADDMEM'] = 250
+    dico['ADDMEM'] = env['ADDMEM']
     dico['srctest'] = os.linesep.join([
     SRCTEST_TMPL % '%(SRC)s/astest' % dico,
     SRCTEST_TMPL % '%(SRC)s/../validation/astest' % dico])
