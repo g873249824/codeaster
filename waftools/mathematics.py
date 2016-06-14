@@ -68,7 +68,7 @@ def check_libm_after_files(self):
                 flags.remove('-lm')
             except ValueError:
                 break
-        self.end_msg('ok ("-lm" removed from LINKFLAGS_CLIB)')
+        self.end_msg('yes ("-lm" removed from LINKFLAGS_CLIB)')
         self.env.LINKFLAGS_CLIB = flags
     else:
         self.end_msg('nothing done')
@@ -129,8 +129,15 @@ def detect_math_lib(self):
     blaslibs, lapacklibs = self.get_mathlib_from_numpy()
     self.check_math_libs('blas', list(BLAS) + blaslibs, embed)
     # lapack
-    self.check_math_libs('lapack', list(LAPACK) + lapacklibs, embed,
-                         optional='openblas' in self.env.get_flat(varlib))
+    opt_lapack = False
+    if 'openblas' in self.env.get_flat(varlib):
+        try:
+            self.check_math_libs_call()
+            opt_lapack = True
+        except:
+            pass
+    if not opt_lapack:
+        self.check_math_libs('lapack', list(LAPACK) + lapacklibs, embed)
 
     def _scalapack():
         """Check scalapack"""
