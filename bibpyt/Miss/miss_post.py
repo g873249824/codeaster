@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -443,12 +443,12 @@ class PostMissHarm(PostMissTran):
         """Vérification des arguments d'entrée."""
         super(PostMissHarm, self).argument()
         self.parent.DeclareOut('trangene', self.parent.sd)
-        self.suppr_acce_fft()
 
     def concepts_communs(self):
         """Construction des concepts spécifiques au cas HARMO."""
         super(PostMissHarm, self).concepts_communs()
-        for excit_i in self.excit_kw:
+        if self.excit_kw is not None:
+          for excit_i in self.excit_kw:
             dExc = excit_i.cree_dict_valeurs(excit_i.mc_liste)
             for mc in dExc.keys():
                 if dExc[mc] is None:
