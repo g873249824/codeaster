@@ -17,7 +17,7 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
 #include "asterfort/dismoi.h"
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -66,7 +66,7 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
     aster_logical :: lpilo, lreli, lmacr, lunil
     aster_logical :: lmvib, lflam, lexpl, lxfem, lmodim
     aster_logical :: lrcmk, lgcpc, lpetsc, lamg, lsyme, limpex
-    aster_logical :: londe, ldyna, lgrot, ltheta, lnkry
+    aster_logical :: londe, ldyna, lgrot, ltheta, lnkry, lammo
     aster_logical :: lener, lproj, lmatdi, lldsp, lctgcp, lcomp
     integer :: ifm, niv
     character(len=24) :: typilo, typrel, metres
@@ -95,6 +95,7 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
     lexpl = isfonc(fonact,'EXPLICITE')
     lgrot = isfonc(fonact,'GD_ROTA')
     ltheta = ndynlo(sddyna,'THETA_METHODE')
+    lammo  = ndynlo(sddyna,'AMOR_MODAL')
     limpex = isfonc(fonact,'IMPLEX')
     lnkry = isfonc(fonact,'NEWTON_KRYLOV')
     lener = isfonc(fonact,'ENERGIE')
@@ -173,6 +174,9 @@ subroutine exfonc(fonact, parmet, method, solveu, defico,&
         endif
         if (lpetsc .and. lmatdi) then
             call utmess('F', 'MECANONLINE3_98')
+        endif
+        if (lammo) then
+            call utmess('F', 'MECANONLINE3_3')
         endif
     endif
 !
