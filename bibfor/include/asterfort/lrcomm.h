@@ -16,13 +16,13 @@
 ! 1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 !
 interface
-    subroutine lrcomm(resu, typres, nbordr, chmat, carael,&
-                      modele)
+    subroutine lrcomm(resu, typres, nbordr, chmat, carael, modele, from_lire_resu)
         character(len=8) :: resu
         character(len=16) :: typres
         integer :: nbordr
         character(len=8) :: chmat
         character(len=8) :: carael
         character(len=8) :: modele
+        aster_logical, intent(in), optional :: from_lire_resu
     end subroutine lrcomm
 end interface
