@@ -1,54 +1,8 @@
-subroutine alfint(chmatz, imate, nommaz, tdef, noparz,&
-                  nummat, prec, ch19)
-! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
-! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
-! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
-! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
-! (AT YOUR OPTION) ANY LATER VERSION.
+subroutine alfint(chmatz   , imate, mate_namz, tdef, para_namz,&
+                  mate_nume, prec , func_name)
 !
-! THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
-! WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
-! MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
-! GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+implicit none
 !
-! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
-! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
-!    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
-! ======================================================================
-!.======================================================================
-    implicit none
-!
-!      ALFINT   -- INTERPOLATION DES COEFFICIENTS DE DILATATION
-!                  ALPHA PERMETTANT LA PRISE EN COMPTE DU FAIT
-!                  QUE LA TEMPERATURE DE REFERENCE ( A LAQUELLE
-!                  LES DEFORMATIONS SONT NULLES) EST DIFFERENTE
-!                  DE LA TEMPERATURE AMBIANTE.
-!
-!   ARGUMENT        E/S  TYPE         ROLE
-!    CHMATZ         IN     K*       NOM DU CHAM_MATER COURANT
-!    NOMMAZ         IN     K*       NOM DU MATERIAU COURANT
-!    TDEF           IN     R        TEMPERATURE DE DEFINITION DU
-!                                   MATERIAU
-!    NOPARZ         IN     K*       NOM DU PARAMETRE A INTERPOLER :
-!                                   = 'ALPHA'
-!                                   = 'FBM_ALPH'
-!                                   = 'A_ALPHA'
-!    NUMMAT         IN     I        INDICE DU MATERIAU
-!    PREC           IN     R        PRECISION AVEC LAQUELLE ON COMPARE
-!                                   LA TEMPERATURE COURANTE ET LA
-!                                   LA TEMPERATURE DE REFERENCE ET
-!                                   SELON LAQUELLE ON DECIDE SI ON
-!                                   FAIT UN DEVELOPPEMENT DE T AU
-!                                   PREMIER ORDRE AUTOUR DE TREF.
-!    CH19Z          VAR    K*       NOM DE LA FONCTION ALPHA DU
-!                                   MATERIAU EN ENTREE
-!                                   NOM DE LA FONCTION CONTENANT
-!                                   LES VALEURS DE ALPHA MODIFIEES EN
-!                                   SORTIE
-!
-!.========================= DEBUT DES DECLARATIONS ====================
-! -----  ARGUMENTS
 #include "jeveux.h"
 #include "asterc/getres.h"
 #include "asterc/gettco.h"
@@ -66,128 +20,182 @@ subroutine alfint(chmatz, imate, nommaz, tdef, noparz,&
 #include "asterfort/rcvale.h"
 #include "asterfort/utmess.h"
 !
-    character(len=*) :: chmatz, nommaz, noparz
-    character(len=19) :: ch19
-! -----  VARIABLES LOCALES
+! ======================================================================
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
+! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+! (AT YOUR OPTION) ANY LATER VERSION.
+!
+! THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+! WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+! MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+! GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+!
+! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+!    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+! ======================================================================
+!
+    character(len=*), intent(in) :: chmatz
+    integer, intent(in) :: imate
+    character(len=*), intent(in) :: mate_namz
+    real(kind=8), intent(in) :: tdef
+    character(len=*), intent(in) :: para_namz
+    integer, intent(in) :: mate_nume
+    real(kind=8), intent(in) :: prec
+    character(len=19), intent(inout) :: func_name
+!
+! --------------------------------------------------------------------------------------------------
+!
+! Material - Coding 
+!
+! Interpolation of ALPHA
+!
+! --------------------------------------------------------------------------------------------------
+!
+! In  chmate           : name of material field (CHAM_MATER)
+! In  imate            : index of current material
+! In  mate_name        : name of current material (MATER)
+! In  tdef             : value of TEMP_DEF
+! In  para_name        : name of parameter (ALPHA)
+! In  mate_nume        : index of current material
+! In  prec             : precision for interpolate (in DEFI_MATERIAU)
+! IO  func_name        : function for ALPHA
+!
+! --------------------------------------------------------------------------------------------------
+!
     integer :: icodre(1)
-    character(len=8) :: k8b, chmat, nommat, ktref, nomgd, valk(2)
+    character(len=8) :: k8dummy, chmate, mate_name, phys_name, valk(2),ktref
     character(len=32) :: phenom
-    character(len=16) :: typres, nomcmd, nopara
+    character(len=16) :: typres, nomcmd, para_name
     character(len=19) :: chwork
-    integer :: nummat, ncmp, jnomrc,   i, nbpts, imate
-    integer :: nbec, k, ec1, kk, igd, ngdmax,  jvale
-    real(kind=8) :: prec, undemi, tref, alfref(1), alphai, ti, tim1, tip1
-    real(kind=8) :: alfim1, alfip1, dalref, tdef
-    character(len=24), pointer :: prol(:) => null()
-    real(kind=8), pointer :: vale(:) => null()
-    real(kind=8), pointer :: valw(:) => null()
-    integer, pointer :: desc(:) => null()
+    integer :: nb_cmp, i, nbpts, jv_nomrc
+    integer :: nbec, k, ec1, kk, ngdmax
+    real(kind=8) :: undemi, tref, alfref(1), alphai, ti, tim1, tip1
+    real(kind=8) :: alfim1, alfip1, dalref
+    character(len=24), pointer :: v_prol(:) => null()
+    real(kind=8), pointer :: v_func_vale(:) => null()
+    real(kind=8), pointer :: v_work_vale(:) => null()
+    integer, pointer :: v_chmate_desc(:) => null()
+    character(len=8), pointer :: v_chmate_vale(:) => null()
 !
-!.========================= DEBUT DU CODE EXECUTABLE ==================
+! --------------------------------------------------------------------------------------------------
 !
-! --- INITIALISATIONS :
-!     ---------------
-    chmat = chmatz
-    nommat = nommaz
-    nopara = noparz
-    undemi = 0.5d0
+    chmate    = chmatz
+    mate_name = mate_namz
+    para_name = para_namz
+    undemi    = 0.5d0
 !
-    call getres(k8b, k8b, nomcmd)
-!     EN THERMIQUE ON N A PAS BESOIN DE CALCULER ALPHA=F(T)
-    if (nomcmd(1:5) .eq. 'THER_') goto 999
+! - Not for thermic
 !
-! --- RECUPERATION DE LA TEMPERATURE DE REFERENCE (TREF):
-!     ---------------------------------------------------
-!
-!     -- NOUVELLE SYNTAXE : AFFE_MATERIAU/AFFE_VARC/TEMP
-    call jeveuo(chmat//'.CHAMP_MAT .DESC', 'L', vi=desc)
-    call jeveuo(chmat//'.CHAMP_MAT .VALE', 'L', jvale)
-    igd = desc(1)
-    call jenuno(jexnum('&CATA.GD.NOMGD', igd), nomgd)
-    ASSERT(nomgd.eq.'NOMMATER')
-    call jelira(jexnom('&CATA.GD.NOMCMP', 'NOMMATER'), 'LONMAX', ncmp)
-    call dismoi('NB_EC', nomgd, 'GRANDEUR', repi=nbec)
-    ngdmax=desc(2)
-!     TREF EST SUR LE 1ER ENTIER CODE :
-    ec1=desc(3+2*ngdmax+nbec*(imate-1)+1)
-    k=0
-    do kk = 1, 30
-        if (exisdg([ec1],kk)) k=k+1
-    end do
-    if (zk8(jvale+ncmp*(imate-1)+k-2) .ne. 'TREF=>') then
-        call utmess('F', 'CALCULEL6_56', sk=chmat)
+    call getres(k8dummy, k8dummy, nomcmd)
+    if (nomcmd(1:5) .eq. 'THER_') then
+        goto 100
     endif
-    ktref = zk8(jvale+ncmp*(imate-1)+k-1)
-    if (ktref .eq. 'NAN') goto 9998
 !
+! - Access to CHAM_MATER
+!
+    call jeveuo(chmate//'.CHAMP_MAT .DESC', 'L', vi =v_chmate_desc)
+    call jeveuo(chmate//'.CHAMP_MAT .VALE', 'L', vk8=v_chmate_vale)
+!
+! - Check physical quantity
+!
+    call jenuno(jexnum('&CATA.GD.NOMGD', v_chmate_desc(1)), phys_name)
+    ASSERT(phys_name.eq.'NOMMATER')
+    call jelira(jexnom('&CATA.GD.NOMCMP', 'NOMMATER'), 'LONMAX', nb_cmp)
+    call dismoi('NB_EC', phys_name, 'GRANDEUR', repi=nbec)
+    ngdmax=v_chmate_desc(2)
+!
+! - Get TREF (SUR LE 1ER ENTIER CODE)
+!
+    ec1 = v_chmate_desc(3+2*ngdmax+nbec*(imate-1)+1)
+    k   = 0
+    do kk = 1, 30
+        if (exisdg([ec1],kk)) then
+            k=k+1
+        endif
+    end do
+    if (v_chmate_vale(nb_cmp*(imate-1)+k-1) .ne. 'TREF=>') then
+        call utmess('F', 'MATERIAL1_56', sk=chmate)
+    endif
+    ktref= v_chmate_vale(nb_cmp*(imate-1)+k)
+    if (ktref(1:3) .eq. 'NAN') then
+        goto 999
+    endif
     read (ktref,'(F8.2)') tref
 !
-! --- RECUPERATION DU NOM DU PHENOMENE ASSOCIE AU MATERIAU :
-!     ----------------------------------------------------
-    call jeveut(nommat//'.MATERIAU.NOMRC', 'L', jnomrc)
-    phenom = zk32(jnomrc+nummat-1)(1:10)
+! - Get phenomen for material
 !
-! --- CREATION DE LA NOUVELLE FONCTION DEVANT CONTENIR LES VALEURS
-! --- INTERPOLEES DE ALPHA :
-! --- LE NOM DE CETTE NOUVELLE FONCTION EST DEFINI DE LA MANIERE
-! --- SUIVANTE : NOM_NOUVEAU = &&NOM_ANCIEN(1:2)//00NUMMAT :
-!     ----------------------------------------------------
+    call jeveut(mate_name//'.MATERIAU.NOMRC', 'L', jv_nomrc)
+    phenom = zk32(jv_nomrc+mate_nume-1)(1:10)
+!
+! --------------------------------------------------------------------------------------------------
+!
+!  Create new function for ALPHA
+!
+! --------------------------------------------------------------------------------------------------
+!
+!
+! - Name of new function: new_name = &&old_name(1:2)//00NUMMAT
+!
     call gcncon('.', chwork)
     chwork = '&&'//chwork(3:8)
 !
-! --- CREATION DE LA NOUVELLE FONCTION CHWORK PAR RECOPIE DE CH19
-! --- SUR LA VOLATILE :
-    call gettco(ch19, typres)
-    if (typres .eq. 'FORMULE') then
-        call utmess('F', 'MODELISA2_1')
+! - Check if function
+!
+    call gettco(func_name, typres)
+    if (typres .ne. 'FONCTION_SDASTER' .and. typres .ne. ' ') then
+        call utmess('F', 'MATERIAL1_1')
     endif
-    call copisd('FONCTION', 'V', ch19, chwork)
 !
-! --- RECUPERATION DU NOMBRE DE POINTS DEFINISSANT LA FONCTION :
+! - Copy function
+!
+    call copisd('FONCTION', 'V', func_name, chwork)
+!
+! - Get number of points
+!
     call jelira(chwork(1:19)//'.VALE', 'LONMAX', nbpts)
-!
-! --- NOMBRE DE POINTS DE LA FONCTION :
     nbpts = nbpts/2
 !
-!     -- SI LA FONCTION N'A QU'UN POINT :
+! - Check function if only one point
+!
     if (nbpts .eq. 1) then
-        call jeveuo(chwork(1:19)//'.PROL', 'L', vk24=prol)
+        call jeveuo(chwork(1:19)//'.PROL', 'L', vk24=v_prol)
 !        -- SI LA FONCTION EST UNE CONSTANTE, ON NE FAIT RIEN :
-        if (prol(1) .eq. 'CONSTANT') then
-            goto 999
+        if (v_prol(1) .eq. 'CONSTANT') then
+            goto 100
 !        -- SI TREF ET TDEF SONT PROCHES (1 DEGRE), ON NE FAIT RIEN :
-        else if (abs(tref-tdef).lt.1.d0) then
-            goto 999
-!        -- SINON ON ARRETE TOUT :
+        else if (abs(tref-tdef) .lt. 1.d0) then
+            goto 100
         else
-            call utmess('F', 'MODELISA2_42', sk=ch19(1:8))
+            call utmess('F', 'MATERIAL1_42', sk=func_name(1:8))
         endif
     endif
 !
-! --- CALCUL DE ALPHA A LA TEMPERATURE DE REFERENCE :
-    call rcvale(nommat, phenom, 1, 'TEMP    ', [tref],&
-                1, nopara, alfref(1), icodre(1), 2)
+! - Get ALPHA at reference temperature tref
 !
-! --- RECUPERATION DU .VALE DE LA FONCTION DESTINEE A CONTENIR LES
-! --- VALEURS DE ALPHA INTERPOLEES :
-    call jeveuo(chwork(1:19)//'.VALE', 'E', vr=valw)
+    call rcvale(mate_name, phenom, 1, 'TEMP    ', [tref],&
+                1, para_name, alfref(1), icodre(1), 2)
 !
-! --- RECUPERATION DU .VALE DE LA FONCTION CONTENANT LES
-! --- VALEURS INITIALES DE ALPHA  :
-    call jeveuo(ch19(1:19)//'.VALE', 'L', vr=vale)
+! - Acces to function values
 !
-! --- CALCUL DES ALPHA INTERPOLES :
+    call jeveuo(chwork(1:19)//'.VALE', 'E', vr=v_work_vale)
+    call jeveuo(func_name(1:19)//'.VALE', 'L', vr=v_func_vale)
+!
+! - Compute new values for ALPHA
+!
     do i = 1, nbpts
 !
-        alphai = vale(1+i+nbpts-1)
-        ti = vale(i)
+        alphai = v_func_vale(1+i+nbpts-1)
+        ti = v_func_vale(i)
 !
 ! --- DANS LE CAS OU ABS(TI-TREF) > PREC :
 ! --- ALPHA_NEW(TI) = (ALPHA(TI)*(TI-TDEF) - ALPHA(TREF)*(TREF-TDEF))
 ! ---                 /(TI-TREF)   :
         if (abs(ti-tref) .ge. prec) then
 !
-            valw(1+i+nbpts-1) = ( alphai*(ti-tdef)- alfref(1)*(tref- tdef)) /(ti-tref )
+            v_work_vale(1+i+nbpts-1) = ( alphai*(ti-tdef)- alfref(1)*(tref- tdef)) /(ti-tref )
 ! --- DANS LE CAS OU ABS(TI-TREF) < PREC :
 ! --- IL FAUT D'ABORD CALCULER LA DERIVEE DE ALPHA PAR RAPPORT
 ! --- A LA TEMPERATURE EN TREF : D(ALPHA)/DT( TREF) :
@@ -197,15 +205,15 @@ subroutine alfint(chmatz, imate, nommaz, tdef, noparz,&
 ! ---                            +(ALPHA(TREF)-ALPHA(TI-1))/(TREF-TI-1))
             if (i .gt. 1 .and. i .lt. nbpts) then
 !
-                tim1 = vale(1+i-1-1)
-                tip1 = vale(1+i+1-1)
-                alfim1 = vale(1+i+nbpts-1-1)
-                alfip1 = vale(1+i+nbpts+1-1)
+                tim1 = v_func_vale(1+i-1-1)
+                tip1 = v_func_vale(1+i+1-1)
+                alfim1 = v_func_vale(1+i+nbpts-1-1)
+                alfip1 = v_func_vale(1+i+nbpts+1-1)
                 if (tip1 .eq. tref) then
-                    call utmess('F', 'MODELISA2_2')
+                    call utmess('F', 'MATERIAL1_3')
                 endif
                 if (tim1 .eq. tref) then
-                    call utmess('F', 'MODELISA2_2')
+                    call utmess('F', 'MATERIAL1_3')
                 endif
 !
                 dalref = undemi*((alfip1-alfref(1))/(tip1-tref) +(alfref(1)- alfim1)/(tref-tim1))
@@ -214,10 +222,10 @@ subroutine alfint(chmatz, imate, nommaz, tdef, noparz,&
 ! ---   D(ALPHA)/DT( TREF) = (ALPHA(TREF)-ALPHA(TI-1))/(TREF-TI-1) :
             else if (i.eq.nbpts) then
 !
-                tim1 = vale(1+i-1-1)
-                alfim1 = vale(1+i+nbpts-1-1)
+                tim1 = v_func_vale(1+i-1-1)
+                alfim1 = v_func_vale(1+i+nbpts-1-1)
                 if (tim1 .eq. tref) then
-                    call utmess('F', 'MODELISA2_2')
+                    call utmess('F', 'MATERIAL1_3')
                 endif
 !
                 dalref = (alfref(1)-alfim1)/(tref-tim1)
@@ -226,10 +234,10 @@ subroutine alfint(chmatz, imate, nommaz, tdef, noparz,&
 ! ---   D(ALPHA)/DT( TREF) = (ALPHA(TI+1)-ALPHA(TREF))/(TI+1-TREF) :
             else if (i.eq.1) then
 !
-                tip1 = vale(1+i+1-1)
-                alfip1 = vale(1+i+nbpts+1-1)
+                tip1 = v_func_vale(1+i+1-1)
+                alfip1 = v_func_vale(1+i+nbpts+1-1)
                 if (tip1 .eq. tref) then
-                    call utmess('F', 'MODELISA2_2')
+                    call utmess('F', 'MATERIAL1_3')
                 endif
 !
                 dalref = (alfip1-alfref(1))/(tip1-tref)
@@ -238,22 +246,20 @@ subroutine alfint(chmatz, imate, nommaz, tdef, noparz,&
 ! ---   DANS CE CAS OU ABS(TI-TREF) < PREC , ON A :
 ! ---   ALPHA_NEW(TI) = ALPHA_NEW(TREF)
 ! ---   ET ALPHA_NEW(TREF) = D(ALPHA)/DT (TREF)*(TREF-TDEF)+ALPHA(TREF):
-            valw(1+i+nbpts-1) = dalref*(tref-tdef) + alfref(1)
-!
+            v_work_vale(1+i+nbpts-1) = dalref*(tref-tdef) + alfref(1)
         endif
-!
     end do
 !
-! --- ON REMPLACE LA FONCTION EN ENTREE CH19 PAR LA FONCTION
-! --- DE TRAVAIL CONTENANT LES VALEURS DE ALPHA INTERPOLEES CHWORK :
-    ch19 = chwork
+! - New function to save
 !
-    goto 999
+    func_name = chwork
+!
+    goto 100
 !     -- SECTION "ERREUR":
-9998 continue
-    valk(1)=chmat
-    valk(2)=nommat
-    call utmess('F', 'CALCULEL6_1', nk=2, valk=valk)
-!
 999 continue
+    valk(1)=chmate
+    valk(2)=mate_name
+    call utmess('F', 'MATERIAL1_2', nk=2, valk=valk)
+!
+100 continue
 end subroutine
