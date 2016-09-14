@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -19,20 +19,6 @@
 
 cata_msg = {
 
-    1: _(u"""
-Erreur utilisateur (dans la commande AFFE_MATERIAU) :
-  Dans le CHAM_MATER %(k1)s, vous avez affecté le matériau %(k2)s.
-  Dans ce matériau, il existe un coefficient de dilatation (ELAS/ALPHA)
-  qui est une fonction de la température.
-  Pour pouvoir utiliser cette fonction, il est nécessaire de transformer
-  cette fonction (changement de repère : "TEMP_DEF_ALPHA" -> "TEMP_REF").
-  Pour cela, l'utilisateur doit fournir une température de référence.
-
-Solution :
-  Vérifier que les mailles affectées par le matériau %(k2)s sont bien
-  toutes affectées par une température de référence
-  (mot clé AFFE_VARC/NOM_VARC='TEMP',VALE_REF=...).
-"""),
 
     2: _(u"""
   Problème d'extraction : Résultat généralisé %(k1)s
@@ -180,15 +166,7 @@ Conseils :
 """),
 
 
-    56: _(u"""
- Erreur d'utilisation (rcmaco/alfint) :
- Un des matériaux du CHAM_MATER %(k1)s contient un coefficient de dilatation ALPHA=f(TEMP).
- Mais la température de référence n'est pas fournie sous AFFE_MATERIAU/AFFE_VARC/VALE_REF
 
- Conseil :
-   Renseignez la température de référence à l'aide de :
-     AFFE_MATERIAU/AFFE_VARC/NOM_VARC='TEMP'     + VALE_REF
-"""),
 
     57: _(u"""
  Erreur d'utilisation (préparation des variables de commande) :
@@ -246,7 +224,7 @@ Conseils :
 
 
     68: _(u"""
- la liste des composantes fournies à NOCART est incorrecte.
+ la liste des composantes fournies est incorrecte.
  composantes dans catalogue:
 """),
 
