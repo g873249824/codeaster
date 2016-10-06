@@ -21,9 +21,10 @@ implicit none
 #include "asterfort/nbec.h"
 #include "asterfort/nbgrel.h"
 #include "asterfort/typele.h"
+#include "asterfort/utmess.h"
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -97,7 +98,7 @@ implicit none
 !
 ! --------------------------------------------------------------------------------------------------
 !
-    character(len=8) :: new_mesh, exiele
+    character(len=8) :: new_mesh, exiele, valk(2)
     character(len=16) :: phenom, new_phenom, nomte
     character(len=19) :: prefix
     character(len=24) :: ligr_name
@@ -141,7 +142,7 @@ implicit none
 ! - Save temporary objects ADNE et ADLI
 !
     do i_list_ligr = 1, nb_ligr
-        
+
         ligr_name = list_ligr(i_list_ligr)
 !
 ! ----- Only one phenomenon
@@ -158,9 +159,11 @@ implicit none
         call jeveut(ligr_name(1:19)//'.LGRF', 'L', iad)
         new_mesh = zk8(iad)
         if (i_list_ligr .eq. 1) then
-            mesh = new_mesh 
-        else
-            ASSERT(mesh.eq.new_mesh)
+            mesh = new_mesh
+        else if (mesh .ne. new_mesh ) then
+            valk(1) = mesh
+            valk(2) = new_mesh
+            call utmess('F', 'CHARGES_33', nk=2, valk=valk)
         endif
 !
 ! ----- Create object in collection

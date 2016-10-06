@@ -76,6 +76,12 @@ On ne peut pas piloter la charge %(k1)s car c'est une charge fonction du temps.
 La charge %(k1)s contient une condition de type ECHANGE et elle n'est pas compatible avec FONC_MULT. Pour appliquer une fonction (y compris en fonction du temps), il faut utiliser AFFE_CHAR_THER_F.
 """),
 
+    33 : _(u"""
+Il n'est pas possible d'avoir des maillages différents : %(k1)s et %(k2)s.
+
+Conseil : Vérifier la cohérence entre les objets maillage, modèle, champ de matériau, etc.
+"""),
+
     34 : _(u"""
 La charge de type EVOL_CHAR %(k1)s  ne peut pas être pilotée.
 """),
