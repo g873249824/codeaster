@@ -1,7 +1,7 @@
 subroutine op0009()
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -162,23 +162,20 @@ subroutine op0009()
 !
 ! --------------------------------------------------------------------------------------------------
     else if (suropt.eq.'MASS_MECA') then
-!        COMPOR = ' '
-        call memame(suropt, modele, ncha, zk8(icha), mate,&
-                    cara, exitim, time, compor, matel,&
+        call memame(suropt, modele, mate,&
+                    cara, time, compor, matel,&
                     base)
 !
 ! --------------------------------------------------------------------------------------------------
     else if (suropt.eq.'MASS_FLUI_STRU') then
-!        COMPOR = ' '
-        call memame(suropt, modele, ncha, zk8(icha), mate,&
-                    cara, exitim, time, compor, matel,&
+        call memame(suropt, modele, mate,&
+                    cara, time, compor, matel,&
                     base)
 !
 ! --------------------------------------------------------------------------------------------------
     else if (suropt.eq.'MASS_MECA_DIAG') then
-!        COMPOR = ' '
-        call memame(suropt, modele, ncha, zk8(icha), mate,&
-                    cara, exitim, time, compor, matel,&
+        call memame(suropt, modele, mate,&
+                    cara, time, compor, matel,&
                     base)
 !
 ! --------------------------------------------------------------------------------------------------

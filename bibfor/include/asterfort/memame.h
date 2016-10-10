@@ -1,5 +1,5 @@
 !
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                WWW.CODE-ASTER.ORG
 !
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
@@ -18,19 +18,15 @@
 #include "asterf_types.h"
 !
 interface
-    subroutine memame(option, modele, nchar, lchar, mate,&
-                      carele, exitim, instan, compor, matelz,&
-                      base)
-        character(len=*) :: option
-        character(len=*) :: modele
-        integer :: nchar
-        character(len=8) :: lchar(*)
-        character(len=*) :: mate
-        character(len=*) :: carele
-        aster_logical :: exitim
-        real(kind=8) :: instan
-        character(len=*) :: compor
-        character(len=*) :: matelz
-        character(len=1) :: base
+    subroutine memame(option , model_    , mate_, cara_elem_, time,&
+                      compor_, matr_elem_, base)
+        character(len=*), intent(in) :: option
+        character(len=*), intent(in) :: model_
+        character(len=*), intent(in) :: mate_
+        character(len=*), intent(in) :: cara_elem_
+        real(kind=8), intent(in) :: time
+        character(len=*), intent(in) :: compor_
+        character(len=*), intent(in) :: matr_elem_
+        character(len=1), intent(in) :: base
     end subroutine memame
 end interface

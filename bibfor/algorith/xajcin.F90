@@ -6,7 +6,7 @@ implicit none
 #include "asterfort/assert.h"
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -171,6 +171,31 @@ implicit none
         lchin(nchin + 8 ) = model(1:8)//'.LTNO'
         lpain(nchin + 9 ) = 'PHEA_NO'
         lchin(nchin + 9 ) = model(1:8)//'.TOPONO.HNO'
+        nchin = nchin+nbadd
+    elseif (option(1:5) .eq. 'MASS_') then
+!
+        nbadd = 10
+        ASSERT(nchin+nbadd .le. mxchin)
+        lpain(nchin + 1 ) = 'PPINTTO'
+        lchin(nchin + 1 ) = model(1:8)//'.TOPOSE.PIN'
+        lpain(nchin + 2 ) = 'PHEAVTO'
+        lchin(nchin + 2 ) = model(1:8)//'.TOPOSE.HEA'
+        lpain(nchin + 3 ) = 'PLONCHA'
+        lchin(nchin + 3 ) = model(1:8)//'.TOPOSE.LON'
+        lpain(nchin + 4 ) = 'PCNSETO'
+        lchin(nchin + 4 ) = model(1:8)//'.TOPOSE.CNS'
+        lpain(nchin + 5 ) = 'PBASLOR'
+        lchin(nchin + 5 ) = model(1:8)//'.BASLOC'
+        lpain(nchin + 6 ) = 'PLSN'
+        lchin(nchin + 6 ) = model(1:8)//'.LNNO'
+        lpain(nchin + 7 ) = 'PLST'
+        lchin(nchin + 7 ) = model(1:8)//'.LTNO'
+        lpain(nchin + 8 ) = 'PSTANO'
+        lchin(nchin + 8 ) = model(1:8)//'.STNO'
+        lpain(nchin + 9 ) = 'PHEA_NO'
+        lchin(nchin + 9 ) = model(1:8)//'.TOPONO.HNO'
+        lpain(nchin + 10) = 'PPMILTO'
+        lchin(nchin + 10) = model(1:8)//'.TOPOSE.PMI'
         nchin = nchin+nbadd
 !
     else
