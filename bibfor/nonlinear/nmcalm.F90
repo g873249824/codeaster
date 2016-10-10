@@ -4,7 +4,7 @@ subroutine nmcalm(typmat, modelz, lischa, mate, carele,&
                   resoco, matele)
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -168,8 +168,8 @@ subroutine nmcalm(typmat, modelz, lischa, mate, carele,&
 ! --- MATR_ELEM MASSES
 !
     else if (typmat.eq.'MEMASS') then
-        call memame(optmat, modele, nbchar, zk8(jchar2), mate,&
-                    carele, .true._1, instam, compor, matele,&
+        call memame(optmat, modele, mate,&
+                    carele, instam, compor, matele,&
                     base)
 !
 ! --- MATR_ELEM AMORTISSEMENT
