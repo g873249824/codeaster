@@ -2,7 +2,7 @@ subroutine ibdbgs()
     implicit none
 !     ------------------------------------------------------------------
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -56,19 +56,14 @@ subroutine ibdbgs()
 !-----------------------------------------------------------------------
     call jemarq()
     tbloc=800.d0
-!
-!     -- WARNING SUR LES MOTS-CLES CODE ET DEBUG
-    call ibcode(ncode)
-    call getfac('DEBUG', ndbg)
-    if (ncode .gt. 0 .or. ndbg .gt. 0) then
-        call utmess('I', 'SUPERVIS_22')
-    endif
+    ndbg = 0
 !
 !     -- DEBUG / JXVERI :
     repons = 'NON'
     call getvtx('DEBUG', 'JXVERI', iocc=1, scal=repons, nbret=l)
     if (l .eq. 0) then
         if (repons .eq. 'OUI') then
+        ndbg = 1
             call utmess('I', 'SUPERVIS_23')
 !           LE "FLAG" JXVERI=OUI EST POSTIONNE DANS LE JDC
 !           VOIR ROUTINE EXPASS.F
@@ -88,6 +83,7 @@ subroutine ibdbgs()
     endif
 !
     if (repons .eq. 'OUI') then
+        ndbg = 1
         call jdcset('sdveri', 1)
         call utmess('I', 'SUPERVIS_24')
     else
@@ -101,6 +97,7 @@ subroutine ibdbgs()
     call getvtx('DEBUG', 'JEVEUX', iocc=1, scal=repons)
     ASSERT(repons.eq.'OUI' .or. repons.eq.'NON')
     if (repons .eq. 'OUI') then
+        ndbg = 1
         call utmess('I', 'SUPERVIS_12')
         idebug = 1
     endif
@@ -111,8 +108,15 @@ subroutine ibdbgs()
     repons = 'NON'
     call getvtx('DEBUG', 'ENVIMA', iocc=1, scal=repons)
     if (repons .eq. 'TES') then
+        ndbg = 1
         ifi = iunifi ( 'RESULTAT' )
         call impvem(ifi)
+    endif
+!
+!     -- WARNING SUR LES MOTS-CLES CODE ET DEBUG
+    call ibcode(ncode)
+    if (ncode .gt. 0 .or. ndbg .gt. 0) then
+        call utmess('I', 'SUPERVIS_22')
     endif
 !
 !
