@@ -56,6 +56,7 @@ subroutine ibdbgs()
 !-----------------------------------------------------------------------
     call jemarq()
     tbloc=800.d0
+    call ibcode(ncode)
     ndbg = 0
 !
 !     -- DEBUG / JXVERI :
@@ -76,9 +77,6 @@ subroutine ibdbgs()
     if (l .eq. 0) then
         if (ncode .gt. 0) then
 !          UN JOUR, ON METTRA 'OUI' PAR DEFAUT ...
-            repons='NON'
-        else
-            repons='NON'
         endif
     endif
 !
@@ -114,7 +112,6 @@ subroutine ibdbgs()
     endif
 !
 !     -- WARNING SUR LES MOTS-CLES CODE ET DEBUG
-    call ibcode(ncode)
     if (ncode .gt. 0 .or. ndbg .gt. 0) then
         call utmess('I', 'SUPERVIS_22')
     endif
