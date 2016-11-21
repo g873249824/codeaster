@@ -1,7 +1,7 @@
 # coding=utf-8
 # person_in_charge: mathieu.courtois at edf.fr
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -137,16 +137,15 @@ class ETAPE:
                         la commande avant son execution.
         """
         from Utilitai.Utmess import UTMESS
-        voir = (not isinstance(self.parent, MACRO_ETAPE)) or self.parent.nom == 'INCLUDE' \
-            or self.jdc.impr_macro == 1
+        voir = not isinstance(self.parent, MACRO_ETAPE) or \
+            self.jdc.impr_macro == 1 or self.parent.show_children
         # top départ du chrono de la commande
         etiq = self.nom
         # id unique pour l'étape. L'attribut n'est pas déclaré dans
         # l'__init__...
         count = (self.icmd or 0)
         self.id_timer = str(time.time() + count)
-        if (isinstance(self.parent, MACRO_ETAPE)) or \
-           (self.parent.nom == 'INCLUDE'):
+        if isinstance(self.parent, MACRO_ETAPE):
             etiq = ' . ' + etiq
         if voir:
             self.jdc.timer.Start(self.id_timer, name=etiq)
@@ -190,8 +189,8 @@ class ETAPE:
                     cartouche de la commande apres son execution.
         """
         from Utilitai.Utmess import UTMESS
-        voir = (not isinstance(self.parent, MACRO_ETAPE)) or self.parent.nom == 'INCLUDE' \
-            or self.jdc.impr_macro == 1
+        voir = not isinstance(self.parent, MACRO_ETAPE) or \
+            self.jdc.impr_macro == 1 or self.parent.show_children
         if not voir:
             return
         # stop pour la commande
