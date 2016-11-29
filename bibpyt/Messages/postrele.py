@@ -416,4 +416,15 @@ Erreur utilisateur dans la commande POST_RELEVE_T :
 Erreur utilisateur dans la commande POST_RELEVE_T :
    Le mot clé RESULTANTE n'est autorisé que pour OPERATION='EXTRACTION'.
 """),
+
+    70 : _(u"""
+Le champ d'intérêt n'a de valeurs pour aucun des noeuds renseignés.
+Vérifiez qu'ils appartiennent au modèle.
+"""),
+
+    71 : _(u"""
+Le champ d'intérêt n'a de valeurs pour aucune des mailles renseignées.
+Vérifiez qu'elles appartiennent au modèle.
+"""),
+
 }
