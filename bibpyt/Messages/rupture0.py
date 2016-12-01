@@ -500,6 +500,14 @@ du fond de fissure (ici égal à %(i1)i) lorsque le lissage de G est de type
 LEGENDRE et le lissage de THETA de type LAGRANGE.
 """),
 
+    85: _(u"""
+Incohérence entre la dimension du maillage et le nombre de noeuds du fond. L'opérateur
+DEFI_FOND_FISS ne trouve qu'un seul noeud pour le fond, mais le maillage %(k1)s est considéré
+comme tridimensionnel.
+-> Risque et Conseil :
+S'il s'agit d'un maillage 2d, les noeuds doivent obligatoirement se situer dans le plan z=0.
+"""),
+
     86: _(u"""
 Erreur utilisateur.
 Cette combinaison de lissage est interdite.
