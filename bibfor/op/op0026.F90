@@ -125,10 +125,6 @@ subroutine op0026()
 !
     call getres(newtab, k24bid, k24bid)
 !
-! - Name of reused table
-!
-    call getvid(' ', 'TABLE', nbval=0, nbret=n1)
-!
 ! - Collecting variables
 !
     call nmchai('VALINC', 'LONMAX', long)
