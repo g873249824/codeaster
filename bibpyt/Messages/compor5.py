@@ -118,6 +118,11 @@ Erreur utilisateur :
   DEBORST nécessite d'avoir un seul matériau par poutre!
  """),
 
+    51 : _(u"""
+ BETON_DOUBLE_DP:
+ Le cas des contraintes planes n'est pas traité pour ce modèle.
+"""),
+
     56 : _(u"""
 Plusieurs matériaux de type %(k1)s ont été trouvés.
   -> Conseil:
