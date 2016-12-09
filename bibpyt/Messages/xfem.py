@@ -21,6 +21,14 @@
 
 cata_msg = {
 
+    1: _(u"""
+  -> Le calcul de la matrice de masse pour les éléments X-FEM a été retiré de
+     la version 12 de Code_Aster. Il n'est notamment plus possible d'effectuer
+     une analyse modale d'une pièce fissurée en utilisant cette version.
+  -> Conseil:
+     Utiliser la version 13 de Code_Aster.
+"""),
+
     2: _(u"""
   -> Le calcul de la distance d'un noeud à l'ellipse n'a pas convergé
      avec le nombre d'itérations maximal fixé (10). Cela est dû à une
