@@ -3,7 +3,7 @@ subroutine calcsp(casint, nomu, table, freq, masg,&
     implicit none
 !-----------------------------------------------------------------------
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -27,7 +27,7 @@ subroutine calcsp(casint, nomu, table, freq, masg,&
 ! IN  : NOMU  : NOM UTILISATEUR DU CONCEPT TABL_INTSP CORRESPONDANT
 !               AUX INTERSPECTRES DE REPONSES : A PRODUIRE
 ! IN  : TABLE : NOM UTILISATEUR DU CONCEPT TABL_INTSP CORRESPONDANT
-!               AUX INTERSPECTRES D'EXCITATIONS : DONNEE DU CALCUL
+!     bibfor/modelisa/calcsp.F90          AUX INTERSPECTRES D'EXCITATIONS : DONNEE DU CALCUL
 ! IN  : FREQ  : TABLEAU DES FREQUENCES ET AMORTISSEMENTS
 ! IN  : MASG  : TABLEAU DES MASSES GENERALISEES
 ! IN  : NBM   : NOMBRE DE MODES DE LA BASE DE CONCEPT MELASFLU
@@ -78,6 +78,9 @@ subroutine calcsp(casint, nomu, table, freq, masg,&
 !
     pi = r8pi()
     imodf = imod1 + nbmr - 1
+    if (imodf .gt. nbm) then
+        call utmess('F', 'MODELISA2_76', ni=2, vali=[nbm, nbmr])
+    end if
 !
     chnumi = table//'.NUMI'
     chnumj = table//'.NUMJ'

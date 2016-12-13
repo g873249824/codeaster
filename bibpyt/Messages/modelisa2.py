@@ -29,7 +29,35 @@ cata_msg = {
     4: _(u"""
   calcul de la tension le long du câble numéro %(k1)s  :
   la longueur sur laquelle on doit prendre en compte les pertes de tension par recul de l ancrage
-  est égale à la longueur du câble"""),
+  est égale à la longueur du câble"""),+76: _(u"""
+
++ Incohérence détectée entre le nombre de modes de la base "mouillée", calculée par CALC_FLUI_STRU, et ceux de la
+
++ base modale de la structure "en air", utilisée pour la projection du spectre de turbulence (PROJ_SPEC_BASE). 
+
+ 
+
++ - Nombre de modes de la base mouillée : %(i1)d
+
++ - Nombre de modes de la base en air   : %(i2)d
+
++
+
++ Conseil : si vous avez filtré des modes lors du calcul des coefficients de couplage (CALC_FLUI_STRU), il faut
+
++ obligatoirement les omettre de la base de projection du spectre (PROJ_SPEC_BASE).
+
++
+
++ En pratique, si un filtrage de modes est nécessaire pour l'étape de calcul IFS, un simple appel à EXTR_MODE sur 
+
++ la base initiale permet d'extraire ces modes. Cette étape réalisée en amont des calculs couplés Fluide-Structure
+
++ permet d'assurer la cohérence de l'enchaînement.
+
++"""),
+
+
 
     5: _(u"""
  Formule interdite pour le calcul d'intégrale : la fonction soit être tabulée.
@@ -261,6 +289,21 @@ Les abscisses curvilignes de la table fournie ne correspondent pas à celles du 
     70 : _(u""" Attention, vous voulez calculer les pertes par relaxation de l'acier, mais
       le coefficient RELAX_1000 est nul. Les pertes associées sont donc nulles.
  """),
+
+    76: _(u"""
+Incohérence détectée entre le nombre de modes de la base "mouillée", calculée par CALC_FLUI_STRU, et ceux de la
+base modale de la structure "en air", utilisée pour la projection du spectre de turbulence (PROJ_SPEC_BASE). 
+
+- Nombre de modes de la base mouillée : %(i1)d
+- Nombre de modes de la base en air   : %(i2)d
+
+Conseil : si vous avez filtré des modes lors du calcul des coefficients de couplage (CALC_FLUI_STRU), il faut
+obligatoirement les omettre de la base de projection du spectre (PROJ_SPEC_BASE).
+En pratique, si un filtrage de modes est nécessaire pour l'étape de calcul IFS, un simple appel à EXTR_MODE sur 
+la base initiale permet d'extraire ces modes. Cette étape réalisée en amont des calculs couplés Fluide-Structure
+permet d'assurer la cohérence de l'enchaînement.
+"""),
+
 
     83: _(u"""
  on doit utiliser le mot clé CHAM_NO pour donner le CHAM_NO dont les composantes seront les seconds membres de la relation linéaire.
