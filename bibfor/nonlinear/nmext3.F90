@@ -6,6 +6,8 @@ subroutine nmext3(mesh         , field    , field_type, field_s       , nb_cmp  
 implicit none
 !
 #include "jeveux.h"
+#include "asterfort/as_deallocate.h"
+#include "asterfort/as_allocate.h"
 #include "asterfort/assert.h"
 #include "asterfort/celces.h"
 #include "asterfort/jedema.h"
@@ -18,7 +20,7 @@ implicit none
 #include "asterfort/sdmpic.h"
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -97,6 +99,7 @@ implicit none
     integer, pointer :: v_list_spoi(:) => null()
     real(kind=8), pointer :: v_work_poin(:) => null()
     real(kind=8), pointer :: v_work_elem(:) => null()
+    real(kind=8), pointer :: v_init_poin(:) => null()
 !
 ! --------------------------------------------------------------------------------------------------
 !
@@ -122,6 +125,11 @@ implicit none
     call jeveuo(work_elem, 'E', vr = v_work_elem)
     call jeveuo(work_poin, 'E', vr = v_work_poin)
 !
+! - Copy initial point values
+!
+    AS_ALLOCATE(vr=v_init_poin, size = nb_poin*nb_spoi*nb_cmp)
+    v_init_poin(:) = v_work_poin(:)
+!
 ! - Get access to lists
 !
     call jeveuo(list_elem, 'L', vi = v_list_elem)
@@ -131,6 +139,10 @@ implicit none
 ! - Loop on elements
 !
     do i_elem = 1, nb_elem
+!
+! ----- Copy initial value
+!
+        v_work_poin(:) = v_init_poin(:)
 !
 ! ----- Current element
 !
@@ -179,9 +191,10 @@ implicit none
 !
                     do i_vale = 1, nb_vale
                         valr  = vale_resu(i_vale)
-                        val2r = v_work_poin(1+nb_cmp*(i_vale-1)+&
-                                              nb_poin*(i_poin_r-1)+&
-                                              nb_spoi*(i_spoi_r-1))
+                        val2r = v_work_poin(1+nb_poin*nb_spoi*(i_vale-1) +&
+                                          nb_spoi*(i_poin_r-1)+&
+                                          (i_spoi_r-1))
+                                          
                         if (type_extr_elem .eq. 'VALE') then
                             v_work_poin(1+nb_poin*nb_spoi*(i_vale-1) +&
                                           nb_spoi*(i_poin_r-1)+&
@@ -275,6 +288,8 @@ implicit none
                 end do
             end do
     end do
+    
+    AS_DEALLOCATE(vr=v_init_poin)
 !
 ! - For mean value
 !
