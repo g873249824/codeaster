@@ -1,4 +1,3 @@
-# TITRE FISSURE PLANE SEMI-INFINIE
 # ======================================================================
 # COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
@@ -15,7 +14,7 @@
 # ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
 #    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
 # ======================================================================
-# sslp114b.para=tps_job 120 mem_job 512Mo mem_aster 50 ncpus 1 liste_test S
+# sslp114a.para=tps_job 120 mem_job 512Mo mem_aster 50 ncpus 1 liste_test S
 
 DEBUT(CODE=_F(NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'),PAR_LOT='OUI');
 
@@ -28,7 +27,7 @@ KII=0.;
 
 #ANGLE INCLINAISON :: -135 (degres) < alpha0 < 135 (degres)
 #Pour un tour complet voir conditions limites
-alpha0=0.
+alpha0=22.5
 alpha=alpha0*math.pi/180.
 
 # LONGUEUR DE LA FISSURE
@@ -65,7 +64,7 @@ MAILLAGE=DEFI_GROUP( reuse =MAILLAGE,
 MODELEIN=AFFE_MODELE(MAILLAGE=MAILLAGE,
                      AFFE= _F(GROUP_MA=('SURF','LIG1','LIG2','LIG3','LIG4','TEST_MA'),
                               PHENOMENE='MECANIQUE',
-                              MODELISATION='D_PLAN'
+                              MODELISATION='C_PLAN'
                              ),
 #                    INFO=2,
                      );
@@ -89,9 +88,9 @@ FISS=DEFI_FISS_XFEM(MAILLAGE=MAILLAGE,
                                  PFON_ORIG  = (0.5 , 0.5,0.),
                                  PFON_EXTR  = ( PFONDX, PFONDY,0.),
                                  ),
-#                    TYPE_ENRI_FOND='GEOMETRIQUE',
-#                    RAYON_ENRI=0.2*A,
-                    TYPE_ENRI_FOND='TOPOLOGIQUE',
+                    TYPE_ENRI_FOND='GEOMETRIQUE',
+                    RAYON_ENRI=0.2*A,
+#                    TYPE_ENRI_FOND='TOPOLOGIQUE',
                    );
 
 MODELK=MODI_MODELE_XFEM(MODELE_IN=MODELEIN,FISSURE=FISS);
@@ -221,9 +220,6 @@ CH2=AFFE_CHAR_MECA_F(MODELE=MODELK,
                      FORCE_CONTOUR=(_F(GROUP_MA=('LIG4'),FX=FXXF,FY=FXYF),),
                      );
 
-COND=AFFE_CHAR_MECA(MODELE=MODELK,
-                    DDL_IMPO=_F(TOUT='OUI',E3X=0.,E3Y=0.,E4X=0.,E4Y=0.));
-
 #Combinaison 2 : Dirichletx1+Neumannx3
 CH2B=AFFE_CHAR_MECA_F(MODELE=MODELK,
                      DDL_IMPO=_F(GROUP_MA=('LIG2'),DX=U1,DY=U2,),
@@ -238,14 +234,9 @@ UTOT=MECA_STATIQUE(MODELE=MODELK,
                    CHAM_MATER=CHMA,
                    EXCIT=(
                           _F(CHARGE=CH2),
-                          _F(CHARGE=COND),
                          ),
                    SOLVEUR=_F(RENUM='METIS',
                               METHODE='MUMPS',
-                              #NPREC=14,
-                              #RESI_RELA=1.E-2,
-                              #RESI_RELA=-1,
-                              #PCENT_PIVOT=100,
                              ),
                    INFO=2,
                   );
@@ -267,7 +258,7 @@ MA_XFEM=POST_MAIL_XFEM(MODELE=MODELK);
 MOD_VISU=AFFE_MODELE(MAILLAGE=MA_XFEM,
                      AFFE=_F(GROUP_MA='SURF',
                      PHENOMENE='MECANIQUE',
-                     MODELISATION='D_PLAN',
+                     MODELISATION='C_PLAN',
                      ),)
 
 RES_XFEM=POST_CHAM_XFEM(MODELE_VISU  = MOD_VISU,
@@ -371,8 +362,8 @@ Ucal=CREA_CHAMP(OPERATION='EXTR',
 
 tabL2=POST_ERREUR(OPTION='DEPL_RELA',
                   CHAM_GD=Ucal,
-                  MODELE=MODELK,
                   CHAM_MATER=CHMA,
+                  MODELE=MODELK,
                   GROUP_MA='SURF',
                   DX=U1,
                   DY=U2)
@@ -384,7 +375,7 @@ IMPR_TABLE(TABLE=tabL2)
 TEST_TABLE(CRITERE='RELATIF',
            REFERENCE='ANALYTIQUE',
            PRECISION=1.E-3,
-           VALE_CALC=0.999687623552,
+           VALE_CALC=0.999562268634,
            VALE_REFE=1.0,
            NOM_PARA='K1',
            LEGENDE='alpha=0.0',
@@ -393,7 +384,7 @@ TEST_TABLE(CRITERE='RELATIF',
 TEST_TABLE(CRITERE='ABSOLU',
            REFERENCE='ANALYTIQUE',
            PRECISION=1.E-3,
-           VALE_CALC=-2.07918683017E-05,
+           VALE_CALC=0.0001888242865,
            VALE_REFE=0.0,
            NOM_PARA='K2',
            LEGENDE='alpha=0.0',
@@ -402,7 +393,7 @@ TEST_TABLE(CRITERE='ABSOLU',
 TEST_TABLE(CRITERE='RELATIF',
            REFERENCE='ANALYTIQUE',
            PRECISION=1.E-3,
-           VALE_CALC=9.99374965187E-06,
+           VALE_CALC=9.991247824E-06,
            VALE_REFE=1.0000000000000001E-05,
            NOM_PARA='G',
            LEGENDE='alpha=0.0',
@@ -411,7 +402,7 @@ TEST_TABLE(CRITERE='RELATIF',
 TEST_TABLE(CRITERE='RELATIF',
            REFERENCE='ANALYTIQUE',
            PRECISION=1.E-3,
-           VALE_CALC=0.999643875894,
+           VALE_CALC=0.99954154349,
            VALE_REFE=1.0,
            NOM_PARA='K1',
            LEGENDE='alpha=0.0',
@@ -420,7 +411,7 @@ TEST_TABLE(CRITERE='RELATIF',
 TEST_TABLE(CRITERE='ABSOLU',
            REFERENCE='ANALYTIQUE',
            PRECISION=1.E-3,
-           VALE_CALC=-0.000121543846699,
+           VALE_CALC=0.000172449441269,
            VALE_REFE=0.0,
            NOM_PARA='K2',
            LEGENDE='alpha=0.0',
@@ -429,7 +420,7 @@ TEST_TABLE(CRITERE='ABSOLU',
 TEST_TABLE(CRITERE='RELATIF',
            REFERENCE='ANALYTIQUE',
            PRECISION=1.E-3,
-           VALE_CALC=9.99329008851E-06,
+           VALE_CALC=9.99086390227E-06,
            VALE_REFE=1.0000000000000001E-05,
            NOM_PARA='G',
            LEGENDE='alpha=0.0',
@@ -440,14 +431,14 @@ NormeL2_U=7.72403392144e-06
 TEST_TABLE(CRITERE='ABSOLU',
            REFERENCE='ANALYTIQUE',
            PRECISION=7.7240339214399998E-09,
-           VALE_CALC=1.98515894525E-10,
+           VALE_CALC=7.53724639386E-11,
            VALE_REFE=0.0,
            NOM_PARA='VALE_NORM',
            LEGENDE='ERREUR DEPL NORME_L2',
            TABLE=tab_du,)
 
 TEST_TABLE(CRITERE='ABSOLU',
-           VALE_CALC=1.98515894525E-10,
+           VALE_CALC=7.53724639386E-11,
            NOM_PARA='VALE_NORM',
            LEGENDE='ERREUR DEPL NORME_L2',
            TABLE=tab_du,
@@ -455,7 +446,7 @@ TEST_TABLE(CRITERE='ABSOLU',
 
 TEST_TABLE(CRITERE='RELATIF',
            REFERENCE='ANALYTIQUE',
-           VALE_CALC=3.50530708732E-06,
+           VALE_CALC=3.50504098679E-06,
            VALE_REFE=3.50687407712e-6,
            NOM_PARA='REFERENCE',
            FILTRE=_F(NOM_PARA='GROUP_MA',
@@ -464,7 +455,7 @@ TEST_TABLE(CRITERE='RELATIF',
            );
 
 TEST_TABLE(CRITERE='RELATIF',
-           VALE_CALC=0.00958891533354,
+           VALE_CALC=0.034053694632,
            NOM_PARA='ERREUR RELATIVE',
            FILTRE=_F(NOM_PARA='GROUP_MA',
                      VALE_K='TOTAL'),
@@ -473,7 +464,7 @@ TEST_TABLE(CRITERE='RELATIF',
 
 TEST_TABLE(CRITERE='RELATIF',
            REFERENCE='ANALYTIQUE',
-           VALE_CALC=7.60576907995E-06,
+           VALE_CALC=7.60576908068E-06,
            VALE_REFE=7.6057690825e-6,
            NOM_PARA='REFERENCE',
            FILTRE=_F(NOM_PARA='GROUP_MA',
@@ -482,7 +473,7 @@ TEST_TABLE(CRITERE='RELATIF',
            );
 
 TEST_TABLE(CRITERE='RELATIF',
-           VALE_CALC=0.000187065408397,
+           VALE_CALC=0.000387847336864,
            NOM_PARA='ERREUR RELATIVE',
            FILTRE=_F(NOM_PARA='GROUP_MA',
                      VALE_K='TOTAL'),
