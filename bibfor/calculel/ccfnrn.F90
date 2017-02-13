@@ -46,7 +46,7 @@ subroutine ccfnrn(option, resuin, resuou, lisord, nbordr,&
     character(len=16) :: option, typesd
     character(len=19) :: lisord
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -298,6 +298,13 @@ subroutine ccfnrn(option, resuin, resuou, lisord, nbordr,&
                     codret)
         call rsexch(' ', resuin, 'COMPORTEMENT', iordr, compor,&
                     iret)
+!
+!
+! Initialisation
+        partps(1) = time
+        partps(1) = time    
+        partps(1) = 0.D0
+!
 !
         call vefnme(option, 'V', modele, mater, carac,&
                     compor, partps, nh, ligrel, chvarc,&
