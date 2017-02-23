@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -253,5 +253,11 @@ Conseil:
     Vérifier le mot-clé NOM_CHAM et que vous souhaitez bien faire un
     calcul de type multi-appui ou avec prise en compte de la correction statique.
 """),
+
+
+    82: _(u"""
+Il faut renseigner le spectre à un sigma jusque 0.1 Hz pour SPEC_FRACTILE.
+"""),
+
 
 }
