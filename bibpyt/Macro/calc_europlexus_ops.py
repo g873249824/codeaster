@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -496,7 +496,7 @@ class EUROPLEXUS:
                     dicOrthotropie = {}
                     donnees_coque = tolist(cara_elem_struc[cle])
                     for elem in donnees_coque:
-                        l_group = get_group_ma(elem)
+                        l_group = get_group_ma(elem, mcfact='AFFE_CARA_ELEM/COQUE')
 
                         if elem.has_key('VECTEUR'):
                             for group in l_group:

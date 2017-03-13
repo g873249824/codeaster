@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -147,7 +147,7 @@ def export_charge(epx, EXCIT, MAILLAGE):
                                                 ' '.join(tolist(vale_verif[ind]))))
                         continue
                     if cle in entite:
-                        l_group = get_group_ma(ch, cle)
+                        l_group = get_group_ma(ch, cle, mcfact='AFFE_CHAR_MECA/' + char)
                         continue
                     if not cle in cle_aster:
                         UTMESS('F', 'PLEXUS_27', valk=(cle, char))
@@ -234,7 +234,7 @@ def ecri_rela_cine(cabl_precont, cle_epx, type_epx):
     Recherche des mots-clés de DEFI_CABLE_BP pour traduction en EPX (LCAB)
     """
     from Calc_epx.calc_epx_struc import BLOC_DONNEES, BLOC_DONNEES_SUP
-    
+
     defi_cable_bp = recupere_structure(cabl_precont)
     # BETON COQUE
     gr_ma_bet = defi_cable_bp['GROUP_MA_BETON']
@@ -245,9 +245,9 @@ def ecri_rela_cine(cabl_precont, cle_epx, type_epx):
     for insta in defi_cable:
         gr_ma_cab.append(insta['GROUP_MA'])
     bloc_cabl = BLOC_DONNEES('CABL', l_group=gr_ma_cab)
-    
+
     bloc_lcab = BLOC_DONNEES_SUP(cle_epx,[bloc_betc, bloc_cabl], cle=type_epx)
-    
+
     return bloc_lcab
 #-----------------------------------------------------------------------
 def ecri_rela_cine_old(cabl_precont, MAILLAGE):
