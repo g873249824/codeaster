@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -24,7 +24,7 @@ Pour que CALC_EUROPLEXUS fonctionne il faut ajouter DEBUG=_F(HIST_ETAPE='OUI')
 dans la commande DEBUT.
 Remarque : CALC_EUROPLEXUS ne fonctionne pas en POURSUITE"""),
 
-    2:  _(u"""Le mot-clé %(k1)s n'existe pas"""),
+    2:  _(u"""Le mot-clé '%(k1)s' n'est pas renseigné."""),
 
     3 : _(u"""
 La modélisation %(k1)s est affecté à une partie du modèle fourni à CALC_EUROPLEXUS.
@@ -324,4 +324,5 @@ Code_Aster associés aux mêmes éléments du maillage, s'ils existent,
 gardent des valeurs nulles sur le champ correspondant.
 """),
 
+    58:  _(u"""Le mot-clé '%(k1)s' n'est pas renseigné sous le mot-clé facteur '%(k2)s'."""),
 }
