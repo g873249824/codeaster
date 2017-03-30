@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -27,7 +27,8 @@ def macr_cara_poutre_ops(self, MAILLAGE, SYME_Y, SYME_Z, GROUP_MA_BORD,
     import string
     from Accas import _F
     import aster
-    from Utilitai.Utmess import UTMESS
+    from Utilitai.Utmess import UTMESS, MasquerAlarme, RetablirAlarme
+    #
     ier = 0
     # On importe les definitions des commandes a utiliser dans la macro
     # Le nom de la variable doit etre obligatoirement le nom de la commande
@@ -57,10 +58,11 @@ def macr_cara_poutre_ops(self, MAILLAGE, SYME_Y, SYME_Z, GROUP_MA_BORD,
     DETRUIRE = self.get_cmd('DETRUIRE')
     # La macro compte pour 1 dans la numerotation des commandes
     self.set_icmd(1)
-
     # Le concept sortant (de type table_sdaster) est nommé 'nomres' dans le
     # contexte de la macro
     self.DeclareOut('nomres', self.sd)
+    #
+    ImprTable = False
     #
     if (MAILLAGE != None):
         __nomlma = COPIER(CONCEPT=MAILLAGE)
@@ -85,7 +87,10 @@ def macr_cara_poutre_ops(self, MAILLAGE, SYME_Y, SYME_Z, GROUP_MA_BORD,
 
     __nomama = AFFE_MATERIAU(
         MAILLAGE=__nomlma, AFFE=_F(TOUT='OUI', MATER=__nomdma,),)
-
+    #
+    # L'utilisateur ne peut rien faire pour éviter ces "Alarmes" donc pas d'impression
+    MasquerAlarme('CHARGES2_87')
+    MasquerAlarme('CALCULEL_40')
     # --------------------------------------------------------------
     # --- CALCUL DES CARACTERISTIQUES GEOMETRIQUES DE LA SECTION
     # --------------------------------------------------------------
@@ -758,8 +763,7 @@ def macr_cara_poutre_ops(self, MAILLAGE, SYME_Y, SYME_Z, GROUP_MA_BORD,
             )
             TabTmp = nomres.EXTR_TABLE().dict_CREA_TABLE()
         else:
-            # si NomMaillageNew est donné on remplace LIEU=NomMaillageOld par
-            # LIEU=NomMaillageNew
+            # si NomMaillageNew est donné on remplace LIEU=NomMaillageOld par LIEU=NomMaillageNew
             if (NomMaillageNew != None):
                 TabTmp = nomres.EXTR_TABLE()
                 for ii in range(len(TabTmp.rows)):
@@ -779,7 +783,8 @@ def macr_cara_poutre_ops(self, MAILLAGE, SYME_Y, SYME_Z, GROUP_MA_BORD,
                 TABLE=__catp2,
                 ACTION=(
                     _F(OPERATION='EXTR', NOM_PARA=('LIEU', 'A', 'IY', 'IZ', 'AY',
-                                                   'AZ', 'EY', 'EZ', 'JX', 'JG', 'IYR2', 'IZR2', 'RY', 'RZ', 'RT',),),
+                                                   'AZ', 'EY', 'EZ', 'JX', 'JG', 'IYR2', 'IZR2', 'RY', 'RZ', 'RT',
+                                                   'ALPHA','CDG_Y','CDG_Z'),),
                 ),
             )
         elif GROUP_MA_BORD and GROUP_MA:
@@ -787,17 +792,54 @@ def macr_cara_poutre_ops(self, MAILLAGE, SYME_Y, SYME_Z, GROUP_MA_BORD,
                 TABLE=__catp2,
                 ACTION=(
                     _F(OPERATION='EXTR', NOM_PARA=('LIEU', 'A', 'IY', 'IZ', 'AY',
-                                                   'AZ', 'EY', 'EZ', 'JX', 'IYR2', 'IZR2', 'RY', 'RZ', 'RT',),),
+                                                   'AZ', 'EY', 'EZ', 'JX', 'IYR2', 'IZR2', 'RY', 'RZ', 'RT',
+                                                   'ALPHA','CDG_Y','CDG_Z'),),
                 ),
             )
         else:
             nomres = CALC_TABLE(
                 TABLE=__catp2,
                 ACTION=(
-                    _F(OPERATION='EXTR', NOM_PARA=(
-                       'LIEU', 'A', 'IY', 'IZ', 'IYR2', 'IZR2', 'RY', 'RZ',),),
+                    _F(OPERATION='EXTR', NOM_PARA=('LIEU', 'A', 'IY', 'IZ', 'IYR2', 'IZR2', 'RY', 'RZ',
+                                                   'ALPHA','CDG_Y','CDG_Z'),),
                 ),
             )
+        #
+        # Validation des résultats qui doivent toujours être >=0
+        TabTmp = nomres.EXTR_TABLE()
+        for ii in range(len(TabTmp.rows)):
+            ligne = TabTmp.rows[ii]
+            # on recherche la bonne ligne
+            if (ligne['LIEU'].strip() == NomMaillageNew):
+                paras = TabTmp.para
+                # Vérification des grandeurs qui doivent toujours rester positive
+                Lparas = ('A', 'IY', 'IZ', 'AY', 'AZ', 'JX', 'JG', )
+                iergd = 0
+                for unpara in Lparas:
+                    if ( unpara in paras ):
+                        if ( ligne[unpara] <=0 ): iergd += 1
+                if ( iergd != 0):
+                    if ( not ImprTable ): IMPR_TABLE(TABLE=nomres)
+                    ImprTable = True
+                    for unpara in Lparas:
+                        if ( unpara in paras ):
+                            if ( ligne[unpara] <= 0 ):
+                                UTMESS('E', 'POUTRE0_10',valk=unpara, valr=ligne[unpara])
+                    UTMESS('F', 'POUTRE0_11')
+                #
+                # Vérification que le CDG est l'origine du maillage
+                cdgy = ligne['CDG_Y']; cdgz = ligne['CDG_Z']
+                dcdg = pow(cdgy*cdgy + cdgz*cdgz,0.5)/pow(ligne['A'],0.5)
+                if ( dcdg > 1.0E-08 ):
+                    if ( not ImprTable ): IMPR_TABLE(TABLE=nomres)
+                    ImprTable = True
+                    UTMESS('A', 'POUTRE0_12',valr=[cdgy,cdgz])
+                # Vérification que la section n'est pas tournée
+                alpha = ligne['ALPHA']
+                if ( alpha > 1.0E-08 ):
+                    if ( not ImprTable ): IMPR_TABLE(TABLE=nomres)
+                    ImprTable = True
+                    UTMESS('A', 'POUTRE0_13',valr=[alpha, -alpha])
     #
     # On retourne une table contenant toutes les caractéristiques calculées
     else:
@@ -837,6 +879,8 @@ def macr_cara_poutre_ops(self, MAILLAGE, SYME_Y, SYME_Z, GROUP_MA_BORD,
                 ),
             )
     #
-    IMPR_TABLE(TABLE=nomres)
+    if ( not ImprTable ): IMPR_TABLE(TABLE=nomres)
     #
+    RetablirAlarme('CHARGES2_87')
+    RetablirAlarme('CALCULEL_40')
     return ier
