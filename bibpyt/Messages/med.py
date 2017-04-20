@@ -97,7 +97,7 @@ cata_msg = {
      Si le maillage a été produit par un code externe, vérifier que les
      noms de maillage, de groupes, de familles ne contiennent pas de
      blancs à la fin.
-     Dans Salomé, on peut renommer ces entités et supprimer les espaces
+     Dans SALOME, on peut renommer ces entités et supprimer les espaces
      invalides.
 """),
 
@@ -204,7 +204,7 @@ cata_msg = {
      Aster qu'il contient, il suffit de faire plusieurs IMPR_RESU et de
      renseigner pour chaque impression une liste d'instants ad hoc.
 
-     Pour la visualisation dans Salomé (Scalar Map par exemple),
+     Pour la visualisation dans SALOME (Scalar Map par exemple),
      sélectionner la composante dans Scalar Range/Scalar Mode.
 """),
 
