@@ -22,7 +22,7 @@ def configure(self):
 
     self.env.append_value('LIBPATH', [
         YAMMROOT + '/prerequisites/Hdf5-1814/lib',
-        YAMMROOT + '/tools/Medfichier-320/lib',
+        YAMMROOT + '/tools/Medfichier-321/lib',
         YAMMROOT + '/prerequisites/Metis-40/lib',
         YAMMROOT + '/prerequisites/Mfront_stable-TFEL202/lib',
         YAMMROOT + '/prerequisites/Mumps4-4100_aster3/SEQ/lib',
@@ -30,7 +30,7 @@ def configure(self):
 
     self.env.append_value('INCLUDES', [
         YAMMROOT + '/prerequisites/Hdf5-1814/include',
-        YAMMROOT + '/tools/Medfichier-320/include',
+        YAMMROOT + '/tools/Medfichier-321/include',
         YAMMROOT + '/prerequisites/Metis-40/Lib',
         YAMMROOT + '/prerequisites/Mfront_stable-TFEL202/include',
         YAMMROOT + '/prerequisites/Scotch-5111/include'])
