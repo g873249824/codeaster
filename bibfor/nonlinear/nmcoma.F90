@@ -7,7 +7,7 @@ subroutine nmcoma(modelz, mate, carele, compor, carcri,&
                   codere, faccvg, ldccvg, sdnume)
 !
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -160,6 +160,11 @@ subroutine nmcoma(modelz, mate, carele, compor, carcri,&
     lamor = ndynlo(sddyna,'MAT_AMORT')
     lsuiv = isfonc(fonact,'FORCE_SUIVEUSE')
 !
+! --- RE-CREATION DU NUME_DDL OU PAS
+!
+    call nmrenu(modelz, fonact, lischa, solveu, defico,&
+                resoco, numedd, renume)
+!
 ! --- CHOIX DE REASSEMBLAGE DE LA MATRICE GLOBALE
 !
     call nmchrm('CORRECTION', parmet, method, fonact, sddisc,&
@@ -169,14 +174,8 @@ subroutine nmcoma(modelz, mate, carele, compor, carcri,&
 ! --- CHOIX DE REASSEMBLAGE DE L'AMORTISSEMENT
 !
     if (lamor) then
-        call nmchra(sddyna, optamo, lcamor)
+        call nmchra(sddyna, renume, optamo, lcamor)
     endif
-!
-! --- RE-CREATION DU NUME_DDL OU PAS
-!
-    call nmrenu(modelz, fonact, lischa, solveu, defico,&
-                resoco, numedd, renume)
-!
 ! --- OPTION DE CALCUL POUR MERIMO
 !
     call nmchoi('CORRECTION', sddyna, numins, fonact, metpre,&
