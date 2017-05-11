@@ -143,9 +143,9 @@ class Graph(object):
         bounding box +/- avec une 'marge'*(Max-Min)/2.
         x0,x1 permettent de modifier la bb.
         """
-        if x0 <> None:
+        if x0 != None:
             self.BBXmin = min([self.BBXmin, x0])
-        if x1 <> None:
+        if x1 != None:
             self.BBXmax = max([self.BBXmax, x1])
 
         dx = max(self.BBXmax - self.BBXmin, 0.01 * self.BBXmax)
@@ -162,9 +162,9 @@ class Graph(object):
         bounding box +/- avec une 'marge'*(Max-Min)/2.
         y0,y1 permettent de modifier la bb.
         """
-        if y0 <> None:
+        if y0 != None:
             self.BBYmin = min([self.BBYmin, y0])
-        if y1 <> None:
+        if y1 != None:
             self.BBYmax = max([self.BBYmax, y1])
 
         dy = max(self.BBYmax - self.BBYmin, 0.01 * self.BBYmax)
@@ -243,7 +243,7 @@ class Graph(object):
            len(Val[0]) == len(Val[1]) and (nbc == 2 or len(Val[0]) == len(Val[2]))):
             UTMESS('F', 'GRAPH0_1', valk='Val')
 
-        if len(Lab) <> nbc:
+        if len(Lab) != nbc:
             UTMESS('S', 'GRAPH0_2', valk='Lab')
 
         # ajout dans les données
@@ -308,11 +308,11 @@ class Graph(object):
             kargs = self.LastTraceArgs.copy()
             if FORMAT == None:
                 FORMAT = self.LastTraceFormat
-            if FICHIER <> None:
+            if FICHIER != None:
                 kargs['FICHIER'] = FICHIER
-            if dform <> None:
+            if dform != None:
                 kargs['dform'] = dform
-            if opts <> {}:
+            if opts != {}:
                 kargs['opts'] = opts
         if not FORMAT in para.keys():
             UTMESS('A', 'GRAPH0_3', valk=FORMAT)
@@ -376,7 +376,7 @@ class TraceGraph:
             self.NomFich = [None] * 2
         self.Fich = []
         for ff in self.NomFich:
-            if ff <> None:
+            if ff != None:
                 self.Fich.append(open(ff, fmod))
             else:
                 self.Fich.append(sys.stdout)
@@ -415,7 +415,7 @@ class TraceGraph:
             'formR': '%12.5E',  # réels
             'formI': '%12d'     # entiers
         }
-        if dform <> None and type(dform) == types.DictType:
+        if dform != None and type(dform) == types.DictType:
             self.DicForm.update(dform)
 
         # let's go
@@ -431,7 +431,7 @@ class TraceGraph:
     def _FermFich(self):
         """Fermeture du(des) fichier(s)"""
         for fp in self.Fich:
-            if fp <> sys.stdout:
+            if fp != sys.stdout:
                 fp.close()
 # ------------------------------------------------------------------------
 
@@ -489,9 +489,9 @@ class TraceTableau(TraceGraph):
             t0 = numpy.array(g.Courbe(0)['Abs'])
             max0 = max(abs(t0))
             for i in range(1, g.NbCourbe):
-                if g.Courbe(i)['NbPts'] <> g.Courbe(0)['NbPts']:
+                if g.Courbe(i)['NbPts'] != g.Courbe(0)['NbPts']:
                     msg.append("La courbe %d n'a pas le même "
-                               "nombre de points que la 1ère." % i)
+                               "nombre de points que la 1ère." % (i + 1))
                 else:
                     ti = numpy.array(g.Courbe(i)['Abs'])
                     if max(abs((ti - t0).ravel())) > self.EPSILON * max0:
@@ -1060,15 +1060,15 @@ GRAPHIQUE:
         if g.Titre == '':
             g.Titre = 'GRAPHIQUE CODE_ASTER'
         entete.append('Titre :' + ' '.join(g.Titre) + '\n')
-        if g.SousTitre <> '':
+        if g.SousTitre != '':
             entete.append('Commentaire :' + g.SousTitre + '\n')
         entete.append('Frequence Grille X :' + str(int(g.Grille_X)) + '\n')
         entete.append('Frequence Grille Y :' + str(int(g.Grille_Y)) + '\n')
         entete.append('Echelle X :' + dic_ech[g.Echelle_X] + '\n')
         entete.append('Echelle Y :' + dic_ech[g.Echelle_Y] + '\n')
-        if g.Legende_X <> '':
+        if g.Legende_X != '':
             entete.append('Legende X :' + g.Legende_X + '\n')
-        if g.Legende_Y <> '':
+        if g.Legende_Y != '':
             entete.append('Legende Y :' + g.Legende_Y + '\n')
         entete.append('Min X : ' + str(g.Min_X) + '\n')
         entete.append('Max X : ' + str(g.Max_X) + '\n')
@@ -1093,7 +1093,7 @@ GRAPHIQUE:
         descr.append('     Couleur :' + color + '\n')
         descr.append('     Marqueur :' + symbol + '\n')
         descr.append('     Frequence Marqueur :' + freqm + '\n')
-        if args['Leg'] <> '':
+        if args['Leg'] != '':
             descr.append('     Legende :' + args['Leg'] + '\n')
         descr.append('     Tri :' + args['Tri'] + '\n')
         descr.append(
@@ -1132,7 +1132,7 @@ GRAPHIQUE:
                     for lig in self.DescrCourbe(**dCi):
                         fdigr.write(lig)
                 # partie données (.dogr)
-                if dCi['Leg'] <> '':
+                if dCi['Leg'] != '':
                     leg = dCi['Leg']
                 else:
                     leg = 'COURBE_' + str(i)
@@ -1213,38 +1213,38 @@ def IniGrace(fich):
     x1 = None
     y0 = None
     y1 = None
-    if os.path.exists(fich) and os.stat(fich).st_size <> 0:
+    if os.path.exists(fich) and os.stat(fich).st_size != 0:
         os.rename(fich, fich + '.prev')
         fpre = open(fich + '.prev', 'r')
         fnew = open(fich,         'w')
         for line in fpre:
             ikeep = True
             mat = re.search('@target g[0-9]+\.s([0-9]+)', line)
-            if mat <> None and int(mat.group(1)) > ns:
+            if mat != None and int(mat.group(1)) > ns:
                 ns = int(mat.group(1))
             mat = re.search('@[ ]+world[ ]+xmin[ ]+([\-\+\.0-9eEdD]+)', line)
-            if mat <> None:
+            if mat != None:
                 try:
                     x0 = float(mat.group(1))
                     ikeep = False
                 except ValueError:
                     pass
             mat = re.search('@[ ]+world[ ]+xmax[ ]+([\-\+\.0-9eEdD]+)', line)
-            if mat <> None:
+            if mat != None:
                 try:
                     x1 = float(mat.group(1))
                     ikeep = False
                 except ValueError:
                     pass
             mat = re.search('@[ ]+world[ ]+ymin[ ]+([\-\+\.0-9eEdD]+)', line)
-            if mat <> None:
+            if mat != None:
                 try:
                     y0 = float(mat.group(1))
                     ikeep = False
                 except ValueError:
                     pass
             mat = re.search('@[ ]+world[ ]+ymax[ ]+([\-\+\.0-9eEdD]+)', line)
-            if mat <> None:
+            if mat != None:
                 try:
                     y1 = float(mat.group(1))
                     ikeep = False
