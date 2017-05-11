@@ -3,7 +3,7 @@ subroutine cccmcr(jcesdd, numma, jrepe, jconx2, jconx1,&
                   iepais, jalpha, jbeta, jgamma, ligrmo,&
                   ino, pgl, modeli, codret)
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -28,9 +28,10 @@ subroutine cccmcr(jcesdd, numma, jrepe, jconx2, jconx1,&
 #include "asterfort/jexnum.h"
 #include "asterfort/matrot.h"
 #include "asterfort/mpglcp.h"
+#include "asterfort/teattr.h"
 #include "asterfort/typele.h"
 !
-    integer :: jcesdd, numma, jrepe, jconx2, jconx1, jcoord
+    integer :: jcesdd, numma, jrepe, jconx2, jconx1, jcoord, iret
     integer :: ialpha, ibeta, iepais, jalpha, adcar1(3), adcar2(3)
     integer :: jbeta, jgamma, codret, ino
     real(kind=8) :: pgl(3, 3)
@@ -63,7 +64,7 @@ subroutine cccmcr(jcesdd, numma, jrepe, jconx2, jconx1,&
 !
     real(kind=8) :: coordc(3, 10), alpha, beta, gamma, epais, ang1(3)
 !
-    character(len=16) :: nomte
+    character(len=16) :: nomte, atdis
 !
     codret = 3
 !
@@ -85,13 +86,14 @@ subroutine cccmcr(jcesdd, numma, jrepe, jconx2, jconx1,&
     te = typele(ligrmo,igrel)
     call jenuno(jexnum('&CATA.TE.NOMTE', te), nomte)
     call dismoi('MODELISATION', nomte, 'TYPE_ELEM', repk=modeli)
+    call teattr('C', 'DISCRET',  atdis, iret, typel=nomte)
 !
     nbnol = zi(jconx2+numma)-zi(jconx2+numma-1)
     posin = zi(jconx2+numma-1)
 !
 !     SUIVANT LE TYPE DE MODELISATION, LE CHANGEMENT DE REPERE
 !     N'EST PAS LE MEME BARRE, CABLE, TUYAU
-    if ((modeli(1:3).eq.'POU') .or. (modeli(1:7).eq.'2D_DIS_') .or. (modeli.eq.'BARRE')&
+    if ((modeli(1:3).eq.'POU') .or. (modeli.eq.'BARRE')&
         .or. (modeli.eq.'CABLE') .or. (modeli.eq.'TUYAU')) then
 !
         ino1 = zi(jconx1+posin-1)
@@ -114,6 +116,29 @@ subroutine cccmcr(jcesdd, numma, jrepe, jconx2, jconx1,&
 !
         call mpglcp('P', nbnol, coordc, alpha, beta,&
                     gamma, pgl, codret)
+!
+    else if (atdis.eq.'OUI') then
+        if ( nbnol .eq. 1 ) then
+!           lecture de alpha, beta, gamma dans .carorien
+            call cesexi('S', jcesd, jcesl, numma, 1, 1, jalpha, iad)
+            alpha = zr(jcesv-1+iad)
+            call cesexi('S', jcesd, jcesl, numma, 1, 1, jbeta,  iad)
+            beta  = zr(jcesv-1+iad)
+            call cesexi('S', jcesd, jcesl, numma, 1, 1, jgamma, iad)
+            gamma = zr(jcesv-1+iad)
+            call mpglcp('1', nbnol, coordc, alpha, beta, gamma, pgl, codret)
+        else
+            ino1 = zi(jconx1+posin-1)
+            ino2 = zi(jconx1+posin)
+            do idir = 1, 3
+                coordc(idir,1) = zr(jcoord+3*(ino2-1)+idir-1)
+                coordc(idir,2) = zr(jcoord+3*(ino1-1)+idir-1)
+            enddo
+!           lecture de gamma dans .carorien
+            call cesexi('S', jcesd, jcesl, numma, 1, 1, jgamma, iad)
+            gamma = zr(jcesv-1+iad)
+            call mpglcp('D', nbnol, coordc, alpha, beta, gamma, pgl, codret)
+        endif
 !
     else if ((modeli.eq.'COQUE_3D')) then
 !

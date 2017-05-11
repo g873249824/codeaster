@@ -1,6 +1,6 @@
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -36,7 +36,7 @@ cata_msg = {
 """),
 
     5 : _(u"""
- il manque le vecteur des composantes "NOCP".
+ il manque le vecteur des composantes
  Contactez le support.
 """),
 
@@ -425,6 +425,22 @@ Vérifiez qu'ils appartiennent au modèle.
     71 : _(u"""
 Le champ d'intérêt n'a de valeurs pour aucune des mailles renseignées.
 Vérifiez qu'elles appartiennent au modèle.
+"""),
+
+    72 : _(u"""
+Commande POST_RELEVE_T :
+Votre modèle contient des éléments de structures et :
+    - vous avez demandé le post-traitement du champ %(k1)s, qui n'a de signification que dans
+      le repère LOCAL des éléments.
+    - vous avez demandé le post-traitement dans un repère différent de LOCAL.
+
+Le mot clef REPERE est ignoré.
+Le post-traitement sera réalisé dans le repère LOCAL des éléments.
+
+Conseil :
+    Si vous avez précédemment utilisé la commande CALC_CHAMP et que les repères locaux des
+    éléments connectés à un même noeud sont différents, une alarme a été émise.
+    Dans ce cas les résultats obtenus aux noeuds ne sont pas pertinents.
 """),
 
 }
