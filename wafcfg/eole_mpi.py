@@ -19,10 +19,10 @@ def configure(self):
     # parallel must be set before calling intel.configure() to use MPI wrappers
     opts.parallel = True
     eole.configure(self)
-    self.env['ADDMEM'] = 400
+    self.env['ADDMEM'] = 800
 
     self.env.append_value('OPT_ENV', [
-        'module load impi/2016.3.068'])
+               '. /etc/profile.d/lmod.sh','module load impi/2016.3.068'])
 
     self.env.prepend_value('LIBPATH', [
         YAMMROOT + '/prerequisites/Mumps4-4100_aster3/MPI/lib',
@@ -35,4 +35,4 @@ def configure(self):
     # allow to compile the elements catalog using the executable on one processor
     self.env['CATALO_CMD'] = 'I_MPI_FABRICS=shm'
     # produce an executable file with symbols for INTEL16 with mpiifort wrapper
-    self.env.append_value('LINKFLAGS', ('-nostrip')) 
+    self.env.prepend_value('LINKFLAGS', ('-L/opt/intel/2016.0.047/impi/5.1.1.109/lib64'))
