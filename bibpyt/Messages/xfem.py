@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # coding=utf-8
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -546,6 +546,12 @@ Utilisez ELIM_ARETE='DUAL'.
 
     75: _(u"""
      Coordonnées des points du fond de fissure sur la grille
+"""),
+
+    76: _(u"""
+     La famille de points de Gauss %(k3)s n'est pas présente dans le catalogue 
+     pour le sous-élément %(k2)s des éléments de type %(k1)s
+     . 
 """),
 
     77: _(u"""
