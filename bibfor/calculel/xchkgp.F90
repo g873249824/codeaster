@@ -1,6 +1,6 @@
 subroutine xchkgp(model)
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -68,7 +68,7 @@ subroutine xchkgp(model)
     integer :: k, nuflpg, nufgpg, vali(2)
     character(len=8) :: nomgd, elrese(6), elrefe, ma, famil, noma, nomail, param
     character(len=8), pointer :: typma(:) => null()
-    character(len=16) :: nofpg, nomte, valk(2), option, pheno
+    character(len=16) :: nofpg, nomte, valk(3), option, pheno
     character(len=19) :: ligrel, chslon
     character(len=24) :: chlong
     character(len=32) :: noflpg
@@ -185,7 +185,13 @@ subroutine xchkgp(model)
                 nuflpg = indk32(pnlocfpg,noflpg,1,nblfpg)
 !
 !               Assertion : on a trouve la famille
-                ASSERT(nuflpg.ne.0)
+                if (nuflpg.eq.0) then
+                    valk(1)=nomte
+                    valk(2)=elrese(ndime+irese)
+                    valk(3) = 'XINT'
+                    call utmess('F', 'XFEM_76', nk=3, valk=valk)
+                endif
+!                ASSERT(nuflpg.ne.0)
 
 !               recuperation du nombre de points de Gauss de la famille XINT,
 !               i.e. du nombre de points de Gauss par sous-element
