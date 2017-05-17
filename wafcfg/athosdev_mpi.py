@@ -22,7 +22,11 @@ def configure(self):
     self.env['ADDMEM'] = 800
 
     self.env.append_value('OPT_ENV', [
-        '. /etc/profile.d/lmod.sh','module load impi/2013.1.046'])
+        '. /etc/profile.d/lmod.sh',
+        'module load impi/2016.0.047'])
+    self.env.prepend_value('LINKFLAGS', [
+        '-nostrip',
+        '-L/opt/intel/2016.0.047/impi/5.1.1.109/lib64'])
 
     self.env.prepend_value('LIBPATH', [
         YAMMROOT + '/prerequisites/Mumps4-4100_aster3/MPI/lib',
@@ -34,5 +38,4 @@ def configure(self):
 
     # allow to compile the elements catalog using the executable on one processor
     self.env['CATALO_CMD'] = 'I_MPI_FABRICS=shm'
-    self.env.prepend_value('LINKFLAGS', ('-L/opt/intel/2013.1.046/impi/4.1.3.048/lib64'))
 
