@@ -45,7 +45,7 @@ subroutine rc3201(lpmpb, lsn, lsnet, lfatig, lrocht,&
     character(len=8) :: mater
 !     ------------------------------------------------------------------
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2016  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -413,7 +413,25 @@ subroutine rc3201(lpmpb, lsn, lsnet, lfatig, lrocht,&
             ug = dble( nocc ) / nadm(1)
         endif
         resuas(10*(is1-1)+10) = ug
+!
+        if (.not. seisme) goto 999
+!
+        call limend(mater, salijs(1), 'WOHLER', kbid, endur)
+        if (endur) then
+            ug=0.d0
+        else
+            call rcvale(mater, 'FATIGUE', 1, 'SIGM    ', salijs(1),&
+                        1, 'WOHLER  ', nadm(1), icodre(1), 2)
+            if (nadm(1) .lt. 0) then
+                vale(1) = salijs(1)
+                vale(2) = nadm(1)
+                call utmess('A', 'POSTRCCM_32', nr=2, valr=vale)
+            endif
+            ug = dble( nocc ) / nadm(1)
+        endif
         resuss(10*(is1-1)+10) = ug
+999     continue
+!
 !        IF (NIV.GE.2)  WRITE (IFM,1061) NSITUP, UG
 !
 ! ----- SITUATION Q :
@@ -734,6 +752,13 @@ subroutine rc3201(lpmpb, lsn, lsnet, lfatig, lrocht,&
                 resuca(icas) = salijs(1)
                 icas = icas + 1
                 resuca(icas) = salijs(2)
+                if (salijs(1) .gt. samax) then
+                  samax = salijs(1)
+                  sm = smm
+                else if (salijs(2).gt.samax) then
+                  samax = salijs(2)
+                  sm = smm
+                endif
                 kemax = max( kemax , kemeca )
                 matrice_fu_s(inds+1) = fuij(1)+fuij(2)
                 matrice_fu_s(indi+1) = fuij(1)+fuij(2)
