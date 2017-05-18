@@ -1,6 +1,6 @@
 subroutine te0100(option, nomte)
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -154,6 +154,15 @@ subroutine te0100(option, nomte)
         call jevech('PCONTXR', 'E', icontp)
 !       INITIALISATION DE LA CONTRAINTE EXTRAPOLEE CONTXR=CONTMR
         call dcopy(npg1*4, zr(icontm), 1, zr(icontp), 1)
+    endif
+!
+! - Check
+!
+
+    if (zk16(icompo-1+3) .eq.'GROT_GDEP') then
+        if (lteatt('C_PLAN','OUI') .and. zk16(icompo-1+1).eq.'ELAS') then
+            call utmess('F', 'COMPOR1_15')
+        endif
     endif
 !
 !
