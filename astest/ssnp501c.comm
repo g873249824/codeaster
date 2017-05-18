@@ -1,6 +1,6 @@
 # TITRE ECRASEMENT D'UN ANNEAU ENTRE DEUX PLAQUES SANS FROTTEMENT.
 # ======================================================================
-# COPYRIGHT (C) 1991 - 2012  EDF R&D                  WWW.CODE-ASTER.ORG
+# COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 # THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 # IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 # THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -24,11 +24,7 @@
 #UNITES   : NEWTON , CENTIMETRE , SECONDE (N,CM,S)
 #
 
-
-
 DEBUT(CODE=_F(NIV_PUB_WEB='INTERNET'),DEBUG=_F(SDVERI='OUI'))
-
-#PRE_GIBI();
 
 MA=LIRE_MAILLAGE(FORMAT='MED',);
 
@@ -39,14 +35,13 @@ MA=DEFI_GROUP(reuse =MA,
                                 UNION=('LESC','A','D'),),
                              ),);
 
-
-#----- GRANDEUR PHYSIQUE:  ---
+#----- GRANDEUR PHYSIQUE ------
 
 POLTH=DEFI_MATERIAU(ELAS=_F(E=407.,
-                            NU=0.47999999999999998,),);
+                            NU=0.47999999999999998,),ECRO_LINE=_F(D_SIGM_EPSI=1.0,SY=1E15),)
 
 ACIER=DEFI_MATERIAU(ELAS=_F(E=20700000,
-                            NU=0.29999999999999999,),);
+                            NU=0.29999999999999999,),ECRO_LINE=_F(D_SIGM_EPSI=1.0,SY=1E15),)
 
 #-----   MODELE ----------------
 
@@ -114,17 +109,13 @@ LINST=DEFI_LIST_REEL(DEBUT=0.0,
 
 RESU=STAT_NON_LINE(MODELE=MO,
                    CHAM_MATER=CHMAT,
-                   EXCIT=(
-                          _F(CHARGE=CL,),
+                   EXCIT=(_F(CHARGE=CL,),
                           _F(CHARGE=DEPL,
                              FONC_MULT=RAMPE,),),
                    CONTACT  = CON,
-                   COMPORTEMENT=_F(RELATION='ELAS',
+                   COMPORTEMENT=_F(RELATION='VMIS_ISOT_LINE',
                                 DEFORMATION='GROT_GDEP',),
                    INCREMENT=_F(LIST_INST=LINST,),
-
-                   SOLVEUR=_F(METHODE='LDLT',
-                              RENUM='SANS'),
                    NEWTON=_F(MATRICE='TANGENTE',
                              REAC_ITER=1,),
                    CONVERGENCE=_F(RESI_GLOB_RELA=9.9999999999999995E-07,
@@ -134,16 +125,12 @@ RESU=STAT_NON_LINE(MODELE=MO,
 #------- POST TRAITEMENT -----------------------
 
 RESU=CALC_CHAMP(reuse =RESU,
-
-
                 CONTRAINTE=('SIGM_ELNO'),
                RESULTAT=RESU,);
 
 RESU=CALC_CHAMP(reuse =RESU,
              RESULTAT=RESU,
              FORCE='REAC_NODA',CONTRAINTE='SIGM_NOEU',
-
-
              );
 
 TAB_REAC=POST_RELEVE_T(ACTION=_F(INTITULE='MESSAGE',
@@ -167,8 +154,8 @@ TAB_PRES=POST_RELEVE_T(ACTION=_F(INTITULE='MESSAGE',
 # TEST REFERENCE
 
 TEST_TABLE(REFERENCE='SOURCE_EXTERNE',
-           PRECISION=0.15,
-           VALE_CALC=-8.563810489,
+           PRECISION=0.1,
+           VALE_CALC=-8.78259567222,
            VALE_REFE=-8.0083311249999998,
            NOM_PARA='DY',
            TABLE=TAB_REAC,
@@ -177,8 +164,8 @@ TEST_TABLE(REFERENCE='SOURCE_EXTERNE',
            )
 
 TEST_TABLE(REFERENCE='SOURCE_EXTERNE',
-           PRECISION=0.15,
-           VALE_CALC=-16.213939913,
+           PRECISION=0.05,
+           VALE_CALC=-16.8013028173,
            VALE_REFE=-16.016662499999999,
            NOM_PARA='DY',
            TABLE=TAB_REAC,
@@ -187,8 +174,8 @@ TEST_TABLE(REFERENCE='SOURCE_EXTERNE',
            )
 
 TEST_TABLE(REFERENCE='SOURCE_EXTERNE',
-           PRECISION=0.15,
-           VALE_CALC=-23.562946943,
+           PRECISION=0.02,
+           VALE_CALC=-24.4956524317,
            VALE_REFE=-24.02499375,
            NOM_PARA='DY',
            TABLE=TAB_REAC,
@@ -197,8 +184,8 @@ TEST_TABLE(REFERENCE='SOURCE_EXTERNE',
            )
 
 TEST_TABLE(REFERENCE='SOURCE_EXTERNE',
-           PRECISION=0.15,
-           VALE_CALC=-31.684309894,
+           PRECISION=0.03,
+           VALE_CALC=-32.8559610285,
            VALE_REFE=-32.033324999999998,
            NOM_PARA='DY',
            TABLE=TAB_REAC,
@@ -212,7 +199,7 @@ TEST_RESU(RESU=_F(GROUP_NO='D',
                   RESULTAT=RESU,
                   NOM_CHAM='DEPL',
                   NOM_CMP='DX',
-                  VALE_CALC=0.73382600716927004,
+                  VALE_CALC=0.73382600713111001,
                   ),
           )
 
@@ -230,7 +217,7 @@ TEST_RESU(RESU=_F(GROUP_NO='A',
                   RESULTAT=RESU,
                   NOM_CHAM='SIGM_NOEU',
                   NOM_CMP='SIYY',
-                  VALE_CALC=-19.084000924331001,
+                  VALE_CALC=-20.5303310727,
                   ),
           )
 
@@ -239,7 +226,7 @@ TEST_RESU(RESU=_F(GROUP_NO='A',
                   RESULTAT=RESU,
                   NOM_CHAM='SIGM_NOEU',
                   NOM_CMP='SIYY',
-                  VALE_CALC=-13.732421997128,
+                  VALE_CALC=-14.9682025903,
                   ),
           )
 
