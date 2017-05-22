@@ -30,7 +30,7 @@ subroutine projmr(matras, nomres, basemo, nugene, nu,&
     character(len=19) :: nomsto
 !-----------------------------------------------------------------------
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -193,19 +193,19 @@ subroutine projmr(matras, nomres, basemo, nugene, nu,&
         ASSERT(n1bloc.eq.1)
         ASSERT(n2bloc.eq.nueq)
 !
-        do i = 1, nueq
-            nbj=i-schc(i)+1
+        do j = 1, nueq
+            nbj=j-schc(j)+1
             ASSERT(nbj.eq.1)
-            call mrmult('ZERO', imatra, zr(idbase+(i-1)*neq), vectass2, 1,&
+            call mrmult('ZERO', imatra, zr(idbase+(j-1)*neq), vectass2, 1,&
                         .true._1)
             call zerlag(neq, deeq, vectr=vectass2)
-            do j = 1, nueq
-                pij=ddot(neq,zr(idbase+(j-1)*neq),1,vectass2,1)
+            do i = 1, nueq
+                pij=ddot(neq,zr(idbase+(i-1)*neq),1,vectass2,1)
                 if (j .ge. i) then
-                    zr(ldblo1+scdi(j)+i-j-1)=pij
+                    zr(ldblo1+scdi(j)-j+i-1)=pij
                 endif
                 if (j .le. i) then
-                    zr(ldblo2+scdi(i)+j-i-1)=pij
+                    zr(ldblo2+scdi(i)-i+j-1)=pij
                 endif
             end do
         end do
