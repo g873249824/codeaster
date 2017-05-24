@@ -23,16 +23,19 @@ def configure(self):
 
     self.env.append_value('OPT_ENV', [
         '. /etc/profile.d/lmod.sh',
-        'module load impi/2016.0.047'])
+        'module load impi/2013.1.046'])
     self.env.prepend_value('LINKFLAGS', [
         '-nostrip',
-        '-L/opt/intel/2016.0.047/impi/5.1.1.109/lib64'])
+        '-L/opt/intel/2013.1.046/impi/4.1.3.048/lib64'])
 
     self.env.prepend_value('LIBPATH', [
         YAMMROOT + '/prerequisites/Mumps4-4100_aster3/MPI/lib',
         YAMMROOT + '/prerequisites/Petsc_mpi-petsc_aster/lib'])
     self.env.prepend_value('INCLUDES', [
         YAMMROOT + '/prerequisites/Petsc_mpi-petsc_aster/include'])
+#
+#   for using ifort/2013.0.046 icc/2013.0.046 with Mfront2.0.2, otherwise compilation aborts
+    self.env.prepend_value('INCLUDES', ['/usr/include/c++/4.8','/usr/lib/gcc/x86_64-linux-gnu/4.8/include','/usr/include/x86_64-linux-gnu/c++/4.8', ])
 
     opts.enable_petsc = True
 
