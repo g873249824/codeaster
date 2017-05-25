@@ -28,7 +28,7 @@ def configure(self):
     self.env['ADDMEM'] = 600
     self.env.append_value('OPT_ENV', [
         '. /etc/profile.d/lmod.sh',
-        'module load ifort/2013.0.046 icc/2013.0.046 mkl/2013.0.046'])
+        'module load ifort/2013.1.046 icc/2013.1.046 mkl/2013.1.046'])
 
     self.env.append_value('LIBPATH', [
         YAMMROOT + '/prerequisites/Hdf5-1814/lib',
