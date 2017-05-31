@@ -22,9 +22,6 @@ def configure(self):
 
     intel.configure(self)
 
-    # enable TEST_STRICT on the reference server
-    self.env.append_value('DEFINES', ['TEST_STRICT'])
-
     self.env['ADDMEM'] = 600
     self.env.append_value('OPT_ENV', [
         '. /etc/profile.d/lmod.sh',
