@@ -1,7 +1,7 @@
 # coding=utf-8
 
 """
-Build script for Code_Aster
+Build script for code_aster
 
 
 Note:
@@ -78,7 +78,7 @@ def options(self):
     group.add_option('--prefix', dest='prefix', default=None,
                      help='installation prefix [default: %r]' % default_prefix)
 
-    group = self.add_option_group('Code_Aster options')
+    group = self.add_option_group('code_aster options')
 
     self.load('parallel', tooldir='waftools')
     self.load('python_cfg', tooldir='waftools')
@@ -302,7 +302,7 @@ def uncompress64(self, compressed):
 @Configure.conf
 def check_platform(self):
     self.start_msg('Getting platform')
-    # convert to Code_Aster terminology
+    # convert to code_aster terminology
     os_name = self.env.DEST_OS
     if os_name.startswith(('darwin', 'cygwin')):
         os_name = 'linux'
