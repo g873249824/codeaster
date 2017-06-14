@@ -31,6 +31,7 @@ import re
 import pprint
 from math import log
 import shutil
+import tempfile
 
 import numpy as NP
 
@@ -44,7 +45,7 @@ except ImportError:
 from Noyau.N_types import force_list
 from Utilitai.Utmess import UTMESS, ASSERT
 from Utilitai.transpose import transpose
-from Utilitai.utils import _printDBG
+from Utilitai.utils import get_shared_tmpdir, _printDBG
 
 dict_format = {
     'R': "15.6E",
@@ -81,7 +82,7 @@ class MISS_PARAMETER(object):
         # defauts hors du mot-clé PARAMETRE
         self._defaults = {
             '_INIDIR': initial_dir,
-            '_WRKDIR': osp.join(initial_dir, 'tmp_miss3d'),
+            '_WRKDIR': get_shared_tmpdir('tmp_miss3d', initial_dir),
             '_NBM_DYN': None,
             '_NBM_STAT': None,
             '_exec_Miss': False,

@@ -398,7 +398,7 @@ class CALCUL_ASTER:
            Creation du repertoire temporaire d'execution du calcul esclave
         """
         from Utilitai.utils import get_shared_tmpdir
-
+        
         # Creation du repertoire temporaire
         tmp_macr_recal = get_shared_tmpdir('tmp_macr_recal')
 
