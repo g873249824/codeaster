@@ -17,7 +17,7 @@
 # along with code_aster.  If not, see <http://www.gnu.org/licenses/>.
 # --------------------------------------------------------------------
 
-# person_in_charge: aimery.assire at edf.fr
+# person_in_charge: mathieu.courtois@edf.fr
 
 
 debug = False
@@ -181,12 +181,7 @@ class CALCUL_ASTER:
             self.Creation_Fichier_Export_Esclave(tmp_macr_recal)
 
             # Code_Aster installation
-            if os.environ.has_key('ASTER_ROOT'):
-                ASTER_ROOT = os.environ['ASTER_ROOT']
-            else:
-                import aster
-                ASTER_ROOT = os.path.join(
-                    aster_core.get_option('repout'), '..')
+            ASTER_ROOT = os.environ['ASTER_ROOT']
             as_run = os.path.join(ASTER_ROOT, 'bin', 'as_run')
 
             # General
@@ -402,15 +397,10 @@ class CALCUL_ASTER:
         """
            Creation du repertoire temporaire d'execution du calcul esclave
         """
-        from asrun.run import AsRunFactory
-        run = AsRunFactory()
-        shared_tmp = run.get('shared_tmp')
-        if not shared_tmp:
-            shared_tmp = os.getcwd()
+        from Utilitai.utils import get_shared_tmpdir
 
         # Creation du repertoire temporaire
-        tmp_macr_recal = tempfile.mkdtemp(dir=shared_tmp,
-                                          prefix='tmp_macr_recal')
+        tmp_macr_recal = get_shared_tmpdir('tmp_macr_recal')
 
         if not os.path.exists(tmp_macr_recal):
             UTMESS('F', 'RECAL0_82', valk=tmp_macr_recal)
