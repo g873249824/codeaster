@@ -11,7 +11,7 @@ def options(self):
     self.load('compiler_cxx')
     self.load('compiler_fc')
 
-    group = self.get_option_group("Code_Aster options")
+    group = self.get_option_group("code_aster options")
     group.add_option('--enable-mpi', dest='parallel', action='store_true',
                     help='Build a parallel version with mpi')
 
