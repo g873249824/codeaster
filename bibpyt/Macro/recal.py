@@ -44,6 +44,7 @@ try:
     import aster
     import Macro
     from Accas import _F
+    from Utilitai.utils import get_shared_tmpdir
 except ImportError:
     pass
 
@@ -154,19 +155,8 @@ def Affiche_Param(para, val):
 def make_include_files(UNITE_INCLUDE, calcul, parametres):
     """  Module permettant de generer les fichiers a inclure (mode INCLUSION)
     """
-
-# Importation de commandes Aster
-#    try:
-#       import aster
-#       import Macro
-#       from Accas import _F
-#       from Cata.cata import *
-#    except ImportError:
-#       raise Exception("Le mode INCLUSION doit etre lance depuis Aster")
-
+    ASTER_ROOT = os.environ['ASTER_ROOT']
     try:
-        ASTER_ROOT = os.path.join(aster_core.get_option('repout'), '..')
-        sys.path.append(os.path.join(ASTER_ROOT, 'ASTK', 'ASTK_SERV', 'lib'))
         sys.path.append(os.path.join(ASTER_ROOT, 'lib', 'python%s.%s' % (sys.version_info[0], sys.version_info[1] ), 'site-packages'))
     except:
         pass
@@ -730,7 +720,7 @@ class CALCULS_ASTER:
         # ----------------------------------------------------------------------------
         if not ASTER_ROOT:
             try:
-                ASTER_ROOT = os.path.join(aster_core.get_option('repout'), '..')
+                ASTER_ROOT = os.environ['ASTER_ROOT']
             except:
                 pass
         try:
@@ -1067,11 +1057,10 @@ class CALCULS_ASTER:
         """
         if not self.ASTER_ROOT:
             try:
-                ASTER_ROOT = os.path.join(aster_core.get_option('repout'), '..')
+                ASTER_ROOT = os.environ['ASTER_ROOT']
             except:
                 pass
         try:
-            sys.path.append(os.path.join(ASTER_ROOT, 'ASTK', 'ASTK_SERV', 'lib'))
             sys.path.append(os.path.join(ASTER_ROOT, 'lib', 'python%s.%s' % (sys.version_info[0], sys.version_info[1] ), 'site-packages'))
         except:
             pass
