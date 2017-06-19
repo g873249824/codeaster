@@ -14,6 +14,8 @@ ASTER_ROOT = os.environ['ASTER_ROOT']
 YAMMROOT = os.environ['ROOT_SALOME']
 
 import intel
+import official_programs
+
 
 def configure(self):
     opts = self.options
@@ -21,6 +23,9 @@ def configure(self):
     self.env.append_value('CXXFLAGS', ['-D_GLIBCXX_USE_CXX11_ABI=1'])
 
     intel.configure(self)
+    official_programs.configure(self)
+    opts.with_prog_salome = True
+    opts.with_prog_europlexus = True
 
     self.env['ADDMEM'] = 600
     self.env.append_value('OPT_ENV', [
