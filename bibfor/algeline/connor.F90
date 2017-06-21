@@ -1,25 +1,27 @@
+! --------------------------------------------------------------------
+! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! This file is part of code_aster.
+!
+! code_aster is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! code_aster is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with code_aster.  If not, see <http://www.gnu.org/licenses/>.
+! --------------------------------------------------------------------
+
 subroutine connor(melflu, typflu, freq, base, nuor,&
                   amoc, carac, masg, lnoe, nbm,&
                   vite, rho, abscur)
 !
 ! aslint: disable=W1306 
     implicit none
-! ======================================================================
-! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
-! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
-! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
-! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
-! (AT YOUR OPTION) ANY LATER VERSION.
-!
-! THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
-! WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
-! MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
-! GENERAL PUBLIC LICENSE FOR MORE DETAILS.
-!
-! YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
-! ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
-!   1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
-! ======================================================================
 !
 !  CALCUL DES VITESSES EFFICACES ET CRITIQUES PAR LA METHODE DE CONNORS
 !  IN : MELFLU : NOM DU CONCEPT DE TYPE MELASFLU PRODUIT
@@ -333,8 +335,8 @@ subroutine connor(melflu, typflu, freq, base, nuor,&
         mphi2(im)=0.d0
         do ima = 1, nbma
 !
-            a = 0.5d0*r8pi()*(di**2) * drho_i + &
-                correl*(de**2)*drho_e/(2*dx)
+            a = (0.5d0*r8pi()*(di**2) * drho_i + &
+                correl*(de**2)*drho_e)/(2*dx)
 
             b = r8pi()*rhotub*(de**2-di**2)/4        + &
                 r8pi()*(di**2)/4*(rho_i-drho_i/dx*x) + &
@@ -360,10 +362,8 @@ subroutine connor(melflu, typflu, freq, base, nuor,&
         else 
             ven_1d(im) = sqrt((numera(im)*mastub) / (mphi2(im)*rhos))
         end if
-        print *,"  >>vitesse entrainement = ", ven_1d(im)
         do i = 1, nbval
             rap_1d(im,i) = ven_1d(im)/vcr_1d(im,i)
-            print *,"  >>rapport d'instabilité, connor's constant # : ",i, " value =", rap_1d(im,i)
         end do
     end do
 !
@@ -492,10 +492,8 @@ subroutine connor(melflu, typflu, freq, base, nuor,&
         mass(im) = zr(lmasg)
 
         ven_3d(im) = sqrt((numera(im)*mastub) / (mass(im)*rhos))
-        print *,"  >>vitesse entrainement = ", ven_3d(im)
         do i = 1, nbval
             rap_3d(im,i) = ven_3d(im)/vcr_3d(im,i)
-            print *,"  >>rapport d'instabilité, connor's constant : ",i, " value =", rap_3d(im,i)
         end do
     end do
 !
