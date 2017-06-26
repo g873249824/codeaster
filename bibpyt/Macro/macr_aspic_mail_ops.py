@@ -704,7 +704,7 @@ def macr_aspic_mail_ops(self, EXEC_MAILLAGE, TYPE_ELEM, RAFF_MAIL, TUBULURE,
 #
     logiel = aster_core.get_option('prog:gibi_aster.py')
     UNITD = EXEC_MAILLAGE['UNITE_DATG']
-    UNITP = EXEC_MAILLAGE['UNITE_MGIB']
+    UNITS = EXEC_MAILLAGE['UNITE_MGIB']
 #
 #     --- ecriture sur le fichier .datg  de la procedure ---
 #
