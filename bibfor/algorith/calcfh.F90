@@ -12,7 +12,7 @@ subroutine calcfh(option, perman, thmc, ndim, dimdef,&
                   valfac, valcen)
 !     ------------------------------------------------------------------
 ! ======================================================================
-! COPYRIGHT (C) 1991 - 2015  EDF R&D                  WWW.CODE-ASTER.ORG
+! COPYRIGHT (C) 1991 - 2017  EDF R&D                  WWW.CODE-ASTER.ORG
 ! THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
 ! IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
 ! THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
@@ -876,7 +876,7 @@ subroutine calcfh(option, perman, thmc, ndim, dimdef,&
                         t/t*gpa(i))
                     endif
                     dgcgp1(1)=dgpgp1(1)/p2
-                    dgcgp2(1)=dgpgp2(1)/p2-pvp/p2/p2
+                    dgcgp2(1)=dgpgp2(1)/p2
                     dgcgp1(2)=mamolg*1/r/t*dgpgp1(2)
                     dgcgp2(2)=mamolg*1/r/t*dgpgp2(2)
                     if (yate .eq. 1) then
