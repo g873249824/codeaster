@@ -10,7 +10,7 @@ waf install -p
 """
 
 import calibre9
-YAMMROOT = calibre9.YAMMROOT 
+YAMMROOT = calibre9.YAMMROOT
 
 def configure(self):
     opts = self.options
@@ -22,8 +22,8 @@ def configure(self):
 
     self.env.prepend_value('LIBPATH', [
         YAMMROOT + '/prerequisites/Mumps4-4100_aster3/MPI/lib',
-        YAMMROOT + '/prerequisites/Petsc_mpi-petsc_aster/lib'])
+        YAMMROOT + '/prerequisites/Petsc_mpi-344_aster/lib'])
     self.env.prepend_value('INCLUDES', [
-        YAMMROOT + '/prerequisites/Petsc_mpi-petsc_aster/include'])
+        YAMMROOT + '/prerequisites/Petsc_mpi-344_aster/include'])
 
     opts.enable_petsc = True
