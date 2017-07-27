@@ -47,6 +47,10 @@ PGEOM_R  = OutputParameter(phys=PHY.GEOM_R, type='ELEM')
 PCOEH_R  = OutputParameter(phys=PHY.COEH_R, type='ELEM')
 
 
+
+PNEUT_F  = OutputParameter(phys=PHY.NEUT_F, type='ELEM')
+
+
 TOU_INI_ELEM = Option(
     para_in=(
     ),
@@ -60,6 +64,7 @@ TOU_INI_ELEM = Option(
            PPRES_R,
            PSOUR_R,
            PCOEH_R,
+           PNEUT_F,
     ),
     condition=(
       CondCalcul('+', ((AT.PHENO,'ME'),)),
