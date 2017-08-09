@@ -285,14 +285,13 @@ class SyntaxCheckerVisitor(object):
 
         # loop on occurrences filled by the user
         for userOcc in userDict:
-            # check rules
-            if step.rules != None:
-                for rule in step.rules:
-                    self._stack.append(rule)
-                    rule.check(userOcc)
-                    self._stack.pop()
-            # check that the required keywords are provided by the user
             ctxt = self._parent_context[-1] if self._parent_context else {}
+            # check rules
+            for rule in step.getRules(userOcc, ctxt):
+                self._stack.append(rule)
+                rule.check(userOcc)
+                self._stack.pop()
+            # check that the required keywords are provided by the user
             step.checkMandatory(userOcc, self._stack, ctxt)
             # loop on keywords provided by the user
             for key, value in userOcc.iteritems():
