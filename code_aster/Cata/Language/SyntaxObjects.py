@@ -406,6 +406,31 @@ class PartOfSyntax(UIDMixing):
                 break
         return found
 
+    def getRules(self, userSyntax, _parent_ctxt=None):
+        """Return the rules to be applied to the given keywords.
+
+        Arguments:
+            userSyntax (dict): dict of the keywords as filled by the user.
+            _parent_ctxt (dict): contains the keywords as known in the parent.
+                This context is used to evaluate block conditions.
+        """
+        ctxt = _parent_ctxt.copy() if _parent_ctxt else {}
+        userSyntax = mixedcopy(userSyntax)
+        # add default keywords into userSyntax
+        self.addDefaultKeywords(userSyntax, ctxt)
+        # and update parent context with local keywords
+        ctxt.update(userSyntax)
+
+        rules = list(self.rules)
+        # search in BLOC objects
+        for key, kwd in self.definition.iterItemsByType():
+            if not isinstance(kwd, Bloc):
+                continue
+            if not kwd.isEnabled(ctxt):
+                continue
+            rules.extend(kwd.getRules(userSyntax))
+        return rules
+
     @classmethod
     def undefined(cls, value):
         """Return *True* if the value is a null value (undefined keyword),
