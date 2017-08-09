@@ -40,6 +40,7 @@ to import command files that contain it. But it is always optional (see
 """
 
 import os
+import inspect
 import copy
 import types
 from collections import OrderedDict
@@ -316,7 +317,7 @@ class PartOfSyntax(UIDMixing):
         ctxt = _parent_ctxt.copy() if _parent_ctxt else {}
         for key, kwd in self.definition.iterItemsByType():
             if isinstance(kwd, SimpleKeyword):
-                # use the default or None
+                # use the default
                 kwd.addDefaultKeywords(key, userSyntax, ctxt)
             elif isinstance(kwd, FactorKeyword):
                 # if not given by the user, default value is None if optional
@@ -613,11 +614,11 @@ class Command(PartOfSyntax):
             if type(resultType) is types.FunctionType:
                 ctxt = mixedcopy(args)
                 self.addDefaultKeywords(ctxt)
-                if os.environ.get('DEBUG'):
+                # if os.environ.get('DEBUG'):
                     # print "COMMAND:", self.name
                     # print "CTX1:", ctxt.keys()
                     # print "CTX1:", ctxt
-                    _check_args(self, resultType, ctxt)
+                self._add_none_sdprod(resultType, ctxt)
                 resultType = self.build_sd_prod(resultType, ctxt)
             return resultType
 
@@ -627,6 +628,34 @@ class Command(PartOfSyntax):
         resultType = sdprodFunc(**ctxt)
         disable_0key(ctxt)
         return resultType
+
+    def _add_none_sdprod(self, sd_prod, dictargs):
+        """Check if some arguments are missing to call *sd_prod* function and
+        add them with the *None* value.
+
+        It could be considered as a catalog error. *sd_prod* function should
+        not take optional keywords as arguments.
+
+        Arguments:
+            sd_prod (callable): *sd_prod* function to inspect.
+            dictargs (dict): Dict of keywords.
+        """
+        argspec = inspect.getargspec(sd_prod)
+        required = argspec.args
+        if argspec.defaults:
+            required = required[:-len(argspec.defaults)]
+        args = dictargs.keys()
+        # add 'self' for macro
+        args.append('self')
+        miss = set(required).difference(args)
+        if len(miss) > 0:
+            # miss = sorted(list(miss))
+            # raise ValueError("Arguments required by the function:\n    {0}\n"
+            #                  "Provided in dict:    {1}\n"
+            #                  "Missing:    {2}\n"\
+            #                  .format(sorted(required), sorted(args), miss))
+            for i in miss:
+                dictargs[i] = None
 
 
 class Operator(Command):
@@ -663,23 +692,3 @@ class Formule(Macro):
 class CataError(Exception):
     """Exception raised in case of error in the catalog."""
     pass
-
-
-# for debugging
-def _check_args(obj, func, dictargs):
-    """Check if some arguments missing to call *func*."""
-    import inspect
-    argspec = inspect.getargspec(func)
-    required = argspec.args
-    if argspec.defaults:
-        required = required[:-len(argspec.defaults)]
-    args = dictargs.keys()
-    miss = set(required).difference(args)
-    if isinstance(obj, Macro):
-        miss.discard('self')
-    if len(miss) > 0:
-        miss = sorted(list(miss))
-        raise ValueError("Arguments required by the function:\n    {0}\n"
-                         "Provided in dict:    {1}\n"
-                         "Missing:    {2}\n"\
-                         .format(sorted(required), sorted(args), miss))
