@@ -173,8 +173,7 @@ class Together(Validator):
         """Check values"""
         missing = set(self.args[0]).difference(force_list(values))
         if missing and len(missing) != len(self.args[0]):
-            raise ValueError("Missing values: {0}"
-                             .format([str(i) for i in missing]))
+            raise ValueError("Missing values: {0}".format(_lstr(missing)))
 
 
 class Absent(Validator):
@@ -192,8 +191,7 @@ class Absent(Validator):
         """Check values"""
         invalid = set(self.args[0]).intersection(force_list(values))
         if invalid:
-            raise ValueError("Unexpected values: {0}"
-                             .format([str(i) for i in invalid]))
+            raise ValueError("Unexpected values: {0}".format(_lstr(invalid)))
 
 
 class Compulsory(Validator):
@@ -213,7 +211,7 @@ class Compulsory(Validator):
         missing = set(self.args[0]).difference(force_list(values))
         if missing:
             raise ValueError("Required values: {0}, missing {1}"
-                             .format(self.args, [str(i) for i in missing]))
+                             .format(_lstr(*self.args), _lstr(missing)))
 
 
 class NotEqualTo(Validator):
@@ -236,3 +234,7 @@ class NotEqualTo(Validator):
             if val == ref:
                 raise ValueError("Unauthorized value: {0[0]}"
                                  .format(self.args))
+
+
+def _lstr(list_):
+    return [str(i) for i in list_]
