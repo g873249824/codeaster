@@ -268,7 +268,7 @@ class PartOfSyntax(UIDMixing):
         from code_aster.Cata import HAVE_ASTERSTUDY
         definition = self.definition
         value = definition.get("statut", "f")
-        if not HAVE_ASTERSTUDY:
+        if not HAVE_ASTERSTUDY or value == "c":
             return value
         # In AsterStudy, a simple keyword with a default value...
         if self.getCataTypeId() == IDS.simp and self.hasDefaultValue():
