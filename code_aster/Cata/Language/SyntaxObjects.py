@@ -456,6 +456,9 @@ class SimpleKeyword(PartOfSyntax):
             _parent_ctxt (dict): contains the keywords as known in the parent.
         """
         value = userSyntax.get(key, self.defaultValue())
+        # do not insert None value
+        if value is None:
+            return
         if self.is_list():
             if value is not None and not value_is_sequence(value):
                 value = [value, ]
