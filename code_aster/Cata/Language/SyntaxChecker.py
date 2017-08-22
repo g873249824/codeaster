@@ -140,6 +140,11 @@ class SyntaxCheckerVisitor(object):
         self._parent_context.append(keywords)
         self._visitComposite(step, keywords)
         self._parent_context.pop()
+        try:
+            step.get_type_sd_prod(**keywords)
+        except:
+            raise TypeError('Cannot type result of the command {}'
+                            .format(step.name))
 
     def visitBloc(self, step, userDict=None):
         """Visit a Bloc object"""
