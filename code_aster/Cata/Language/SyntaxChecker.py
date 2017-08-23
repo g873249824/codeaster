@@ -213,6 +213,9 @@ class SyntaxCheckerVisitor(object):
                 continue
             if hasattr(i, "evaluation"):
                 i = i.evaluation
+                # for lists and tuples, take the first element
+                if type(i) in (list, tuple) and i:
+                    i = i[0]
             # if a Variable is not yet evaluated
             if i is None:
                 continue
