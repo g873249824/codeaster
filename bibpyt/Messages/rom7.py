@@ -52,4 +52,7 @@ cata_msg = {
    20 : _(u"""Paramètres spécifiques à la méthode POD ou POD_INCR."""),
 
    21 : _(u"""Paramètres spécifiques à la méthode GLOUTON."""),
+
+   24 : _(u"""Le calcul de type POD_INCR nécessite de récupérer la table des coordonnées réduites dans la base %(k1)s.
+              Conseil: si vous récupérez la base d'un fichier externe (LIRE_RESU), ça ne peut pas fonctionner, il faut que la création de la base soit dans la même étude."""),
 }
