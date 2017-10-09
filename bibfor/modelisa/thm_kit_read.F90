@@ -162,6 +162,7 @@ subroutine thm_kit_read(keywordfact, iocc, rela_comp, rela_thmc, rela_hydr,&
 ! ----- KIT_HM
 !
         if (.not.l_meca) call utmess('F', 'THM1_41', 1, rela_comp)
+        if (rela_meca .eq. 'ELAS_GONF') call utmess('F', 'THM1_67')
         if (rela_thmc .ne. 'LIQU_SATU' .and. rela_thmc .ne. 'GAZ' .and. rela_thmc .ne.&
             'LIQU_GAZ_ATM') then
             valk(1) = rela_thmc
@@ -208,6 +209,7 @@ subroutine thm_kit_read(keywordfact, iocc, rela_comp, rela_thmc, rela_hydr,&
 !
 ! ----- KIT_H
 !
+        if (rela_meca .eq. 'ELAS_GONF') call utmess('F', 'THM1_67')
         if (l_meca) then
             valk(1) = rela_comp
             call utmess('F', 'THM1_46', 1, valk)
@@ -251,6 +253,7 @@ subroutine thm_kit_read(keywordfact, iocc, rela_comp, rela_thmc, rela_hydr,&
 !
 ! ----- KIT_THV
 !
+        if (rela_meca .eq. 'ELAS_GONF') call utmess('F', 'THM1_67')
         if (l_meca) then
             valk(1) = rela_comp
             call utmess('F', 'THM1_46', 1, valk)
@@ -266,6 +269,7 @@ subroutine thm_kit_read(keywordfact, iocc, rela_comp, rela_thmc, rela_hydr,&
 ! ----- KIT_THM
 !
         if (.not.l_meca) call utmess('F', 'THM1_41', 1, rela_comp)
+        if (rela_meca .eq. 'ELAS_GONF') call utmess('F', 'THM1_67')
         if (rela_thmc .ne. 'LIQU_SATU' .and. rela_thmc .ne. 'LIQU_GAZ_ATM' .and. rela_thmc&
             .ne. 'GAZ') then
             valk(1) = rela_thmc

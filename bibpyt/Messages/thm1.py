@@ -73,4 +73,8 @@ Il y a une loi mécanique définie dans la relation, ce n'est pas possible avec 
 La loi de couplage doit être LIQU_SATU ou GAZ pour une modélisation <%(k1)s>.
 """),
 
+    67 : _(u"""
+La loi mécanique GONF_ELAS n'est utilisable qu'avec une modélisation à deux pressions.
+"""),
+
 }
