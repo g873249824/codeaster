@@ -69,8 +69,8 @@ implicit none
 !
 ! - Get informations about bases - Dual
 !
-    call getvid(' ', 'BASE_DUAL', scal = base_dual)
-    call romBaseRead(base_dual, empi_dual)
+!    call getvid(' ', 'BASE_DUAL', scal = base_dual)
+!    call romBaseRead(base_dual, empi_dual)
 !
 ! - Get input results datastructures
 !
