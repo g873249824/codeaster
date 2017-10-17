@@ -406,7 +406,7 @@ CALC_MODES=MACRO(nom="CALC_MODES",
 
 #########################################################################################
 #        Amélioration de la qualité des modes
-         AMELIORATION=SIMP(statut='f',typ='TXM',defaut="NON",into=("OUI","NON"), ),
+         AMELIORATION=SIMP(statut='f',typ='TXM',defaut="NON",into=("NON"), ),
 #########################################################################################
          INFO       =SIMP(statut='f',typ='I',defaut=1,into=(1,2) ),
          TITRE      =SIMP(statut='f',typ='TXM'),
