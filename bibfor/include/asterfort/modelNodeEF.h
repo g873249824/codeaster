@@ -17,15 +17,9 @@
 ! --------------------------------------------------------------------
 !
 interface
-    subroutine nbnlma(noma, nbm    , limanu    , nbtyp, lityp,&
-                      nbn , l_error, elem_error)
-        character(len=8), intent(in) :: noma
-        integer, intent(in) :: nbm
-        integer, intent(in) :: limanu(*)
-        integer, intent(in) :: nbtyp
-        character(len=8), intent(in) :: lityp(*)
-        integer, intent(out) :: nbn
-        aster_logical, intent(out) :: l_error
-        character(len=8), intent(out) :: elem_error
-    end subroutine nbnlma
+    subroutine modelNodeEF(modelz, nb_node, v_list_node_)
+        character(len=*), intent(in) :: modelz
+        integer, intent(out) :: nb_node
+        integer, pointer, optional, intent(out) :: v_list_node_(:)
+    end subroutine modelNodeEF
 end interface

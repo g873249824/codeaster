@@ -97,6 +97,9 @@ implicit none
 !
     call dismoi('MODELE', ds_para%result_rom, 'RESULTAT', repk=ds_para%model_rom)
 !
+        if (iret .ne. 0) then
+            call utmess('F', 'ROM7_25', sk = ds_para%ds_empi_dual%field_name)
+        endif
 ! - Print parameters
 !
     if (niv .ge. 2) then

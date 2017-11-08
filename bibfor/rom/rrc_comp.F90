@@ -60,6 +60,6 @@ implicit none
 !
 ! - For dual field
 !
-    call rrc_comp_dual(ds_para)
+!    call rrc_comp_dual(ds_para)
 !
 end subroutine

@@ -32,12 +32,10 @@ def post_champ_prod(RESULTAT_REDUIT,**args):
 
 REST_REDUIT_COMPLET=OPER(nom="REST_REDUIT_COMPLET",op=54,
                          sd_prod=post_champ_prod,
-                         reentrant='f',
-    reuse = SIMP(statut='c', typ=CO),
+                         reentrant='n',
     MODELE           = SIMP(statut='o',typ=modele_sdaster),
     RESULTAT_REDUIT  = SIMP(statut='o',typ=resultat_sdaster,max=1),
     BASE_PRIMAL      = SIMP(statut='o',typ=mode_empi,max=1),
-    BASE_DUAL        = SIMP(statut='o',typ=mode_empi,max=1),
     INFO             = SIMP(statut='f',typ='I',defaut= 1,into=( 1 , 2) ),
     TITRE            = SIMP(statut='f',typ='TXM'),
 ) ;

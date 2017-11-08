@@ -89,6 +89,7 @@ implicit none
     real(kind=8), pointer :: v_cnvabu(:) => null()
     real(kind=8), pointer :: v_cndirp(:) => null()
     real(kind=8), pointer :: v_cnresi(:) => null()
+    real(kind=8), pointer :: v_gamma(:) => null()
 !
 ! --------------------------------------------------------------------------------------------------
 !
@@ -160,6 +161,10 @@ implicit none
 ! ----- Solve linear system
 !
         if (ds_algorom%l_rom) then
+            call jeveuo(ds_algorom%gamma, 'E', vr = v_gamma)
+            do k = 1, ds_algorom%ds_empi%nb_mode
+                v_gamma (k) = 0.d0
+            enddo
             call romAlgoNLSystemSolve(matass, cn2mbr, ds_algorom, chsol)
         else
             call nxreso(matass, maprec, solver, cnchci, cn2mbr,&
@@ -183,6 +188,10 @@ implicit none
 ! ----- Solve linear system
 !
         if (ds_algorom%l_rom) then
+            call jeveuo(ds_algorom%gamma, 'E', vr = v_gamma)
+            do k = 1, ds_algorom%ds_empi%nb_mode
+                v_gamma (k) = 0.d0
+            enddo
             call copisd('CHAMP_GD', 'V', temp_prev, chsol)
             call romAlgoNLSystemSolve(matass, cn2mbr, ds_algorom, chsol)
         else
