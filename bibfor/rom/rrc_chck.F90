@@ -55,21 +55,21 @@ implicit none
 ! - Check mesh
 !
     mesh_prim = ds_para%ds_empi_prim%mesh
-    mesh_dual = ds_para%ds_empi_dual%mesh
-    if (mesh_prim .ne. mesh_dual) then
-        call utmess('F','ROM4_9')
-    endif
+!    mesh_dual = ds_para%ds_empi_dual%mesh
+!    if (mesh_prim .ne. mesh_dual) then
+!        call utmess('F','ROM4_9')
+!    endif
 !
 ! - Check model
 !
     model_prim = ds_para%ds_empi_prim%model
-    model_dual = ds_para%ds_empi_dual%model
-    if (model_prim .eq. '#PLUSIEURS' .or. model_dual .eq. '#PLUSIEURS') then
+!    model_dual = ds_para%ds_empi_dual%model
+    if (model_prim .eq. '#PLUSIEURS') then
         call utmess('F','ROM4_11')
     endif
-    if (model_prim .ne. model_dual) then
-        call utmess('F', 'ROM6_2')
-    endif
+!    if (model_prim .ne. model_dual) then
+!        call utmess('F', 'ROM6_2')
+!    endif
     model_rom    = ds_para%model_rom
     model_dom    = ds_para%model_dom
     if (model_rom .eq. model_dom) then
@@ -78,13 +78,13 @@ implicit none
     if (model_prim .ne. model_dom) then
         call utmess('F', 'ROM6_9', sk = ds_para%ds_empi_prim%base)
     endif
-    if (model_dual .ne. model_dom) then
-        call utmess('F', 'ROM6_9', sk = ds_para%ds_empi_dual%base)
-    endif
+!    if (model_dual .ne. model_dom) then
+!        call utmess('F', 'ROM6_9', sk = ds_para%ds_empi_dual%base)
+!    endif
 !
 ! - Check empiric modes base
 !
     call romBaseChck(ds_para%ds_empi_prim)
-    call romBaseChck(ds_para%ds_empi_dual)
+!    call romBaseChck(ds_para%ds_empi_dual)
 !
 end subroutine

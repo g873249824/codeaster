@@ -84,7 +84,7 @@ implicit none
     character(len=8) :: ncra1(nelas), fami, poum
     integer :: icodre(nresma)
     real(kind=8) :: dsdeme(6, 6)
-    real(kind=8) :: angma1(3), ang2(3), depstr(6)
+    real(kind=8) :: ang2(3), depstr(6)
     real(kind=8) :: d(6, 6), mdal(6), dalal
     character(len=16) :: complg(20)
     aster_logical :: yapre2
@@ -351,7 +351,7 @@ implicit none
             call nmcomp(fami, kpg, ksp, ndim, typmod,&
                       imate, complg, carcri, instam, instap,&
                       6, defgem(addeme+ndim), deps, 6, congem(adcome),&
-                      vintm, option, angma1, 1, [0.d0],&
+                      vintm, option, ang2, 1, [0.d0],&
                       congep(adcome), vintp, 36, dsdeme, 1,&
                       [0.d0], retcom)
         endif

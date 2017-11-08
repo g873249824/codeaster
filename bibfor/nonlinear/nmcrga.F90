@@ -43,7 +43,7 @@ subroutine nmcrga(sderro)
 ! ----------------------------------------------------------------------
 !
     integer :: zeven
-    parameter   (zeven = 33)
+    parameter   (zeven = 34)
     character(len=16) :: neven(zeven)
     character(len=8) :: ncret(zeven)
     integer :: vcret(zeven)
@@ -60,7 +60,7 @@ subroutine nmcrga(sderro)
 ! --- NOM DES EVENEMENTS
 !
     data neven   /'ERRE_INTE','INTE_NPHY','DIVE_DEBO',&
-     &              'INTE_BORN',&
+     &              'INTE_BORN','ERRE_NPHY',&
      &              'ERRE_PILO','CONV_PILO','ERRE_FACS',&
      &              'ERRE_FACT','ERRE_CTD1','ERRE_CTD2',&
      &              'ERRE_TIMN','ERRE_TIMP','ERRE_EXCP',&
@@ -76,7 +76,7 @@ subroutine nmcrga(sderro)
 ! --- NOM DU CODE RETOUR ATTACHE A L'EVENEMENT
 !
     data ncret   /'LDC','LDC','LDC',&
-     &              'LDC',&
+     &              'LDC','XXX',&
      &              'PIL','PIL','FAC',&
      &              'FAC','CTC','CTC',&
      &              'XXX','XXX','XXX',&
@@ -92,7 +92,7 @@ subroutine nmcrga(sderro)
 ! --- VALEUR DU CODE RETOUR CORRESPONDANT A CHAQUE EVENEMENT
 !
     data vcret   / 1 , 2, 3,&
-     &               4 ,&
+     &               4 , 99, &
      &               1 , 2, 1,&
      &               2 , 1, 2,&
      &               99,99,99,&
@@ -115,7 +115,7 @@ subroutine nmcrga(sderro)
 ! CONV_ : EVENEMENT A TRAITER POUR DETERMINER LA CONVERGENCE
 !
     data teven   /'ERRI_NEWT','ERRC_NEWT','CONV_NEWT',&
-     &              'EVEN'     ,&
+     &              'EVEN'   ,'ERRI_NEWT',&
      &              'ERRI_NEWT','CONV_CALC','ERRI_NEWT',&
      &              'ERRI_NEWT','ERRI_NEWT','ERRI_NEWT',&
      &              'ERRI_CALC','ERRI_CALC','ERRI_CALC',&
@@ -131,7 +131,7 @@ subroutine nmcrga(sderro)
 ! --- FONCTIONNALITE ACTIVE SI NECESSAIRE POUR CONVERGENCE
 !
     data feven   /' ',' '       ,' ',&
-     &              ' ',&
+     &              ' ', ' ',&
      &              ' ','PILOTAGE',' ',&
      &              ' ',' '       ,' ',&
      &              ' ',' '       ,' ',&
@@ -147,8 +147,8 @@ subroutine nmcrga(sderro)
 ! --- CODE DU MESSAGE A AFFICHER
 !
     data meven /&
-     &        'MECANONLINE10_1' ,'MECANONLINE10_24',' ',&
-     &        'MECANONLINE10_25',&
+     &        'MECANONLINE10_1' ,'MECANONLINE10_13',' ',&
+     &        'MECANONLINE10_25','MECANONLINE10_13',&
      &        'MECANONLINE10_2' ,' '               ,'MECANONLINE10_6' ,&
      &        'MECANONLINE10_6' ,'MECANONLINE10_4' ,'MECANONLINE10_4' ,&
      &        'MECANONLINE10_7' ,'MECANONLINE10_5' ,'MECANONLINE10_8' ,&

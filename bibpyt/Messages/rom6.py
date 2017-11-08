@@ -23,8 +23,6 @@ cata_msg = {
 
    1  : _(u"""Création des structures de données pour le post-traitement du calcul réduit."""), 
 
-   2  : _(u"""Le modèle doit être le même sur les deux bases."""),
-
    3  : _(u"""Initialisations pour le post-traitement du calcul réduit."""), 
 
    4  : _(u"""On ne trouve pas la table des coordonnées réduites dans la structure de données résultat. Vérifiez qu'il vient bien d'un calcul réduit."""), 
