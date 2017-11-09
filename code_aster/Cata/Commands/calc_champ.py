@@ -77,7 +77,7 @@ CALC_CHAMP=OPER(nom="CALC_CHAMP",op=52,sd_prod=calc_champ_prod,reentrant='f',
 
          FONC_MULT    = SIMP(statut='f',typ=(fonction_sdaster,nappe_sdaster,formule),),
          COEF_MULT    = SIMP(statut='f',typ='R'),
-         TYPE_CHARGE  = SIMP(statut='f',typ='TXM',defaut="FIXE_CSTE",into=("FIXE_CSTE",),),),
+         TYPE_CHARGE  = SIMP(statut='f',typ='TXM',defaut="FIXE_CSTE",into=("FIXE_CSTE","FIXE_PILO","SUIV","DIDI"),),),
 
      # Bloc lineaire
      b_lineaire  = BLOC(condition = """is_type("RESULTAT") in (evol_elas,dyna_trans,dyna_harmo,mode_meca,comb_fourier,mult_elas,fourier_elas,mode_flamb)""",
