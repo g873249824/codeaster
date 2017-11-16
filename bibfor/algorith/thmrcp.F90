@@ -130,7 +130,7 @@ subroutine thmrcp(etape, imate, thmc, meca, hydr,&
 !   NRESMA EST LE MAX DE DIMPAR, DIMSAT ET DE DIMI, AVEC I DE 1 A 43
     integer :: nresma
 !      PARAMETER ( NRESMA = 34 )
-    parameter ( nresma = 40 )
+    parameter ( nresma = 43 )
 !
     real(kind=8) :: val1(dim1), val2(dim2), val3(dim3), val4(dim4)
     real(kind=8) :: val5(dim5), val6(dim6), val7(dim7), val8(dim8)
