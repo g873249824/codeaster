@@ -216,6 +216,7 @@ subroutine hmgazp(yachai, option, meca, thmc, ther,&
 ! ======================================================================
 ! --- CALCUL DE LA CAPACITE CALORIFIQUE SELON FORMULE DOCR -------------
 ! ======================================================================
+        rho12=0.d0
         call capaca(rho0, rho11, rho12, rho21, rho22,&
                     sat, phi, csigm, cp11, cp12,&
                     cp21, cp22, dalal, t, coeps,&
