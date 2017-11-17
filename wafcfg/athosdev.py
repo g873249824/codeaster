@@ -28,7 +28,7 @@ waf install -p
 
 import os
 ASTER_ROOT = os.environ['ASTER_ROOT']
-YAMMROOT = ASTER_ROOT + '/public/default'
+YAMMROOT = ASTER_ROOT + '/public/v13'
 
 import intel
 import official_programs
