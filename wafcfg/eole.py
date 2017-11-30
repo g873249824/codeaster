@@ -44,7 +44,8 @@ def configure(self):
 
     self.env['ADDMEM'] = 600
     self.env.append_value('OPT_ENV', [
-        'module load icc/2016.0.047 ifort/2016.0.047 mkl/2016.0.047'])
+        'module unload mkl',
+        'module load ifort/2016.0.047 icc/2016.0.047 mkl/2016.0.047'])
 
     TFELHOME = YAMMROOT + '/prerequisites/Mfront-TFEL300'
     self.env.TFELHOME = TFELHOME
