@@ -76,11 +76,8 @@ implicit none
     call getvtx(' ', 'NOM_DOMAINE'    , scal = grelem_rid)
     call getvis(' ', 'NB_COUCHE_SUPPL', scal = nb_layer_ma)
     call getvtx(' ', 'NOM_INTERFACE'  , scal = grnode_int)
-    call getvtx(' ', 'CORR_COMPLET'   , scal = answer)
-    l_corr_ef = answer .eq. 'OUI'
-    if (l_corr_ef) then
-        call getvtx(' ', 'NOM_ENCASTRE', scal = grnode_sub)
-    endif
+    l_corr_ef  = ASTER_FALSE
+    grnode_sub = ' '
     keywf = 'DOMAINE_INCLUS'
     call getfac(keywf, nocc)
     ASSERT(nocc .le. 1)

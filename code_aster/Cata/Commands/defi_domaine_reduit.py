@@ -41,10 +41,6 @@ DEFI_DOMAINE_REDUIT=OPER(nom="DEFI_DOMAINE_REDUIT",op=50,
          GROUP_MA        = SIMP(statut='f',typ=grma,validators=NoRepeat(),max='**'),
          MAILLE          = SIMP(statut='c',typ=ma  ,validators=NoRepeat(),max='**'),
      ),
-
-     CORR_COMPLET  = SIMP(statut='f',typ='TXM',defaut='NON',into=('OUI','NON')),
-     p_correcteur   =BLOC(condition="""(equal_to("CORR_COMPLET", 'OUI'))""",
-        NOM_ENCASTRE     = SIMP(statut='o',typ='TXM',max=1),),
      INFO          = SIMP(statut='f',typ='I',defaut= 1,into=( 1 , 2) ),
      TITRE         = SIMP(statut='f',typ='TXM'),
 );
