@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -32,7 +32,6 @@ subroutine iremed(nomcon, ifichi, nocham, novcmp, partie,&
 #include "asterfort/irchme.h"
 #include "asterfort/irmpar.h"
 #include "asterfort/jedema.h"
-#include "asterfort/jedetr.h"
 #include "asterfort/jeexin.h"
 #include "asterfort/jelira.h"
 #include "asterfort/jemarq.h"
@@ -44,7 +43,6 @@ subroutine iremed(nomcon, ifichi, nocham, novcmp, partie,&
 #include "asterfort/rsutrg.h"
 #include "asterfort/utcmp3.h"
 #include "asterfort/utmess.h"
-#include "asterfort/wkvect.h"
 #include "asterfort/as_deallocate.h"
 #include "asterfort/as_allocate.h"
 !
@@ -291,7 +289,7 @@ subroutine iremed(nomcon, ifichi, nocham, novcmp, partie,&
             call irchme(ifichi, cham19, partie, nochmd, noresu,&
                         nosy16, typech, numord, nbrcmp, zk8(jnocmp),&
                         nbnoec, linoec, nbmaec, limaec, lvarie,&
-                        sdcarm, linopa, codret)
+                        sdcarm, carael, linopa, codret)
 !
 999         continue
 !
