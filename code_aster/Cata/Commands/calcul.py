@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -24,7 +24,8 @@ from code_aster.Cata.DataStructure import *
 from code_aster.Cata.Commons import *
 
 
-CALCUL=OPER(nom="CALCUL",op=26,sd_prod=table_container,reentrant='f',
+CALCUL=OPER(nom="CALCUL",op=26,sd_prod=table_container,
+            reentrant='f:TABLE',
             fr=tr("Calculer des objets élémentaires comme une matrice tangente, intégrer une loi de comportement, etc..."),
      reuse=SIMP(statut='c', typ=CO),
      OPTION          =SIMP(statut='o',typ='TXM',validators=NoRepeat(),max='**',defaut="COMPORTEMENT",

@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ from code_aster.Cata.Commons import *
 
 DEFI_MATERIAU=OPER(nom="DEFI_MATERIAU",op=5,sd_prod=mater_sdaster,
                    fr=tr("Définition des paramètres décrivant le comportement d un matériau"),
-                   reentrant='f',
+                   reentrant='f:MATER',
        regles=(EXCLUS('ELAS','ELAS_FO','ELAS_FLUI','ELAS_ISTR','ELAS_ISTR_FO','ELAS_ORTH',
                       'ELAS_ORTH_FO','ELAS_COQUE','ELAS_COQUE_FO',
                       'ELAS_HYPER','ELAS_2NDG','ELAS_GLRC','ELAS_DHRC'),
