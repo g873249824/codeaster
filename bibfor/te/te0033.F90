@@ -73,7 +73,7 @@ subroutine te0033(option, nomte)
     real(kind=8) :: pgl(3, 3), xyzl(3, 4), r8bid=0.d0, valr(2)
     real(kind=8) :: depl(24)
     real(kind=8) :: effgt(32), effpg(32)
-    real(kind=8) :: t2iu(4), t2ui(4), c, s
+    real(kind=8) :: t2iu(4), t2ui(4), c, s, alphac(1)
 !
     aster_logical :: dkg
 !
@@ -215,11 +215,20 @@ subroutine te0033(option, nomte)
         endif
 !
         call rccoma(zi(jmate), 'ELAS', 1, phenom, icodre(1))
-!        ON NE SAIT PAS TRAITER LE CAS ELAS_COQUE
+
         if (phenom .eq. 'ELAS' .or. phenom .eq. 'ELAS_ORTH' .or. phenom .eq. 'ELAS_ISTR') then
             call dxsith(nomte, zi(jmate), zr(jsigm))
         else if (phenom.eq.'ELAS_COQMU') then
             call dxsit2(nomte, pgl, zr(jsigm))
+        else
+!           ON NE SAIT PAS TRAITER LE CAS ELAS_COQUE
+            call rcvalb('FPG1', 1, 1, '+', zi(jmate),&
+                    ' ', phenom, 0, ' ', [0.d0],&
+                    1, 'ALPHA', alphac, icodre, 0)
+!
+            if ((icodre(1).eq.0) .and. (alphac(1).ne.0.d0)) then
+                call utmess('F', 'ELEMENTS_35', sk=phenom)
+            endif
         endif
 !     ----------------------------
     else if (option(1:9) .eq. 'EPSI_ELGA') then
