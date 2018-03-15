@@ -177,9 +177,10 @@ Conseil :
  élément non traité  %(k1)s
 """),
 
-
-
-
+    35 : _(u"""
+ La prise en compte de la déformation thermique n'est pas programmée pour le
+ matériau %(k1)s. 
+"""),
 
     36 : _(u"""
  nombre de couches négatif ou nul :  %(k1)s
