@@ -52,7 +52,7 @@ def configure(self):
 
     self.env.append_value('LIBPATH', [
         YAMMROOT + '/prerequisites/Hdf5-1814/lib',
-        YAMMROOT + '/tools/Medfichier-321/lib',
+        YAMMROOT + '/tools/Medfichier-331/lib',
         YAMMROOT + '/prerequisites/Metis_aster-510_aster1/lib',
         YAMMROOT + '/prerequisites/Scotch_aster-604_aster6/SEQ/lib',
         YAMMROOT + '/prerequisites/Mumps-511_consortium_aster/SEQ/lib',
@@ -61,7 +61,7 @@ def configure(self):
 
     self.env.append_value('INCLUDES', [
         YAMMROOT + '/prerequisites/Hdf5-1814/include',
-        YAMMROOT + '/tools/Medfichier-321/include',
+        YAMMROOT + '/tools/Medfichier-331/include',
         YAMMROOT + '/prerequisites/Metis_aster-510_aster1/include',
         YAMMROOT + '/prerequisites/Scotch_aster-604_aster6/SEQ/include',
         YAMMROOT + '/prerequisites/Mumps-511_consortium_aster/SEQ/include',
