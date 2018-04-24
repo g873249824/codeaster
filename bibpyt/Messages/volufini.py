@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -56,7 +56,7 @@ Contactez le support technique.
 L'option  %(k1)s est inconnue
 """),
     12 : _(u"""
-En 3D et en VF on peut utiliser uniquement des hexaèdres a 27 DDL et des tétraèdres a 27 DDL.
+En 3D et en volumes finis on peut utiliser uniquement des hexaèdres a 27 DDL et des tétraèdres a 27 DDL.
 Ce message est un message d'erreur développeur.
 Contactez le support technique.
 """),
