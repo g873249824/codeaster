@@ -27,6 +27,8 @@ def calc_fonction_prod(self, DERIVE, EXTRACTION, INTEGRE, INVERSE, COMB, COMB_C,
                        ENVELOPPE, FRACTILE, SPEC_OSCI, ASSE, FFT, COMPOSE, CORR_ACCE, COHERENCE,
                        PUISSANCE, LISS_ENVELOP, ABS, REGR_POLYNOMIALE, DSP, MOYENNE,
                        INTERPOL_FFT, **args):
+   if args.get('__all__'):
+       return (fonction_sdaster, fonction_c, nappe_sdaster)
 
    if (INTEGRE     != None): return fonction_sdaster
    if (DERIVE      != None): return fonction_sdaster
@@ -109,7 +111,7 @@ CALC_FONCTION=MACRO(nom="CALC_FONCTION",
            COEF            =SIMP(statut='f',typ='R',defaut= 0.E+0,fr=tr("Valeur de la constante d intégration") ),
          ),
          LISS_ENVELOP    = FACT(statut='f',fr=tr("Lissage d une enveloppe"),
-           regles=(UN_PARMI('NAPPE', 'FONCTION', 'TABLE'),), 
+           regles=(UN_PARMI('NAPPE', 'FONCTION', 'TABLE'),),
            NAPPE           =SIMP(statut='f',typ=nappe_sdaster ,max='**'),
            TABLE           =SIMP(statut='f',typ=table_sdaster ,max='**'),
            FONCTION        =SIMP(statut='f',typ=fonction_sdaster ,min=1,max=1),
@@ -120,8 +122,8 @@ CALC_FONCTION=MACRO(nom="CALC_FONCTION",
            FREQ_MIN        =SIMP(statut='f',typ='R'),
            FREQ_MAX        =SIMP(statut='f',typ='R'),
            LIST_FREQ       =SIMP(statut='f',typ='R',max='**',defaut =[]),
-           NB_FREQ_LISS    =SIMP(statut='f',typ='I',max=2, val_min=1, defaut=10, fr=tr("Nb de points pour le lissage ") ), 
-           ZPA             =SIMP(statut='f',typ='R'), 
+           NB_FREQ_LISS    =SIMP(statut='f',typ='I',max=2, val_min=1, defaut=10, fr=tr("Nb de points pour le lissage ") ),
+           ZPA             =SIMP(statut='f',typ='R'),
          ),
          REGR_POLYNOMIALE = FACT(statut='f',fr=tr("Régression polynomiale d'une fonction"),
            FONCTION        =SIMP(statut='o',typ=fonction_sdaster),
