@@ -40,7 +40,6 @@ def configure(self):
     intel.configure(self)
     official_programs.configure(self)
     opts.with_prog_salome = True
-    opts.with_prog_europlexus = True
 
     # enable TEST_STRICT on the reference server
     self.env.append_value('DEFINES', ['TEST_STRICT'])
