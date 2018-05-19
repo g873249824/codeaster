@@ -40,6 +40,9 @@ def configure(self):
 
     self.env['ADDMEM'] = 300
 
+    self.env.append_value('OPT_ENV', [
+        'export PATH=' + YAMMROOT + '/tools/Medfichier-331/bin:$PATH'])
+
     TFELHOME = YAMMROOT + '/prerequisites/Mfront-TFEL300'
     self.env.TFELHOME = TFELHOME
 
