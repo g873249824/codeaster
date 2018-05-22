@@ -47,8 +47,7 @@ def configure(self):
     self.env['ADDMEM'] = 600
     self.env.append_value('OPT_ENV', [
         '. /etc/profile.d/lmod.sh',
-        'module load ifort/2016.0.047 icc/2016.0.047 mkl/2016.0.047'])
-    self.env.append_value('OPT_ENV', [
+        'module load ifort/2016.0.047 icc/2016.0.047 mkl/2016.0.047',
         'export PATH=' + YAMMROOT + '/tools/Medfichier-331/bin:$PATH'])
 
     TFELHOME = YAMMROOT + '/prerequisites/Mfront-TFEL300'

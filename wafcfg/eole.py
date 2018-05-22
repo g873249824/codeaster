@@ -45,9 +45,9 @@ def configure(self):
     self.env['ADDMEM'] = 600
     self.env.append_value('OPT_ENV', [
         'module unload mkl',
-        'module load ifort/2016.0.047 icc/2016.0.047 mkl/2016.0.047'])
-    self.env.append_value('OPT_ENV', [
-        'export PATH=' + YAMMROOT + '/tools/Medfichier-331/bin:$PATH'])
+        'module load ifort/2016.0.047 icc/2016.0.047 mkl/2016.0.047',
+        'export PATH=' + YAMMROOT + '/tools/Medfichier-331/bin:$PATH',
+        'export OPENBLAS_CORETYPE=SANDYBRIDGE'])
 
     TFELHOME = YAMMROOT + '/prerequisites/Mfront-TFEL300'
     self.env.TFELHOME = TFELHOME
