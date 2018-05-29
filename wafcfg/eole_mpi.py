@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -22,20 +22,20 @@ Configuration for athosdev + Intel MPI
 
 . $HOME/dev/codeaster/devtools/etc/env_unstable_mpi.sh
 
-waf_mpi configure --use-config=athosdev_mpi --prefix=../install/mpi
+waf_mpi configure --use-config=eole_mpi --prefix=../install/mpi
 waf_mpi install -p
 """
 
-import eole
-ASTER_ROOT = eole.ASTER_ROOT
-YAMMROOT = eole.YAMMROOT
+import eole_std
+ASTER_ROOT = eole_std.ASTER_ROOT
+YAMMROOT = eole_std.YAMMROOT
 
 def configure(self):
     opts = self.options
 
     # parallel must be set before calling intel.configure() to use MPI wrappers
     opts.parallel = True
-    eole.configure(self)
+    eole_std.configure(self)
     self.env['ADDMEM'] = 800
 
     # suppress too aggressive optimization with Intel impi/2017.0.98 : I_MPI_DAPL_TRANSLATION_CACHE=0 

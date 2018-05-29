@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -26,14 +26,14 @@ waf_mpi configure --use-config=calibre9_mpi --prefix=../install/mpi
 waf_mpi install -p
 """
 
-import calibre9
-YAMMROOT = calibre9.YAMMROOT
+import calibre9_std
+YAMMROOT = calibre9_std.YAMMROOT
 
 def configure(self):
     opts = self.options
 
     opts.parallel = True
-    calibre9.configure(self)
+    calibre9_std.configure(self)
     self.env['ADDMEM'] = 500
 
     self.env.prepend_value('LIBPATH', [

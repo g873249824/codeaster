@@ -18,11 +18,11 @@
 # --------------------------------------------------------------------
 
 """
-Configuration for Calibre 9
+Configuration for aster5
 
 . $HOME/dev/codeaster/devtools/etc/env_unstable.sh
 
-waf configure --use-config=calibre9 --prefix=../install/std
+waf configure --use-config=aster5_std --prefix=../install/std
 waf install -p
 """
 
@@ -30,23 +30,32 @@ import os
 ASTER_ROOT = os.environ['ASTER_ROOT']
 YAMMROOT = os.environ['ROOT_SALOME']
 
+import intel
 import official_programs
 
 
 def configure(self):
     opts = self.options
 
+    intel.configure(self)
     official_programs.configure(self)
+    opts.with_prog_salome = True
 
-    self.env.append_value('CXXFLAGS', ['-D_GLIBCXX_USE_CXX11_ABI=0'])
-    self.env['ADDMEM'] = 350
+    # enable TEST_STRICT on the reference server
+    self.env.append_value('DEFINES', ['TEST_STRICT'])
+
+    self.env['ADDMEM'] = 600
+    self.env.append_value('OPT_ENV', [
+        '. /etc/profile.d/lmod.sh',
+        'module load ifort/2016.0.047 icc/2016.0.047 mkl/2016.0.047',
+        'export PATH=' + YAMMROOT + '/tools/Medfichier-331/bin:$PATH'])
 
     TFELHOME = YAMMROOT + '/prerequisites/Mfront-TFEL300'
     self.env.TFELHOME = TFELHOME
 
     self.env.append_value('LIBPATH', [
         YAMMROOT + '/prerequisites/Hdf5-1814/lib',
-        YAMMROOT + '/prerequisites/Medfichier-331/lib',
+        YAMMROOT + '/tools/Medfichier-331/lib',
         YAMMROOT + '/prerequisites/Metis_aster-510_aster1/lib',
         YAMMROOT + '/prerequisites/Scotch_aster-604_aster6/SEQ/lib',
         YAMMROOT + '/prerequisites/Mumps-511_consortium_aster/SEQ/lib',
@@ -55,7 +64,7 @@ def configure(self):
 
     self.env.append_value('INCLUDES', [
         YAMMROOT + '/prerequisites/Hdf5-1814/include',
-        YAMMROOT + '/prerequisites/Medfichier-331/include',
+        YAMMROOT + '/tools/Medfichier-331/include',
         YAMMROOT + '/prerequisites/Metis_aster-510_aster1/include',
         YAMMROOT + '/prerequisites/Scotch_aster-604_aster6/SEQ/include',
         YAMMROOT + '/prerequisites/Mumps-511_consortium_aster/SEQ/include',
