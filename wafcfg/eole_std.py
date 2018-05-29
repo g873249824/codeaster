@@ -18,11 +18,11 @@
 # --------------------------------------------------------------------
 
 """
-Configuration for aster5
+Configuration for eole
 
 . $HOME/dev/codeaster/devtools/etc/env_unstable.sh
 
-waf configure --use-config=aster5 --prefix=../install/std
+waf configure --use-config=eole_std --prefix=../install/std
 waf install -p
 """
 
@@ -40,15 +40,14 @@ def configure(self):
     intel.configure(self)
     official_programs.configure(self)
     opts.with_prog_salome = True
-
-    # enable TEST_STRICT on the reference server
-    self.env.append_value('DEFINES', ['TEST_STRICT'])
+    opts.with_prog_europlexus = True
 
     self.env['ADDMEM'] = 600
     self.env.append_value('OPT_ENV', [
-        '. /etc/profile.d/lmod.sh',
+        'module unload mkl',
         'module load ifort/2016.0.047 icc/2016.0.047 mkl/2016.0.047',
-        'export PATH=' + YAMMROOT + '/tools/Medfichier-331/bin:$PATH'])
+        'export PATH=' + YAMMROOT + '/tools/Medfichier-331/bin:$PATH',
+        'export OPENBLAS_CORETYPE=SANDYBRIDGE'])
 
     TFELHOME = YAMMROOT + '/prerequisites/Mfront-TFEL300'
     self.env.TFELHOME = TFELHOME
