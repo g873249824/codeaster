@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -16,6 +16,8 @@
 ! along with code_aster.  If not, see <http://www.gnu.org/licenses/>.
 ! --------------------------------------------------------------------
 
+! person_in_charge: mickael.abbas at edf.fr
+!
 subroutine exfonc(list_func_acti, ds_algopara, solver, ds_contact, sddyna,&
                   mate, model)
 !
@@ -36,15 +38,13 @@ implicit none
 #include "asterfort/utmess.h"
 #include "asterfort/dismoi.h"
 !
-! person_in_charge: mickael.abbas at edf.fr
-!
-    integer, intent(in) :: list_func_acti(*)
-    character(len=19), intent(in) :: solver
-    character(len=19), intent(in) :: sddyna
-    type(NL_DS_Contact), intent(in) :: ds_contact
-    character(len=24), intent(in) :: mate
-    character(len=24), intent(in) :: model
-    type(NL_DS_AlgoPara), intent(in) :: ds_algopara
+integer, intent(in) :: list_func_acti(*)
+character(len=19), intent(in) :: solver
+character(len=19), intent(in) :: sddyna
+type(NL_DS_Contact), intent(in) :: ds_contact
+character(len=24), intent(in) :: mate
+character(len=24), intent(in) :: model
+type(NL_DS_AlgoPara), intent(in) :: ds_algopara
 !
 ! --------------------------------------------------------------------------------------------------
 !
@@ -67,7 +67,7 @@ implicit none
     aster_logical :: l_cont, lallv, l_cont_cont, l_cont_disc, lpena, leltc, l_cont_lac, l_iden_rela
     aster_logical :: l_pilo, l_line_search, lmacr, l_unil, l_diri_undead, l_cont_xfem
     aster_logical :: l_vibr_mode, l_buckling, lexpl, lxfem, lmodim, l_mult_front
-    aster_logical :: lgcpc, lpetsc, lamg, limpex, l_matr_rigi_syme, l_matr_distr
+    aster_logical :: lgcpc, lpetsc, lamg, limpex, l_matr_distr
     aster_logical :: londe, l_dyna, l_grot_gdep, l_newt_krylov, l_mumps, l_rom
     aster_logical :: l_energy, lproj, lmatdi, lldsp, lctgcp, l_comp_rela, lammo, lthms
     character(len=24) :: typilo, metres, char24
@@ -121,7 +121,6 @@ implicit none
     reac_incr        = ds_algopara%reac_incr
     matrix_pred      = ds_algopara%matrix_pred
     reli_meth        = ds_algopara%line_search%method
-    l_matr_rigi_syme = ds_algopara%l_matr_rigi_syme
 !
 ! - Get solver parameters
 !
@@ -155,9 +154,6 @@ implicit none
             if (lmodim) then
                 call utmess('F', 'CONTACT_88')
             endif
-        endif
-        if (.not.(l_matr_rigi_syme.or.lallv)) then
-            call utmess('A', 'CONTACT_1')
         endif
         if ((l_vibr_mode.or.l_buckling) .and. lmodim) then
             call utmess('F', 'MECANONLINE5_14')
@@ -217,9 +213,6 @@ implicit none
         endif
         if (lgcpc .or. lpetsc) then
             call utmess('F', 'MECANONLINE3_96', sk=slvk(1))
-        endif
-        if (.not.l_matr_rigi_syme) then
-            call utmess('A', 'UNILATER_1')
         endif
     endif
 !
