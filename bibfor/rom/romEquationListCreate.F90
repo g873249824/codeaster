@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ implicit none
     type(ROM_DS_Empi), intent(in) :: ds_empi
     character(len=24), intent(in) :: nume_dof
     character(len=24), intent(in) :: grnode_int
-    integer, pointer, intent(out) :: v_equa_int(:)
+    integer, pointer :: v_equa_int(:)
 !
 ! --------------------------------------------------------------------------------------------------
 !

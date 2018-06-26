@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -34,10 +34,10 @@ implicit none
 !
 ! aslint: disable=W1504
 !
-    real(kind=8), intent(in), pointer :: v_sdlist_infor(:)
-    real(kind=8), intent(in), pointer :: v_sdlist_evenr(:)
-    character(len=16), intent(in), pointer :: v_sdlist_evenk(:)
-    real(kind=8), intent(in), pointer :: v_sdlist_subdr(:)
+    real(kind=8), pointer :: v_sdlist_infor(:)
+    real(kind=8), pointer :: v_sdlist_evenr(:)
+    character(len=16), pointer :: v_sdlist_evenk(:)
+    real(kind=8), pointer :: v_sdlist_subdr(:)
     integer, intent(in) :: i_fail_save
     character(len=16), intent(in) :: event_type
     real(kind=8), intent(in) :: vale_ref
