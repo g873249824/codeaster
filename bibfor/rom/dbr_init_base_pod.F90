@@ -81,6 +81,10 @@ implicit none
 ! - Get information about model
 !
     call dismoi('NOM_MODELE', result_in, 'RESULTAT', repk = model)
+
+    if (model .eq. '#AUCUN' .or. model .eq. ' ') then
+        call utmess('F', 'ROM5_54')
+    endif
 !
 ! - Get informations about fields
 !

@@ -118,6 +118,8 @@ cata_msg = {
 
    53 : _(u"""Le nombre de composantes dans le modèle est incorrect. Vérifiez que vous n'avez pas de chargements de Dirichlet appliqués avec AFFE_CHAR_MECA."""),
 
+   54 : _(u"""Il n'y a pas de modèle attaché à la structure de données résultat en entrée."""),
+
    60 : _(u"""Calcul par la méthode GLOUTON."""),
 
    61 : _(u"""Calcul du mode empirique %(i1)d."""),
