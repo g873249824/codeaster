@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -254,6 +254,12 @@ Ne renseignez pas le mot-clé COMPORTEMENT/%(k2)s, afin de sélectionner l'algor
   Assurez-vous que les rotations ne soient pas très grandes au risque de résultats faux.
 """),
 
+    53: _(u"""
+ ECRO_LINE : la plasticité parfaite n'est pas autorisée !
+             Par conséquent la pente d'écrouissage H doit être strictement positive.
+             (H doit également être inférieure à E).
+             Ici, H vaut <%(r1)E>. (E vaut <%(r2)E>)
+"""),
 
     54: _(u"""
  ECRO_LINE : la pente d'écrouissage H et/ou le module de YOUNG E ne sont pas compatibles :
