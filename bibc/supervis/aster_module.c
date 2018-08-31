@@ -450,7 +450,6 @@ void DEFSPS(GETTYP,gettyp, _IN char *typaster, _IN STRING_SIZE ltyp,
 
     FreeStr(typ);
     Py_XDECREF(res);
-    Py_XDECREF(tup);
 }
 
 /* ------------------------------------------------------------------ */
