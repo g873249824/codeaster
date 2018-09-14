@@ -47,7 +47,7 @@ subroutine op0039()
 #include "asterfort/mdexma.h"
 #include "asterfort/ulaffe.h"
 #include "asterfort/ulexis.h"
-#include "asterfort/ulisog.h"
+#include "asterfort/ultype.h"
 #include "asterfort/ulopen.h"
 #include "asterfort/utmess.h"
 #include "asterfort/w039ca.h"
@@ -60,6 +60,7 @@ subroutine op0039()
 !
     real(kind=8) :: versi2, eps
 !
+    character(len=1) :: typf
     character(len=8) :: modele, noma, form, nomare, nomsq, proc
     character(len=8) :: resu, resure(9)
     character(len=16) :: fich
@@ -163,6 +164,11 @@ subroutine op0039()
                call ulaffe(ifi, ' ', fich, 'NEW', 'O')
            else
                call ulopen(ifi, ' ', fich, 'NEW', 'O')
+           endif
+       elseif (form .eq.'MED') then
+           call ultype(ifi, typf)
+           if (typf .ne. 'B' .and. typf .ne. 'L') then
+            call utmess('A','PREPOST3_7')
            endif
        endif
 !
