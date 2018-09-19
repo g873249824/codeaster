@@ -241,6 +241,14 @@ subroutine nifilg(ndim, nno1, nno2, nno3, npg,&
                     logl, ftm, ftp, epsml, deps,&
                     tn, resi, cod(g))
 !
+        if (cod(g) .ne. 0) then
+            codret = cod(g)
+            if (.not. resi) then
+                call utmess('F', 'ALGORITH14_75')
+            endif
+            goto 999
+        endif
+!
         call nmcomp('RIGI', g, 1, ndim, typmod,&
                     mate, compor, crit, instm, instp,&
                     6, epsml, deps, 6, tn,&
@@ -263,8 +271,8 @@ subroutine nifilg(ndim, nno1, nno2, nno3, npg,&
                     instp, angmas, gn, lamb, logl,&
                     sigp_ldc, dsidep, pk2m, pk2, cod(g))
 !
-        if (cod(g) .eq. 1) then
-            codret = 1
+        if (cod(g) .ne. 0) then
+            codret = cod(g)
             if (.not. resi) then
                 call utmess('F', 'ALGORITH14_75')
             endif

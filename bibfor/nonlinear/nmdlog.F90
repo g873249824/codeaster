@@ -78,8 +78,6 @@ implicit none
 ! OUT MATUU   : MATR. DE RIGIDITE NON SYM. (RIGI_MECA_* ET FULL_MECA_*)
 ! OUT CODRET  : CODE RETOUR DE L'INTEGRATION DE LA LDC
 !
-
-
     aster_logical :: grand, axi, resi, rigi, matsym, cplan, lintbo
     parameter (grand = .true._1)
     integer :: g, i, nddl, cod(27), ivf
