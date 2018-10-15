@@ -85,7 +85,7 @@ implicit none
     call getvr8(keywf, 'SUBD_PAS_MINI', iocc=i_fail, scal=subd_pas_mini, nbret = nbret)
     ASSERT(nbret .le. 1)
     if (subd_pas_mini .gt. dtmin) then
-        call utmess('F', 'DISCRETISATION_2')
+        call utmess('F', 'DISCRETISATION_6', sr = dtmin)
     endif
     if (subd_methode .eq. 'MANUEL') then
         call getvis(keywf, 'SUBD_NIVEAU', iocc=i_fail, scal=subd_niveau)
