@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -198,10 +198,6 @@ implicit none
             zr(vale_indx-1+39) = v_sdcont_cychis(60*(i_cont_poin-1)+24+20)
             zr(vale_indx-1+40) = v_sdcont_cychis(60*(i_cont_poin-1)+24+21)
             zr(vale_indx-1+41) = v_sdcont_cychis(60*(i_cont_poin-1)+24+22)
-            !mode robuste contact
-            zr(vale_indx-1+45) = v_sdcont_cychis(60*(i_cont_poin-1)+51)
-            !mode robuste frottement
-            zr(vale_indx-1+46) = v_sdcont_cychis(60*(i_cont_poin-1)+52)
             
         enddo
         nt_liel = nt_liel + nb_liel

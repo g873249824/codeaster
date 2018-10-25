@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -80,8 +80,7 @@ subroutine mmmlcf(coefff, coefac, coefaf, lpenac, lpenaf,&
 ! --- PENALISATION ?
 !
 !    lpenac = (ialgoc.eq.3)
-    lpenac = (ialgoc.eq.3) .or. &
-              nint(zr(jpcf-1+45)) .eq. 4
+    lpenac = (ialgoc.eq.3) 
               
 !    lpenaf = (ialgof.eq.3) 
     lpenaf = (ialgof.eq.3) .or. &

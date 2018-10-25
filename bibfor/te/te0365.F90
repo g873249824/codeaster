@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -58,27 +58,18 @@ subroutine te0365(option, nomte)
     integer :: nddl, ndim, nbcps, nbdm
     integer :: jvect, jpcf
     integer :: iresof, iresog
-    integer :: iresof_prev, iresog_prev
     integer :: ndexfr
     integer :: ndexfr_prev
 !    
     real(kind=8) :: norm(3)=0.0, tau1(3)=0.0, tau2(3)=0.0
-    real(kind=8) :: norm_prev(3)=0.0, tau1_prev(3)=0.0, tau2_prev(3)=0.0
     real(kind=8) :: mprojt(3, 3)=0.0
-    real(kind=8) ::  mprojt_prev(3, 3)=0.0
     real(kind=8) :: rese(3)=0.0, nrese=0.0
-    real(kind=8) :: rese_prev(3)=0.0, nrese_prev=0.0
     real(kind=8) :: wpg, jacobi
     real(kind=8) :: coefff=0.0, lambda=0.0, lambds=0.0
-    real(kind=8) :: lambda_prev=0.0, lambds_prev=0.0
     real(kind=8) :: coefac=0.0, coefaf=0.0
-    real(kind=8) :: coefac_prev=0.0, coefaf_prev=0.0
     real(kind=8) :: jeusup=0.0
-    real(kind=8) :: jeusup_prev=0.0
     real(kind=8) :: dlagrc=0.0, dlagrf(2)=0.0
-    real(kind=8) :: dlagrc_prev=0.0, dlagrf_prev(2)=0.0
     real(kind=8) :: jeu=0.0, djeu(3)=0.0, djeut(3)=0.0
-    real(kind=8) :: jeu_prev=0.0, djeut_prev(3)=0.0,djeu_prev(3)=0.0
     character(len=8) :: typmae, typmam
     character(len=9) :: phasep
     character(len=9) :: phasep_prev
@@ -91,7 +82,6 @@ subroutine te0365(option, nomte)
     aster_logical :: lcont_prev = .false. 
     aster_logical :: ladhe = .false. 
     aster_logical :: ladhe_prev  = .false. 
-    aster_logical :: l_previous_cont = .false. , l_previous_frot = .false. , l_previous = .false. 
 !    
     aster_logical :: debug = .false. 
     real(kind=8) :: ffe(9), ffm(9), ffl(9)
@@ -129,10 +119,6 @@ subroutine te0365(option, nomte)
     typelt = 'POIN_ELEM'
     loptf = option.eq.'CHAR_MECA_FROT'
     call jevech('PCONFR', 'L', jpcf)
-    l_previous_cont = (nint(zr(jpcf-1+30)) .eq. 1 )
-    l_previous_frot = (nint(zr(jpcf-1+44)) .eq. 1 ) .and. .false.
-    if (option .eq. 'RIGI_CONT') l_previous = l_previous_cont
-    if (option .eq. 'RIGI_FROT') l_previous = l_previous_frot
     
 !
 ! --- PREPARATION DES CALCULS - INFOS SUR LA MAILLE DE CONTACT
@@ -149,33 +135,6 @@ subroutine te0365(option, nomte)
                 
     call mmmlav(ldyna, jeusup, ndexfr)
                 
-                
-    if (l_previous) then
-        call mmmlcf(coefff, coefac_prev, coefaf_prev, lpenac_prev, lpenaf_prev,&
-                    iresof_prev, iresog_prev, lambds_prev, l_previous)
-        call mmmlav(ldyna, jeusup_prev, ndexfr_prev)
-        
-!        debug = .false.
-!        if (debug) then 
-        
-!            write (6,*) "MMLCF : DEBUGGING PREVIOUS AND CURRENT"
-!            write (6,*) "coefac_prev",coefac_prev, "coefac",coefac
-!            write (6,*) "coefaf_prev",coefaf_prev,"coefaf",coefaf
-!            write (6,*) "lpenac_prev",lpenac_prev,"lpenac",lpenac
-!            write (6,*) "lpenaf_prev",lpenaf_prev,"lpenaf",lpenaf
-!            write (6,*) "iresof_prev",iresof_prev,"iresof",iresof
-!            write (6,*) "iresog_prev",iresog_prev,"iresog",iresog
-!            write (6,*) "lambs_prev",lambds_prev,"lambds",lambds
-!            write (6,*) "MMLCF : END DEBUGGING PREVIOUS AND CURRENT"
-        
-!            write (6,*) "MMLAV : DEBUGGING PREVIOUS AND CURRENT"
-!            write (6,*) "jeusup_prev",jeusup_prev, "jeusup",jeusup
-!            write (6,*) "ndexfr_prev",ndexfr_prev,"ndexfr_prev",ndexfr
-!            write (6,*) "MMLAV : END DEBUGGING PREVIOUS AND CURRENT"
-            
-!        endif
-!        debug = .false.
-    endif
 !
 ! --- PREPARATION DES DONNEES
 !
@@ -189,38 +148,13 @@ subroutine te0365(option, nomte)
                              norm, tau1, tau2, mprojt, jacobi,&
                              wpg, dlagrc, dlagrf, jeu, djeu,&
                              djeut, .false._1)
-                             
-        if (l_previous) then
-            call      mmvppe(typmae, typmam, iresog, ndim, nne,&
-                             nnm, nnl, nbdm, laxis, ldyna,&
-                             lpenac_prev, jeusup_prev, ffe, ffm, ffl,&
-                             norm_prev, tau1_prev, tau2_prev, mprojt_prev, jacobi,&
-                             wpg, dlagrc_prev, dlagrf_prev, jeu_prev, djeu_prev,&
-                             djeut_prev, l_previous)
-!              call modification_quantity_previous(jeu_prev,dlagrc_prev) 
-        endif
+                
 !
 !
 !
 !  --- PREPARATION DES DONNEES - CHOIX DU LAGRANGIEN DE CONTACT
 !
         call mmlagc(lambds, dlagrc, iresof, lambda)
-        if (l_previous) then 
-            call mmlagc(lambds_prev, dlagrc_prev, iresof_prev, lambda_prev)
-!            debug = .false.
-!            if (debug) then 
-                   
-!                write (6,*) "MMLAGC : DEBUGGING PREVIOUS AND CURRENT"
-!                write (6,*) "lambds_prev",lambds_prev, "lambds",lambds
-!                write (6,*) "dlagrc_prev",dlagrc_prev,"dlagrc",dlagrc
-!                write (6,*) "iresof_prev",iresof_prev,"iresof",iresof
-!                write (6,*) "lambda_prev",lambda_prev,"lambda",lambda
-!                write (6,*) "MMLAGC : END DEBUGGING PREVIOUS AND CURRENT"
-                
-!            endif
-!            debug = .false.
-        endif
-
 !
 ! ----- STATUTS
 !
@@ -233,48 +167,7 @@ subroutine te0365(option, nomte)
         call mmmpha(loptf, lcont, ladhe, ndexfr, lpenac,&
                     lpenaf, phasep)
                     
-        if (l_previous) then
-!
-! ----- Statuts  : previous
-!
-            call mmmsta(ndim, leltf, lpenaf_prev, loptf, djeut_prev,&
-                        dlagrf_prev, coefaf_prev, tau1_prev, tau2_prev, lcont_prev,&
-                        ladhe_prev, lambda_prev, rese_prev, nrese_prev, l_previous)
-!            debug = .false.
-!            if (debug) then
-!                write (6,*) "MMMSTA : DEBUGGING PREVIOUS AND CURRENT"
-!                write (6,*) "lpenaf_prev",lpenaf_prev,"lpenaf_prev",lpenaf
-!                write (6,*) "djeut_prev",djeut_prev,"djeut_prev",djeut
-!                write (6,*) "dlagrf_prev",djeut_prev,"djeut_prev",djeut
-!                write (6,*) "coefaf_prev",djeut_prev,"djeut_prev",djeut
-!                write (6,*) "tau1_prev",tau1_prev,"tau1",tau1
-!                write (6,*) "tau2_prev",tau2_prev,"tau2",tau2
-!                write (6,*) "lcont_prev",lcont_prev,"lcont",lcont
-!                write (6,*) "ladhe_prev",ladhe_prev,"ladhe",ladhe
-!                write (6,*) "lambda_prev",lambda_prev,"lambda",lambda
-!                write (6,*) "rese_prev",rese_prev,"rese",rese
-!                write (6,*) "nrese_prev",nrese_prev,"nrese",nrese
-!                write (6,*) "MMMSTA : END DEBUGGING PREVIOUS AND CURRENT"
-!            endif
-!            debug = .false.
-!
-! ----- PHASE DE CALCUL : previous
-!
-            call mmmpha(loptf, lcont_prev, ladhe_prev, ndexfr_prev, lpenac_prev,&
-                        lpenaf_prev, phasep_prev)
-!            debug = .false.
-!            if (debug) then 
-!                write (6,*) "mmmpha : DEBUGGING PREVIOUS AND CURRENT"
-!                write (6,*) "lcont_prev",lcont_prev, "lcont",lcont
-!                write (6,*) "ladhe_prev",ladhe_prev,"ladhe",ladhe
-!                write (6,*) "ndexfr_prev",ndexfr_prev,"ndexfr",ndexfr
-!                write (6,*) "lpenac_prev",lpenac_prev,"lpenac",lpenac
-!                write (6,*) "lpenaf_prev",lpenaf_prev,"lpenaf",lpenaf
-!                write (6,*) "phasep_prev",phasep_prev,"phasep",phasep
-!                write (6,*) "mmmpha : END DEBUGGING PREVIOUS AND CURRENT"
-!            endif
-!            debug = .false.
-        endif
+        
 !
     else
         ASSERT(.false.)
@@ -288,14 +181,7 @@ subroutine te0365(option, nomte)
                     ffm, jacobi, jeu, coefac, coefaf,&
                     lambda, coefff, dlagrc, dlagrf, djeu,&
                     rese, nrese, vectee, vectmm)
-                    
-        if (l_previous) then
-            call mmvfpe(phasep_prev, ndim, nne, nnm, norm_prev,&
-                        tau1_prev, tau2_prev, mprojt_prev, wpg, ffe,&
-                        ffm, jacobi, jeu_prev, coefac_prev, coefaf_prev,&
-                        lambda_prev, coefff, dlagrc_prev, dlagrf_prev, djeu_prev,&
-                        rese_prev, nrese_prev, vectee_prev, vectmm_prev)
-        endif
+               
                         
     else
         ASSERT(.false.)
@@ -310,13 +196,6 @@ subroutine te0365(option, nomte)
                     mprojt, dlagrc, dlagrf, djeu, rese,&
                     vectcc, vectff)
                    
-        if (l_previous) then
-            call mmvape(phasep_prev, leltf, ndim, nnl, nbcps,&
-                        coefac_prev, coefaf_prev, coefff, ffl, wpg,&
-                        jeu_prev, jacobi, lambda_prev, tau1_prev, tau2_prev,&
-                        mprojt_prev, dlagrc_prev, dlagrf_prev, djeu_prev, rese_prev,&
-                        vectcc_prev, vectff_prev)
-        endif
     else
         ASSERT(.false.)
     endif
@@ -324,30 +203,19 @@ subroutine te0365(option, nomte)
 ! --- MODIFICATIONS EXCLUSION
 !
     call mmmvex(nnl, nbcps, ndexfr, vectff)
-                  
-    if (l_previous) then
-        call mmmvex(nnl, nbcps, ndexfr, vectff_prev)
-    endif
+           
 !
 ! --- ASSEMBLAGE FINAL
 !
     call mmmvas(ndim, nne, nnm, nnl, nbdm,&
                 nbcps, vectee, vectmm, vectcc, vectff,&
                 vtmp)
-              
-    if (l_previous) then
-        call mmmvas(ndim, nne, nnm, nnl, nbdm,&
-                    nbcps, vectee_prev, vectmm_prev, vectcc_prev, vectff_prev,&
-                    vtmp_prev)
-    endif
+          
     
 !---------------------------------------------------------------
 !-------------- RECOPIE DANS LA BASE DE TRAVAIL ----------------
 !---------------------------------------------------------------
 
-    alpha_cont = zr(jpcf-1+31)
-!    if (alpha_cont .lt. 1.d0 ) write (6,*) "alpha_cont",alpha_cont
-!    l_previous = .true.   .and. (iresog .ne. 1) .and. (.not. loptf)
 !
 ! --- RECUPERATION DES VECTEURS 'OUT' (A REMPLIR => MODE ECRITURE)
 !
@@ -356,18 +224,7 @@ subroutine te0365(option, nomte)
 ! --- RECOPIE VALEURS FINALES
 !
     do iddl = 1, nddl
-        if (l_previous) then 
-            zr(jvect-1+iddl) = alpha_cont * vtmp(iddl) &
-                             + (1-alpha_cont) * vtmp_prev(iddl)
-        else 
             zr(jvect-1+iddl) = 1.0d0 * vtmp(iddl)
-        endif
-        
-!        if (debug) then
-!            if (vtmp(iddl) .ne. 0.d0) then
-!                write(6,*) 'TE0365: ',iddl,vtmp(iddl)
-!            endif
-!        endif
     end do
 !
 end subroutine
