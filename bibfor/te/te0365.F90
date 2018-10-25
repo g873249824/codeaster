@@ -59,7 +59,6 @@ subroutine te0365(option, nomte)
     integer :: jvect, jpcf
     integer :: iresof, iresog
     integer :: ndexfr
-    integer :: ndexfr_prev
 !    
     real(kind=8) :: norm(3)=0.0, tau1(3)=0.0, tau2(3)=0.0
     real(kind=8) :: mprojt(3, 3)=0.0
@@ -72,28 +71,20 @@ subroutine te0365(option, nomte)
     real(kind=8) :: jeu=0.0, djeu(3)=0.0, djeut(3)=0.0
     character(len=8) :: typmae, typmam
     character(len=9) :: phasep
-    character(len=9) :: phasep_prev
     real(kind=8) :: alpha_cont=1.0
 !    
     aster_logical :: laxis = .false. , leltf = .false. 
-    aster_logical :: lpenac = .false. , lpenaf = .false. 
-    aster_logical :: lpenac_prev = .false. , lpenaf_prev = .false. 
+    aster_logical :: lpenac = .false. , lpenaf = .false.
     aster_logical :: loptf = .false. , ldyna = .false. ,  lcont = .false. 
-    aster_logical :: lcont_prev = .false. 
-    aster_logical :: ladhe = .false. 
-    aster_logical :: ladhe_prev  = .false. 
+    aster_logical :: ladhe = .false.  
 !    
     aster_logical :: debug = .false. 
     real(kind=8) :: ffe(9), ffm(9), ffl(9)
 !
     real(kind=8) :: vectcc(9)
-    real(kind=8) :: vectcc_prev(9)
     real(kind=8) :: vectff(18)
-    real(kind=8) :: vectff_prev(18)
     real(kind=8) :: vectee(27), vectmm(27)
-    real(kind=8) :: vectee_prev(27), vectmm_prev(27)
     real(kind=8) :: vtmp(81)
-    real(kind=8) :: vtmp_prev(81)
 !
     character(len=24) :: typelt
 !
@@ -103,15 +94,10 @@ subroutine te0365(option, nomte)
 ! --- INITIALISATIONS
 !
     call vecini(81, 0.d0, vtmp)
-    call vecini(81, 0.d0, vtmp_prev)
     call vecini(9, 0.d0, vectcc)
-    call vecini(9, 0.d0, vectcc_prev)
     call vecini(18, 0.d0, vectff)
-    call vecini(18, 0.d0, vectff_prev)
     call vecini(27, 0.d0, vectee)
-    call vecini(27, 0.d0, vectee_prev)
     call vecini(27, 0.d0, vectmm)
-    call vecini(27, 0.d0, vectmm_prev)
     debug = .false.
 !
 ! --- TYPE DE MAILLE DE CONTACT
