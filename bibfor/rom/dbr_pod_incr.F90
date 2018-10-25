@@ -44,6 +44,7 @@ implicit none
 #include "blas/dgemm.h"
 #include "blas/dgesv.h"
 #include "blas/dgesvd.h"
+#include "asterc/r8prem.h"
 !
 aster_logical, intent(in) :: l_reuse
 integer, intent(in) :: nb_mode_maxi
@@ -185,6 +186,9 @@ integer, intent(out) :: nb_snap_redu
             enddo
         endif
         call norm_frobenius(nb_equa, qi, norm_q)
+        if (norm_q .le. r8prem()) then
+            cycle
+        endif
         AS_ALLOCATE(vr  = kv  , size = p*p)
         AS_ALLOCATE(vr  = kt  , size = p)
         AS_ALLOCATE(vi4 = IPIV, size = p)
