@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -86,7 +86,8 @@ subroutine te0364(option, nomte)
     real(kind=8) :: lambda_prev = 0.0 , lambds_prev =0.0
     real(kind=8) :: coefac = 0.0 , coefaf=0.0
     real(kind=8) :: coefac_prev =0.0, coefaf_prev=0.0
-    real(kind=8) :: wpg, jacobi
+    real(kind=8) :: wpg=0, jacobi=0
+    real(kind=8) :: wpg_prev=0, jacobi_prev=0
     real(kind=8) :: norm(3) = 0.0 , tau1(3) = 0.0 , tau2(3) =0.0 
     real(kind=8) :: norm_prev(3) = 0.0 , tau1_prev(3) = 0.0 , tau2_prev(3)=0.0
     real(kind=8) :: mprojn(3, 3)=0.0, mprojt(3, 3)=0.0
@@ -104,7 +105,8 @@ subroutine te0364(option, nomte)
     character(len=8) :: typmae, typmam
     character(len=9) :: phasep
     character(len=9) :: phasep_prev
-    real(kind=8) :: ffe(9), ffm(9), ffl(9), dffm(2, 9)
+    real(kind=8) :: ffe(9)=0, ffm(9)=0, ffl(9)=0, dffm(2, 9)=0
+    real(kind=8) :: ffe_prev(9)=0, ffm_prev(9)=0, ffl_prev(9)=0, dffm_prev(2, 9)=0
 !
     real(kind=8) :: mprt1n(3, 3)=0.0, mprt2n(3, 3)=0.0
     real(kind=8) :: mprt1n_prev(3, 3)=0.0, mprt2n_prev(3, 3)=0.0
@@ -287,57 +289,18 @@ subroutine te0364(option, nomte)
                     gene22, kappa, h, vech1, vech2,&
                     a, ha, hah, mprt11, mprt21,&
                     mprt22, .false._1)
-                    
+                 
         if (l_previous) then
             call mmtppe(typmae, typmam, ndim, nne, nnm,&
                         nnl, nbdm, iresog_prev, laxis, ldyna,&
-                        jeusup_prev, ffe, ffm, dffm, ffl,&
-                        jacobi, wpg, jeu_prev, djeut_prev, dlagrc_prev,&
+                        jeusup_prev, ffe_prev, ffm_prev, dffm_prev, ffl_prev,&
+                        jacobi_prev, wpg_prev, jeu_prev, djeut_prev, dlagrc_prev,&
                         dlagrf_prev, norm_prev, tau1_prev, tau2_prev, mprojn_prev,&
                         mprojt_prev, mprt1n_prev, mprt2n_prev, gene11_prev, gene21_prev,&
                         gene22_prev, kappa_prev, h_prev, vech1_prev, vech2_prev,&
                         a_prev, ha_prev, hah_prev, mprt11_prev, mprt21_prev,&
                         mprt22_prev, .true._1)  
-                              
-!            debug = .false.
-!            if (debug) then 
-            
-!                write (6,*) "MMTPPE : DEBUGGING PREVIOUS AND CURRENT"
-!                write (6,*) "iresog_prev",iresog_prev, "iresog",iresog
-!                write (6,*) "jeu_prev",jeu_prev,"jeu",jeu
-!                write (6,*) "djeut_prev",djeut_prev,"djeut",djeut
-!                write (6,*) "dlagrc_prev",dlagrc,"dlagrc",dlagrc
-                
-!                write (6,*) "dlagrf_prev",dlagrf_prev,"dlagrf",dlagrf
-!                write (6,*) "norm_prev",norm_prev,"norm",norm
-!                write (6,*) "tau1_prev",tau1_prev,"tau1",tau1
-!                write (6,*) "tau2_prev",tau2_prev,"tau2",tau2
-                
-!                write (6,*) "mprojn_prev",mprojn_prev,"mprojn",mprojn
-!                write (6,*) "mprojt_prev",mprojt_prev,"mprojt",mprojt
-!                write (6,*) "mprt1n_prev",mprt1n_prev,"mprt1n",mprt1n
-                
-!                write (6,*) "mprt11_prev",mprt11_prev,"mprt11",mprt11
-!                write (6,*) "mprt21_prev",mprt21_prev,"mprt21",mprt21
-!                write (6,*) "mprt22_prev",mprt22_prev,"mprt22",mprt22
-                
-!                write (6,*) "mprt2n_prev",mprt2n_prev,"mprt2n",mprt2n
-!                write (6,*) "gene11_prev",gene11_prev,"gene11",gene11
-!                write (6,*) "gene21_prev",gene21_prev,"gene21",gene21
-!                write (6,*) "gene22_prev",gene22_prev,"gene22",gene22
-                
-!                write (6,*) "kappa_prev",kappa_prev,"kappa",kappa
-!                write (6,*) "h_prev",h_prev,"h",h
-!                write (6,*) "ha_prev",ha_prev,"ha",ha
-!                write (6,*) "hah_prev",hah_prev,"hah",hah
-                
-!                write (6,*) "vech1_prev",vech1_prev,"vech1",vech1
-!                write (6,*) "vech2_prev",vech2_prev,"vech2",vech2
-                
-!                write (6,*) "MMTPPE : END DEBUGGING PREVIOUS AND CURRENT"            
-!            endif
-!            debug = .false.
-        endif
+        endif  
 
 !
 !  --- PREPARATION DES DONNEES - CHOIX DU LAGRANGIEN DE CONTACT
@@ -345,18 +308,6 @@ subroutine te0364(option, nomte)
         call mmlagc(lambds, dlagrc, iresof, lambda)
         if (l_previous) then 
             call mmlagc(lambds_prev, dlagrc_prev, iresof_prev, lambda_prev)
-!            debug = .false.
-!            if (debug) then 
-                   
-!                write (6,*) "MMLAGC : DEBUGGING PREVIOUS AND CURRENT"
-!                write (6,*) "lambds_prev",lambds_prev, "lambds",lambds
-!                write (6,*) "dlagrc_prev",dlagrc_prev,"dlagrc",dlagrc
-!                write (6,*) "iresof_prev",iresof_prev,"iresof",iresof
-!                write (6,*) "lambda_prev",lambda_prev,"lambda",lambda
-!                write (6,*) "MMLAGC : END DEBUGGING PREVIOUS AND CURRENT"
-                
-!            endif
-!            debug = .false.
         endif
 !
 ! --- PREPARATION DES DONNEES - STATUTS + PHASE élémentaires

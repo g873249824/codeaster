@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -159,11 +159,62 @@ subroutine mmtppe(typmae, typmam, ndim, nne, nnm,&
     real(kind=8) :: dffl(2, 9), ddffl(3, 9)
     real(kind=8) :: xpc, ypc, xpr, ypr
 !
-! ----------------------------------------------------------------------
+! -------------------------Initialisation---------------------
 !
+
+jeusup=0
+jacobi=0
+wpg=0
+dlagrc=0
+dlagrf=0
+jeu=0
+djeu=0
+djeut=0
+ffe=0 
+ffm=0
+ffl=0
+dffm=0
+norm=0
+tau1=0
+tau2=0
+mprojn=0
+mprojt=0
+mprt1n=0
+ mprt2n=0
+mprt11=0
+mprt21=0
+mprt22=0
+gene11=0 
+gene21=0
+gene22=0
+kappa=0
+a=0
+h=0
+ha=0
+hah=0
+vech1=0 
+vech2=0
+geomae=0
+geomam=0
+geomm=0
+geome=0
+ddeple=0
+ddeplm=0
+deplme=0
+deplmm=0
+
+dffe=0
+ddffe=0
+ddffm=0
+dffl=0
+ddffl=0
+xpc=0
+ypc=0
+xpr=0
+ypr=0
 !
 ! --- RECUPERATION DES DONNEES DE PROJECTION
-!
+!   
     call jevech('PCONFR', 'L', jpcf)
     xpc = zr(jpcf-1+1)
     ypc = zr(jpcf-1+2)
@@ -177,6 +228,9 @@ subroutine mmtppe(typmae, typmam, ndim, nne, nnm,&
     tau2(3) = zr(jpcf-1+10)
     wpg = zr(jpcf-1+11)
     ppe = 0.d0
+    if (iresog .eq. 1) then
+        ppe = 1.0d0
+    endif
 !
 ! TRAITEMENT CYCLAGE : ON REMPLACE LES VALEURS DE JEUX et DE NORMALES
 !                      POUR AVOIR UNE MATRICE CONSISTANTE
@@ -207,9 +261,6 @@ subroutine mmtppe(typmae, typmam, ndim, nne, nnm,&
         call jevech('PVITE_P', 'L', jvitp)
         call jevech('PVITE_M', 'L', jvitm)
         call jevech('PACCE_M', 'L', jaccm)
-    endif
-    if (iresog .eq. 1) then
-        ppe = 1.0d0
     endif
 !
 !
