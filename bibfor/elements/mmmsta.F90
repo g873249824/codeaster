@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -106,8 +106,8 @@ subroutine mmmsta(ndim, leltf, lpenaf, loptf, djeut,&
     if (loptf) then
 ! This test influence highly the NON_REGRESSION & CONVERGENCE 
 ! ONE MUST HAVE ATTENTION WHEN MODIFYING    
-        if (lambda .eq. 0.d0) lcont = .false._1
-!        if ( abs(lambda) .lt. 1.d-100) lcont = .false._1
+!        if (lambda .eq. 0.d0) lcont = .false._1
+        if ( abs(lambda) .lt. 1.d-16) lcont = .false._1
     endif
 !
 ! --- ETAT D'ADHERENCE DU POINT DE CONTACT
