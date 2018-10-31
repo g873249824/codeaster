@@ -528,16 +528,16 @@ subroutine te0364(option, nomte)
                 if (lpenac.and.(option.eq.'RIGI_CONT')) then
                     if (l_previous) then 
                         zr(jmatt+ij-1) = alpha_cont * mmat(i,j) &
-                                         + (1-alpha_cont) * mmat_prev(i,j)
+                                         + (1.0d0-alpha_cont) * mmat_prev(i,j)
                     else 
-                        zr(jmatt+ij-1) = 1.0 * mmat(i,j)
+                        zr(jmatt+ij-1) = 1.0d0 * mmat(i,j)
                     endif
                 else if ((option.eq.'RIGI_FROT').and.(iresof.ne.0)) then 
                     if (l_previous) then 
                         zr(jmatt+ij-1) = alpha_frot * mmat(i,j) &
-                                         + (1-alpha_frot) * mmat_prev(i,j)
+                                         + (1.0d0-alpha_frot) * mmat_prev(i,j)
                     else 
-                        zr(jmatt+ij-1) = 1.0 * mmat(i,j)                    
+                        zr(jmatt+ij-1) = 1.0d0 * mmat(i,j)                    
                     endif
                     
                 else if (lpenaf.and.(option.eq.'RIGI_FROT')) then 
@@ -545,7 +545,7 @@ subroutine te0364(option, nomte)
                         zr(jmatt+ij-1) = alpha_frot * mmat(i,j) &
                                          + (1-alpha_frot) * mmat_prev(i,j)
                     else     
-                        zr(jmatt+ij-1) = 1.0 * mmat(i,j)        
+                        zr(jmatt+ij-1) = 1.0d0 * mmat(i,j)        
                     endif
                 endif
                 if (debug) then
@@ -567,12 +567,12 @@ subroutine te0364(option, nomte)
                 if (l_previous) then 
                     if ((option.ne.'RIGI_FROT')) then
                         zr(jmatt+ij-1) = alpha_cont *  mmat(i,j) &
-                                         + (1-alpha_cont) * mmat_prev(i,j)
+                                         + (1.0d0-alpha_cont) * mmat_prev(i,j)
                     else
-                        zr(jmatt+ij-1) = 1.0 *  mmat(i,j)
+                        zr(jmatt+ij-1) = 1.0d0 *  mmat(i,j)
                     endif
                 else 
-                    zr(jmatt+ij-1) = 1.0 *  mmat(i,j)
+                    zr(jmatt+ij-1) = 1.0d0 *  mmat(i,j)
                 endif
                 if (debug) then
                     call mmmtdb(mmat(i, j), 'IJ', i, j)
@@ -583,3 +583,4 @@ subroutine te0364(option, nomte)
     endif
 !
 end subroutine
+

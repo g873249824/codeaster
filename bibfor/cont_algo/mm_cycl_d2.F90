@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -144,6 +144,7 @@ implicit none
                     alpha_frot_matr = 0.1 
                     alpha_frot_vect = 0.1
                 endif
+                write (6,*) "Sub-cycling 1"
             
         !
         ! - Sub-cycling 2
@@ -158,6 +159,7 @@ implicit none
                     alpha_frot_matr = 9.d-1
                     alpha_frot_vect = 9.d-1
                 endif
+                write (6,*) "Sub-cycling 2"
             
         !
         ! - Sub-cycling 3
@@ -172,6 +174,7 @@ implicit none
                     alpha_frot_matr = 0.1
                     alpha_frot_vect = 0.1
                 endif
+                write (6,*) "Sub-cycling 3"
             
         !
         ! - Sub-cycling 4
@@ -181,6 +184,7 @@ implicit none
                 cycl_stat = 14
                 alpha_frot_matr = 5.d-1
                 alpha_frot_vect = 5.d-1
+                write (6,*) "Sub-cycling 4"
             
             else 
 !                call utmess('A',CONTACT5_2)

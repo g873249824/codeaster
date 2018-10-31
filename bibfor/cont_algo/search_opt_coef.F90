@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -87,22 +87,23 @@ implicit none
        endif
        
 ! Dichotomie : continue iteration using dichotomie 
-       if (terminate .and. (it .lt. 500)) then
-           it = it + 1 
-           save_coefficient = coefficient  
-           valmax = (log(coefficient) + log(valmax)) / 2
-           if (valmax .lt. log(coef(2))) then 
-               valmax = 10**valmax
-               terminate = .false. 
-           else 
-               terminate = .true.
-           endif
-           
+       it = it + 1 
+       if (it .lt. 500) then
+          if (terminate) then 
+               save_coefficient = coefficient  
+               valmax = (log(coefficient) + log(valmax)) / 2
+               if (valmax .lt. log(coef(2))) then 
+                   valmax = 10**valmax
+                   terminate = .false. 
+               endif
+          endif
        else
            save_coefficient = coefficient
-           
+           terminate = .true.
        endif
-      coefficient = coefficient *4.0d0     
+       
+      coefficient = coefficient *4.0d0
+
 ! Dichotomie :
       
     end do
