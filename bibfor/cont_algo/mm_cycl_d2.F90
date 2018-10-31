@@ -144,7 +144,6 @@ implicit none
                     alpha_frot_matr = 0.1 
                     alpha_frot_vect = 0.1
                 endif
-                write (6,*) "Sub-cycling 1"
             
         !
         ! - Sub-cycling 2
@@ -159,7 +158,6 @@ implicit none
                     alpha_frot_matr = 9.d-1
                     alpha_frot_vect = 9.d-1
                 endif
-                write (6,*) "Sub-cycling 2"
             
         !
         ! - Sub-cycling 3
@@ -174,7 +172,6 @@ implicit none
                     alpha_frot_matr = 0.1
                     alpha_frot_vect = 0.1
                 endif
-                write (6,*) "Sub-cycling 3"
             
         !
         ! - Sub-cycling 4
@@ -184,7 +181,6 @@ implicit none
                 cycl_stat = 14
                 alpha_frot_matr = 5.d-1
                 alpha_frot_vect = 5.d-1
-                write (6,*) "Sub-cycling 4"
             
             else 
 !                call utmess('A',CONTACT5_2)
