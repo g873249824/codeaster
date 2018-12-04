@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -314,8 +314,8 @@ subroutine ccfnrn(option, resuin, resuou, lisord, nbordr,&
 !
 ! Initialisation
         partps(1) = time
-        partps(1) = time    
-        partps(1) = 0.D0
+        partps(2) = time    
+        partps(3) = 0.D0
 !
 !
 ! separation reel imag si dyna_harmo
