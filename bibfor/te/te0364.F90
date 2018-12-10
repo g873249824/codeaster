@@ -401,8 +401,8 @@ subroutine te0364(option, nomte)
                     
         if (l_previous) then
             call mmtfpe(phasep_prev, iresof_prev, ndim, nne, nnm,&
-                        nnl, nbcps, wpg, jacobi, ffl,&
-                        ffe, ffm, norm, tau1_prev, tau2_prev,&
+                        nnl, nbcps, wpg_prev, jacobi_prev, ffl_prev,&
+                        ffe_prev, ffm_prev, norm_prev, tau1_prev, tau2_prev,&
                         mprojn_prev, mprojt_prev, rese_prev, nrese_prev, lambda_prev,&
                         coefff, coefaf_prev, coefac_prev, dlagrf_prev, djeut_prev,&
                         matree_prev, matrmm_prev, matrem_prev, matrme_prev, matrec_prev,&
@@ -423,7 +423,7 @@ subroutine te0364(option, nomte)
             if (l_previous) then
                 call mmtgeo(phasep_prev, ndim, nne, nnm, mprt1n_prev,&
                             mprt2n_prev, mprojn_prev, mprt11_prev, mprt21_prev, mprt22_prev,&
-                            wpg, ffe, ffm, dffm, jacobi,&
+                            wpg, ffe_prev, ffm_prev, dffm_prev, jacobi_prev,&
                             coefac_prev, jeu_prev, dlagrc_prev, kappa_prev, vech1_prev,&
                             vech2_prev, h_prev, hah_prev, matree_prev, matrmm_prev,&
                             matrem_prev, matrme_prev)
@@ -452,8 +452,8 @@ subroutine te0364(option, nomte)
                     
         if (l_previous) then 
             call mmtape(phasep_prev, leltf, ndim, nnl, nne,&
-                        nnm, nbcps, wpg, jacobi, ffl,&
-                        ffe, ffm, norm, tau1_prev, tau2_prev,&
+                        nnm, nbcps, wpg_prev, jacobi_prev, ffl_prev,&
+                        ffe_prev, ffm_prev, norm_prev, tau1_prev, tau2_prev,&
                         mprojt_prev, rese_prev, nrese_prev, lambda_prev, coefff,&
                         coefaf_prev, coefac_prev, matrcc_prev, matrff_prev, matrce_prev,&
                         matrcm_prev, matrfe_prev, matrfm_prev)        
@@ -506,12 +506,7 @@ subroutine te0364(option, nomte)
 
     alpha_cont = zr(jpcf-1+28)
     alpha_frot = zr(jpcf-1+42)
-!    do compte_l = 1, 81
-!       if mmat(compte_l,compte_l) .le. 1.d-50&
-!       write (6,*) "diagonal nul" , mmat(compte_l,compte_l)
-!    enddo
-!    if (alpha_cont .lt. 1.0) write (6,*) "alpha_cont",alpha_cont
-!    if (alpha_frot .lt. 1.0) write (6,*) "alpha_frot",alpha_frot
+
     if ((lpenac.and.(option.eq.'RIGI_CONT')) .or.&
         ((option.eq.'RIGI_FROT').and.(iresof.ne.0)) .or.&
         (lpenaf.and.(option.eq.'RIGI_FROT'))) then
