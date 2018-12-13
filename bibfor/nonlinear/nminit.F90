@@ -69,6 +69,7 @@ implicit none
 #include "asterfort/InitPrint.h"
 #include "asterfort/romAlgoNLInit.h"
 #include "asterfort/nonlinDSConstitutiveInit.h"
+#include "asterfort/nonlinDSDynamicInit.h"
 #include "asterfort/nmrefe.h"
 #include "asterfort/nminma.h"
 #include "asterfort/nminmc.h"
@@ -162,7 +163,7 @@ implicit none
     real(kind=8) :: instin
     character(len=8) :: partit, answer
     character(len=19) :: varc_prev, disp_prev, strx_prev
-    aster_logical :: lacc0, lpilo, lmpas, lsstf, lerrt, lviss, lrefe, ldidi, l_obsv
+    aster_logical :: lacc0, lpilo, lmpas, lsstf, lerrt, lviss, lrefe, ldidi, l_obsv, l_dyna
     aster_logical :: limpl,lcont, l_pou_d_em
 !
 ! --------------------------------------------------------------------------------------------------
@@ -208,7 +209,7 @@ implicit none
     lviss = ndynlo(sddyna,'VECT_ISS' )
     lrefe = isfonc(fonact,'RESI_REFE')
     ldidi = isfonc(fonact,'DIDI')
-!
+    l_dyna = ndynlo(sddyna,'DYNAMIQUE')
 ! - THe POU_D_EM elements are prohibidden
 !
     call dismoi('EXI_STR2', model, 'MODELE', repk=answer)
@@ -258,6 +259,10 @@ implicit none
 !
     call nmcrch(numedd, fonact, sddyna, ds_contact, valinc,&
                 solalg, veasse)
+!
+! - Initializations for dynamic
+!
+    call nonlinDSDynamicInit(valinc, sddyna)
 !
 ! --- CONSTRUCTION DU CHAM_NO ASSOCIE AU PILOTAGE
 !
