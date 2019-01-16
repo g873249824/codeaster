@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -21,11 +21,9 @@
 
 cata_msg = {
 
-    1  : _(u"""
- Erreur dans CALC_META: le résultat thermique doit contenir au moins deux pas de temps.
-"""),
+    1  : _(u"""Le résultat thermique doit contenir au moins deux pas de temps."""),
 
-    2  : _(u"""
- Erreur dans CALC_META: le résultat thermique donné pour l'état initial doit être le même que le résultat de CALC_META.
-"""),
+    2  : _(u"""Le résultat thermique donné pour l'état initial doit être le même que le résultat de CALC_META."""),
+
+    3  : _(u"""Il n'est pas possible de calculer la dureté (DURT_ELNO) pour les phases de type %(k1)s."""),
 }
