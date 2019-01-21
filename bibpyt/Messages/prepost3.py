@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -150,6 +150,18 @@ cata_msg = {
 
     85 : _(u"""
  il faut autant de composantes que de noeuds
+"""),
+
+    86 : _(u"""
+Il manque interspectre NUME_ORDRE_I : %(i1)d
+                       NUME_ORDRE_J : %(i2)d
+dans la matrice interspectrale : %(k1)s
+"""),
+
+    87 : _(u"""
+Il manque interspectre NOEUD_I/NOM_CMP_I : %(k1)s,%(k2)s
+                       NOEUD_J/NOM_CMP_J : %(k3)s,%(k4)s
+dans la matrice interspectrale : %(k5)s
 """),
 
     93 : _(u"""
