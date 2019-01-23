@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -160,10 +160,10 @@ implicit none
     integer :: iret, ibid
     real(kind=8) :: r8bid3(3)
     real(kind=8) :: instin
-    character(len=8) :: partit
+    character(len=8) :: partit, answer
     character(len=19) :: varc_prev, disp_prev, strx_prev
     aster_logical :: lacc0, lpilo, lmpas, lsstf, lerrt, lviss, lrefe, ldidi, l_obsv
-    aster_logical :: limpl,lcont
+    aster_logical :: limpl,lcont, l_pou_d_em
 !
 ! --------------------------------------------------------------------------------------------------
 !
@@ -208,6 +208,16 @@ implicit none
     lviss = ndynlo(sddyna,'VECT_ISS' )
     lrefe = isfonc(fonact,'RESI_REFE')
     ldidi = isfonc(fonact,'DIDI')
+!
+! - THe POU_D_EM elements are prohibidden
+!
+    call dismoi('EXI_STR2', model, 'MODELE', repk=answer)
+    l_pou_d_em = answer .eq. 'OUI'
+    if (isfonc(fonact,'CRIT_STAB' ) .or. isfonc(fonact,'MODE_VIBR' )) then
+        if (l_pou_d_em) then
+            call utmess('F', 'MECANONLINE4_4')
+        endif
+    endif    
 !
 ! - Initialization for reduced method
 !
