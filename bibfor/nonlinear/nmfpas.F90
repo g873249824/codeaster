@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -35,6 +35,8 @@ subroutine nmfpas(fonact, sddyna, sdpilo, sddisc, nbiter,&
 #include "asterfort/nmchex.h"
 #include "asterfort/nmchsv.h"
 #include "asterfort/nmpiac.h"
+#include "asterfort/setTimeListProgressBar.h"
+!
     character(len=19) :: solalg(*), valinc(*), veasse(*)
     character(len=19) :: sddyna, sdpilo, sddisc
     real(kind=8) :: eta
@@ -65,7 +67,6 @@ subroutine nmfpas(fonact, sddyna, sdpilo, sddisc, nbiter,&
 !
     aster_logical :: ldyna, lmpas
     aster_logical :: lpilo
-
     character(len=19) :: depmoi, varmoi, sigmoi, commoi, vitmoi, accmoi
     character(len=19) :: depplu, varplu, sigplu, complu, vitplu, accplu
     character(len=19) :: depdel, depold, strmoi, strplu
@@ -143,6 +144,10 @@ subroutine nmfpas(fonact, sddyna, sdpilo, sddisc, nbiter,&
         call jeveuo(cfsc, 'E', vr=coef_sch)
         coef_sch(24) = diinst(sddisc,numins-1)
     endif
+!
+! - Progress bar
+!
+    call setTimeListProgressBar(sddisc, numins)
 !
     call jedema()
 !
