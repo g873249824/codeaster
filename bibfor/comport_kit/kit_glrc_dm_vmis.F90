@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -228,7 +228,7 @@ implicit none
 !     --    POUR POUVOIR UTILISER NMISOT
                 typmod(1) = '3D  '
                 typmod(2) = '        '
-                call nmisot('RIGI', 1, 1, 3, typmod,&
+                call nmisot('RIGI', 1, 1, 3, typmod, ASTER_TRUE,&
                             imate, 'VMIS_ISOT_LINE  ', crbid, deps2d, sig2dm,&
                             vim(8), 'FULL_MECA       ', sig2dp, vip(8), tan3d,&
                             iret)

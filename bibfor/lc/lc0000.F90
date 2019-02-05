@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 ! along with code_aster.  If not, see <http://www.gnu.org/licenses/>.
 ! --------------------------------------------------------------------
 
-subroutine lc0000(fami, kpg, ksp, ndim, typmod,&
+subroutine lc0000(fami, kpg, ksp, ndim, typmod, l_epsi_varc,&
                   imate, compor, mult_comp, carcri,&
                   instam, instap,&
                   neps, epsm, deps, nsig, sigm,&
@@ -153,6 +153,7 @@ implicit none
 ! aslint: disable=W1501,W1504
 !
     integer :: imate, ndim, nvi, kpg, ksp
+    aster_logical, intent(in) :: l_epsi_varc
     integer :: neps, nsig, nwkin, nwkout, ndsde
     real(kind=8) :: carcri(*), angmas(3)
     real(kind=8) :: instam, instap
@@ -302,7 +303,7 @@ implicit none
                     dsidep, codret)
     case (2)
 !     VMIS_ISOT_XXX, VISC_ISOT_XXX
-        call lc0002(fami, kpg, ksp, ndim, imate,&
+        call lc0002(fami, kpg, ksp, ndim, imate, l_epsi_varc,&
                     compor, carcri, instam, instap, neps,&
                     epsm, deps, nsig, sigm, vim,&
                     option, sigp, vip, typmod, ndsde,&
@@ -787,7 +788,7 @@ implicit none
                     nvi, dsidep, codret)
     case (120)
 !     BETON_DOUBLE_DP
-        call lc0120(fami, kpg, ksp, ndim, imate,&
+        call lc0120(fami, kpg, ksp, ndim, imate, l_epsi_varc,&
                     compor, carcri, instam, instap, epsm,&
                     deps, sigm, vim, option, angmas,&
                     sigp, vip, wkin, typmod, icomp,&

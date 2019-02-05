@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -15,7 +15,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with code_aster.  If not, see <http://www.gnu.org/licenses/>.
 ! --------------------------------------------------------------------
-
+! aslint: disable=W1504
+!
 subroutine nmcpla(fami, kpg   , ksp  , ndim  , typmod,&
                   imat, compor, mult_comp, carcri , timed , timef ,&
                   neps, epsdt , depst, nsig  , sigd  ,&
@@ -39,22 +40,20 @@ implicit none
 #include "asterfort/rslnvi.h"
 #include "asterfort/utmess.h"
 !
-! aslint: disable=W1504
-!
-    integer :: imat, ndim, kpg, ksp, iret
-    integer :: neps, nsig, nwkin, nwkout, ndsde
+integer :: imat, ndim, kpg, ksp, iret
+integer :: neps, nsig, nwkin, nwkout, ndsde
     character(len=16), intent(in) :: compor(*)
     character(len=16), intent(in) :: mult_comp
-    real(kind=8), intent(in) :: carcri(*)
-    real(kind=8) :: timed, timef, tempd, tempf, tref
-    real(kind=8) :: wkin(*), wkout(*)
-    real(kind=8) :: epsdt(6), depst(6)
-    real(kind=8) :: sigd(6), sigf(6)
-    real(kind=8) :: vind(*), vinf(*)
-    real(kind=8) :: dsde(ndsde)
-    character(len=16) :: option
-    character(len=*) :: fami
-    character(len=8) :: typmod(*)
+real(kind=8), intent(in) :: carcri(*)
+real(kind=8) :: timed, timef, tempd, tempf, tref
+real(kind=8) :: wkin(*), wkout(*)
+real(kind=8) :: epsdt(6), depst(6)
+real(kind=8) :: sigd(6), sigf(6)
+real(kind=8) :: vind(*), vinf(*)
+real(kind=8) :: dsde(ndsde)
+character(len=16) :: option
+character(len=*) :: fami
+character(len=8) :: typmod(*)
 !
 ! --------------------------------------------------------------------------------------------------
 !
@@ -140,7 +139,7 @@ implicit none
     real(kind=8) :: sigf2(6)
     real(kind=8) :: tmpdmx, tmpfmx, epsth
     real(kind=8) :: alphad, alphaf, bendod, bendof, kdessd, kdessf
-    aster_logical :: cp, l_inte_forc
+    aster_logical :: cp, l_inte_forc, l_epsi_varc
 !
 ! --------------------------------------------------------------------------------------------------
 !
@@ -286,13 +285,14 @@ implicit none
 !
 ! - Solve plasticity law
 !
+    l_epsi_varc = ASTER_FALSE
     if (rela_plas(1:9) .eq. 'VMIS_ISOT' .or. rela_plas(1:14) .eq. 'VMIS_ISOT_LINE') then
-        call nmisot(fami             , kpg      , ksp , ndim             , typmod,&
+        call nmisot(fami             , kpg      , ksp , ndim   , typmod, l_epsi_varc,&
                     imat             , rela_plas, carcri, deps             , sigd  ,&
                     vind(idx_vi_plas), option   , sigf, vinf(idx_vi_plas), dsde  ,&
                     iret)
     else if (rela_plas(1:8).eq. 'ROUSS_PR' .or. rela_plas(1:15).eq.'BETON_DOUBLE_DP') then
-        call redece(fami             , kpg              , ksp   , ndim , typmod,&
+        call redece(fami             , kpg              , ksp   , ndim , typmod, l_epsi_varc,&
                     imat             , compor_plas      , mult_comp, carcri  , timed, timef ,&
                     neps             , epsdt            , deps  , nsig , sigd  ,&
                     vind(idx_vi_plas), option           , angmas, nwkin, wkin  ,&
