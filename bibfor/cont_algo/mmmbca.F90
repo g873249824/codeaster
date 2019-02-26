@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -94,7 +94,6 @@ implicit none
     integer :: model_ndim, nb_cont_zone, loop_cont_vali
     integer :: elem_slav_nbno, nb_poin_elem, nb_elem_slav
     integer :: indi_cont_eval, indi_frot_eval
-    integer :: indi_cont_init, indi_frot_init
     real(kind=8) :: ksipr1, ksipr2, ksipc1, ksipc2
     real(kind=8) :: norm(3), tau1(3), tau2(3)
     real(kind=8) :: lagr_cont_node(9), lagr_fro1_node(9), lagr_fro2_node(9)
@@ -309,10 +308,6 @@ implicit none
 !
 ! ------------- Previous status and coefficients
 !
-                indi_cont_init = nint(v_sdcont_tabfin(ztabf*(i_cont_poin-1)+23))
-                if (l_frot_zone) then
-                    indi_frot_init = nint(v_sdcont_tabfin(ztabf*(i_cont_poin-1)+24))
-                endif
                 coef_cont = v_sdcont_cychis(60*(i_cont_poin-1)+2)
                 coef_frot = v_sdcont_cychis(60*(i_cont_poin-1)+6)
 !
