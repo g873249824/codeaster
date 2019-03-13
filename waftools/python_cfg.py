@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -94,7 +94,10 @@ def check_numpy_module(self):
     # getting python module
     self.start_msg('Checking for numpy')
     self.check_python_module('numpy')
-    self.end_msg('yes')
+    import numpy
+    self.env.append_unique('CFG_PYTHONPATH',
+        [osp.normpath(osp.dirname(osp.dirname(numpy.__file__)))])
+    self.end_msg(numpy.__file__)
 
 @Configure.conf
 def check_numpy_headers(self):
