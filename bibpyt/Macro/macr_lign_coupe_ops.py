@@ -528,15 +528,15 @@ def crea_mail_lig_coup(dimension, lignes, groups, arcs):
         nbp_lig_coupe = lignes[i][2]
         for j in range(nbp_lig_coupe):
             if dimension == 2:
-                x = pt1[0] + j * (pt2[0] - pt1[0]) / (nbp_lig_coupe - 1)
-                y = pt1[1] + j * (pt2[1] - pt1[1]) / (nbp_lig_coupe - 1)
+                x = pt1[0] + 1.0 * j * (pt2[0] - pt1[0]) / (nbp_lig_coupe - 1)
+                y = pt1[1] + 1.0 * j * (pt2[1] - pt1[1]) / (nbp_lig_coupe - 1)
                 nbno = nbno + 1
                 noeud = '  N%d   %21.14E    %21.14E' % (nbno, x, y)
                 resu.append(noeud)
             elif dimension == 3:
-                x = pt1[0] + j * (pt2[0] - pt1[0]) / (nbp_lig_coupe - 1)
-                y = pt1[1] + j * (pt2[1] - pt1[1]) / (nbp_lig_coupe - 1)
-                z = pt1[2] + j * (pt2[2] - pt1[2]) / (nbp_lig_coupe - 1)
+                x = pt1[0] + 1.0 * j * (pt2[0] - pt1[0]) / (nbp_lig_coupe - 1)
+                y = pt1[1] + 1.0 * j * (pt2[1] - pt1[1]) / (nbp_lig_coupe - 1)
+                z = pt1[2] + 1.0 * j * (pt2[2] - pt1[2]) / (nbp_lig_coupe - 1)
                 nbno = nbno + 1
                 noeud = '  N%d   %21.14E    %21.14E    %21.14E' % (
                     nbno, x, y, z)
