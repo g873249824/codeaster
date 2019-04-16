@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -490,7 +490,7 @@ class PostMissHarm(PostMissTran):
             if dExc.get('VECT_ASSE') is not None:
                 __excit = PROJ_VECT_BASE(BASE=self.param['BASE_MODALE'],
                                          NUME_DDL_GENE=self.nddlgen,
-                                         VECT_ASSE=dExc['VECT_ASSE'])
+                                         VECT_ASSE=dExc['VECT_ASSE'], TYPE_VECT='FORC')
                 dExc['VECT_ASSE_GENE'] = __excit
                 del dExc['VECT_ASSE']
             self.excit_harmo.append(dExc)
