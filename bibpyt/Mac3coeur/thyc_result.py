@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -78,10 +78,9 @@ def definir_chargement_transverse(cote, epaisseur, pos_thyc, force, prod):
     som_f = 0.0
     for k in range(kk, pos_thyc[0]):
         som_l = som_l + string.atof(epaisseur[k])
-        som_f = som_f + prod * string.atof(
-            force[k]) / string.atof(epaisseur[k])
-    som_feq = som_l / \
-        (som_l + 0.5 * string.atof(epaisseur[pos_thyc[0]])) * som_f
+        som_f = som_f + prod * string.atof(force[k])
+    som_feq = som_f / \
+        (som_l + 0.25 * string.atof(epaisseur[pos_thyc[0]]))
     defi_fonc.append(
         string.atof(cote[kk]) - 0.5 * string.atof(epaisseur[kk]) - eps)
     defi_fonc.append(som_feq)
@@ -97,11 +96,10 @@ def definir_chargement_transverse(cote, epaisseur, pos_thyc, force, prod):
         som_f = 0.0
         for k in range(pos_thyc[j] + 1, pos_thyc[j + 1]):
             som_l = som_l + string.atof(epaisseur[k])
-            som_f = som_f + prod * string.atof(
-                force[k]) / string.atof(epaisseur[k])
-        som_feq = som_l / \
-            (som_l + 0.5 *
-             (string.atof(epaisseur[pos_thyc[j]]) + string.atof(epaisseur[pos_thyc[j + 1]]))) * som_f
+            som_f = som_f + prod * string.atof(force[k])
+        som_feq = som_f / \
+            (som_l + 0.25 *
+             (string.atof(epaisseur[pos_thyc[j]]) + string.atof(epaisseur[pos_thyc[j + 1]])))
         defi_fonc.append(
             string.atof(cote[pos_thyc[j]]) + 0.5 * string.atof(epaisseur[pos_thyc[j]]) - eps)
         defi_fonc.append(som_feq)
@@ -116,10 +114,9 @@ def definir_chargement_transverse(cote, epaisseur, pos_thyc, force, prod):
     som_f = 0.0
     for k in range(pos_thyc[len(pos_thyc) - 1] + 1, len(cote)):
         som_l = som_l + string.atof(epaisseur[k])
-        som_f = som_f + prod * string.atof(
-            force[k]) / string.atof(epaisseur[k])
-    som_feq = som_l / \
-        (som_l + 0.5 * string.atof(epaisseur[len(cote) - 1])) * som_f
+        som_f = som_f + prod * string.atof(force[k])
+    som_feq = som_f / \
+        (som_l + 0.25 * string.atof(epaisseur[len(cote) - 1]))
     defi_fonc.append(string.atof(cote[pos_thyc[len(pos_thyc) - 1]]) + 0.5 * string.atof(
         epaisseur[pos_thyc[len(pos_thyc) - 1]]) - eps)
     defi_fonc.append(som_feq)
