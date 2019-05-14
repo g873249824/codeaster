@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ cata_msg = {
 Cette maille n'est pas valable pour la méthode LAC de contact.
 """),
 
-    2 : _("""
+    2 : _(u"""
 Vous essayer de faire un MODI_MAILLAGE après avoir fait CREA_MAILLAGE/DECOUPE_LAC sur ce même maillage.
 C'est interdit sauf pour les mots clés DEFORME et TRANSLATION uniquement.
 
