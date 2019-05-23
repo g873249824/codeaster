@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -45,6 +45,11 @@ On l'écrase pour le remplacer par le nouveau.
     5 : _(u"""
 A cause des erreurs précédentes, le code s'arrête.
   Le champ des variables internes fourni à CALCUL n'est pas cohérent avec le comportement donné par le mot-clef COMPORTEMENT.
+"""),
+
+    6 : _(u"""
+A cause des erreurs précédentes, le code s'arrête.
+Le champ des contraintes fourni à CALCUL n'est pas cohérent à propos du nombre des sous-points.
 """),
 
     7 : _(u"""
