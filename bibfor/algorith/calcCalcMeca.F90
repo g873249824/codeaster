@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -105,7 +105,7 @@ implicit none
     aster_logical :: l_lagr
     character(len=16) :: option
     character(len=19) :: varc_curr, disp_curr, sigm_curr, vari_curr, k19bla = ' '
-    character(len=19) :: vari_prev, disp_prev, sigm_prev
+    character(len=19) :: vari_prev, disp_prev, sigm_prev, disp_cumu_inst
     integer :: iterat, ixfem, nb_subs_stat
     aster_logical :: tabret(0:10), l_meta_zirc, l_meta_acier, l_xfem, l_macr_elem
     integer :: fonact(100)
@@ -217,9 +217,10 @@ implicit none
         if (.not. l_nonl) then
             call copisd('CHAMP_GD', 'V', sigm_prev, sigm_curr)
         endif
+        call nmchex(hval_algo, 'SOLALG', 'DEPDEL', disp_cumu_inst )
         call vefnme(option, 'G', model, mate, cara_elem,&
                     ds_constitutive%compor, partps, 0, ligrmo, varc_curr,&
-                    sigm_curr, ' ', disp_curr, ' ', vefori)
+                    sigm_curr, ' ', disp_prev, disp_cumu_inst, vefori)
     endif
 !
 ! - State variables
