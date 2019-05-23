@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -310,6 +310,12 @@ Risques & conseils :
     52 : _(u"""Maille: %(k1)-8s - Nombre de sous-points précédent: %(i1)d - Nombre de sous-points courant: %(i2)d"""),
 
     53 : _(u"""Maille: %(k1)-8s - Nombre de variables internes précédent: %(i1)d - Nombre de variables internes courant: %(i2)d"""),
+
+        54: _(u"""
+Erreur lors de la vérification de la cohérence entre les champs de contrainte.
+
+On a affiché ci-dessus la liste des mailles pour lesquelles le nombre de sous-points est différent.
+"""),
 
 
     70: _(u"""
