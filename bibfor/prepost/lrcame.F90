@@ -170,7 +170,7 @@ subroutine lrcame(nrofic, nochmd, nomamd, nomaas, ligrel,&
     character(len=8) :: nomtyp(ntymax)
     character(len=19) :: prefix
     character(len=24) :: numcmp, ntncmp, ntucmp, ntvale, nmcmfi(ntymax)
-    character(len=24) :: valk(2)
+    character(len=64) :: valk(2)
     character(len=24) :: ntproa, nmcmfl
     character(len=64) :: nomprf
     character(len=200) :: nofimd
@@ -497,8 +497,8 @@ subroutine lrcame(nrofic, nochmd, nomamd, nomaas, ligrel,&
 ! 2.3. ==> IL MANQUE DES CHOSES !
 !
     if (.not.existt) then
-        valk (1) = nofimd(1:24)
-        valk (2) = nochmd(1:24)
+        valk (1) = nofimd(1:64)
+        valk (2) = nochmd(1:64)
         call utmess('A+', 'MED_98', nk=2, valk=valk)
         if (iinst .ne. 0) then
             valr = inst
