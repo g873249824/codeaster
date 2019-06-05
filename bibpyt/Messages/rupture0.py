@@ -79,6 +79,11 @@ le mot-clé EXCIT est obligatoire.
 Veuillez le renseigner.
 """),
 
+    10: _(u"""
+Le champ %(k1)s est un champ de type %(k2)s.
+POST_K1_K2_K3 ne peut prendre en charge que les CHAM_NO.
+"""),
+
     11: _(u"""
 Problème à la récupération des noeuds du fond de fissure.
 -> Risque et Conseil :
