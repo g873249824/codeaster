@@ -31,6 +31,10 @@ cata_msg = {
          Comportement %(k1)s non implanté pour l'élément d'interface
 """),
 
+    3: _(u"""
+        Choix de déformation %(k1)s non disponible pour l'élément CABLE_GAINE
+"""),
+
     4: _(u"""
         La formulation n'est ni en contrainte nette ni en Bishop
 """),
