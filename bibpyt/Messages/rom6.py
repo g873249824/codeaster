@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ cata_msg = {
 
    3  : _(u"""Initialisations pour le post-traitement du calcul réduit."""), 
 
-   4  : _(u"""On ne trouve pas la table des coordonnées réduites dans la structure de données résultat. Vérifiez qu'il vient bien d'un calcul réduit."""), 
+   4  : _(u"""On ne trouve pas la table des coordonnées réduites dans la structure de données résultat. Vérifiez qu'il vient bien d'un calcul réduit et que les résultats n'ont pas été produits par LIRE_RESU ou CREA_RESU."""), 
 
    5  : _(u"""Création du résultat de nom %(k1)s sur le modèle complet de nom %(k2)s."""), 
 
