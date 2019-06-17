@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2017 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -290,8 +290,8 @@ subroutine cakg2d(optioz, result, modele, depla, theta,&
 !           MAIS ON FAIT TOURNER DE 90 DEGRES LE VECTEUR DE PROPA
             rcmp(3) = zr(jbasfo-1+3)
             rcmp(4) = zr(jbasfo-1+4)
-            rcmp(5) = zr(jbasfo-1+1)
-            rcmp(6) = zr(jbasfo-1+2)
+            rcmp(5) = -zr(jbasfo-1+4)
+            rcmp(6) = zr(jbasfo-1+3)
         endif
     endif
 !
@@ -323,8 +323,8 @@ subroutine cakg2d(optioz, result, modele, depla, theta,&
         call jeveuo(fiss//'.BASEFOND', 'L', jnor)
         rcmp(3) = zr(jnor-1+4*(numfon-1)+3)
         rcmp(4) = zr(jnor-1+4*(numfon-1)+4)
-        rcmp(5) = zr(jnor-1+4*(numfon-1)+1)
-        rcmp(6) = zr(jnor-1+4*(numfon-1)+2)
+        rcmp(5) = -zr(jnor-1+4*(numfon-1)+4)
+        rcmp(6) = zr(jnor-1+4*(numfon-1)+3)
         write(ifm,*)'   '
         write(ifm,*)'    TRAITEMENT DU FOND DE FISSURE NUMERO ',numfon
         write(ifm,*)'    NOMME ',noeud
