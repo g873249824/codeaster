@@ -1,6 +1,6 @@
 # coding=utf-8
 # --------------------------------------------------------------------
-# Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
+# Copyright (C) 1991 - 2020 - EDF R&D - www.code-aster.org
 # This file is part of code_aster.
 #
 # code_aster is free software: you can redistribute it and/or modify
@@ -490,7 +490,7 @@ class MEDPTR3_XT(Element):
                      (OP.RIGI_MECA_GE.PHEAVTO, E6NEUTI), (OP.RIGI_MECA_GE.PLONCHA, LC.E10NEUTI),
                      (OP.RIGI_MECA_GE.PLSN, LC.N1NEUT_R), (OP.RIGI_MECA_GE.PLST, LC.N1NEUT_R),
                      (OP.RIGI_MECA_GE.PPINTTO, LC.E6NEUTR), (OP.RIGI_MECA_GE.PPMILTO, LC.E22NEUTR),
-                     (OP.RIGI_MECA_GE.PSTANO, STANO_I), (SP.PMATERC, LC.CMATERC),),
+                     (OP.RIGI_MECA_GE.PSTANO, STANO_I),),
             para_out=((SP.PMATUUR, MMATUUR), ),
         ),
 
