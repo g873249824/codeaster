@@ -1,5 +1,5 @@
 ! --------------------------------------------------------------------
-! Copyright (C) 1991 - 2018 - EDF R&D - www.code-aster.org
+! Copyright (C) 1991 - 2019 - EDF R&D - www.code-aster.org
 ! This file is part of code_aster.
 !
 ! code_aster is free software: you can redistribute it and/or modify
@@ -199,7 +199,7 @@ type(NL_DS_AlgoPara), intent(in) :: ds_algopara
             call utmess('F', 'MECANONLINE3_99')
         elseif (l_matr_distr) then
             call utmess('F', 'CONTACT2_19')
-        elseif (lpetsc .and. .not. lldsp) then
+        elseif ((lpetsc .or. lgcpc).and. .not. lldsp) then
             call utmess('F', 'MECANONLINE3_87')
         endif
     endif
